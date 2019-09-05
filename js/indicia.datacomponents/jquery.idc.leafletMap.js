@@ -394,7 +394,9 @@
       // consumers.
       el.settings.source = {};
       $.each(el.settings.layerConfig, function eachLayer() {
-        el.settings.source[this.source] = typeof this.title === 'undefined' ? this.source : this.title;
+        if (this.type !== 'WMS') {
+          el.settings.source[this.source] = typeof this.title === 'undefined' ? this.source : this.title;
+        }
       })
 ;      // Apply settings passed to the constructor.
       if (typeof options !== 'undefined') {
@@ -430,17 +432,30 @@
       baseMaps[el.settings.baseLayer].addTo(el.map);
       $.each(el.settings.layerConfig, function eachLayer(id, layer) {
         var group;
-        if (layer.type && layer.type === 'heat') {
-          group = L.heatLayer([], $.extend({ radius: 10 }, layer.style ? layer.style : {}));
+        var wmsOptions;
+        if (layer.type === 'WMS') {
+          wmsOptions = {
+            layers: layer.layer,
+            format: 'image/png',
+            transparent: true
+          };
+          if (typeof layer.wmsOptions !== 'undefined') {
+            $.extend(wmsOptions, layer.wmsOptions);
+          }
+          group = L.tileLayer.wms(layer.sourceUrl, wmsOptions);
         } else {
-          group = L.featureGroup();
+          if (layer.type && layer.type === 'heat') {
+            group = L.heatLayer([], $.extend({ radius: 10 }, layer.style ? layer.style : {}));
+          } else {
+            group = L.featureGroup();
+          }
+          group.on('add', function addEvent() {
+            onAddLayer(el, this, id);
+          });
+          group.on('remove', function removeEvent() {
+            onRemoveLayer(el, id);
+          });
         }
-        group.on('add', function addEvent() {
-          onAddLayer(el, this, id);
-        });
-        group.on('remove', function removeEvent() {
-          onRemoveLayer(el, id);
-        });
         // Leaflet wants layers keyed by title.
         overlays[typeof layer.title === 'undefined' ? id : layer.title] = group;
         // Plugin wants them keyed by source ID.
