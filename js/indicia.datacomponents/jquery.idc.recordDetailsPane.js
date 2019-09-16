@@ -169,7 +169,7 @@
     loadedCommentsOcurrenceId = occurrenceId;
     // Load the comments
     $.ajax({
-      url: indiciaData.ajaxUrl + '/comments/' + indiciaData.nid,
+      url: indiciaData.esProxyAjaxUrl + '/comments/' + indiciaData.nid,
       data: { occurrence_id: occurrenceId },
       success: function success(response) {
         $(el).find('.comments').html('');
@@ -201,7 +201,7 @@
     }
     loadedAttrsOcurrenceId = occurrenceId;
     $.ajax({
-      url: indiciaData.ajaxUrl + '/attrs/' + indiciaData.nid,
+      url: indiciaData.esProxyAjaxUrl + '/attrs/' + indiciaData.nid,
       data: { occurrence_id: occurrenceId },
       success: function success(response) {
         var attrsDiv = $(el).find('.record-details .attrs');
