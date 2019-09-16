@@ -123,9 +123,6 @@
       if (el.settings.sortable !== false && sortableField) {
         heading += '<span class="sort fas fa-sort"></span>';
       }
-      if (colDef.multiselect) {
-        heading += '<span title="Enable multiple selection mode" class="fas fa-list multiselect-switch"></span>';
-      }
       // Extra data attrs to support footable.
       if (colDef['hide-breakpoints']) {
         footableExtras = ' data-hide="' + colDef['hide-breakpoints'] + '"';
@@ -294,7 +291,7 @@
     });
 
     $(el).find('.multiselect-switch').click(function clickMultiselectSwitch() {
-      var table = $(this).closest('table');
+      var table = $(this).closest('.idc-output-dataGrid').find('table');
       if ($(table).hasClass('multiselect-mode')) {
         $(table).removeClass('multiselect-mode');
         $(table).find('.multiselect-cell').remove();
@@ -844,6 +841,9 @@
       tools = '<span class="fas fa-wrench data-grid-show-settings" title="Click to show grid column settings"></span>';
       if (document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled) {
         tools += '<br/><span class="far fa-window-maximize data-grid-fullscreen" title="Click to view grid in full screen mode"></span>';
+      }
+      if (el.settings.includeMultiSelectTool) {
+        tools = '<span title="Enable multiple selection mode" class="fas fa-list multiselect-switch"></span><br/>' + tools;
       }
       $('<div class="data-grid-tools">' + tools + '</div>').appendTo(el);
       // Add overlay for settings etc.

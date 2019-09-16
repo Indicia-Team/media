@@ -267,7 +267,10 @@ table.report-grid {
   .idc-output-dataGrid .data-grid-tools {
     position: absolute;
     top: 0;
-    right: 0; }
+    right: 0;
+    border: solid silver 1px;
+    border-radius: 3px;
+    background-color: rgba(38, 80, 38, 0.1); }
     .idc-output-dataGrid .data-grid-tools span {
       font-size: 20px;
       padding: 0;
