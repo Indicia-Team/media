@@ -560,8 +560,10 @@ jQuery(document).ready(function ($) {
           delete indiciaData.filter.def.indexed_location_id;
         }
         indiciaData.disableMapDataLoading = true;
-        indiciaData.mapOrigCentre = indiciaData.mapdiv.map.getCenter();
-        indiciaData.mapOrigZoom = indiciaData.mapdiv.map.getZoom();
+        if (indiciaData.mapdiv) {
+          indiciaData.mapOrigCentre = indiciaData.mapdiv.map.getCenter();
+          indiciaData.mapOrigZoom = indiciaData.mapdiv.map.getZoom();
+        }
         if (indiciaData.filter.def.indexed_location_list &&
           $("#site-type option[value='loc:" + indiciaData.filter.def.indexed_location_list + "']").length > 0) {
           $('#site-type').val('loc:' + indiciaData.filter.def.indexed_location_list);
@@ -584,13 +586,15 @@ jQuery(document).ready(function ($) {
           $('.olControlModifyFeatureItemInactive').hide();
         }
         // select the first draw... tool if allowed to draw on the map by permissions, else select navigate
-        $.each(indiciaData.mapdiv.map.controls, function (idx, ctrl) {
-          if (context && (((context.sref || context.searchArea) && ctrl.CLASS_NAME.indexOf('Control.Navigate') > -1) ||
-            ((!context.sref && !context.searchArea) && ctrl.CLASS_NAME.indexOf('Control.Draw') > -1))) {
-            ctrl.activate();
-            return false;
-          }
-        });
+        if (indiciaData.mapdiv) {
+          $.each(indiciaData.mapdiv.map.controls, function (idx, ctrl) {
+            if (context && (((context.sref || context.searchArea) && ctrl.CLASS_NAME.indexOf('Control.Navigate') > -1) ||
+              ((!context.sref && !context.searchArea) && ctrl.CLASS_NAME.indexOf('Control.Draw') > -1))) {
+              ctrl.activate();
+              return false;
+            }
+          });
+        }
         if (context && (context.location_id || context.indexed_location_id || context.location_name || context.searchArea)) {
           $('#controls-filter_where .context-instruct').show();
         }
@@ -1263,7 +1267,9 @@ jQuery(document).ready(function ($) {
           && typeof indiciaData.filterCustomDefs[id] !== 'undefined') {
         def = JSON.stringify(indiciaData.filterCustomDefs[id]);
       }
-      indiciaData.mapdiv.removeAllFeatures(indiciaData.mapdiv.map.editLayer, 'boundary');
+      if (indiciaData.mapdiv) {
+        indiciaData.mapdiv.removeAllFeatures(indiciaData.mapdiv.map.editLayer, 'boundary');
+      }
       if (def) {
         filterLoaded([{
           id: id,
@@ -1502,8 +1508,8 @@ jQuery(document).ready(function ($) {
           });
         }
         // Hook the addedFeature handler up to the draw controls on the map
-        if (ctrl.CLASS_NAME.indexOf('Control.Draw') > -1) {
-          ctrl.events.register('featureadded', ctrl, addedFeature);
+        if (this.CLASS_NAME.indexOf('Control.Draw') > -1) {
+          this.events.register('featureadded', this, addedFeature);
         }
       });
       // ensures that if part of a loaded filter description is a boundary, it gets loaded onto the map only when the map is ready
