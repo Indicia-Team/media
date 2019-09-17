@@ -775,6 +775,10 @@
         }
       });
       applyFilterRows(filterRows, data);
+      // If a standard params filter bar on the page, respect it's definition.
+      if (indiciaData.filter && indiciaData.filter.def) {
+        data.filter_def = indiciaData.filter.def;
+      }
       // Apply select in user filters drop down.
       if ($('.user-filter').length > 0) {
         $.each($('.user-filter'), function eachUserFilter() {
