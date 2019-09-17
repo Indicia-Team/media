@@ -662,6 +662,20 @@
   }
 
   /**
+   * If a standard params filter active on the page, copy it into the ES filter.
+   */
+  function setFilterDef(data) {
+    var geom;
+    if (indiciaData.filter && indiciaData.filter.def) {
+      data.filter_def = $.extend({}, indiciaData.filter.def);
+    }
+    if (data.filter_def.searchArea && OpenLayers) {
+      geom = OpenLayers.Geometry.fromWKT(data.filter_def.searchArea);
+      data.filter_def.searchArea = geom.transform('EPSG:3857', 'EPSG:4326').toString();
+    }
+  }
+
+  /**
    * Retrieve the value of a named data attribute from an input.
    *
    * If the input is a select, then the selected option can override the
@@ -776,9 +790,7 @@
       });
       applyFilterRows(filterRows, data);
       // If a standard params filter bar on the page, respect it's definition.
-      if (indiciaData.filter && indiciaData.filter.def) {
-        data.filter_def = indiciaData.filter.def;
-      }
+      setFilterDef(data);
       // Apply select in user filters drop down.
       if ($('.user-filter').length > 0) {
         $.each($('.user-filter'), function eachUserFilter() {
