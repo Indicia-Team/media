@@ -841,17 +841,6 @@ jQuery(document).ready(function ($) {
     }
   }
 
-  // Hook the addedFeature handler up to the draw controls on the map
-  mapInitialisationHooks.push(function (mapdiv) {
-    $.each(mapdiv.map.controls, function (idx, ctrl) {
-      if (ctrl.CLASS_NAME.indexOf('Control.Draw') > -1) {
-        ctrl.events.register('featureadded', ctrl, addedFeature);
-      }
-    });
-    // ensures that if part of a loaded filter description is a boundary, it gets loaded onto the map only when the map is ready
-    indiciaFns.updateFilterDescriptions();
-  });
-
   // Ensure that pane controls that are exclusive of others are only filled in one at a time
   $('.filter-controls fieldset :input').change(function (e) {
     var formDiv = $(e.currentTarget).parents('.filter-popup');
@@ -1137,6 +1126,14 @@ jQuery(document).ready(function ($) {
       });
       if (typeof indiciaData.mapdiv !== 'undefined' && typeof indiciaData.mapReportControllerGrid !== 'undefined') {
         indiciaData.mapReportControllerGrid.mapRecords();
+      }
+      // Integrate with Elasticsearch reports as well.
+      if (indiciaData.esSourceObjects) {
+        $.each(indiciaData.esSourceObjects, function eachSource() {
+          // Reset to first page.
+          this.settings.from = 0;
+          this.populate();
+        });
       }
     }
   };
@@ -1490,28 +1487,37 @@ jQuery(document).ready(function ($) {
     $('.olControlModifyFeatureItemInactive').hide();
   });
 
-  mapInitialisationHooks.push(function(div) {
-    // On initialisation of the map, hook event handlers to the draw feature control so we can link the modify feature
-    // control visibility to it.
-    $.each(div.map.controls, function() {
-      if (this.CLASS_NAME === 'OpenLayers.Control.DrawFeature' || this.CLASS_NAME === 'OpenLayers.Control.ModifyFeature') {
-        this.events.register('activate', '', function () {
-          $('.olControlModifyFeatureItemInactive, .olControlModifyFeatureItemActive').show();
-        });
-        this.events.register('deactivate', '', function () {
-          $('.olControlModifyFeatureItemInactive').hide();
-        });
-      }
-    });
-  });
 
-  mapClickForSpatialRefHooks.push(function (data, mapdiv) {
-    // on click to set a grid square, clear any other boundary data
-    mapdiv.removeAllFeatures(mapdiv.map.editLayer, 'clickPoint', true);
-    clearSites();
-    $('#controls-filter_where').find(':input')
-        .not('#imp-sref,#imp-sref-system,:checkbox,[type=button],[name="location_list[]"]').val('');
-  });
+  if (typeof mapInitialisationHooks !== 'undefined') {
+    mapInitialisationHooks.push(function(div) {
+      // On initialisation of the map, hook event handlers to the draw feature control so we can link the modify feature
+      // control visibility to it.
+      $.each(div.map.controls, function eachControl() {
+        if (this.CLASS_NAME === 'OpenLayers.Control.DrawFeature' || this.CLASS_NAME === 'OpenLayers.Control.ModifyFeature') {
+          this.events.register('activate', '', function () {
+            $('.olControlModifyFeatureItemInactive, .olControlModifyFeatureItemActive').show();
+          });
+          this.events.register('deactivate', '', function () {
+            $('.olControlModifyFeatureItemInactive').hide();
+          });
+        }
+        // Hook the addedFeature handler up to the draw controls on the map
+        if (ctrl.CLASS_NAME.indexOf('Control.Draw') > -1) {
+          ctrl.events.register('featureadded', ctrl, addedFeature);
+        }
+      });
+      // ensures that if part of a loaded filter description is a boundary, it gets loaded onto the map only when the map is ready
+      indiciaFns.updateFilterDescriptions();
+    });
+
+    mapClickForSpatialRefHooks.push(function (data, mapdiv) {
+      // on click to set a grid square, clear any other boundary data
+      mapdiv.removeAllFeatures(mapdiv.map.editLayer, 'clickPoint', true);
+      clearSites();
+      $('#controls-filter_where').find(':input')
+          .not('#imp-sref,#imp-sref-system,:checkbox,[type=button],[name="location_list[]"]').val('');
+    });
+  }
 
   $('form.filter-controls').submit(function(e) {
     var arrays = {};
