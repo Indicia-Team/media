@@ -171,11 +171,27 @@ table.es-data-grid {
       background: silver;
     }
   }
+  .multi-only {
+    display: none;
+  }
   .sep {
     height: 20px;
     width: 1px;
     background-color: silver;
     margin: 0 8px;
+  }
+}
+
+.multiselect-mode {
+  .multi-only {
+    display: initial;
+    button {
+      margin: 0;
+      &.active {
+        background: #cde;
+        border: #999;
+      }
+    }
   }
 }
 
