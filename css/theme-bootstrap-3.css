@@ -270,7 +270,7 @@ table.report-grid {
     right: 0;
     border: solid silver 1px;
     border-radius: 3px;
-    background-color: rgba(38, 60, 38, 0.2); }
+    background-color: rgba(38, 80, 38, 0.1); }
     .idc-output-dataGrid .data-grid-tools span {
       font-size: 20px;
       padding: 0;
@@ -375,11 +375,21 @@ table.es-data-grid {
   padding: 6px; }
   .idc-verification-buttons-row button:hover, .idc-verification-buttons-row a:hover {
     background: silver; }
+.idc-verification-buttons-row .multi-only {
+  display: none; }
 .idc-verification-buttons-row .sep {
   height: 20px;
   width: 1px;
   background-color: silver;
   margin: 0 8px; }
+
+.multiselect-mode .multi-only {
+  display: initial; }
+  .multiselect-mode .multi-only button {
+    margin: 0; }
+    .multiselect-mode .multi-only button.active {
+      background: #cde;
+      border: #999; }
 
 /* idcEsDownload */
 .idc-download-files {

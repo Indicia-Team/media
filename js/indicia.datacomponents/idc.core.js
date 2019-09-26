@@ -669,7 +669,7 @@
     if (indiciaData.filter && indiciaData.filter.def) {
       data.filter_def = $.extend({}, indiciaData.filter.def);
     }
-    if (data.filter_def.searchArea && OpenLayers) {
+    if (data.filter_def && data.filter_def.searchArea && OpenLayers) {
       geom = OpenLayers.Geometry.fromWKT(data.filter_def.searchArea);
       data.filter_def.searchArea = geom.transform('EPSG:3857', 'EPSG:4326').toString();
     }
@@ -693,7 +693,7 @@
     }
     val = $(input).attr(dataName);
     return val ? val : null;
-  }
+  };
 
   /**
    * Build query data to send to ES proxy.
