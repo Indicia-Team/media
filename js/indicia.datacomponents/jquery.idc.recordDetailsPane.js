@@ -373,6 +373,8 @@
       var fieldClass = 'field-' + field.replace('.', '--').replace('_', '-').replace('#', '-');
       item = indiciaFns.getValueForField(doc, field);
       if (item !== '') {
+        // Convert to hyperlink where relevant.
+        item = item.match(/^http(s)?:\/\//) ? '<a href="' + item + '" target="_blank">' + item + '</a>' : item;
         values.push('<span class="' + fieldClass + '">' + item + '</span>');
       }
     });
