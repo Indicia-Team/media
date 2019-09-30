@@ -169,7 +169,7 @@
     loadedCommentsOcurrenceId = occurrenceId;
     // Load the comments
     $.ajax({
-      url: indiciaData.ajaxUrl + '/comments/' + indiciaData.nid,
+      url: indiciaData.esProxyAjaxUrl + '/comments/' + indiciaData.nid,
       data: { occurrence_id: occurrenceId },
       success: function success(response) {
         $(el).find('.comments').html('');
@@ -201,7 +201,7 @@
     }
     loadedAttrsOcurrenceId = occurrenceId;
     $.ajax({
-      url: indiciaData.ajaxUrl + '/attrs/' + indiciaData.nid,
+      url: indiciaData.esProxyAjaxUrl + '/attrs/' + indiciaData.nid,
       data: { occurrence_id: occurrenceId },
       success: function success(response) {
         var attrsDiv = $(el).find('.record-details .attrs');
@@ -305,12 +305,14 @@
       success: function success(response) {
         var html = '';
         if (typeof response.error !== 'undefined' || (response.code && response.code !== 200)) {
-          console.log(response);
           alert('Elasticsearch query failed');
-          $(el).find('.recorder-experience').html('<div class="alert alert-warning">Experience could not be loaded.</div>');
+          $(el).find('.recorder-experience').html(
+            '<div class="alert alert-warning">Experience could not be loaded.</div>'
+          );
           $(el).find('.loading-spinner').hide();
         } else {
-          html += '<h3>Experience for <span class="field-taxon--accepted-name">' + doc.taxon.accepted_name + '</span></h3>';
+          html += '<h3>Experience for <span class="field-taxon--accepted-name">' +
+            doc.taxon.accepted_name + '</span></h3>';
           html += getExperienceAggregation(response.aggregations, 'species', doc.metadata.created_by_id,
             'filter-taxa_taxon_list_external_key_list=' + doc.taxon.accepted_taxon_id, el);
           html += '<h3>Experience for ' + doc.taxon.group + '</h3>';
@@ -321,7 +323,6 @@
         }
       },
       error: function error(jqXHR, textStatus, errorThrown) {
-        console.log(errorThrown);
         alert('Elasticsearch query failed');
       },
       dataType: 'json'
@@ -372,6 +373,8 @@
       var fieldClass = 'field-' + field.replace('.', '--').replace('_', '-').replace('#', '-');
       item = indiciaFns.getValueForField(doc, field);
       if (item !== '') {
+        // Convert to hyperlink where relevant.
+        item = item.match(/^http(s)?:\/\//) ? '<a href="' + item + '" target="_blank">' + item + '</a>' : item;
         values.push('<span class="' + fieldClass + '">' + item + '</span>');
       }
     });
@@ -400,20 +403,13 @@
       $.post(
         indiciaData.ajaxFormPostRedet,
         data,
-        function (response) {
+        function onResponse(response) {
           if (typeof response.error !== 'undefined') {
             alert(response.error);
-          } else {
-            // reload current tab
-            /*if (indiciaData.detailsTabs[indiciaFns.activeTab($('#record-details-tabs'))] === 'details' ||
-              indiciaData.detailsTabs[indiciaFns.activeTab($('#record-details-tabs'))] === 'comments') {
-              $('#record-details-tabs').tabs('load', indiciaFns.activeTab($('#record-details-tabs')));
-            }
-            reloadGrid();*/
           }
         }
       );
-      // Now post update to Elasticsearch.
+      // Now post update to Elasticsearch. ill the website ID to temporarily disable the record.
       data = {
         ids: [occurrenceId],
         doc: {
@@ -428,7 +424,7 @@
         url: indiciaData.esProxyAjaxUrl + '/updateids/' + indiciaData.nid,
         type: 'post',
         data: data,
-        success: function success(response) {
+        success: function success() {
           $(dataGrid).idcDataGrid('hideRowAndMoveNext');
         }
       });
@@ -462,7 +458,8 @@
       }
       dataGrid = $('#' + el.settings.showSelectedRow);
       if (dataGrid.length === 0) {
-        indiciaFns.controlFail(el, 'Missing idcDataGrid ' + el.settings.showSelectedRow + ' for idcRecordDetailsPane @showSelectedRow setting.');
+        indiciaFns.controlFail(el, 'Missing idcDataGrid ' + el.settings.showSelectedRow +
+          ' for idcRecordDetailsPane @showSelectedRow setting.');
       }
       // Tabify
       $(el).find('.tabs').tabs({
@@ -490,7 +487,8 @@
           occurrenceId = doc.id;
           acceptedNameAnnotation = doc.taxon.taxon_name === doc.taxon.accepted_name ? ' (as recorded)' : '';
           if (el.settings.allowRedetermination) {
-            acceptedNameAnnotation += '<span class="fas fa-edit push right" id="popup-redet" title="Redetermine this record"></span>';
+            acceptedNameAnnotation +=
+              '<span class="fas fa-edit push right" id="popup-redet" title="Redetermine this record"></span>';
           }
           vernaculardNameAnnotation = doc.taxon.taxon_name === doc.taxon.vernacular_name ? ' (as recorded)' : '';
           addRow(rows, doc, 'ID', 'id');

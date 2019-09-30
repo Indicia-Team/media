@@ -23,6 +23,9 @@ $colour-select-row-bg: #3333ee;
     position: absolute;
     top: 0;
     right: 0;
+    border: solid silver 1px;
+    border-radius: 3px;
+    background-color: rgba(38, 80, 38, 0.1);
     span {
       font-size: 20px;
       padding: 0;
@@ -168,11 +171,27 @@ table.es-data-grid {
       background: silver;
     }
   }
+  .multi-only {
+    display: none;
+  }
   .sep {
     height: 20px;
     width: 1px;
     background-color: silver;
     margin: 0 8px;
+  }
+}
+
+.multiselect-mode {
+  .multi-only {
+    display: initial;
+    button {
+      margin: 0;
+      &.active {
+        background: #cde;
+        border: #999;
+      }
+    }
   }
 }
 

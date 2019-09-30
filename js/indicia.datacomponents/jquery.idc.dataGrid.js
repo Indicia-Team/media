@@ -67,7 +67,8 @@
     compositeInfo: {
       page: 0,
       pageAfterKeys: {}
-    }
+    },
+    totalRowCount: null
   };
 
   /**
@@ -122,9 +123,6 @@
         || indiciaData.fieldConvertorSortFields[this.simpleFieldName()];
       if (el.settings.sortable !== false && sortableField) {
         heading += '<span class="sort fas fa-sort"></span>';
-      }
-      if (colDef.multiselect) {
-        heading += '<span title="Enable multiple selection mode" class="fas fa-list multiselect-switch"></span>';
       }
       // Extra data attrs to support footable.
       if (colDef['hide-breakpoints']) {
@@ -294,13 +292,14 @@
     });
 
     $(el).find('.multiselect-switch').click(function clickMultiselectSwitch() {
-      var table = $(this).closest('table');
-      if ($(table).hasClass('multiselect-mode')) {
-        $(table).removeClass('multiselect-mode');
+      var el = $(this).closest('.idc-output-dataGrid');
+      var table = el.find('table');
+      if ($(el).hasClass('multiselect-mode')) {
+        $(el).removeClass('multiselect-mode');
         $(table).find('.multiselect-cell').remove();
         $('.selection-buttons-placeholder').append($('.all-selected-buttons'));
       } else {
-        $(table).addClass('multiselect-mode');
+        $(el).addClass('multiselect-mode');
         $(table).find('thead tr').prepend(
           '<th class="multiselect-cell" />'
         );
@@ -639,7 +638,7 @@
    */
   function getRowBehaviourCells(el) {
     var cells = [];
-    if ($(el).find('table.multiselect-mode').length) {
+    if ($(el).hasClass('multiselect-mode')) {
       cells.push('<td class="multiselect-cell"><input type="checkbox" class="multiselect" /></td>');
     }
     if (el.settings.responsive) {
@@ -845,6 +844,9 @@
       if (document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled) {
         tools += '<br/><span class="far fa-window-maximize data-grid-fullscreen" title="Click to view grid in full screen mode"></span>';
       }
+      if (el.settings.includeMultiSelectTool) {
+        tools = '<span title="Enable multiple selection mode" class="fas fa-list multiselect-switch"></span><br/>' + tools;
+      }
       $('<div class="data-grid-tools">' + tools + '</div>').appendTo(el);
       // Add overlay for settings etc.
       $('<div class="data-grid-settings" style="display: none"></div>').appendTo(el);
@@ -926,6 +928,7 @@
       if (el.settings.responsive) {
         $(el).find('table').trigger('footable_redraw');
       }
+      el.settings.totalRowCount = el.settings.aggregation ? null : response.hits.total;
       drawTableFooter(el, response, data, afterKey);
       fireAfterPopulationCallbacks(el);
       setColWidths(el, maxCharsPerCol);
@@ -953,14 +956,14 @@
      * a verification accept.
      */
     hideRowAndMoveNext: function hideRowAndMoveNext() {
-      var grid = this;
-      var oldSelected = $(grid).find('tr.selected');
+      var el = this;
+      var oldSelected = $(el).find('tr.selected');
       var newSelectedId;
-      var showingLabel = $(grid).find('.showing');
+      var showingLabel = $(el).find('.showing');
       var selectedIds = [];
 
-      if ($(grid).find('table.multiselect-mode').length > 0) {
-        $.each($(grid).find('input.multiselect:checked'), function eachRow() {
+      if ($(el).find('table.multiselect-mode').length > 0) {
+        $.each($(el).find('input.multiselect:checked'), function eachRow() {
           var tr = $(this).closest('tr');
           selectedIds.push($(tr).attr('data-row-id'));
           tr.remove();
@@ -974,10 +977,10 @@
         selectedIds.push($(oldSelected).attr('data-row-id'));
         $(oldSelected).remove();
       }
-      $.each(grid.settings.source, function eachSource(sourceId) {
+      $.each(el.settings.source, function eachSource(sourceId) {
         var source = indiciaData.esSourceObjects[sourceId];
         // If the number of rows below 75% of page size, reresh the grid.
-        if ($(grid).find('table tbody tr.data-row').length < source.settings.size * 0.75) {
+        if ($(el).find('table tbody tr.data-row').length < source.settings.size * 0.75) {
           // As ES updates are not instant, we need a temporary must_not match
           // filter to prevent the verified records reappearing.
           if (!source.settings.filterBoolClauses) {
@@ -991,7 +994,7 @@
             field: '_id',
             value: JSON.stringify(selectedIds)
           });
-          $(grid)[0].settings.selectIdsOnNextLoad = [newSelectedId];
+          $(el)[0].settings.selectIdsOnNextLoad = [newSelectedId];
           // Reload the grid page.
           source.populate(true);
           // Clean up the temporary exclusion filter.
@@ -1001,14 +1004,14 @@
           }
         } else {
           // Update the paging info if some rows left.
-          showingLabel.html(showingLabel.html().replace(/\d+ of /, $(grid).find('tbody tr.data-row').length + ' of '));
+          showingLabel.html(showingLabel.html().replace(/\d+ of /, $(el).find('tbody tr.data-row').length + ' of '));
           // Immediately select the next row.
           if (typeof newSelectedId !== 'undefined') {
-            $(grid).find('table tbody tr.data-row[data-row-id="' + newSelectedId + '"]').addClass('selected');
+            $(el).find('table tbody tr.data-row[data-row-id="' + newSelectedId + '"]').addClass('selected');
           }
           // Fire callbacks for selected row.
-          $.each(grid.settings.callbacks.rowSelect, function eachCallback() {
-            this($(grid).find('tr.selected').length === 0 ? null : $(grid).find('tr.selected')[0]);
+          $.each(el.settings.callbacks.rowSelect, function eachCallback() {
+            this($(el).find('tr.selected').length === 0 ? null : $(el).find('tr.selected')[0]);
           });
         }
       });

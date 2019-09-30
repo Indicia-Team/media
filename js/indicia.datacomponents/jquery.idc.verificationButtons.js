@@ -40,6 +40,7 @@
 
   var saveVerifyComment = function saveVerifyComment(occurrenceIds, status, comment) {
     var commentToSave;
+    var allTableMode = $(dataGrid).find('.multi-mode-table.active').length > 0;
     var data = {
       website_id: indiciaData.website_id,
       user_id: indiciaData.user_id
@@ -48,17 +49,32 @@
       identification: {}
     };
     var indiciaPostUrl;
+    // Since this might be slow.
+    $('body').append('<div class="loading-spinner"><div>Loading...</div></div>');
     if (status.status) {
-      indiciaPostUrl = indiciaData.ajaxFormPostSingleVerify;
       commentToSave = comment.trim() === ''
         ? indiciaData.statusMsgs[status.status]
         : comment.trim();
       $.extend(data, {
-        'occurrence:ids': occurrenceIds.join(','),
         'occurrence:record_decision_source': 'H',
         'occurrence:record_status': status.status[0],
         'occurrence_comment:comment': commentToSave
       });
+      if (allTableMode) {
+        indiciaPostUrl = indiciaData.esProxyAjaxUrl + '/updateall/' + indiciaData.nid;
+        // Loop sources, only 1 will apply.
+        $.each($(dataGrid)[0].settings.source, function eachSource(sourceId) {
+          $.extend(data, {
+            'occurrence:idsFromElasticFilter': indiciaFns.getFormQueryData(indiciaData.esSourceObjects[sourceId])
+          });
+          return false;
+        });
+      } else {
+        indiciaPostUrl = indiciaData.ajaxFormPostSingleVerify;
+        $.extend(data, {
+          'occurrence:ids': occurrenceIds.join(',')
+        });
+      }
       doc.identification.verification_status = status.status[0];
       if (status.status.length > 1) {
         data['occurrence:record_substatus'] = status.status[1];
@@ -68,10 +84,22 @@
       $.post(
         indiciaPostUrl,
         data,
-        function success() {
-
+        function success(response) {
+          alert(response.updated + ' record(s) updated.');
+          // Wait a moment before refresh as Elastic updates not quite immediate.
+          setTimeout(function doPopulate() {
+            indiciaFns.populateDataSources();
+          }, 500);
         }
-      );
+      ).always(function cleanup() {
+        if (allTableMode) {
+          $('body > .loading-spinner').remove();
+        }
+      });
+      // In all table mode, everything handled by the ES proxy so nothing else to do.
+      if (allTableMode) {
+        return;
+      }
     } else if (status.query) {
       // No bulk API for query updates at the moment, so process one at a time.
       indiciaPostUrl = indiciaData.ajaxFormPostComment;
@@ -88,11 +116,10 @@
         // Post update to Indicia.
         $.post(
           indiciaPostUrl,
-          data,
-          function success() {
-
-          }
-        );
+          data
+        ).always(function cleanup() {
+          $('body > .loading-spinner').remove();
+        });
       });
     }
 
@@ -120,6 +147,8 @@
         alert('Elasticsearch update failed');
       },
       dataType: 'json'
+    }).always(function cleanup() {
+      $('body > .loading-spinner').remove();
     });
   };
 
@@ -129,18 +158,25 @@
     var heading;
     var statusData = [];
     var overallStatus = status.status ? status.status : status.query;
-    var selectedTrs = $(dataGrid).find('table').hasClass('multiselect-mode')
-      ? $(dataGrid).find('.multiselect:checked').closest('tr')
-      : $(dataGrid).find('tr.selected');
     var ids = [];
-    if (selectedTrs.length === 0) {
-      alert('There are no selected records');
-      return;
+    var todoCount;
+    var selectedTrs;
+    if ($(dataGrid).find('.multi-mode-table.active').length > 0) {
+      todoCount = $(dataGrid)[0].settings.totalRowCount;
+    } else {
+      selectedTrs = $(dataGrid).hasClass('multiselect-mode')
+        ? $(dataGrid).find('.multiselect:checked').closest('tr')
+        : $(dataGrid).find('tr.selected');
+      if (selectedTrs.length === 0) {
+        alert('There are no selected records. Either select some rows using the checkboxes in the leftmost column or set the "Apply decision to" mode to "all".');
+        return;
+      }
+      $.each(selectedTrs, function eachRow() {
+        doc = JSON.parse($(this).attr('data-doc-source'));
+        ids.push(parseInt(doc.id, 10));
+      });
+      todoCount = ids.length;
     }
-    $.each(selectedTrs, function eachRow() {
-      doc = JSON.parse($(this).attr('data-doc-source'));
-      ids.push(parseInt(doc.id, 10));
-    });
     if (status.status) {
       statusData.push('data-status="' + status.status + '"');
     }
@@ -148,10 +184,10 @@
       statusData.push('data-query="' + status.query + '"');
     }
     fs = $('<fieldset class="comment-popup" data-ids="' + JSON.stringify(ids) + '" ' + statusData.join('') + '>');
-    if (selectedTrs.length > 1) {
+    if (todoCount > 1) {
       heading = status.status
-        ? 'Set status to ' + indiciaData.statusMsgs[overallStatus] + ' for ' + selectedTrs.length + ' records'
-        : 'Query ' + selectedTrs.length + ' records';
+        ? 'Set status to ' + indiciaData.statusMsgs[overallStatus] + ' for ' + todoCount + ' records'
+        : 'Query ' + todoCount + ' records';
       $('<div class="alert alert-info">You are updating multiple records!</alert>').appendTo(fs);
     } else {
       heading = status.status
@@ -249,17 +285,24 @@
       });
       $(el).find('.l1').hide();
       $(el).find('.toggle').click(function toggleClick(e) {
+        var div = $(e.currentTarget).closest('.idc-verification-buttons-row');
         if ($(e.currentTarget).hasClass('fa-toggle-on')) {
           $(e.currentTarget).removeClass('fa-toggle-on');
           $(e.currentTarget).addClass('fa-toggle-off');
-          $(el).find('.l2').hide();
-          $(el).find('.l1').show();
+          div.find('.l2').hide();
+          div.find('.l1').show();
         } else {
           $(e.currentTarget).removeClass('fa-toggle-off');
           $(e.currentTarget).addClass('fa-toggle-on');
-          $(el).find('.l1').hide();
-          $(el).find('.l2').show();
+          div.find('.l1').hide();
+          div.find('.l2').show();
         }
+      });
+      // Toggle the apply to selected|table mode buttons.
+      $(el).find('.apply-to button').click(function modeClick(e) {
+        var div = $(e.currentTarget).closest('.idc-verification-buttons-row');
+        div.find('.apply-to button').not(e.currentTarget).removeClass('active');
+        $(e.currentTarget).addClass('active');
       });
     },
 
