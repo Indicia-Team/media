@@ -213,7 +213,10 @@
           table = $('<table>').appendTo(attrsDiv);
           tbody = $('<tbody>').appendTo($(table));
           $.each(attrs, function eachAttr() {
-            $('<tr><th>' + this.caption + '</th><td>' + this.value + '</td></tr>').appendTo(tbody);
+            var val = this.value.match(/^http(s)?:\/\//)
+              ? '<a href="' + this.value + '" target="_blank">' + this.value + '</a>'
+              : this.value;
+            $('<tr><th>' + this.caption + '</th><td>' + val + '</td></tr>').appendTo(tbody);
           });
         });
       },
