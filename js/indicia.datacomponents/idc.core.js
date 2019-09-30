@@ -832,6 +832,7 @@
             precision: Math.min(Math.max(mapToFilterTo[0].map.getZoom() - 3, 4), 10)
           });
           indiciaFns.findAndSetValue(agg, 'field', $(mapToFilterTo).idcLeafletMap('getAutoSquareField'), 'autoGridSquareField');
+          data.numericFilters['location.coordinate_uncertainty_in_meters'] = '0-' + $(mapToFilterTo).idcLeafletMap('getAutoSquareSize');
         }
       }
       data.aggs = agg;
