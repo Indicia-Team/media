@@ -736,12 +736,13 @@
     // Column resizing needs to be done manually when tbody has scroll bar.
     if (el.settings.scrollY) {
       $.each(el.settings.columns, function eachColumn(idx) {
-        // Allow 2 extra chars per col for padding.
+        // Allow extra char per col for padding.
         maxCharsPerCol['col-' + idx] += 1;
         maxCharsPerRow += maxCharsPerCol['col-' + idx];
       });
-      if (el.settings.actions) {
-        maxCharsPerCol['col-actions'] += 1;
+      if (el.settings.actions.length > 0) {
+        // Allow 3 characters per icon. Max 2 wide, rest can flow below.
+        maxCharsPerCol['col-actions'] = Math.min(6, el.settings.actions.length * 3);
         maxCharsPerRow += maxCharsPerCol['col-actions'];
       }
       if (el.settings.responsive) {
@@ -890,7 +891,7 @@
       $.each(el.settings.columns, function eachColumn(idx) {
         // Only use the longest word in the caption as we'd rather break the
         // heading than the data rows.
-        maxCharsPerCol['col-' + idx] = Math.max(longestWordLength(el.settings.availableColumnInfo[this].caption), 5);
+        maxCharsPerCol['col-' + idx] = Math.max(longestWordLength(el.settings.availableColumnInfo[this].caption), 10);
         if (typeof indiciaData.esMappings[this] !== 'undefined' && indiciaData.esMappings[this].sort_field) {
           // Add 2 chars to allow for the sort icon.
           maxCharsPerCol['col-' + idx] += 2;
