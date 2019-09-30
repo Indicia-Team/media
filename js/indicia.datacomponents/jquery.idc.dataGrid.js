@@ -890,7 +890,7 @@
       $.each(el.settings.columns, function eachColumn(idx) {
         // Only use the longest word in the caption as we'd rather break the
         // heading than the data rows.
-        maxCharsPerCol['col-' + idx] = Math.max(longestWordLength(el.settings.availableColumnInfo[this].caption), 10);
+        maxCharsPerCol['col-' + idx] = Math.max(longestWordLength(el.settings.availableColumnInfo[this].caption), 3);
         if (typeof indiciaData.esMappings[this] !== 'undefined' && indiciaData.esMappings[this].sort_field) {
           // Add 2 chars to allow for the sort icon.
           maxCharsPerCol['col-' + idx] += 2;
