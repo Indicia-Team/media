@@ -661,6 +661,8 @@
       var colDef = el.settings.availableColumnInfo[this];
       var media = '';
       var date;
+      // Extra space in last col to account for tool icons.
+      var extraSpace = idx === el.settings.columns.length - 1 && !el.settings.actions.length ? 2 : 0;
       value = indiciaFns.getValueForField(doc, this);
       if (colDef.rangeField) {
         rangeValue = indiciaFns.getValueForField(doc, colDef.rangeField);
@@ -684,9 +686,10 @@
         });
         value = media;
         // Approximate a column size to accomodate the thumbnails.
-        maxCharsPerCol['col-' + idx] = Math.max(maxCharsPerCol['col-' + idx], value.length === 1 ? 8 : 14);
+        maxCharsPerCol['col-' + idx] = Math.max(maxCharsPerCol['col-' + idx], extraSpace + value.length === 1 ? 8 : 14);
       } else {
-        maxCharsPerCol['col-' + idx] = Math.max(maxCharsPerCol['col-' + idx], $('<p>' + value + '</p>').text().length);
+        maxCharsPerCol['col-' + idx] =
+          Math.max(maxCharsPerCol['col-' + idx], $('<p>' + value + '</p>').text().length + extraSpace);
       }
       classes.push('field-' + this.replace(/\./g, '--').replace(/_/g, '-'));
       // Copy across responsive hidden cols.
@@ -698,10 +701,6 @@
         value = colDef.ifEmpty;
       }
       cells.push('<td class="' + classes.join(' ') + '"' + style + '>' + value + '</td>');
-      // Extra space in last col to account for tool icons.
-      if (idx === el.settings.columns.length - 1 && !el.settings.actions.length) {
-        maxCharsPerCol['col-' + idx] += 1;
-      }
       return true;
     });
     return cells;
