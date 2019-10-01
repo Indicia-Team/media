@@ -14,6 +14,13 @@ $colour-select-row-bg: #3333ee;
   word-wrap: break-word;
 }
 
+/* So we can absolute position the loading spinner */
+body {
+  position: relative;
+  .loading-spinner {
+    position: fixed;
+  }
+}
 /* idcDataGrid plugin */
 .idc-output-dataGrid {
   position: relative;

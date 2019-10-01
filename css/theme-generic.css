@@ -259,6 +259,12 @@ table.report-grid {
   .licence span.icon.licence-cc0 {
     background-position-y: -54px; }
 
+/* So we can absolute position the loading spinner */
+body {
+  position: relative; }
+  body .loading-spinner {
+    position: fixed; }
+
 /* idcDataGrid plugin */
 .idc-output-dataGrid {
   position: relative;
