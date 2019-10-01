@@ -77,9 +77,9 @@ jQuery(document).ready(function ($) {
     });
     $.each(ctrlIds, function (idx, ctrlId) {
       if (disable) {
-        $(ctrlId).attr('disabled', true);
+        $(ctrlId).prop('disabled', true);
       } else {
-        $(ctrlId).removeAttr('disabled');
+        $(ctrlId).prop('disabled', false);
       }
     });
   }
@@ -90,7 +90,7 @@ jQuery(document).ready(function ($) {
     var typeIds;
     if (context && context[type + '_list_op'] && context[type + '_list']) {
       typeIds = context[type + '_list'].split(',');
-      $('#filter-' + type + 's-mode').attr('disabled', true);
+      $('#filter-' + type + 's-mode').prop('disabled', true);
       // Get all the checkboxes relevant to this level (e.g. for surveys, it includes surveys and input forms.
       allRelevantCheckboxes = $('#' + type + '-list-checklist input');
       $.each(childTypes, function () {
@@ -103,16 +103,16 @@ jQuery(document).ready(function ($) {
           $('#check-website-' + type + '-' + this + ',.vis-' + type + '-' + this + ' input'));
       });
       if (context[type + '_list_op'] === 'not in') {
-        $(allRelevantCheckboxes).removeAttr('disabled');
-        $(allCheckboxesMatchingIds).attr('disabled', true);
+        $(allRelevantCheckboxes).prop('disabled', false);
+        $(allCheckboxesMatchingIds).prop('disabled', true);
       } else {
-        $(allRelevantCheckboxes).attr('disabled', true);
-        $(allCheckboxesMatchingIds).removeAttr('disabled');
+        $(allRelevantCheckboxes).prop('disabled', true);
+        $(allCheckboxesMatchingIds).prop('disabled', false);
       }
       // Force uncheck the websites you can't access
-      $('#' + type + '-list-checklist input:disabled').removeAttr('checked');
+      $('#' + type + '-list-checklist input:disabled').attr('checked', false);
     } else {
-      $('#filter-' + type + 's-mode').removeAttr('disabled');
+      $('#filter-' + type + 's-mode').prop('disabled', false);
     }
   }
 
@@ -302,19 +302,19 @@ jQuery(document).ready(function ($) {
         }
         if (context && context.marine_flag && context.marine_flag !== 'all') {
           $('#marine_flag').find('option[value=' + context.marine_flag + ']').attr('selected', 'selected');
-          $('#marine_flag').attr('disabled', 'disabled');
+          $('#marine_flag').prop('disabled', true);
           $('#flags-tab .context-instruct').show();
         } else {
-          $('#marine_flag').removeAttr('disabled');
+          $('#marine_flag').prop('disabled', false);
           $('#flags-tab .context-instruct').hide();
         }
         if (context && context.confidential && context.confidential !== 'all') {
-          $('#confidential').attr('disabled', 'disabled');
+          $('#confidential').prop('disabled', true);
           $('#confidential').find('option[value=' + context.confidential + ']').attr('selected', 'selected');
           $('#flags-tab .context-instruct').show();
         }
         if (context && context.release_status && context.release_status !== 'A') {
-          $('#release_status').attr('disabled', 'disabled');
+          $('#release_status').prop('disabled', true);
           $('#release_status').find('option[value=' + context.release_status + ']').attr('selected', 'selected');
           $('#flags-tab .context-instruct').show();
         }
@@ -651,11 +651,11 @@ jQuery(document).ready(function ($) {
       },
       loadForm: function (context) {
         if (context && context.my_records) {
-          $('#my_records').attr('disabled', true);
+          $('#my_records').prop('disabled', true);
           $('#controls-filter_who .context-instruct').show();
           $('#controls-filter_who button').hide();
         } else {
-          $('#my_records').removeAttr('disabled');
+          $('#my_records').prop('disabled', false);
           $('#controls-filter_who button').show();
         }
       }
@@ -726,26 +726,26 @@ jQuery(document).ready(function ($) {
       },
       loadForm: function (context) {
         if (context && context.quality && context.quality !== 'all') {
-          $('#quality-filter').attr('disabled', true);
+          $('#quality-filter').prop('disabled', true);
         } else {
-          $('#quality-filter').removeAttr('disabled');
+          $('#quality-filter').prop('disabled', false);
         }
         if (context && context.autochecks) {
-          $('#autochecks').attr('disabled', true);
+          $('#autochecks').prop('disabled', true);
         } else {
-          $('#autochecks').removeAttr('disabled');
+          $('#autochecks').prop('disabled', false);
         }
         if (context && context.identification_difficulty) {
-          $('#identification_difficulty').attr('disabled', true);
-          $('#identification_difficulty_op').attr('disabled', true);
+          $('#identification_difficulty').prop('disabled', true);
+          $('#identification_difficulty_op').prop('disabled', true);
         } else {
-          $('#identification_difficulty').removeAttr('disabled');
-          $('#identification_difficulty_op').removeAttr('disabled');
+          $('#identification_difficulty').prop('disabled', false);
+          $('#identification_difficulty_op').prop('disabled', false);
         }
         if (context && context.has_photos) {
-          $('#has_photos').attr('disabled', true);
+          $('#has_photos').prop('disabled', true);
         } else {
-          $('#has_photos').removeAttr('disabled');
+          $('#has_photos').prop('disabled', false);
         }
         if (context && ((context.quality && context.quality !== 'all') ||
           context.autochecks || context.identification_difficulty || context.has_photos)) {
@@ -785,27 +785,25 @@ jQuery(document).ready(function ($) {
           (context.survey_list && context.survey_list_op) || (context.input_form_list && context.input_form_list_op))) {
           $('#controls-filter_source .context-instruct').show();
         }
+        $('#controls-filter_source ul input')
+          .prop('checked', false)
+          .prop('disabled', false);
         if (indiciaData.filter.def.website_list) {
-          $('#website-list-checklist input').attr('checked', false);
           $.each(indiciaData.filter.def.website_list.split(','), function (idx, id) {
-            $('#check-website-' + id).attr('checked', true);
+            $('#check-website-' + id).prop('checked', true);
           });
           updateWebsiteSelection();
         }
         if (indiciaData.filter.def.survey_list) {
-          $('#survey_list input').attr('checked', false);
           $.each(indiciaData.filter.def.survey_list.split(','), function (idx, id) {
-            $('#check-survey-' + id).attr('checked', true);
+            $('#check-survey-' + id).prop('checked', true);
           });
         }
         if (indiciaData.filter.def.input_form_list) {
-          $('#input_form_list input').attr('checked', false);
           $.each(indiciaData.filter.def.input_form_list.split(','), function (idx, form) {
             $('#check-form-' + indiciaData.formsList[form.replace(/'/g, '')]).attr('checked', true);
           });
         }
-        $('#website-list-checklist,#survey-list-checklist,#input_form-list-checklist')
-          .find('input').removeAttr('disabled');
         disableSourceControlsForContext('website', context, ['survey', 'input_form']);
         disableSourceControlsForContext('survey', context, ['input_form']);
         disableSourceControlsForContext('input_form', context, []);
@@ -852,7 +850,7 @@ jQuery(document).ready(function ($) {
     $.each($(formDiv).find('fieldset.exclusive'), function (idx, fieldset) {
       if (fieldset !== thisFieldset) {
         $(fieldset).find(':input').not('#imp-sref-system,:checkbox,[type=button]').val('');
-        $(fieldset).find(':checkbox').attr('checked', false);
+        $(fieldset).find(':checkbox').prop('checked', false);
       }
     });
   });
@@ -984,12 +982,12 @@ jQuery(document).ready(function ($) {
       // list only the forms that can be picked
       $('#filter-input_forms li').filter(surveys.join(',')).removeClass('survey-hide');
       $('#filter-input_forms li').not(surveys.join(',')).addClass('survey-hide');
-      $('#filter-input_forms li').not(surveys.join(',')).find('input').attr('checked', false);
+      $('#filter-input_forms li').not(surveys.join(',')).find('input').prop('checked', false);
     } else {
       // list only the forms that can be picked - based on an exclusion of surveys
       $('#filter-input_forms li').filter(surveys.join(',')).addClass('survey-hide');
       $('#filter-input_forms li').not(surveys.join(',')).removeClass('survey-hide');
-      $('#filter-input_forms li').filter(surveys.join(',')).find('input').attr('checked', false);
+      $('#filter-input_forms li').filter(surveys.join(',')).find('input').prop('checked', false);
     }
   }
 
@@ -1007,12 +1005,12 @@ jQuery(document).ready(function ($) {
       // list only the surveys that can be picked
       lis.filter(websites.join(',')).removeClass('website-hide');
       lis.not(websites.join(',')).addClass('website-hide');
-      lis.not(websites.join(',')).find('input').attr('checked', false);
+      lis.not(websites.join(',')).find('input').prop('checked', false);
     } else {
       // list only the surveys that can be picked - based on an exclusion of websites
       lis.filter(websites.join(',')).addClass('website-hide');
       lis.not(websites.join(',')).removeClass('website-hide');
-      lis.filter(websites.join(',')).find('input').attr('checked', false);
+      lis.filter(websites.join(',')).find('input').prop('checked', false);
     }
   }
 
@@ -1347,11 +1345,11 @@ jQuery(document).ready(function ($) {
         type = tokens[0];
         if (typeof indiciaData.filter.def[type + '_list'] !== 'undefined') {
           ids = indiciaData.filter.def[type + '_list'].split(',');
-          $(ctrl).attr('checked', $.inArray($(ctrl).val(), ids) > -1);
+          $(ctrl).prop('checked', $.inArray($(ctrl).val(), ids) > -1);
         }
       } else {
         // other checkboxes are simple on/off flags for filter parameters.
-        $(ctrl).attr('checked', typeof indiciaData.filter.def[$(ctrl).attr('name')] !== 'undefined'
+        $(ctrl).prop('checked', typeof indiciaData.filter.def[$(ctrl).attr('name')] !== 'undefined'
           && indiciaData.filter.def[$(ctrl).attr('name')] === $(ctrl).val());
       }
     });
@@ -1395,10 +1393,10 @@ jQuery(document).ready(function ($) {
         });
       }
       // these auto-disable on form submission
-      $('#taxon_group_list\\:search\\:q').removeAttr('disabled');
-      $('#taxa_taxon_list_list\\:search\\:searchterm').removeAttr('disabled');
-      $('#taxon_designation_list\\:search').removeAttr('disabled');
-      $('#location_list\\:search\\:name').removeAttr('disabled');
+      $('#taxon_group_list\\:search\\:q').prop('disabled', false);
+      $('#taxa_taxon_list_list\\:search\\:searchterm').prop('disabled', false);
+      $('#taxon_designation_list\\:search').prop('disabled', false);
+      $('#location_list\\:search\\:name').prop('disabled', false);
     },
     afterClose: function () {
       var pane = $(this.href.replace(/^[^#]+/, ''));
