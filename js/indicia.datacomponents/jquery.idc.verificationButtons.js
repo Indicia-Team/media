@@ -49,6 +49,7 @@
       identification: {}
     };
     var indiciaPostUrl;
+    var requests = 0;
     // Since this might be slow.
     $('body').append('<div class="loading-spinner"><div>Loading...</div></div>');
     if (status.status) {
@@ -81,18 +82,26 @@
         doc.identification.verification_substatus = status.status[1];
       }
       // Post update to Indicia.
+      requests++;
       $.post(
         indiciaPostUrl,
         data,
         function success(response) {
-          alert(response.updated + ' record(s) updated.');
-          // Wait a moment before refresh as Elastic updates not quite immediate.
-          setTimeout(function doPopulate() {
-            indiciaFns.populateDataSources();
-          }, 500);
+          if (allTableMode) {
+            alert(response.updated + ' record(s) updated.');
+            // Wait a moment before refresh as Elastic updates not quite immediate.
+            setTimeout(function doPopulate() {
+              indiciaFns.populateDataSources();
+            }, 500);
+          } else {
+            if (response !== 'OK') {
+              alert('Indicia records update failed');
+            }
+          }
         }
       ).always(function cleanup() {
-        if (allTableMode) {
+        requests--;
+        if (requests <= 0) {
           $('body > .loading-spinner').remove();
         }
       });
@@ -118,7 +127,10 @@
           indiciaPostUrl,
           data
         ).always(function cleanup() {
-          $('body > .loading-spinner').remove();
+          requests--;
+          if (requests <= 0) {
+            $('body > .loading-spinner').remove();
+          }
         });
       });
     }
@@ -137,7 +149,14 @@
           alert('Elasticsearch update failed');
         } else {
           if (response.updated !== occurrenceIds.length) {
-            alert('An error occurred whilst updating the reporting index. It may not reflect your changes temporarily but will be updated automatically later.');
+            alert('An error occurred whilst updating the reporting index. It may not reflect your changes ' +
+              'temporarily but will be updated automatically later.');
+          } else {
+            alert(response.updated + ' record(s) updated.');
+            // Wait a moment before refresh as Elastic updates not quite immediate.
+            setTimeout(function doPopulate() {
+              indiciaFns.populateDataSources();
+            }, 500);
           }
           $(dataGrid).idcDataGrid('hideRowAndMoveNext');
           $(dataGrid).find('.multiselect-all').prop('checked', false);
@@ -148,7 +167,10 @@
       },
       dataType: 'json'
     }).always(function cleanup() {
-      $('body > .loading-spinner').remove();
+      requests--;
+      if (requests <= 0) {
+        $('body > .loading-spinner').remove();
+      }
     });
   };
 
