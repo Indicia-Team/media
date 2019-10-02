@@ -88,6 +88,7 @@
         data,
         function success(response) {
           if (allTableMode) {
+            $('body > .loading-spinner').remove();
             alert(response.updated + ' record(s) updated.');
             // Wait a moment before refresh as Elastic updates not quite immediate.
             setTimeout(function doPopulate() {
@@ -152,13 +153,18 @@
             alert('An error occurred whilst updating the reporting index. It may not reflect your changes ' +
               'temporarily but will be updated automatically later.');
           } else {
-            alert(response.updated + ' record(s) updated.');
-            // Wait a moment before refresh as Elastic updates not quite immediate.
-            setTimeout(function doPopulate() {
-              indiciaFns.populateDataSources();
-            }, 500);
+            $('body > .loading-spinner').remove();
+            if (occurrenceIds.length > 1) {
+              alert(response.updated + ' record(s) updated.');
+              // Wait a moment before refresh as Elastic updates not quite immediate.
+              setTimeout(function doPopulate() {
+                indiciaFns.populateDataSources();
+              }, 500);
+            }
           }
-          $(dataGrid).idcDataGrid('hideRowAndMoveNext');
+          if (occurrenceIds.length === 1) {
+            $(dataGrid).idcDataGrid('hideRowAndMoveNext');
+          }
           $(dataGrid).find('.multiselect-all').prop('checked', false);
         }
       },
