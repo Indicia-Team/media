@@ -17,7 +17,7 @@ $colour-select-row-bg: #3333ee;
 /* So we can absolute position the loading spinner */
 body {
   position: relative;
-  .loading-spinner {
+  > .loading-spinner {
     position: fixed;
   }
 }
