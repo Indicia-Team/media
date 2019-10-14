@@ -244,17 +244,15 @@
    *
    * Zoom, lat, long and selected base layer can all be remembered in cookies.
    */
-  function loadSettingsFromCookies(cookieNames) {
+  function loadSettingsFromCookies(el, cookieNames) {
     var val;
     var settings = {};
-    if (typeof $.cookie !== 'undefined') {
-      $.each(cookieNames, function eachCookie() {
-        val = $.cookie(this);
-        if (val !== null && val !== 'undefined') {
-          settings[this] = val;
-        }
-      });
-    }
+    $.each(cookieNames, function eachCookie() {
+      val = $.cookie(this + '-' + el.id);
+      if (val !== null && val !== 'undefined') {
+        settings[this] = val;
+      }
+    });
     return settings;
   }
 
@@ -361,15 +359,15 @@
     if (indiciaData.esSourceObjects[el.settings.layerConfig[id].source]) {
       indiciaData.esSourceObjects[el.settings.layerConfig[id].source].populate();
     }
-    if (el.settings.cookies && $.cookie) {
-      layerState = $.cookie('layerState');
+    if (el.settings.cookies) {
+      layerState = $.cookie('layerState-' + el.id);
       if (layerState) {
         layerState = JSON.parse(layerState);
       } else {
         layerState = {};
       }
       layerState[id] = { enabled: true };
-      $.cookie('layerState', JSON.stringify(layerState));
+      $.cookie('layerState-' + el.id, JSON.stringify(layerState), { expires: 3650 });
     }
   }
 
@@ -380,15 +378,15 @@
    */
   function onRemoveLayer(el, id) {
     var layerState;
-    if (el.settings.cookies && $.cookie) {
-      layerState = $.cookie('layerState');
+    if (el.settings.cookies) {
+      layerState = $.cookie('layerState-' + el.id);
       if (layerState) {
         layerState = JSON.parse(layerState);
       } else {
         layerState = {};
       }
       layerState[id] = { enabled: false };
-      $.cookie('layerState', JSON.stringify(layerState));
+      $.cookie('layerState-' + el.id, JSON.stringify(layerState), { expires: 3650 });
     }
   }
 
@@ -431,9 +429,13 @@
       el.settings.configuredLat = el.settings.initialLat;
       el.settings.configuredLng = el.settings.initialLng;
       el.settings.configuredZoom = el.settings.initialZoom;
+      // Disable cookies unless id specified.
+      if (!el.id || !$.cookie) {
+        el.settings.cookies = false;
+      }
       // Apply settings stored in cookies.
       if (el.settings.cookies) {
-        $.extend(el.settings, loadSettingsFromCookies([
+        $.extend(el.settings, loadSettingsFromCookies(el, [
           'initialLat',
           'initialLng',
           'initialZoom',
@@ -552,15 +554,15 @@
         $.each(callbacks.moveend, function eachCallback() {
           this(el);
         });
-        if (typeof $.cookie !== 'undefined' && el.settings.cookies) {
-          $.cookie('initialLat', el.map.getCenter().lat);
-          $.cookie('initialLng', el.map.getCenter().lng);
-          $.cookie('initialZoom', el.map.getZoom());
+        if (el.settings.cookies) {
+          $.cookie('initialLat-' + el.id, el.map.getCenter().lat, { expires: 3650 });
+          $.cookie('initialLng-' + el.id, el.map.getCenter().lng, { expires: 3650 });
+          $.cookie('initialZoom-' + el.id, el.map.getZoom(), { expires: 3650 });
         }
       });
-      if (typeof $.cookie !== 'undefined' && el.settings.cookies) {
+      if (el.settings.cookies) {
         el.map.on('baselayerchange', function baselayerchange(layer) {
-          $.cookie('baseLayer', layer.name);
+          $.cookie('baseLayer-' + el.id, layer.name, { expires: 3650 });
         });
       }
     },
