@@ -412,8 +412,8 @@
       });
       applyColumnsList(el, colsList);
       // Save columns in a cookie.
-      if (el.settings.cookies && $.cookie) {
-        $.cookie('cols-' + el.id, JSON.stringify(colsList));
+      if (el.settings.cookies) {
+        $.cookie('cols-' + el.id, JSON.stringify(colsList), { expires: 3650 });
       }
       $(header).find('*').remove();
       // Output header row for column titles.
@@ -799,13 +799,17 @@
       if (typeof options !== 'undefined') {
         $.extend(el.settings, options);
       }
+      // Disable cookies unless id specified.
+      if (!el.id || !$.cookie) {
+        el.settings.cookies = false;
+      }
       // Validate settings.
       if (typeof el.settings.columns === 'undefined') {
         indiciaFns.controlFail(el, 'Missing columns config for table.');
       }
       // Store original column settings.
       el.settings.defaultColumns = el.settings.columns.slice();
-      if (el.settings.cookies && $.cookie) {
+      if (el.settings.cookies) {
         savedCols = $.cookie('cols-' + el.id);
         // Don't recall cookie if empty, as this is unlikely to be deliberate.
         if (savedCols && savedCols !== '[]') {

@@ -18,9 +18,9 @@
  */
 
  /**
- * Output plugin for templated output from ES or Indicia.
+ * Output plugin for custom script output from ES data.
  */
-(function templatedOutputPlugin() {
+(function customScriptPlugin() {
   'use strict';
   var $ = jQuery;
 
@@ -41,13 +41,13 @@
    */
   methods = {
     /**
-     * Initialise the idcTemplatedOutput plugin.
+     * Initialise the idcCustomScript plugin.
      *
      * @param array options
      */
     init: function init(options) {
       var el = this;
-      indiciaFns.registerOutputPluginClass('idcTemplatedOutput');
+      indiciaFns.registerOutputPluginClass('idcCustomScript');
       el.settings = $.extend({}, defaults);
       // Apply settings passed in the HTML data-* attribute.
       if (typeof $(el).attr('data-idc-config') !== 'undefined') {
@@ -60,7 +60,7 @@
     },
 
     /*
-     * Populate the idcTemplatedOutput with Elasticsearch response data.
+     * Populate the idcCustomScript with Elasticsearch response data.
      *
      * @param obj sourceSettings
      *   Settings for the data source used to generate the response.
@@ -70,42 +70,13 @@
      *   Data sent in request.
      */
     populate: function populate(sourceSettings, response) {
-      var el = this;
-      var outputRows = el.settings.repeatField
-        ? indiciaFns.getValueForField(response, el.settings.repeatField) : response;
-      // Find the list of replacement tokens (field names) that are in the
-      // content template.
-      var tokenRegex = /{{ ([a-z_\.]+) }}/g;
-      var tokens = [];
-      var matches;
-      while (matches = tokenRegex.exec(el.settings.content)) {
-        tokens.push(matches[1]);
-      }
-      if (el.settings.header) {
-        $('<div class="idcTemplatedOutput-header">' + el.settings.header + '</div>').appendTo(el);
-      }
-      // Convert non array output to array so can treat the same.
-      if (!Array.isArray(outputRows)) {
-        outputRows = [outputRows];
-      }
-
-      $.each(outputRows, function eachRow() {
-        var outputContent = el.settings.content;
-        var rowData = this;
-        var value;
-        $.each(tokens, function eachToken() {
-          value = indiciaFns.getValueForField(rowData, this);
-          outputContent = outputContent.replace('{{ ' + this + ' }}', value);
-        });
-        $(outputContent).appendTo(el);
-      });
-      if (el.settings.footer) {
-        $('<div class="idcTemplatedOutput-footer">' + el.settings.footer + '</div>').appendTo(el);
+      if (typeof indiciaFns[this.settings.functionName] !== 'undefined') {
+        indiciaFns[this.settings.functionName](this, sourceSettings, response);
       }
     },
 
     /**
-     * Templated outputs always re-populate when their source updates.
+     * Custom script outputs always re-populate when their source updates.
      */
     getNeedsPopulation: function getNeedsPopulation() {
       return true;
@@ -113,9 +84,9 @@
   };
 
   /**
-   * Extend jQuery to declare idcTemplatedOutput method.
+   * Extend jQuery to declare idcCustomScript method.
    */
-  $.fn.idcTemplatedOutput = function buildTemplatedOutput(methodOrOptions) {
+  $.fn.idcCustomScript = function buildCustomScript(methodOrOptions) {
     var passedArgs = arguments;
     var result;
     $.each(this, function callOnEachOutput() {
@@ -128,7 +99,7 @@
         return methods.init.apply(this, passedArgs);
       }
       // If we get here, the wrong method was called.
-      $.error('Method ' + methodOrOptions + ' does not exist on jQuery.idcTemplatedOutput');
+      $.error('Method ' + methodOrOptions + ' does not exist on jQuery.idcCustomScript');
       return true;
     });
     // If the method has no explicit response, return this to allow chaining.
