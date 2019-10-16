@@ -360,8 +360,7 @@
       tbody = $(el).find('tbody');
       if (tbody && el.settings.scrollY) {
         if (fsEl === el) {
-          // @todo Set max height according to full screen size.
-          tbody.css('max-height', '');
+          tbody.css('max-height', $(window).height() - $(el).find('thead').height() - $(el).find('tfoot').height());
         } else {
           tbody.css('max-height', el.settings.scrollY + 'px');
         }
