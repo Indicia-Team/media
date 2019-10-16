@@ -18,6 +18,8 @@
  */
 var mediaUploadAddedHooks = [];
 
+var originalFilename;
+
  /**
  * Form submit handler that prevents the user clicking save during an upload
  */
@@ -43,7 +45,7 @@ var checkSubmitInProgress = function () {
   // When adding a link to a remote resource, the oembed protocol is used to
   // fetch the HTML to display for the external resource. Use the noembed
   // service to guarantee jsonp support and a consistent response.
-  var noembed = function(div, id, url, requestId, typename, isNew, caption) {
+  var noembed = function(div, id, url, requestId, typename, isNew, caption, external_details) {
     var duplicate = false;
     // Check for duplicate links to the same resource
     $.each($(div).find('.path-field'), function(idx, input) {
@@ -81,6 +83,9 @@ var checkSubmitInProgress = function () {
               .replace(/\{captionField\}/g, div.settings.table + ':caption:' + uniqueId)
               .replace(/\{captionValue\}/g, caption)
               .replace(/\{captionPlaceholder\}/g, div.settings.msgCaptionPlaceholder)
+              .replace(/\{externalDetailsField\}/g, div.settings.table + ':external_details:' + uniqueId)
+              .replace(/\{externalDetailsValue\}/g, external_details)
+              .replace(/\{externalDetailsPlaceholder\}/g, div.settings.msgExternalDetailsPlaceholder)
               .replace(/\{typeField\}/g, div.settings.table + ':media_type_id:' + uniqueId)
               .replace(/\{typeValue\}/g, typeId)
               .replace(/\{typeNameField\}/g, div.settings.table + ':media_type:' + uniqueId)
@@ -161,7 +166,7 @@ var checkSubmitInProgress = function () {
           // validate the link matches one of our file type regexes
           $.each(indiciaData.mediaTypes, function(name, cfg) {
             if ($.inArray(name, currentDiv.settings.mediaTypes) >= 0 && url.match(cfg.regex)) {
-              noembed(currentDiv, '', url, linkRequestId, name, true, '');
+              noembed(currentDiv, '', url, linkRequestId, name, true, '', '');
               $(dlg).dialog( "close" );
               found=true;
               return false;
@@ -328,6 +333,9 @@ var checkSubmitInProgress = function () {
                 .replace(/\{captionField\}/g, div.settings.table + ':caption:' + uniqueId)
                 .replace(/\{captionValue\}/g, file.caption.replace(/\"/g, '&quot;'))
                 .replace(/\{captionPlaceholder\}/g, div.settings.msgCaptionPlaceholder)
+                .replace(/\{externalDetailsField\}/g, div.settings.table + ':external_details:' + uniqueId)
+                .replace(/\{externalDetailsValue\}/g, file.external_details.replace(/\"/g, '&quot;'))
+                .replace(/\{externalDetailsPlaceholder\}/g, div.settings.msgExternalDetailsPlaceholder)
                 .replace(/\{pathField\}/g, div.settings.table + ':path:' + uniqueId)
                 .replace(/\{pathValue\}/g, file.path)
                 .replace(/\{typeField\}/g, div.settings.table + ':media_type_id:' + uniqueId)
@@ -346,7 +354,7 @@ var checkSubmitInProgress = function () {
               .replace(/\{id\}/g, uniqueId)
               .replace(/\{linkRequestId\}/g, requestId);
           $('#' + div.id.replace(/:/g,'\\:') + ' .filelist').append(existing);
-          noembed(div, file.id, file.path, requestId, file.media_type, false, file.caption.replace(/\"/g, '&quot;'));
+          noembed(div, file.id, file.path, requestId, file.media_type, false, file.caption.replace(/\"/g, '&quot;'),file.external_details.replace(/\"/g, '&quot;'));
         }
       });
 
@@ -366,6 +374,7 @@ var checkSubmitInProgress = function () {
           });
         }
         $.each(files, function(i, file) {
+          originalFilename = file.name;
           ext=file.name.split('.').pop();
           $('#' + div.id.replace(/:/g,'\\:') + ' .filelist').append(div.settings.file_box_initial_file_infoTemplate.replace(/\{id\}/g, file.id)
               .replace(/\{filename\}/g, $.inArray(ext, div.settings.fileTypes.image) > -1 ? div.settings.msgPhoto : div.settings.msgFile)
@@ -463,6 +472,9 @@ var checkSubmitInProgress = function () {
                 .replace(/\{captionField\}/g, div.settings.table + ':caption:' + uniqueId)
                 .replace(/\{captionValue\}/g, '')
                 .replace(/\{captionPlaceholder\}/g, div.settings.msgCaptionPlaceholder)
+                .replace(/\{externalDetailsField\}/g, div.settings.table + ':external_details:' + uniqueId)
+                .replace(/\{externalDetailsValue\}/g, '')
+                .replace(/\{externalDetailsPlaceholder\}/g, div.settings.msgExternalDetailsPlaceholder)
                 .replace(/\{pathField\}/g, div.settings.table + ':path:' + uniqueId)
                 .replace(/\{pathValue\}/g, '')
                 .replace(/\{typeField\}/g, div.settings.table + ':media_type_id:' + uniqueId)
@@ -476,6 +488,26 @@ var checkSubmitInProgress = function () {
                 .replace(/\{idField\}/g, div.settings.table + ':id:' + uniqueId)
                 .replace(/\{idValue\}/g, '') // Set ID to blank, as this is a new record.
           );
+          // Apply and translate image categories
+          var originalFilenameWithoutExtension = originalFilename.substring(0, originalFilename.lastIndexOf('.')) || originalFilename;
+          var explodedOriginalFilenameWithoutExtension = originalFilenameWithoutExtension.split('_');
+          var imageCategoryCode = explodedOriginalFilenameWithoutExtension[explodedOriginalFilenameWithoutExtension.length-1];
+          var imageCategory;
+          switch (imageCategoryCode) {
+            case 'det':
+              imageCategory = indiciaData.imageCategoryTranslations[indiciaData.langName]['Detail'];
+              break;
+            case 'sto':
+              imageCategory = indiciaData.imageCategoryTranslations[indiciaData.langName]['Standort'];
+              break;
+            case 'mik':
+              imageCategory = indiciaData.imageCategoryTranslations[indiciaData.langName]['Mikrobild'];
+              break;
+            default:
+              imageCategory = indiciaData.imageCategoryTranslations[indiciaData.langName]['Habitus'];
+              break;
+          }
+          $('#' + div.settings.table.replace(/:/g,'\\:') + '\\:external_details\\:' + uniqueId).val(imageCategory);
           // Copy the path into the hidden path input. Watch colon escaping for jQuery selectors.
           $('#' + div.settings.table.replace(/:/g,'\\:') + '\\:path\\:' + uniqueId).val(file.name);
           $.each(mediaUploadAddedHooks, function() {
@@ -540,6 +572,7 @@ jQuery.fn.uploader.defaults = {
   msgUseAddFileBtn: 'Use the Add file button to select a file from your local disk. Files of type {1} are allowed.',
   msgUseAddLinkBtn: 'Use the Add link button to add a link to information stored elsewhere on the internet. You can enter links from {1}.',
   msgCaptionPlaceholder: 'Enter caption...',
+  msgExternalDetailsPlaceholder: 'Image category could not be found...',
   helpText : '',
   helpTextClass: 'helpText',
   useFancybox: true,
@@ -566,7 +599,9 @@ jQuery.fn.uploader.defaults = {
       '<input type="hidden" name="{typeNameField}" id="{typeNameField}" value="{typeNameValue}" />' +
       '<input type="hidden" name="{deletedField}" id="{deletedField}" value="{deletedValue}" class="deleted-value" />' +
       '<input type="hidden" id="{isNewField}" value="{isNewValue}" />' +
-      '<input type="text" maxlength="100" style="width: {imagewidth}px" name="{captionField}" id="{captionField}" value="{captionValue}" placeholder="{captionPlaceholder}" />',
+      '<input type="text" maxlength="100" style="width: {imagewidth}px" name="{captionField}" id="{captionField}" value="{captionValue}" placeholder="{captionPlaceholder}" />' +
+      '<br><em>Category</em>' +
+      '<br><input type="text" maxlength="100" style="width: {imagewidth}px" name="{externalDetailsField}" id="{externalDetailsField}" value="{externalDetailsValue}" placeholder="{externalDetailsPlaceholder}" />',
   file_box_uploaded_linkTemplate : '<div>{embed}</div>',
   file_box_uploaded_imageTemplate : '<a class="fancybox" href="{origfilepath}"><img src="{thumbnailfilepath}" width="{imagewidth}"/></a>',
   file_box_uploaded_audioTemplate : '<audio controls src="{origfilepath}" type="audio/mpeg"/>',
