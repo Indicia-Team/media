@@ -137,6 +137,10 @@
     if (el.settings.actions.length) {
       $('<th class="col-actions"></th>').appendTo(headerRow);
     }
+    if (el.settings.scrollY) {
+      // Spacer in header to allow for scrollbar in body.
+      $('<th class="scroll-spacer"></th>').appendTo(headerRow);
+    }
   }
 
   /**
@@ -732,6 +736,7 @@
    */
   function setColWidths(el, maxCharsPerCol) {
     var maxCharsPerRow = 0;
+    var tbody = $(el).find('tbody');
     // Column resizing needs to be done manually when tbody has scroll bar.
     if (el.settings.scrollY) {
       $.each(el.settings.columns, function eachColumn(idx) {
@@ -752,6 +757,8 @@
       $.each(el.settings.columns, function eachColumn(idx) {
         $(el).find('.col-' + idx).css('width', (100 * (maxCharsPerCol['col-' + idx] / maxCharsPerRow)) + '%');
       });
+      // Space header if a scroll bar visible.
+      $(el).find('.scroll-spacer').css('width', (tbody[0].offsetWidth - tbody[0].clientWidth) + 'px');
     }
   }
 

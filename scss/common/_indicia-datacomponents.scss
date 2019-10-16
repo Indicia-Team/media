@@ -137,10 +137,6 @@ table.es-data-grid {
       /* even columns width , fix width of table too*/
       table-layout: fixed;
     }
-    thead {
-      /* scrollbar is average 1em/16px width, remove it from thead width */
-      width: calc( 100% - 1em );
-    }
     .multiselect-cell {
       padding: 0;
       width: 12px;
