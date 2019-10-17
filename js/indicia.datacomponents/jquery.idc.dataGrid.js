@@ -55,6 +55,7 @@
         lg: 1200
       }
     },
+    autoResponsiveCols: false,
     /**
      * Registered callbacks for different events.
      */
@@ -110,6 +111,19 @@
    */
   function addColumnHeadings(el, header) {
     var headerRow = $('<tr/>').appendTo(header);
+    var breakpointsByIdx = [];
+    if (el.settings.autoResponsiveCols) {
+      // Build list of breakpoints to use by column index.
+      $.each(el.settings.responsiveOptions.breakpoints, function eachPoint(name, point) {
+        var i;
+        for (i = Math.round(point / 100); i < el.settings.columns.length; i++) {
+          while (breakpointsByIdx.length < i + 1) {
+            breakpointsByIdx.push([]);
+          }
+          breakpointsByIdx[i].push(name);
+        }
+      });
+    }
     if (el.settings.responsive) {
       $('<th class="footable-toggle-col" data-sort-ignore="true"></th>').appendTo(headerRow);
     }
@@ -119,17 +133,22 @@
       var footableExtras = '';
       var sortableField = typeof indiciaData.esMappings[this] !== 'undefined'
         && indiciaData.esMappings[this].sort_field;
+      // Tolerate hyphen or camelCase.
+      var hideBreakpoints = colDef.hideBreakpoints || colDef['hide-breakpoints'];
+      var dataType = colDef.dataType || colDef['data-type'];
       sortableField = sortableField
         || indiciaData.fieldConvertorSortFields[this.simpleFieldName()];
       if (el.settings.sortable !== false && sortableField) {
         heading += '<span class="sort fas fa-sort"></span>';
       }
       // Extra data attrs to support footable.
-      if (colDef['hide-breakpoints']) {
-        footableExtras = ' data-hide="' + colDef['hide-breakpoints'] + '"';
+      if (el.settings.autoResponsiveCols) {
+        footableExtras = ' data-hide="' + breakpointsByIdx[idx].join(',') + '"';
+      } else if (hideBreakpoints) {
+        footableExtras = ' data-hide="' + hideBreakpoints + '"';
       }
-      if (colDef['data-type']) {
-        footableExtras += ' data-type="' + colDef['data-type'] + '"';
+      if (dataType) {
+        footableExtras += ' data-type="' + dataType + '"';
       }
       $('<th class="col-' + idx + '" data-field="' + this + '"' + footableExtras + '>' + heading + '</th>')
         .appendTo(headerRow);
