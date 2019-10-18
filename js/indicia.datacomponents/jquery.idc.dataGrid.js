@@ -499,7 +499,13 @@
       var dataVal;
       // Cleanup the square brackets which are not part of the field name.
       var field = fieldToken.replace(/\[/, '').replace(/\]/, '');
-      dataVal = indiciaFns.getValueForField(doc, field);
+      // Field names can be separated by OR if we want to pick the first.
+      var fieldOrList = field.split(' OR ');
+      $.each(fieldOrList, function eachFieldName() {
+        dataVal = indiciaFns.getValueForField(doc, this);
+        // Drop out when we find a value.
+        return dataVal === '' ? true : false;
+      });
       updatedText = updatedText.replace(fieldToken, dataVal);
     });
     return updatedText;
@@ -539,8 +545,7 @@
             });
             link += params.join('&');
           }
-          link = applyFieldReplacements(doc, link);
-          item = '<a href="' + link + '" title="' + this.title + '">' + item + '</a>';
+          item = applyFieldReplacements(doc, '<a href="' + link + '" title="' + this.title + '">' + item + '</a>');
         }
         html += item;
       }
