@@ -113,7 +113,7 @@
     var headerRow = $('<tr/>').appendTo(header);
     var breakpointsByIdx = [];
     if (el.settings.autoResponsiveCols) {
-      // Build list of breakpoints to use by column index.
+      // Build list of breakpoints to use by column position.
       $.each(el.settings.responsiveOptions.breakpoints, function eachPoint(name, point) {
         var i;
         for (i = Math.round(point / 100); i < el.settings.columns.length; i++) {
@@ -884,6 +884,14 @@
       if (footableSort === 'true' || el.settings.responsive) {
         // Make grid responsive.
         $(el).indiciaFootableReport(el.settings.responsiveOptions);
+      }
+      if (el.settings.responsive && el.settings.autoResponsiveExpand) {
+        // Auto-expand the extra details row if cols hidden because below a
+        // breakpoint.
+        $(table).trigger('footable_expand_all');
+        $(table).bind('footable_breakpoint', function onBreak() {
+          $(table).trigger('footable_expand_all');
+        });
       }
     },
 
