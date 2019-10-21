@@ -341,17 +341,17 @@
      * {"caption":"VC code","field":"#higher_geography:Vice County:code#"}
      */
     higher_geography: function higherGeography(doc, params) {
-      var output = '';
+      var output = [];
       if (doc.location.higher_geography) {
         $.each(doc.location.higher_geography, function eachGeography() {
           // If the correct type and not a combined geo-area (indicated by + in the code).
           // See https://github.com/BiologicalRecordsCentre/iRecord/issues/606
           if (this.type === params[0] && !this.code.match(/\+/)) {
-            output = this[params[1]];
+            output.push(this[params[1]]);
           }
         });
       }
-      return output;
+      return output.join('; ');
     },
 
     /**
