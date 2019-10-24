@@ -55,7 +55,7 @@
    */
   indiciaData.statusClasses = {
     V: 'far fa-check-circle status-V',
-    V1: 'far fa-check-double status-V1',
+    V1: 'fas fa-check-double status-V1',
     V2: 'fas fa-check status-V2',
     C: 'fas fa-clock status-C',
     C3: 'fas fa-check-square status-C3',
