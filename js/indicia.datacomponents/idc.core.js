@@ -55,7 +55,7 @@
    */
   indiciaData.statusClasses = {
     V: 'far fa-check-circle status-V',
-    V1: 'far fa-check-double status-V1',
+    V1: 'fas fa-check-double status-V1',
     V2: 'fas fa-check status-V2',
     C: 'fas fa-clock status-C',
     C3: 'fas fa-check-square status-C3',
@@ -341,17 +341,17 @@
      * {"caption":"VC code","field":"#higher_geography:Vice County:code#"}
      */
     higher_geography: function higherGeography(doc, params) {
-      var output = '';
+      var output = [];
       if (doc.location.higher_geography) {
         $.each(doc.location.higher_geography, function eachGeography() {
           // If the correct type and not a combined geo-area (indicated by + in the code).
           // See https://github.com/BiologicalRecordsCentre/iRecord/issues/606
           if (this.type === params[0] && !this.code.match(/\+/)) {
-            output = this[params[1]];
+            output.push(this[params[1]]);
           }
         });
       }
-      return output;
+      return output.join('; ');
     },
 
     /**

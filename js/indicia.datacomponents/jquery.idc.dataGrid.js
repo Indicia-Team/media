@@ -55,6 +55,7 @@
         lg: 1200
       }
     },
+    autoResponsiveCols: false,
     /**
      * Registered callbacks for different events.
      */
@@ -110,6 +111,19 @@
    */
   function addColumnHeadings(el, header) {
     var headerRow = $('<tr/>').appendTo(header);
+    var breakpointsByIdx = [];
+    if (el.settings.autoResponsiveCols) {
+      // Build list of breakpoints to use by column position.
+      $.each(el.settings.responsiveOptions.breakpoints, function eachPoint(name, point) {
+        var i;
+        for (i = Math.round(point / 100); i < el.settings.columns.length; i++) {
+          while (breakpointsByIdx.length < i + 1) {
+            breakpointsByIdx.push([]);
+          }
+          breakpointsByIdx[i].push(name);
+        }
+      });
+    }
     if (el.settings.responsive) {
       $('<th class="footable-toggle-col" data-sort-ignore="true"></th>').appendTo(headerRow);
     }
@@ -119,23 +133,32 @@
       var footableExtras = '';
       var sortableField = typeof indiciaData.esMappings[this] !== 'undefined'
         && indiciaData.esMappings[this].sort_field;
+      // Tolerate hyphen or camelCase.
+      var hideBreakpoints = colDef.hideBreakpoints || colDef['hide-breakpoints'];
+      var dataType = colDef.dataType || colDef['data-type'];
       sortableField = sortableField
         || indiciaData.fieldConvertorSortFields[this.simpleFieldName()];
       if (el.settings.sortable !== false && sortableField) {
         heading += '<span class="sort fas fa-sort"></span>';
       }
       // Extra data attrs to support footable.
-      if (colDef['hide-breakpoints']) {
-        footableExtras = ' data-hide="' + colDef['hide-breakpoints'] + '"';
+      if (el.settings.autoResponsiveCols) {
+        footableExtras = ' data-hide="' + breakpointsByIdx[idx].join(',') + '"';
+      } else if (hideBreakpoints) {
+        footableExtras = ' data-hide="' + hideBreakpoints + '"';
       }
-      if (colDef['data-type']) {
-        footableExtras += ' data-type="' + colDef['data-type'] + '"';
+      if (dataType) {
+        footableExtras += ' data-type="' + dataType + '"';
       }
       $('<th class="col-' + idx + '" data-field="' + this + '"' + footableExtras + '>' + heading + '</th>')
         .appendTo(headerRow);
     });
     if (el.settings.actions.length) {
       $('<th class="col-actions"></th>').appendTo(headerRow);
+    }
+    if (el.settings.scrollY) {
+      // Spacer in header to allow for scrollbar in body.
+      $('<th class="scroll-spacer"></th>').appendTo(headerRow);
     }
   }
 
@@ -356,8 +379,7 @@
       tbody = $(el).find('tbody');
       if (tbody && el.settings.scrollY) {
         if (fsEl === el) {
-          // @todo Set max height according to full screen size.
-          tbody.css('max-height', '');
+          tbody.css('max-height', $(window).height() - $(el).find('thead').height() - $(el).find('tfoot').height());
         } else {
           tbody.css('max-height', el.settings.scrollY + 'px');
         }
@@ -477,7 +499,13 @@
       var dataVal;
       // Cleanup the square brackets which are not part of the field name.
       var field = fieldToken.replace(/\[/, '').replace(/\]/, '');
-      dataVal = indiciaFns.getValueForField(doc, field);
+      // Field names can be separated by OR if we want to pick the first.
+      var fieldOrList = field.split(' OR ');
+      $.each(fieldOrList, function eachFieldName() {
+        dataVal = indiciaFns.getValueForField(doc, this);
+        // Drop out when we find a value.
+        return dataVal === '' ? true : false;
+      });
       updatedText = updatedText.replace(fieldToken, dataVal);
     });
     return updatedText;
@@ -517,8 +545,7 @@
             });
             link += params.join('&');
           }
-          link = applyFieldReplacements(doc, link);
-          item = '<a href="' + link + '" title="' + this.title + '">' + item + '</a>';
+          item = applyFieldReplacements(doc, '<a href="' + link + '" title="' + this.title + '">' + item + '</a>');
         }
         html += item;
       }
@@ -732,6 +759,7 @@
    */
   function setColWidths(el, maxCharsPerCol) {
     var maxCharsPerRow = 0;
+    var tbody = $(el).find('tbody');
     // Column resizing needs to be done manually when tbody has scroll bar.
     if (el.settings.scrollY) {
       $.each(el.settings.columns, function eachColumn(idx) {
@@ -752,6 +780,8 @@
       $.each(el.settings.columns, function eachColumn(idx) {
         $(el).find('.col-' + idx).css('width', (100 * (maxCharsPerCol['col-' + idx] / maxCharsPerRow)) + '%');
       });
+      // Space header if a scroll bar visible.
+      $(el).find('.scroll-spacer').css('width', (tbody[0].offsetWidth - tbody[0].clientWidth) + 'px');
     }
   }
 
@@ -859,6 +889,14 @@
       if (footableSort === 'true' || el.settings.responsive) {
         // Make grid responsive.
         $(el).indiciaFootableReport(el.settings.responsiveOptions);
+      }
+      if (el.settings.responsive && el.settings.autoResponsiveExpand) {
+        // Auto-expand the extra details row if cols hidden because below a
+        // breakpoint.
+        $(table).trigger('footable_expand_all');
+        $(table).bind('footable_breakpoint', function onBreak() {
+          $(table).trigger('footable_expand_all');
+        });
       }
     },
 
