@@ -72,8 +72,8 @@
    *   Response body from the ES proxy containing progress data.
    */
   function updateProgress(el, response) {
-    $(el).find('.progress-text').text(response.done + ' of ' + response.total);
-    animateTo(el, response.done / response.total);
+    $(el).find('.progress-text').text(response.done + ' of ' + response.total.value);
+    animateTo(el, response.done / response.total.value);
   }
 
   /**
@@ -112,7 +112,7 @@
     var data = {
       scroll_id: lastResponse.scroll_id
     };
-    if (lastResponse.done < lastResponse.total) {
+    if (lastResponse.done < lastResponse.total.value) {
       $.extend(data, getColumnSettings(el));
       // Post to the ES proxy. Pass scroll_id parameter to request the next
       // chunk of the dataset.
@@ -122,6 +122,11 @@
         dataType: 'json',
         data: data,
         success: function success(response) {
+          // Patch response from V6 to behave like V7.
+          if (indiciaData.esVersion === 6) {
+            response.total = { value: response.total, relation: 'eq' };
+          }
+          response.done = Math.min(response.done, response.total.value);
           updateProgress(el, response);
           doPages(el, response);
         }
@@ -137,7 +142,7 @@
       $(el).find('.idc-download-files').append('<div><a href="' + lastResponse.filename + '">' +
         '<span class="fas fa-file-archive fa-2x"></span>' +
         'Download .zip file</a><br/>' +
-        'File containing ' + lastResponse.total + ' occurrences. Available until ' + hours + ':' + minutes + '</div>');
+        'File containing ' + lastResponse.total.value + ' occurrences. Available until ' + hours + ':' + minutes + '</div>');
       $(el).find('.idc-download-files').fadeIn('med');
     }
   }

@@ -638,17 +638,19 @@
    */
   function drawTableFooter(el, response, data, afterKey) {
     var fromRowIndex = typeof data.from === 'undefined' ? 1 : (data.from + 1);
+    var ofLabel;
     // Set up the count info in the footer.
     if (!el.settings.aggregation) {
       if (response.hits.hits.length > 0) {
+        ofLabel = response.hits.total.relation === 'gte' ? 'at least ' : '';
         $(el).find('tfoot .showing').html('Showing ' + fromRowIndex +
-          ' to ' + (fromRowIndex + (response.hits.hits.length - 1)) + ' of ' + response.hits.total);
+          ' to ' + (fromRowIndex + (response.hits.hits.length - 1)) + ' of ' + ofLabel + response.hits.total.value);
       } else {
         $(el).find('tfoot .showing').html('No hits');
       }
       // Enable or disable the paging buttons.
       $(el).find('.pager-row .prev').prop('disabled', fromRowIndex <= 1);
-      $(el).find('.pager-row .next').prop('disabled', fromRowIndex + response.hits.hits.length >= response.hits.total);
+      $(el).find('.pager-row .next').prop('disabled', fromRowIndex + response.hits.hits.length >= response.hits.total.value);
     } else if (el.settings.aggregation === 'composite') {
       if (afterKey) {
         el.settings.compositeInfo.pageAfterKeys[el.settings.compositeInfo.page + 1] = afterKey;
@@ -970,7 +972,7 @@
       if (el.settings.responsive) {
         $(el).find('table').trigger('footable_redraw');
       }
-      el.settings.totalRowCount = el.settings.aggregation ? null : response.hits.total;
+      el.settings.totalRowCount = el.settings.aggregation ? null : response.hits.total.value;
       drawTableFooter(el, response, data, afterKey);
       fireAfterPopulationCallbacks(el);
       setColWidths(el, maxCharsPerCol);
