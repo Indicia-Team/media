@@ -2358,7 +2358,7 @@ var destroyAllFeatures;
         }
       });
       // Hide the Google layer if it is not the current base layer.
-      if (map.baseLayer !== olLayer) {
+      if (typeof olLayer !== 'undefined' && map.baseLayer !== olLayer) {
         olLayer.display(false);
       }
     }
