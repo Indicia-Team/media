@@ -55,6 +55,7 @@
         lg: 1200
       }
     },
+    autoResponsiveCols: false,
     /**
      * Registered callbacks for different events.
      */
@@ -110,6 +111,19 @@
    */
   function addColumnHeadings(el, header) {
     var headerRow = $('<tr/>').appendTo(header);
+    var breakpointsByIdx = [];
+    if (el.settings.autoResponsiveCols) {
+      // Build list of breakpoints to use by column position.
+      $.each(el.settings.responsiveOptions.breakpoints, function eachPoint(name, point) {
+        var i;
+        for (i = Math.round(point / 100); i < el.settings.columns.length; i++) {
+          while (breakpointsByIdx.length < i + 1) {
+            breakpointsByIdx.push([]);
+          }
+          breakpointsByIdx[i].push(name);
+        }
+      });
+    }
     if (el.settings.responsive) {
       $('<th class="footable-toggle-col" data-sort-ignore="true"></th>').appendTo(headerRow);
     }
@@ -119,23 +133,32 @@
       var footableExtras = '';
       var sortableField = typeof indiciaData.esMappings[this] !== 'undefined'
         && indiciaData.esMappings[this].sort_field;
+      // Tolerate hyphen or camelCase.
+      var hideBreakpoints = colDef.hideBreakpoints || colDef['hide-breakpoints'];
+      var dataType = colDef.dataType || colDef['data-type'];
       sortableField = sortableField
         || indiciaData.fieldConvertorSortFields[this.simpleFieldName()];
       if (el.settings.sortable !== false && sortableField) {
         heading += '<span class="sort fas fa-sort"></span>';
       }
       // Extra data attrs to support footable.
-      if (colDef['hide-breakpoints']) {
-        footableExtras = ' data-hide="' + colDef['hide-breakpoints'] + '"';
+      if (el.settings.autoResponsiveCols) {
+        footableExtras = ' data-hide="' + breakpointsByIdx[idx].join(',') + '"';
+      } else if (hideBreakpoints) {
+        footableExtras = ' data-hide="' + hideBreakpoints + '"';
       }
-      if (colDef['data-type']) {
-        footableExtras += ' data-type="' + colDef['data-type'] + '"';
+      if (dataType) {
+        footableExtras += ' data-type="' + dataType + '"';
       }
       $('<th class="col-' + idx + '" data-field="' + this + '"' + footableExtras + '>' + heading + '</th>')
         .appendTo(headerRow);
     });
     if (el.settings.actions.length) {
       $('<th class="col-actions"></th>').appendTo(headerRow);
+    }
+    if (el.settings.scrollY) {
+      // Spacer in header to allow for scrollbar in body.
+      $('<th class="scroll-spacer"></th>').appendTo(headerRow);
     }
   }
 
@@ -356,8 +379,7 @@
       tbody = $(el).find('tbody');
       if (tbody && el.settings.scrollY) {
         if (fsEl === el) {
-          // @todo Set max height according to full screen size.
-          tbody.css('max-height', '');
+          tbody.css('max-height', $(window).height() - $(el).find('thead').height() - $(el).find('tfoot').height());
         } else {
           tbody.css('max-height', el.settings.scrollY + 'px');
         }
@@ -412,8 +434,8 @@
       });
       applyColumnsList(el, colsList);
       // Save columns in a cookie.
-      if (el.settings.cookies && $.cookie) {
-        $.cookie('cols-' + el.id, JSON.stringify(colsList));
+      if (el.settings.cookies) {
+        $.cookie('cols-' + el.id, JSON.stringify(colsList), { expires: 3650 });
       }
       $(header).find('*').remove();
       // Output header row for column titles.
@@ -477,7 +499,13 @@
       var dataVal;
       // Cleanup the square brackets which are not part of the field name.
       var field = fieldToken.replace(/\[/, '').replace(/\]/, '');
-      dataVal = indiciaFns.getValueForField(doc, field);
+      // Field names can be separated by OR if we want to pick the first.
+      var fieldOrList = field.split(' OR ');
+      $.each(fieldOrList, function eachFieldName() {
+        dataVal = indiciaFns.getValueForField(doc, this);
+        // Drop out when we find a value.
+        return dataVal === '' ? true : false;
+      });
       updatedText = updatedText.replace(fieldToken, dataVal);
     });
     return updatedText;
@@ -517,8 +545,7 @@
             });
             link += params.join('&');
           }
-          link = applyFieldReplacements(doc, link);
-          item = '<a href="' + link + '" title="' + this.title + '">' + item + '</a>';
+          item = applyFieldReplacements(doc, '<a href="' + link + '" title="' + this.title + '">' + item + '</a>');
         }
         html += item;
       }
@@ -611,17 +638,19 @@
    */
   function drawTableFooter(el, response, data, afterKey) {
     var fromRowIndex = typeof data.from === 'undefined' ? 1 : (data.from + 1);
+    var ofLabel;
     // Set up the count info in the footer.
     if (!el.settings.aggregation) {
       if (response.hits.hits.length > 0) {
+        ofLabel = response.hits.total.relation === 'gte' ? 'at least ' : '';
         $(el).find('tfoot .showing').html('Showing ' + fromRowIndex +
-          ' to ' + (fromRowIndex + (response.hits.hits.length - 1)) + ' of ' + response.hits.total);
+          ' to ' + (fromRowIndex + (response.hits.hits.length - 1)) + ' of ' + ofLabel + response.hits.total.value);
       } else {
         $(el).find('tfoot .showing').html('No hits');
       }
       // Enable or disable the paging buttons.
       $(el).find('.pager-row .prev').prop('disabled', fromRowIndex <= 1);
-      $(el).find('.pager-row .next').prop('disabled', fromRowIndex + response.hits.hits.length >= response.hits.total);
+      $(el).find('.pager-row .next').prop('disabled', fromRowIndex + response.hits.hits.length >= response.hits.total.value);
     } else if (el.settings.aggregation === 'composite') {
       if (afterKey) {
         el.settings.compositeInfo.pageAfterKeys[el.settings.compositeInfo.page + 1] = afterKey;
@@ -732,6 +761,7 @@
    */
   function setColWidths(el, maxCharsPerCol) {
     var maxCharsPerRow = 0;
+    var tbody = $(el).find('tbody');
     // Column resizing needs to be done manually when tbody has scroll bar.
     if (el.settings.scrollY) {
       $.each(el.settings.columns, function eachColumn(idx) {
@@ -752,6 +782,8 @@
       $.each(el.settings.columns, function eachColumn(idx) {
         $(el).find('.col-' + idx).css('width', (100 * (maxCharsPerCol['col-' + idx] / maxCharsPerRow)) + '%');
       });
+      // Space header if a scroll bar visible.
+      $(el).find('.scroll-spacer').css('width', (tbody[0].offsetWidth - tbody[0].clientWidth) + 'px');
     }
   }
 
@@ -799,13 +831,17 @@
       if (typeof options !== 'undefined') {
         $.extend(el.settings, options);
       }
+      // Disable cookies unless id specified.
+      if (!el.id || !$.cookie) {
+        el.settings.cookies = false;
+      }
       // Validate settings.
       if (typeof el.settings.columns === 'undefined') {
         indiciaFns.controlFail(el, 'Missing columns config for table.');
       }
       // Store original column settings.
       el.settings.defaultColumns = el.settings.columns.slice();
-      if (el.settings.cookies && $.cookie) {
+      if (el.settings.cookies) {
         savedCols = $.cookie('cols-' + el.id);
         // Don't recall cookie if empty, as this is unlikely to be deliberate.
         if (savedCols && savedCols !== '[]') {
@@ -855,6 +891,14 @@
       if (footableSort === 'true' || el.settings.responsive) {
         // Make grid responsive.
         $(el).indiciaFootableReport(el.settings.responsiveOptions);
+      }
+      if (el.settings.responsive && el.settings.autoResponsiveExpand) {
+        // Auto-expand the extra details row if cols hidden because below a
+        // breakpoint.
+        $(table).trigger('footable_expand_all');
+        $(table).bind('footable_breakpoint', function onBreak() {
+          $(table).trigger('footable_expand_all');
+        });
       }
     },
 
@@ -928,7 +972,7 @@
       if (el.settings.responsive) {
         $(el).find('table').trigger('footable_redraw');
       }
-      el.settings.totalRowCount = el.settings.aggregation ? null : response.hits.total;
+      el.settings.totalRowCount = el.settings.aggregation ? null : response.hits.total.value;
       drawTableFooter(el, response, data, afterKey);
       fireAfterPopulationCallbacks(el);
       setColWidths(el, maxCharsPerCol);

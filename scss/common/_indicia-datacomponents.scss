@@ -32,7 +32,7 @@ body {
     right: 0;
     border: solid silver 1px;
     border-radius: 3px;
-    background-color: rgba(38, 80, 38, 0.1);
+    background-color: rgba(225, 235, 225, 0.9);
     span {
       font-size: 20px;
       padding: 0;
@@ -136,10 +136,6 @@ table.es-data-grid {
       width:100%;
       /* even columns width , fix width of table too*/
       table-layout: fixed;
-    }
-    thead {
-      /* scrollbar is average 1em/16px width, remove it from thead width */
-      width: calc( 100% - 1em );
     }
     .multiselect-cell {
       padding: 0;
