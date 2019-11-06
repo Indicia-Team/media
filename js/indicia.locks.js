@@ -13,12 +13,12 @@
  */
 
 /**
- * @requires jquery.js, jquery.cookie.js, json2.js
+ * @requires jquery.js, jquery.cookie.js
  */
 
 /**
  * indicia.locks
- * 
+ *
  * This is a library of support code for the indicia project. It implements the
  * javascript for lockable form controls. These allow users to lock controls so
  * the set values are reset as the control value when the form is redisplayed.
@@ -43,10 +43,10 @@
 
   // 'constant' for the base cookie name for locks
   var COOKIE_NAME = 'indicia_locked_controls';
-  
+
   // variable to indicate if locking initialised.
   var initialised = false;
-  
+
   // variables to hold the tool-tips pumped in from PHP. This has to be done to
   // support I18n.
   var lockedTip = '';
@@ -60,7 +60,7 @@
 
   // variables to hold reference to map div and spatial ref input
   var mapDiv, srefId;
-  
+
   // variable to hold user name, or empty string for anonymous
   var user = '';
 
@@ -320,9 +320,9 @@
       if (srefId!==null && mapDiv!==null && escControlId===srefId) {
         $(mapDiv).before('<div id="mapLockMask" style="position: absolute;"/>');
         $('#mapLockMask').css({"opacity": "0.25", "background-color": "white",
-            "left":$(mapDiv).position().left + "px", 
-            "top":$(mapDiv).position().top + "px", 
-            "z-index":9999}) 
+            "left":$(mapDiv).position().left + "px",
+            "top":$(mapDiv).position().top + "px",
+            "z-index":9999})
             .width($(mapDiv).width())
             .height($(mapDiv).height());
       }

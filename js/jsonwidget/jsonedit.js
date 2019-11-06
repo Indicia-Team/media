@@ -662,7 +662,7 @@ jsonwidget.editor.getShowButton = function (jsonref) {
   retval.appendChild(document.createTextNode("["+_("show")+"]"));
   retval.style.display = "none";
   return retval;
-}		
+}
 
 jsonwidget.editor.getDeleteButton = function (jsonref) {
   var retval = document.createElement("span");
@@ -856,7 +856,7 @@ jsonwidget.editor.attachSimplePropertyInput = function (jsonref) {
   case 'str':
   var inputelement = this.getStringInput(jsonref);
   break;
-  
+
   case 'txt':
   var inputelement = this.getTextAreaInput(jsonref);
   break;
@@ -1261,7 +1261,7 @@ jsonwidget.editor.toggleToFormActual = function () {
   this.attachHandlers();
   this.clearStatusLight();
 }
- 
+
 jsonwidget.editor.updateJSON = function () {
   var jsonarea = document.getElementById(this.htmlids.sourcetextarea);
   var parent = jsonarea.parentNode;
@@ -1271,7 +1271,7 @@ jsonwidget.editor.updateJSON = function () {
   jsonarea.value = "";
   }
   else {
-  jsonarea.value = JSON.stringify(this.jsondata);
+  jsonarea.value = JSON.stringify(this.jsondata, null, 2);
   }
   parent.insertBefore(jsonarea, nextsibling);
 }
