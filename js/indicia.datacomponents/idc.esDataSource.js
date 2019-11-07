@@ -147,6 +147,10 @@ var IdcEsDataSource;
             source.hideAllSpinners(source);
             alert('Elasticsearch query failed');
           } else {
+            // Convert hits.total to Elasticsearch 7 style.
+            if (response.hits.total && indiciaData.esVersion === 6) {
+              response.hits.total = { value: response.hits.total, relation: 'eq' };
+            }
             // Build any configured output tables.
             source.buildTableXY(response);
             $.each(indiciaData.outputPluginClasses, function eachPluginClass(i, pluginClass) {

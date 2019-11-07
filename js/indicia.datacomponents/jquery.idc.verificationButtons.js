@@ -94,10 +94,8 @@
             setTimeout(function doPopulate() {
               indiciaFns.populateDataSources();
             }, 500);
-          } else {
-            if (response !== 'OK') {
-              alert('Indicia records update failed');
-            }
+          } else if (response !== 'OK') {
+            alert('Indicia records update failed');
           }
         }
       ).always(function cleanup() {
