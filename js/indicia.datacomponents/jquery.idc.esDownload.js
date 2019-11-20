@@ -162,7 +162,7 @@
       $(el).find('.idc-download-files').append('<div><a href="' + lastResponse.filename + '">' +
         '<span class="fas fa-file-archive fa-2x"></span>' +
         'Download .zip file</a><br/>' + description +
-        'Available until ' + hours + ':' + minutes + '</div>');
+        'Available until ' + hours + ':' + minutes + '.</div>');
       $(el).find('.idc-download-files').fadeIn('med');
     }
   }
