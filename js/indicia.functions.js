@@ -464,7 +464,7 @@ if (typeof window.indiciaData === 'undefined') {
     var childSelect = $('#' + options.escapedId);
     var parentSelect = $(el);
     if (parentSelect.val()) {
-      $.getJSON(options.request + '&query=' + options.query.replace('%22val%22', parentSelect.val()), function onResponse(data) {
+      $.getJSON(options.request + '&' + options.query.replace('%22val%22', parentSelect.val()), function onResponse(data) {
         childSelect.find('option').remove();
         if (data.length > 0) {
           childSelect.removeClass('ui-state-disabled');
