@@ -783,7 +783,9 @@
         $(el).find('.col-' + idx).css('width', (100 * (maxCharsPerCol['col-' + idx] / maxCharsPerRow)) + '%');
       });
       // Space header if a scroll bar visible.
-      $(el).find('.scroll-spacer').css('width', (tbody[0].offsetWidth - tbody[0].clientWidth) + 'px');
+      if (tbody.find('tr').length > 0) {
+        $(el).find('.scroll-spacer').css('width', (tbody[0].offsetWidth - tbody[0].clientWidth) + 'px');
+      }
     }
   }
 
