@@ -2673,11 +2673,19 @@ var destroyAllFeatures;
         div.georeferencer = new Georeferencer(div, _displayGeorefOutput);
       }
 
-      // Add any tile cache layers
-      var tcLayer;
-      $.each(this.settings.tilecacheLayers, function(i, item) {
-        tcLayer = new OpenLayers.Layer.TileCache(item.caption, item.servers, item.layerName, item.settings);
-        div.map.addLayer(tcLayer);
+      // Add any custom layers.
+      $.each(this.settings.otherBaseLayerConfig, function(i, item) {
+        var params = item.params;
+        var layer;
+        // Pad to max 4 params, just so the function call can be the same whatever. 
+        while (params.length < 4) {
+          params.push(null);
+        }
+        layer = new OpenLayers.Layer[item.class](params[0], params[1], params[2], params[3]);
+        if (!layer.layerId) {
+          layer.layerId = 'custom-' + i;
+        }
+        div.map.addLayer(layer);
       });
 
       // Iterate over the preset layers, adding them to the map

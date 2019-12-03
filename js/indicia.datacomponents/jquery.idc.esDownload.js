@@ -72,8 +72,16 @@
    *   Response body from the ES proxy containing progress data.
    */
   function updateProgress(el, response) {
-    $(el).find('.progress-text').text(response.done + ' of ' + response.total.value);
-    animateTo(el, response.done / response.total.value);
+    var done;
+    if (el.settings.aggregation === 'composite') {
+      // Can't get progress, but show something happening.
+      $(el).find('.progress-text').text(response.done + ' items');
+    } else {
+      // ES V7 seems to overshoot, reporting whole rather than partial last page size.
+      done = Math.min(response.done, response.total);
+      $(el).find('.progress-text').text(done + ' of ' + response.total);
+      animateTo(el, done / response.total);
+    }
   }
 
   /**
@@ -87,7 +95,8 @@
    */
   function getColumnSettings(el) {
     var data = {};
-    if (el.settings.columnsTemplate) {
+    // Note, columnsTemplate can be blank.
+    if (typeof el.settings.columnsTemplate !== 'undefined') {
       data.columnsTemplate = el.settings.columnsTemplate;
     }
     if (el.settings.addColumns) {
@@ -109,40 +118,51 @@
     var date;
     var hours;
     var minutes;
-    var data = {
-      scroll_id: lastResponse.scroll_id
-    };
-    if (lastResponse.done < lastResponse.total.value) {
+    var data = {};
+    var description = '';
+    var query = '&state=nextPage&uniq_id=' + lastResponse.uniq_id;
+    if (lastResponse.scroll_id) {
+      // Scrolls remember the search query so only need the scroll ID.
+      query += '&scroll_id=' + lastResponse.scroll_id;
+    } else if (el.settings.aggregation && el.settings.aggregation === 'composite') {
+      // Paging composite aggregations requires the full search query.
+      data = indiciaFns.getFormQueryData(indiciaData.esSourceObjects[el.settings.sourceId]);
+      // Inform the warehouse as composite paging behaviour different. The
+      // uniq_id allows the warehouse to relocate the last request's after_key.
+      query += '&aggregation_type=composite';
+    }
+    if (lastResponse.state === 'nextPage') {
       $.extend(data, getColumnSettings(el));
-      // Post to the ES proxy. Pass scroll_id parameter to request the next
-      // chunk of the dataset.
+      // Post to the ES proxy. Pass scroll_id (docs) or after_key (composite aggregations)
+      // parameter to request the next chunk of the dataset.
       $.ajax({
-        url: indiciaData.esProxyAjaxUrl + '/download/' + indiciaData.nid,
+        url: indiciaData.esProxyAjaxUrl + '/download/' + indiciaData.nid + query,
         type: 'POST',
         dataType: 'json',
         data: data,
         success: function success(response) {
-          // Patch response from V6 to behave like V7.
-          if (indiciaData.esVersion === 6) {
-            response.total = { value: response.total, relation: 'eq' };
-          }
-          response.done = Math.min(response.done, response.total.value);
           updateProgress(el, response);
           doPages(el, response);
         }
       });
     } else {
+      // Finished.
+      $(el).find('.progress-text').text('Done');
       date = new Date();
+      // File available for 45 minutes.
       date.setTime(date.getTime() + (45 * 60 * 1000));
       hours = '0' + date.getHours();
       hours = hours.substr(hours.length - 2);
       minutes = '0' + date.getMinutes();
       minutes = minutes.substr(minutes.length - 2);
+      description = 'File containing ' + lastResponse.done +
+        (el.settings.aggregation && el.settings.aggregation === 'composite' ? ' items. ' : ' occurrences. ');
+
       $(el).find('.progress-circle-container').addClass('download-done');
       $(el).find('.idc-download-files').append('<div><a href="' + lastResponse.filename + '">' +
         '<span class="fas fa-file-archive fa-2x"></span>' +
-        'Download .zip file</a><br/>' +
-        'File containing ' + lastResponse.total.value + ' occurrences. Available until ' + hours + ':' + minutes + '</div>');
+        'Download .zip file</a><br/>' + description +
+        'Available until ' + hours + ':' + minutes + '.</div>');
       $(el).find('.idc-download-files').fadeIn('med');
     }
   }
@@ -156,34 +176,33 @@
      */
     $(el).find('.do-download').click(function doDownload() {
       var data;
-      $.each(el.settings.source, function eachSource(sourceId) {
-        var source = indiciaData.esSourceObjects[sourceId];
-        if (typeof source === 'undefined') {
-          indiciaFns.controlFail(el, 'Download source not found.');
-        }
-        $(el).find('.progress-circle-container').removeClass('download-done');
-        $(el).find('.progress-circle-container').show();
-        done = false;
-        $(el).find('.circle').attr('style', 'stroke-dashoffset: 503px');
-        $(el).find('.progress-text').text('Loading...');
-        data = indiciaFns.getFormQueryData(source);
-        $.extend(data, getColumnSettings(el));
-        // Post to the ES proxy.
-        $.ajax({
-          url: indiciaData.esProxyAjaxUrl + '/download/' + indiciaData.nid,
-          type: 'POST',
-          dataType: 'json',
-          data: data,
-          success: function success(response) {
-            if (typeof response.code !== 'undefined' && response.code === 401) {
-              alert('Elasticsearch alias configuration user or secret incorrect in the form configuration.');
-              $('.progress-circle-container').hide();
-            } else {
-              updateProgress(el, response);
-              doPages(el, response);
-            }
+      var source = indiciaData.esSourceObjects[el.settings.sourceId];
+      var query = '&state=initial';
+      $(el).find('.progress-circle-container').removeClass('download-done');
+      $(el).find('.progress-circle-container').show();
+      done = false;
+      $(el).find('.circle').attr('style', 'stroke-dashoffset: 503px');
+      $(el).find('.progress-text').text('Loading...');
+      data = indiciaFns.getFormQueryData(source);
+      if (el.settings.aggregation && el.settings.aggregation === 'composite') {
+        query += '&aggregation_type=composite';
+      }
+      $.extend(data, getColumnSettings(el));
+      // Post to the ES proxy.
+      $.ajax({
+        url: indiciaData.esProxyAjaxUrl + '/download/' + indiciaData.nid + query,
+        type: 'POST',
+        dataType: 'json',
+        data: data,
+        success: function success(response) {
+          if (typeof response.code !== 'undefined' && response.code === 401) {
+            alert('Elasticsearch alias configuration user or secret incorrect in the form configuration.');
+            $('.progress-circle-container').hide();
+          } else {
+            updateProgress(el, response);
+            doPages(el, response);
           }
-        });
+        }
       });
     });
   }
@@ -211,6 +230,11 @@
       if (typeof options !== 'undefined') {
         $.extend(el.settings, options);
       }
+      // Only allow a single source for download, so simplify the sources.
+      $.each(el.settings.source, function eachSource(sourceId) {
+        el.settings.sourceId = sourceId;
+        return false;
+      });
       initHandlers(el);
     },
 
