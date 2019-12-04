@@ -2677,7 +2677,7 @@ var destroyAllFeatures;
       $.each(this.settings.otherBaseLayerConfig, function(i, item) {
         var params = item.params;
         var layer;
-        // Pad to max 4 params, just so the function call can be the same whatever. 
+        // Pad to max 4 params, just so the function call can be the same whatever.
         while (params.length < 4) {
           params.push(null);
         }
@@ -3314,7 +3314,7 @@ jQuery.fn.indiciaMapPanel.defaults = {
     os_api_key: '',
     proxy: '',
     presetLayers: [],
-    tilecacheLayers: [],
+    otherBaseLayerConfig: [],
     indiciaWMSLayers: {},
     indiciaWFSLayers : {},
     layers: [],
