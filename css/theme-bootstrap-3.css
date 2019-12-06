@@ -467,13 +467,8 @@ table.es-data-grid {
   100% {
     opacity: 1;
     visibility: visible; } }
-.comment-popup label {
-  display: block;
-  width: auto; }
 .comment-popup textarea {
-  min-width: 300px;
-  width: 100%;
-  min-height: 250px; }
+  min-width: 400px; }
 
 .field-taxon--accepted-name {
   font-style: italic; }

@@ -467,13 +467,8 @@ table.es-data-grid {
   100% {
     opacity: 1;
     visibility: visible; } }
-.comment-popup label {
-  display: block;
-  width: auto; }
 .comment-popup textarea {
-  min-width: 300px;
-  width: 100%;
-  min-height: 250px; }
+  min-width: 400px; }
 
 .field-taxon--accepted-name {
   font-style: italic; }
@@ -776,6 +771,13 @@ label#click-buffer {
     .panel.panel-danger .panel-heading {
       background-color: white; }
 
+.btn {
+  padding: 6px 12px; }
+  .btn .btn-primary {
+    color: #fff;
+    background-color: #337ab7;
+    border-color: #2e6da4; }
+
 /* Data value lists */
 @media (min-width: 768px) {
   .dl-horizontal dt, .dl-horizontal dd {
@@ -791,5 +793,21 @@ label#click-buffer {
     white-space: nowrap; }
   .dl-horizontal dd {
     margin: 4px 0 4px 180px; } }
+.form-group label {
+  width: auto;
+  display: inline-block;
+  max-width: 100%;
+  margin-bottom: 5px;
+  font-weight: 700; }
+
+.form-control {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  border: solid #ccc 1px;
+  border-radius: 4px;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  box-sizing: border-box;
+  margin: 0; }
 
 /*# sourceMappingURL=theme-generic.css.map */

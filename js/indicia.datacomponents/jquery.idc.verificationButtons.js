@@ -222,8 +222,11 @@
     }
     $('<legend><span class="' + indiciaData.statusClasses[overallStatus] + ' fa-2x"></span>' + heading + '</legend>')
       .appendTo(fs);
-    $('<label for="comment-textarea">Add the following comment:</label>').appendTo(fs);
-    $('<textarea id="comment-textarea">').appendTo(fs);
+
+    $('<div class="form-group">' +
+        '<label for="comment-textarea">Add the following comment:</label>' +
+        '<textarea id="comment-textarea" class="form-control" rows="6" />' +
+      '</div>').appendTo(fs);
     $('<button class="btn btn-primary">Save</button>').appendTo(fs);
     $.fancybox(fs);
   };
