@@ -205,6 +205,8 @@
       data: { occurrence_id: occurrenceId },
       success: function success(response) {
         var attrsDiv = $(el).find('.record-details .attrs');
+        // False indicates record loaded but email not yet found.
+        indiciaData.thisRecordEmail = false;
         $(attrsDiv).html('');
         $.each(response, function eachHeading(title, attrs) {
           var table;
@@ -217,6 +219,10 @@
               ? '<a href="' + this.value + '" target="_blank">' + this.value + '</a>'
               : this.value;
             $('<tr><th>' + this.caption + '</th><td>' + val + '</td></tr>').appendTo(tbody);
+            if (title === 'Recorder attributes' && this.caption === 'Email' && val.match(/@/)) {
+              // Store recorder email address for querying etc.
+              indiciaData.thisRecordEmail = val;
+            }
           });
         });
       },
@@ -483,6 +489,8 @@
         var key;
         var externalMessage;
         var msgClass = 'info';
+        // Clear the stored email until details loaded.
+        indiciaData.thisRecordEmail = null;
         // Reset the redetermination form.
         $('#redet-form :input').val('');
         if (tr) {
