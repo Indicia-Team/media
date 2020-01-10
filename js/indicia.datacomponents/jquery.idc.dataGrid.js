@@ -371,32 +371,6 @@
       $panel.find('ol').sortable();
     });
 
-    function onFullScreenChange() {
-      var tbody;
-      var fsEl = document.fullscreenElement
-        || document.webkitFullscreenElement
-        || document.mozFullScreenElement;
-      tbody = $(el).find('tbody');
-      if (tbody && el.settings.scrollY) {
-        if (fsEl === el) {
-          tbody.css('max-height', $(window).height() - $(el).find('thead').height() - $(el).find('tfoot').height());
-        } else {
-          tbody.css('max-height', el.settings.scrollY + 'px');
-        }
-      }
-    }
-
-    document.addEventListener('fullscreenchange', onFullScreenChange);
-
-    /* Firefox */
-    document.addEventListener('mozfullscreenchange', onFullScreenChange);
-
-    /* Chrome, Safari and Opera */
-    document.addEventListener('webkitfullscreenchange', onFullScreenChange);
-
-    /* IE / Edge */
-    document.addEventListener('msfullscreenchange', onFullScreenChange);
-
     $(el).find('.data-grid-fullscreen').click(function settingsIconClick() {
       if (document.fullscreenElement ||
           document.webkitFullscreenElement ||
@@ -804,6 +778,18 @@
     return longestWord;
   }
 
+  function setTableHeight(el) {
+    var tbody = $(el).find('tbody');
+    if (el.settings.scrollY) {
+      if (el.settings.scrollY.match(/^-/)) {
+        tbody.css('max-height', (($(window).height() + parseInt(el.settings.scrollY.replace('px', ''), 10))
+          - ($(el).find('tbody').offset().top + $(el).find('tfoot').height())));
+      } else {
+        tbody.css('max-height', el.settings.scrollY);
+      }
+    }
+  }
+
   /**
    * Declare public methods.
    */
@@ -864,10 +850,7 @@
       table = $('<table class="' + tableClasses.join(' ') + '" data-sort="' + footableSort + '" />').appendTo(el);
       addHeader(el, table);
       // We always want a table body for the data.
-      tbody = $('<tbody />').appendTo(table);
-      if (el.settings.scrollY) {
-        $(tbody).css('max-height', el.settings.scrollY);
-      }
+      $('<tbody />').appendTo(table);
       // Output a footer if we want a pager.
       if (el.settings.includePager && !(el.settings.sourceTable || el.settings.aggregation === 'simple')) {
         totalCols = el.settings.columns.length
@@ -877,6 +860,7 @@
           '<span class="buttons"><button class="prev">Previous</button><button class="next">Next</button></span>' +
           '</td></tr></tfoot>').appendTo(table);
       }
+      setTableHeight(el);
       // Add icons for table settings.
       tools = '<span class="fas fa-wrench data-grid-show-settings" title="Click to show grid column settings"></span>';
       if (document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled) {
@@ -902,6 +886,7 @@
           $(table).trigger('footable_expand_all');
         });
       }
+      window.addEventListener('resize', function resize() { setTableHeight(el); });
     },
 
     /**
