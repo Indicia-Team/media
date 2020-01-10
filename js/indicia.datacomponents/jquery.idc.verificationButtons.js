@@ -102,7 +102,6 @@
         function success(response) {
           if (allTableMode) {
             $('body > .loading-spinner').remove();
-            alert(response.updated + ' record(s) updated.');
             // Wait a moment before refresh as Elastic updates not quite immediate.
             setTimeout(function doPopulate() {
               indiciaFns.populateDataSources();
@@ -165,7 +164,6 @@
           } else {
             $('body > .loading-spinner').remove();
             if (occurrenceIds.length > 1) {
-              alert(response.updated + ' record(s) updated.');
               // Wait a moment before refresh as Elastic updates not quite immediate.
               setTimeout(function doPopulate() {
                 indiciaFns.populateDataSources();
