@@ -102,6 +102,9 @@
         function success(response) {
           if (allTableMode) {
             $('body > .loading-spinner').remove();
+            // Unset all table mode as this is a "dangerous" state that should be explicitly chosen each time.
+            $(dataGrid).find('.multi-mode-table.active').removeClass('active');
+            $(dataGrid).find('.multi-mode-selected').addClass('active');
             // Wait a moment before refresh as Elastic updates not quite immediate.
             setTimeout(function doPopulate() {
               indiciaFns.populateDataSources();
