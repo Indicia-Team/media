@@ -84,9 +84,9 @@
         R: datedUrl.replace('-q-', 'R')
       };
       links = {
-        V: buckets.V ? '<a target="_top" href="' + urls.V + '&' + filter + '">' + buckets.V + '</a>' : '0',
-        C: buckets.C ? '<a target="_top" href="' + urls.C + '&' + filter + '">' + buckets.C + '</a>' : '0',
-        R: buckets.R ? '<a target="_top" href="' + urls.R + '&' + filter + '">' + buckets.R + '</a>' : '0'
+        V: buckets.V ? '<a target="_blank" href="' + urls.V + '&' + filter + '">' + buckets.V + '</a>' : '<a>0</a>',
+        C: buckets.C ? '<a target="_blank" href="' + urls.C + '&' + filter + '">' + buckets.C + '</a>' : '<a>0</a>',
+        R: buckets.R ? '<a target="_blank" href="' + urls.R + '&' + filter + '">' + buckets.R + '</a>' : '<a>0</a>'
       };
     } else {
       // No explore URL, so just output the numbers.

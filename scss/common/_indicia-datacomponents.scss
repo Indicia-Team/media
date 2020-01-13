@@ -263,8 +263,9 @@ table.es-data-grid {
     }
     td {
       span {
-        margin-left: 15px;
+        margin-left: 8px;
         display: inline-block;
+        vertical-align: middle;
         height: 15px;
         border-radius: 4px;
         box-shadow: #aaa 0px 2px 4px 0px;
@@ -277,6 +278,12 @@ table.es-data-grid {
         &.exp-R {
           background-color: red;
         }
+      }
+      a {
+        min-width: 30px;
+        display: inline-block;
+        vertical-align: middle;
+        text-align: right;
       }
     }
   }

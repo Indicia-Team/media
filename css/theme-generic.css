@@ -445,8 +445,9 @@ table.es-data-grid {
   .details-container .recorder-experience th {
     width: 25%; }
   .details-container .recorder-experience td span {
-    margin-left: 15px;
+    margin-left: 8px;
     display: inline-block;
+    vertical-align: middle;
     height: 15px;
     border-radius: 4px;
     box-shadow: #aaa 0px 2px 4px 0px; }
@@ -456,6 +457,11 @@ table.es-data-grid {
       background-color: silver; }
     .details-container .recorder-experience td span.exp-R {
       background-color: red; }
+  .details-container .recorder-experience td a {
+    min-width: 30px;
+    display: inline-block;
+    vertical-align: middle;
+    text-align: right; }
 
 @keyframes fadeIn {
   0% {
