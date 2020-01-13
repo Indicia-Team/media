@@ -182,7 +182,7 @@
           if (indiciaFns.fieldConvertorQueryDescriptions[this.simpleFieldName()]) {
             title = indiciaFns.fieldConvertorQueryDescriptions[this.simpleFieldName()];
           } else {
-            title = 'Enter a value to find matches the ' + caption + ' column.';
+            title = 'Enter a value to find matches in the ' + caption + ' column.';
           }
         } else if (indiciaData.esMappings[this].type === 'text' || indiciaData.esMappings[this].type === 'keyword') {
           title = 'Search for words which begin with this text in the ' + caption + ' column. Prefix with ! to exclude rows which contain words beginning with the text you enter.';
