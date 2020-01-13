@@ -163,9 +163,12 @@ var IdcEsDataSource;
             source.hideAllSpinners(source);
           }
         },
-        error: function error() {
+        error: function error(jqXHR) {
           source.hideAllSpinners(source);
-          alert('Elasticsearch query failed');
+          if (jqXHR.readyState === 4) {
+            // Don't bother if not done - i.e. error because user navigated away.
+            alert('Elasticsearch query failed');
+          }
         },
         dataType: 'json'
       });

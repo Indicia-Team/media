@@ -233,6 +233,21 @@
     });
   }
 
+  /**
+   * Calculate the correct tbody height on resize, if a fixed or anchored height.
+   */
+  function setTableHeight(el) {
+    var tbody = $(el).find('tbody');
+    if (el.settings.scrollY) {
+      if (el.settings.scrollY.match(/^-/)) {
+        tbody.css('max-height', (($(window).height() + parseInt(el.settings.scrollY.replace('px', ''), 10))
+          - ($(el).find('tbody').offset().top + $(el).find('tfoot').height())));
+      } else {
+        tbody.css('max-height', el.settings.scrollY);
+      }
+    }
+  }
+
    /**
    * Register the various user interface event handlers.
    */
@@ -315,8 +330,7 @@
     });
 
     $(el).find('.multiselect-switch').click(function clickMultiselectSwitch() {
-      var el = $(this).closest('.idc-output-dataGrid');
-      var table = el.find('table');
+      var table = $(el).find('table');
       if ($(el).hasClass('multiselect-mode')) {
         $(el).removeClass('multiselect-mode');
         $(table).find('.multiselect-cell').remove();
@@ -336,6 +350,7 @@
           $('.all-selected-buttons')
         );
       }
+      setTableHeight(el);
     });
 
     /**
@@ -776,18 +791,6 @@
       }
     }
     return longestWord;
-  }
-
-  function setTableHeight(el) {
-    var tbody = $(el).find('tbody');
-    if (el.settings.scrollY) {
-      if (el.settings.scrollY.match(/^-/)) {
-        tbody.css('max-height', (($(window).height() + parseInt(el.settings.scrollY.replace('px', ''), 10))
-          - ($(el).find('tbody').offset().top + $(el).find('tfoot').height())));
-      } else {
-        tbody.css('max-height', el.settings.scrollY);
-      }
-    }
   }
 
   /**

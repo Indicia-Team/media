@@ -331,8 +331,11 @@
           $(el).find('.loading-spinner').hide();
         }
       },
-      error: function error(jqXHR, textStatus, errorThrown) {
-        alert('Elasticsearch query failed');
+      error: function error(jqXHR) {
+        if (jqXHR.readyState === 4) {
+          // Don't bother if not done - i.e. error because user navigated away.
+          alert('Elasticsearch query failed');
+        }
       },
       dataType: 'json'
     });
