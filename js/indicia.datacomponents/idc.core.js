@@ -448,6 +448,12 @@
           format: '{1}'
         },
         {
+          // yyyy format.
+          pattern: '(\\d{4})-(\\d{4})',
+          field: 'event.year',
+          format: '[{1} TO {2}]'
+        },
+        {
           // dd/mm/yyyy format.
           pattern: '(\\d{2})\\/(\\d{2})\\/(\\d{4})',
           field: 'event.date_start',
@@ -537,7 +543,9 @@
    * Allow special fields to provide custom hints for their filter row inputs.
    */
   indiciaFns.fieldConvertorQueryDescriptions = {
-    lat_lon: 'Enter a latitude and longitude value to filter to records in the vicinity.'
+    lat_lon: 'Enter a latitude and longitude value to filter to records in the vicinity.',
+    event_date: 'Enter a date in dd/mm/yyyy or yyyy-mm-dd format. Filtering to a year or range or years is possible ' +
+      'using yyyy or yyyy-yyyy format.'
   };
 
   /**
