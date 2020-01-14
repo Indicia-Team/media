@@ -425,7 +425,7 @@
         query = 'metadata.website.id:' + parts[0].trim();
         // Search can optionally include the survey ID.
         if (parts.length > 1 && parts[1].trim() !== '') {
-          query += 'AND metadata.survey.id:' + parts[1].trim();
+          query += ' AND metadata.survey.id:' + parts[1].trim();
         }
         return query;
       }
