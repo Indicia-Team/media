@@ -167,11 +167,14 @@ table.es-data-grid {
     box-shadow: none;
     color: black;
     text-shadow: none;
-    min-height: 25px;
+    min-height: 22px;
     margin: 4px;
     padding: 6px;
     &:hover {
       background: silver;
+    }
+    &:link, &:visited {
+      color: black;
     }
   }
   .multi-only {
@@ -304,8 +307,7 @@ table.es-data-grid {
   }
 }
 
-.comment-popup {
-  margin: 0;
+.verification-popup {
   textarea {
     min-width: 400px;
   }

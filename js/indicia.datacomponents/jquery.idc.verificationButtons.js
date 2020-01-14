@@ -30,6 +30,11 @@
   var $ = jQuery;
 
   /**
+   * Currently selected row ID.
+   */
+  var occurrenceId;
+
+  /**
    * Declare default settings.
    */
   var defaults = {
@@ -44,7 +49,12 @@
   /**
    * jQuery validation instance.
    */
-  var validator;
+  var emailFormvalidator;
+
+  /**
+   * jQuery validation instance.
+   */
+  var redetFormValidator;
 
   var dataGrid;
 
@@ -225,7 +235,7 @@
     if (status.query) {
       statusData.push('data-query="' + status.query + '"');
     }
-    fs = $('<fieldset class="comment-popup" data-ids="' + JSON.stringify(ids) + '" ' + statusData.join('') + '>');
+    fs = $('<fieldset class="comment-popup verification-popup" data-ids="' + JSON.stringify(ids) + '" ' + statusData.join('') + '>');
     if (todoCount > 1) {
       heading = status.status
         ? 'Set status to ' + indiciaData.statusMsgs[overallStatus] + ' for ' + todoCount + ' records'
@@ -379,7 +389,7 @@
         '<textarea id="email-body" class="form-control required" rows="12">' + emailBody + '\n\n' + recordData + '</textarea>' +
       '</div>').appendTo(form);
     $('<input type="submit" class="btn btn-primary" value="Send email" />').appendTo(form);
-    validator = $(form).validate({});
+    emailFormvalidator = $(form).validate({});
     $(form).submit(processEmail);
     return emailTab;
   }
@@ -426,7 +436,7 @@
 
               title1 = order === 'emailFirst' ? 'Send email' : 'Add comment';
               title2 = order === 'emailFirst' ? 'Add comment' : 'Send email';
-              content = $('<div id="popup-tabs" />').append($('<ul>' +
+              content = $('<div id="popup-tabs" class="verification-popup" />').append($('<ul>' +
                 '<li><a href="#tab-query-1">' + title1 + '</li>' +
                 '<li><a href="#tab-query-2">' + title2 + '</li>'
               ));
@@ -540,7 +550,7 @@
         occurrenceId + personIdentifierParam + authorisationParam + '">' +
         indiciaData.lang.verificationButtons.replyToThisQuery + '</a>';
     // Complete creation of email of record details
-    if (validator.numberOfInvalids() === 0) {
+    if (emailFormvalidator.numberOfInvalids() === 0) {
       // Save info required for quick reply.
       saveAuthorisationNumberToDb(authorisationNumber, occurrenceId);
       // Replace the text token from the email with the actual link.
@@ -560,6 +570,56 @@
       });
     }
     return false;
+  }
+
+  /**
+   * Submit handler for the redetermination popup form.
+   */
+  function redetFormSubmit(e) {
+    var data;
+    e.preventDefault();
+    if ($('#redet-species').val() === '') {
+      redetFormValidator.showErrors({ 'redet-species:taxon': 'Please type a few characters then choose a name from the list of suggestions' });
+    } else if (redetFormValidator.numberOfInvalids() === 0) {
+      $.fancybox.close();
+      data = {
+        website_id: indiciaData.website_id,
+        'occurrence:id': occurrenceId,
+        'occurrence:taxa_taxon_list_id': $('#redet-species').val(),
+        user_id: indiciaData.user_id
+      };
+      if ($('#redet-comment').val()) {
+        data['occurrence_comment:comment'] = $('#redet-comment').val();
+      }
+      $.post(
+        indiciaData.ajaxFormPostRedet,
+        data,
+        function onResponse(response) {
+          if (typeof response.error !== 'undefined') {
+            alert(response.error);
+          }
+        }
+      );
+      // Now post update to Elasticsearch. Remove the website ID to temporarily disable the record.
+      data = {
+        ids: [occurrenceId],
+        doc: {
+          metadata: {
+            website: {
+              id: 0
+            }
+          }
+        }
+      };
+      $.ajax({
+        url: indiciaData.esProxyAjaxUrl + '/updateids/' + indiciaData.nid,
+        type: 'post',
+        data: data,
+        success: function success() {
+          $(dataGrid).idcDataGrid('hideRowAndMoveNext');
+        }
+      });
+    }
   }
 
   /**
@@ -588,17 +648,22 @@
         indiciaFns.controlFail(el, 'Missing showSelectedRow config for table.');
       }
       dataGrid = $('#' + el.settings.showSelectedRow);
+      // Form validation for redetermination
+      redetFormValidator = $('#redet-form').validate();
       $(dataGrid).idcDataGrid('on', 'rowSelect', function rowSelect(tr) {
         var sep;
         var doc;
         var key;
         var keyParts;
         $('.external-record-link').remove();
+        // Reset the redetermination form.
+        $('#redet-form :input').val('');
         if (tr) {
           // Update the view and edit button hrefs. This allows the user to
           // right click and open in a new tab, rather than have an active
           // button.
           doc = JSON.parse($(tr).attr('data-doc-source'));
+          occurrenceId = doc.id;
           $('.idc-verification-buttons').show();
           sep = el.settings.viewPath.indexOf('?') === -1 ? '?' : '&';
           $(el).find('.view').attr('href', el.settings.viewPath + sep + 'occurrence_id=' + doc.id);
@@ -619,16 +684,23 @@
           $('.idc-verification-buttons').hide();
         }
       });
-      $(dataGrid).idcDataGrid('on', 'populate', function rowSelect() {
+      $(dataGrid).idcDataGrid('on', 'populate', function populate() {
         $('.idc-verification-buttons').hide();
       });
       $(el).find('button.verify').click(function buttonClick(e) {
         var status = $(e.currentTarget).attr('data-status');
         commentPopup({ status: status });
       });
-      $(el).find('button.query').click(function buttonClick(e) {
+      $(el).find('button.query').click(function buttonClick() {
         queryPopup();
       });
+      $(el).find('button.redet').click(function expandRedet() {
+        $.fancybox($('#redet-form'));
+      });
+      indiciaFns.on('click', '#cancel-redet', {}, function expandRedet() {
+        $.fancybox.close();
+      });
+      $('#redet-form').submit(redetFormSubmit);
       indiciaFns.on('click', '.comment-popup button', {}, function onClickSave(e) {
         var popup = $(e.currentTarget).closest('.comment-popup');
         var ids = JSON.parse($(popup).attr('data-ids'));

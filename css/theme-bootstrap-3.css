@@ -373,11 +373,13 @@ table.es-data-grid {
   box-shadow: none;
   color: black;
   text-shadow: none;
-  min-height: 25px;
+  min-height: 22px;
   margin: 4px;
   padding: 6px; }
   .idc-verification-buttons-row button:hover, .idc-verification-buttons-row a:hover {
     background: silver; }
+  .idc-verification-buttons-row button:link, .idc-verification-buttons-row button:visited, .idc-verification-buttons-row a:link, .idc-verification-buttons-row a:visited {
+    color: black; }
 .idc-verification-buttons-row .multi-only {
   display: none; }
 .idc-verification-buttons-row .sep {
@@ -473,10 +475,8 @@ table.es-data-grid {
   100% {
     opacity: 1;
     visibility: visible; } }
-.comment-popup {
-  margin: 0; }
-  .comment-popup textarea {
-    min-width: 400px; }
+.verification-popup textarea {
+  min-width: 400px; }
 
 .field-taxon--accepted-name {
   font-style: italic; }

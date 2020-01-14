@@ -53,11 +53,6 @@
   var loadedAttrsOcurrenceId = 0;
   var loadedExperienceOcurrenceId = 0;
 
-  /**
-   * Popup form validator.
-   */
-  var validator;
-
   function getExperienceCells(buckets, userId, el, filter, yr) {
     var total = buckets.C + buckets.V + buckets.R;
     var indicatorSize;
@@ -396,53 +391,6 @@
     }
   }
 
-  function redetFormSubmit(e) {
-    var data;
-    e.preventDefault();
-    if ($('#redet-species').val() === '') {
-      validator.showErrors({ 'redet-species:taxon': 'Please type a few characters then choose a name from the list of suggestions' });
-    } else if (validator.numberOfInvalids() === 0) {
-      $.fancybox.close();
-      data = {
-        website_id: indiciaData.website_id,
-        'occurrence:id': occurrenceId,
-        'occurrence:taxa_taxon_list_id': $('#redet-species').val(),
-        user_id: indiciaData.user_id
-      };
-      if ($('#redet-comment').val()) {
-        data['occurrence_comment:comment'] = $('#redet-comment').val();
-      }
-      $.post(
-        indiciaData.ajaxFormPostRedet,
-        data,
-        function onResponse(response) {
-          if (typeof response.error !== 'undefined') {
-            alert(response.error);
-          }
-        }
-      );
-      // Now post update to Elasticsearch. ill the website ID to temporarily disable the record.
-      data = {
-        ids: [occurrenceId],
-        doc: {
-          metadata: {
-            website: {
-              id: 0
-            }
-          }
-        }
-      };
-      $.ajax({
-        url: indiciaData.esProxyAjaxUrl + '/updateids/' + indiciaData.nid,
-        type: 'post',
-        data: data,
-        success: function success() {
-          $(dataGrid).idcDataGrid('hideRowAndMoveNext');
-        }
-      });
-    }
-  }
-
   /**
    * Declare public methods.
    */
@@ -480,10 +428,6 @@
       // Clean tabs
       $('.ui-tabs-nav').removeClass('ui-widget-header');
       $('.ui-tabs-nav').removeClass('ui-corner-all');
-      // Form validation for redetermination
-      if (el.settings.allowRedetermination) {
-        validator = $('#redet-form').validate();
-      }
       $(dataGrid).idcDataGrid('on', 'rowSelect', function rowSelect(tr) {
         var doc;
         var rows = [];
@@ -494,16 +438,11 @@
         var msgClass = 'info';
         // Clear the stored email until details loaded.
         indiciaData.thisRecordEmail = null;
-        // Reset the redetermination form.
-        $('#redet-form :input').val('');
+
         if (tr) {
           doc = JSON.parse($(tr).attr('data-doc-source'));
           occurrenceId = doc.id;
           acceptedNameAnnotation = doc.taxon.taxon_name === doc.taxon.accepted_name ? ' (as recorded)' : '';
-          if (el.settings.allowRedetermination) {
-            acceptedNameAnnotation +=
-              '<span class="fas fa-edit push right" id="popup-redet" title="Redetermine this record"></span>';
-          }
           vernaculardNameAnnotation = doc.taxon.taxon_name === doc.taxon.vernacular_name ? ' (as recorded)' : '';
           addRow(rows, doc, 'ID', 'id');
           addRow(rows, doc, 'ID in source system', 'occurrence.source_system_key');
@@ -569,15 +508,6 @@
         $(el).find('.empty-message').show();
         $(el).find('.tabs').hide();
       });
-      if (el.settings.allowRedetermination) {
-        indiciaFns.on('click', '#popup-redet', {}, function expandRedet() {
-          $.fancybox($('#redet-form'));
-        });
-        indiciaFns.on('click', '#cancel-redet', {}, function expandRedet() {
-          $.fancybox.close();
-        });
-        $('#redet-form').submit(redetFormSubmit);
-      }
     },
 
     on: function on(event, handler) {
