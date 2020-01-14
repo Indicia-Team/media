@@ -257,6 +257,9 @@ table.es-data-grid {
       position: relative;
       min-height: 120px;
     }
+    .field-id {
+      font-weight: bold;
+    }
   }
   .recorder-experience {
     position: relative;
@@ -316,3 +319,4 @@ table.es-data-grid {
 .field-taxon--accepted-name {
   font-style: italic;
 }
+

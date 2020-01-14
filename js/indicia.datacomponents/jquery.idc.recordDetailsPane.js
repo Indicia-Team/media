@@ -33,6 +33,11 @@
   var occurrenceId;
 
   /**
+   * Additional useful field values.
+   */
+  var extraFieldValues;
+
+  /**
    * Place to store public methods.
    */
   var methods;
@@ -200,25 +205,39 @@
       data: { occurrence_id: occurrenceId },
       success: function success(response) {
         var attrsDiv = $(el).find('.record-details .attrs');
+        // Make sure standard headings are present.
+        var combined = $.extend({ 'Additional occurrence attributes': [] }, response);
         // False indicates record loaded but email not yet found.
         indiciaData.thisRecordEmail = false;
         $(attrsDiv).html('');
-        $.each(response, function eachHeading(title, attrs) {
+        $.each(combined, function eachHeading(title, attrs) {
           var table;
           var tbody;
           $(attrsDiv).append('<h3>' + title + '</h3>');
           table = $('<table>').appendTo(attrsDiv);
           tbody = $('<tbody>').appendTo($(table));
+          if (title === 'Additional occurrence attributes') {
+            $('<tr><th>Submitted on</th><td>' + extraFieldValues.created_on + '</td></tr>').appendTo(tbody);
+            $('<tr><th>Last updated on</th><td>' + extraFieldValues.updated_on + '</td></tr>').appendTo(tbody);
+          }
           $.each(attrs, function eachAttr() {
             var val = this.value.match(/^http(s)?:\/\//)
               ? '<a href="' + this.value + '" target="_blank">' + this.value + '</a>'
               : this.value;
             $('<tr><th>' + this.caption + '</th><td>' + val + '</td></tr>').appendTo(tbody);
-            if (title === 'Recorder attributes' && this.caption === 'Email' && val.match(/@/)) {
+            if (title === 'Recorder attributes' && this.system_function === 'email' && val.match(/@/)) {
               // Store recorder email address for querying etc.
               indiciaData.thisRecordEmail = val;
             }
           });
+          if (title === 'Additional occurrence attributes') {
+            if (extraFieldValues.licence) {
+              $('<tr><th>Licence</th><td>' + extraFieldValues.licence + '</td></tr>').appendTo(tbody);
+            }
+            if (extraFieldValues.external_key) {
+              $('<tr><th>ID in source system</th><td>' + extraFieldValues.external_key + '</td></tr>').appendTo(tbody);
+            }
+          }
         });
       },
       dataType: 'json'
@@ -377,7 +396,7 @@
     // Always treat fields as array so code can be consistent.
     var fieldArr = Array.isArray(fields) ? fields : [fields];
     $.each(fieldArr, function eachField(i, field) {
-      var fieldClass = 'field-' + field.replace('.', '--').replace('_', '-').replace('#', '-');
+      var fieldClass = 'field-' + field.replace('.', '--').replace('_', '-').replace(/#/g, '-');
       item = indiciaFns.getValueForField(doc, field);
       if (item !== '') {
         // Convert to hyperlink where relevant.
@@ -386,6 +405,9 @@
       }
     });
     value = values.join(separator);
+    if (typeof value === 'undefined' || value === '') {
+      value = '-';
+    }
     if (typeof value !== 'undefined' && value !== '') {
       rows.push('<tr><th scope="row">' + caption + '</th><td>' + value + '</td></tr>');
     }
@@ -431,8 +453,8 @@
       $(dataGrid).idcDataGrid('on', 'rowSelect', function rowSelect(tr) {
         var doc;
         var rows = [];
-        var acceptedNameAnnotation;
-        var vernaculardNameAnnotation;
+        var anAnnotation;
+        var vnAnnotation;
         var key;
         var externalMessage;
         var msgClass = 'info';
@@ -442,26 +464,14 @@
         if (tr) {
           doc = JSON.parse($(tr).attr('data-doc-source'));
           occurrenceId = doc.id;
-          acceptedNameAnnotation = doc.taxon.taxon_name === doc.taxon.accepted_name ? ' (as recorded)' : '';
-          vernaculardNameAnnotation = doc.taxon.taxon_name === doc.taxon.vernacular_name ? ' (as recorded)' : '';
-          addRow(rows, doc, 'ID', 'id');
-          addRow(rows, doc, 'ID in source system', 'occurrence.source_system_key');
-          // Deprecated doc field mappings had occurrence_external_key instead
-          // of occurrence.source_system_key. This line can be removed if the
-          // index has been rebuilt.
-          addRow(rows, doc, 'ID in source system', 'occurrence_external_key');
+          anAnnotation = doc.taxon.taxon_name === doc.taxon.accepted_name ? ' (as entered)' : '';
+          vnAnnotation = doc.taxon.taxon_name === doc.taxon.vernacular_name ? ' (as entered)' : '';
+          addRow(rows, doc, 'ID|status|checks', ['id', '#status_icons#', '#data_cleaner_icons#'], ' | ');
+          addRow(rows, doc, 'Accepted name' + anAnnotation, ['taxon.accepted_name', 'taxon.accepted_name_authorship'], ' ');
+          addRow(rows, doc, 'Common name' + vnAnnotation, 'taxon.vernacular_name');
           if (doc.taxon.taxon_name !== doc.taxon.accepted_name && doc.taxon.taxon_name !== doc.taxon.vernacular_name) {
-            addRow(rows, doc, 'Given name', ['taxon.taxon_name', 'taxon.taxon_name_authorship'], ' ');
+            addRow(rows, doc, 'Name as entered', ['taxon.taxon_name', 'taxon.taxon_name_authorship'], ' ');
           }
-          addRow(rows, doc, 'Accepted name' + acceptedNameAnnotation,
-            ['taxon.accepted_name', 'taxon.accepted_name_authorship'], ' ');
-          addRow(rows, doc, 'Common name' + vernaculardNameAnnotation, 'taxon.vernacular_name');
-          addRow(rows, doc, 'Taxonomy', ['taxon.phylum', 'taxon.order', 'taxon.family'], ' :: ');
-          addRow(rows, doc, 'Licence', 'metadata.licence_code');
-          addRow(rows, doc, 'Status', '#status_icons#');
-          addRow(rows, doc, 'Checks', '#data_cleaner_icons#');
-          addRow(rows, doc, 'Date', '#event_date#');
-          addRow(rows, doc, 'Output map ref', 'location.output_sref');
           if (el.settings.locationTypes) {
             addRow(rows, doc, 'Location', 'location.verbatim_locality');
             $.each(el.settings.locationTypes, function eachType() {
@@ -470,14 +480,33 @@
           } else {
             addRow(rows, doc, 'Location', '#locality#');
           }
-          addRow(rows, doc, 'Sample comments', 'event.event_remarks');
-          addRow(rows, doc, 'Occurrence comments', 'occurrence.occurrence_remarks');
-          addRow(rows, doc, 'Submitted on', 'metadata.created_on');
-          addRow(rows, doc, 'Last updated on', 'metadata.updated_on');
+          addRow(rows, doc, 'Grid ref', 'location.output_sref');
+          addRow(rows, doc, 'Date seen', '#event_date#');
+          addRow(rows, doc, 'Recorder', 'event.recorded_by');
+          addRow(rows, doc, 'Determiner', 'identification.identified_by');
           addRow(rows, doc, 'Dataset',
             ['metadata.website.title', 'metadata.survey.title', 'metadata.group.title'], ' :: ');
+          addRow(rows, doc, 'Sample comment', 'event.event_remarks');
+          addRow(rows, doc, 'Occurrence comment', 'occurrence.occurrence_remarks');
+
+          extraFieldValues = {
+            created_on: indiciaFns.getValueForField(doc, 'metadata.created_on'),
+            updated_on: indiciaFns.getValueForField(doc, 'metadata.updated_on'),
+            licence: indiciaFns.getValueForField(doc, 'metadata.licence_code'),
+            external_key: indiciaFns.getValueForField(doc, 'occurrence.source_system_key'),
+          };
+
           $(recordDetails).html('<table><tbody>' + rows.join('') + '</tbody></table>');
           $(recordDetails).append('<div class="attrs"><div class="loading-spinner"><div>Loading...</div></div></div>');
+          rows = [];
+          addRow(rows, doc, 'Taxonomy', ['taxon.phylum', 'taxon.order', 'taxon.family'], ' :: ');
+          if (el.settings.extraLocationTypes) {
+            $.each(el.settings.extraLocationTypes, function eachType() {
+              addRow(rows, doc, this, '#higher_geography:' + this + ':name#');
+            });
+          }
+          $(recordDetails).append('<h3>Derived info</h3>');
+          $(recordDetails).append('<table><tbody>' + rows.join('') + '</tbody></table>');
           loadedAttrsOcurrenceId = 0;
           // Reference to doc.occurrence_external_key is deprecated and can be
           // removed if the BRC index has been re-indexed.
