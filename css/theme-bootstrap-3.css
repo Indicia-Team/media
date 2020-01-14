@@ -441,6 +441,8 @@ table.es-data-grid {
 .details-container .record-details .attrs {
   position: relative;
   min-height: 120px; }
+.details-container .record-details .field-id {
+  font-weight: bold; }
 .details-container .recorder-experience {
   position: relative;
   min-height: 150px; }
