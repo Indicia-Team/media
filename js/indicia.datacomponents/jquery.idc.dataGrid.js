@@ -185,9 +185,13 @@
             title = 'Enter a value to find matches in the ' + caption + ' column.';
           }
         } else if (indiciaData.esMappings[this].type === 'text' || indiciaData.esMappings[this].type === 'keyword') {
-          title = 'Search for words which begin with this text in the ' + caption + ' column. Prefix with ! to exclude rows which contain words beginning with the text you enter.';
+          title = 'Search for words in the ' + caption + ' column. Prefix with ! to exclude rows which contain words ' +
+            'beginning with the text you enter. Use * at the end of words to find words starting with. Use ' +
+            '&quot;&quot; to group words into phrases and | between words to request either/or searches. Use - before ' +
+            'a word to exclude that word from the search results.';
         } else {
-          title = 'Search for a number in the ' + caption + ' column. Prefix with ! to exclude rows which match the number you enter or separate a range with a hyphen (e.g. 123-456).';
+          title = 'Search for a number in the ' + caption + ' column. Prefix with ! to exclude rows which match the ' +
+            'number you enter or separate a range with a hyphen (e.g. 123-456).';
         }
         $('<input type="text" title="' + title + '">').appendTo(td);
       }
