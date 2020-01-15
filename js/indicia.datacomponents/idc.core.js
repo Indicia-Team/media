@@ -51,6 +51,11 @@
   indiciaData.esSourceObjects = {};
 
   /**
+   * List of the user filters we've used, so we can refresh cache appropriately.
+   */
+  indiciaData.esUserFiltersLoaded = [];
+
+  /**
    * Font Awesome icon and other classes for record statuses and flags.
    */
   indiciaData.statusClasses = {
@@ -717,7 +722,8 @@
       textFilters: {},
       numericFilters: {},
       bool_queries: [],
-      user_filters: []
+      user_filters: [],
+      refresh_user_filters: false
     };
     var mapToFilterTo;
     var bounds;
@@ -804,6 +810,10 @@
         $.each($('.user-filter'), function eachUserFilter() {
           if ($(this).val()) {
             data.user_filters.push($(this).val());
+            if (indiciaData.esUserFiltersLoaded.indexOf($(this).val()) === -1) {
+              data.refresh_user_filters = true;
+              indiciaData.esUserFiltersLoaded.push($(this).val());
+            }
           }
         });
       }
