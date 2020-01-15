@@ -373,11 +373,13 @@ table.es-data-grid {
   box-shadow: none;
   color: black;
   text-shadow: none;
-  min-height: 25px;
+  min-height: 22px;
   margin: 4px;
   padding: 6px; }
   .idc-verification-buttons-row button:hover, .idc-verification-buttons-row a:hover {
     background: silver; }
+  .idc-verification-buttons-row button:link, .idc-verification-buttons-row button:visited, .idc-verification-buttons-row a:link, .idc-verification-buttons-row a:visited {
+    color: black; }
 .idc-verification-buttons-row .multi-only {
   display: none; }
 .idc-verification-buttons-row .sep {
@@ -439,14 +441,17 @@ table.es-data-grid {
 .details-container .record-details .attrs {
   position: relative;
   min-height: 120px; }
+.details-container .record-details .field-id {
+  font-weight: bold; }
 .details-container .recorder-experience {
   position: relative;
   min-height: 150px; }
   .details-container .recorder-experience th {
     width: 25%; }
   .details-container .recorder-experience td span {
-    margin-left: 15px;
+    margin-left: 8px;
     display: inline-block;
+    vertical-align: middle;
     height: 15px;
     border-radius: 4px;
     box-shadow: #aaa 0px 2px 4px 0px; }
@@ -456,6 +461,11 @@ table.es-data-grid {
       background-color: silver; }
     .details-container .recorder-experience td span.exp-R {
       background-color: red; }
+  .details-container .recorder-experience td a {
+    min-width: 30px;
+    display: inline-block;
+    vertical-align: middle;
+    text-align: right; }
 
 @keyframes fadeIn {
   0% {
@@ -467,13 +477,8 @@ table.es-data-grid {
   100% {
     opacity: 1;
     visibility: visible; } }
-.comment-popup label {
-  display: block;
-  width: auto; }
-.comment-popup textarea {
-  min-width: 300px;
-  width: 100%;
-  min-height: 250px; }
+.verification-popup textarea {
+  min-width: 400px; }
 
 .field-taxon--accepted-name {
   font-style: italic; }

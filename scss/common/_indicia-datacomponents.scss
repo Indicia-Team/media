@@ -167,11 +167,14 @@ table.es-data-grid {
     box-shadow: none;
     color: black;
     text-shadow: none;
-    min-height: 25px;
+    min-height: 22px;
     margin: 4px;
     padding: 6px;
     &:hover {
       background: silver;
+    }
+    &:link, &:visited {
+      color: black;
     }
   }
   .multi-only {
@@ -254,6 +257,9 @@ table.es-data-grid {
       position: relative;
       min-height: 120px;
     }
+    .field-id {
+      font-weight: bold;
+    }
   }
   .recorder-experience {
     position: relative;
@@ -263,8 +269,9 @@ table.es-data-grid {
     }
     td {
       span {
-        margin-left: 15px;
+        margin-left: 8px;
         display: inline-block;
+        vertical-align: middle;
         height: 15px;
         border-radius: 4px;
         box-shadow: #aaa 0px 2px 4px 0px;
@@ -277,6 +284,12 @@ table.es-data-grid {
         &.exp-R {
           background-color: red;
         }
+      }
+      a {
+        min-width: 30px;
+        display: inline-block;
+        vertical-align: middle;
+        text-align: right;
       }
     }
   }
@@ -297,18 +310,13 @@ table.es-data-grid {
   }
 }
 
-.comment-popup {
-  label {
-    display: block;
-    width: auto;
-  }
+.verification-popup {
   textarea {
-    min-width: 300px;
-    width: 100%;
-    min-height: 250px;
+    min-width: 400px;
   }
 }
 
 .field-taxon--accepted-name {
   font-style: italic;
 }
+

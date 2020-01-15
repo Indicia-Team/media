@@ -51,6 +51,11 @@
   indiciaData.esSourceObjects = {};
 
   /**
+   * List of the user filters we've used, so we can refresh cache appropriately.
+   */
+  indiciaData.esUserFiltersLoaded = [];
+
+  /**
    * Font Awesome icon and other classes for record statuses and flags.
    */
   indiciaData.statusClasses = {
@@ -425,7 +430,7 @@
         query = 'metadata.website.id:' + parts[0].trim();
         // Search can optionally include the survey ID.
         if (parts.length > 1 && parts[1].trim() !== '') {
-          query += 'AND metadata.survey.id:' + parts[1].trim();
+          query += ' AND metadata.survey.id:' + parts[1].trim();
         }
         return query;
       }
@@ -446,6 +451,12 @@
           pattern: '(\\d{4})',
           field: 'event.year',
           format: '{1}'
+        },
+        {
+          // yyyy format.
+          pattern: '(\\d{4})-(\\d{4})',
+          field: 'event.year',
+          format: '[{1} TO {2}]'
         },
         {
           // dd/mm/yyyy format.
@@ -537,7 +548,9 @@
    * Allow special fields to provide custom hints for their filter row inputs.
    */
   indiciaFns.fieldConvertorQueryDescriptions = {
-    lat_lon: 'Enter a latitude and longitude value to filter to records in the vicinity.'
+    lat_lon: 'Enter a latitude and longitude value to filter to records in the vicinity.',
+    event_date: 'Enter a date in dd/mm/yyyy or yyyy-mm-dd format. Filtering to a year or range or years is possible ' +
+      'using yyyy or yyyy-yyyy format.'
   };
 
   /**
@@ -709,7 +722,8 @@
       textFilters: {},
       numericFilters: {},
       bool_queries: [],
-      user_filters: []
+      user_filters: [],
+      refresh_user_filters: false
     };
     var mapToFilterTo;
     var bounds;
@@ -796,6 +810,10 @@
         $.each($('.user-filter'), function eachUserFilter() {
           if ($(this).val()) {
             data.user_filters.push($(this).val());
+            if (indiciaData.esUserFiltersLoaded.indexOf($(this).val()) === -1) {
+              data.refresh_user_filters = true;
+              indiciaData.esUserFiltersLoaded.push($(this).val());
+            }
           }
         });
       }

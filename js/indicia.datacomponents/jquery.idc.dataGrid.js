@@ -182,12 +182,16 @@
           if (indiciaFns.fieldConvertorQueryDescriptions[this.simpleFieldName()]) {
             title = indiciaFns.fieldConvertorQueryDescriptions[this.simpleFieldName()];
           } else {
-            title = 'Enter a value to find matches the ' + caption + ' column.';
+            title = 'Enter a value to find matches in the ' + caption + ' column.';
           }
         } else if (indiciaData.esMappings[this].type === 'text' || indiciaData.esMappings[this].type === 'keyword') {
-          title = 'Search for words which begin with this text in the ' + caption + ' column. Prefix with ! to exclude rows which contain words beginning with the text you enter.';
+          title = 'Search for words in the ' + caption + ' column. Prefix with ! to exclude rows which contain words ' +
+            'beginning with the text you enter. Use * at the end of words to find words starting with. Use ' +
+            '&quot;&quot; to group words into phrases and | between words to request either/or searches. Use - before ' +
+            'a word to exclude that word from the search results.';
         } else {
-          title = 'Search for a number in the ' + caption + ' column. Prefix with ! to exclude rows which match the number you enter or separate a range with a hyphen (e.g. 123-456).';
+          title = 'Search for a number in the ' + caption + ' column. Prefix with ! to exclude rows which match the ' +
+            'number you enter or separate a range with a hyphen (e.g. 123-456).';
         }
         $('<input type="text" title="' + title + '">').appendTo(td);
       }
@@ -231,6 +235,21 @@
       }
       source.populate();
     });
+  }
+
+  /**
+   * Calculate the correct tbody height on resize, if a fixed or anchored height.
+   */
+  function setTableHeight(el) {
+    var tbody = $(el).find('tbody');
+    if (el.settings.scrollY) {
+      if (el.settings.scrollY.match(/^-/)) {
+        tbody.css('max-height', (($(window).height() + parseInt(el.settings.scrollY.replace('px', ''), 10))
+          - ($(el).find('tbody').offset().top + $(el).find('tfoot').height())));
+      } else {
+        tbody.css('max-height', el.settings.scrollY);
+      }
+    }
   }
 
    /**
@@ -315,8 +334,7 @@
     });
 
     $(el).find('.multiselect-switch').click(function clickMultiselectSwitch() {
-      var el = $(this).closest('.idc-output-dataGrid');
-      var table = el.find('table');
+      var table = $(el).find('table');
       if ($(el).hasClass('multiselect-mode')) {
         $(el).removeClass('multiselect-mode');
         $(table).find('.multiselect-cell').remove();
@@ -336,6 +354,7 @@
           $('.all-selected-buttons')
         );
       }
+      setTableHeight(el);
     });
 
     /**
@@ -370,32 +389,6 @@
       appendColumnsToConfigList(el, el.settings.columns);
       $panel.find('ol').sortable();
     });
-
-    function onFullScreenChange() {
-      var tbody;
-      var fsEl = document.fullscreenElement
-        || document.webkitFullscreenElement
-        || document.mozFullScreenElement;
-      tbody = $(el).find('tbody');
-      if (tbody && el.settings.scrollY) {
-        if (fsEl === el) {
-          tbody.css('max-height', $(window).height() - $(el).find('thead').height() - $(el).find('tfoot').height());
-        } else {
-          tbody.css('max-height', el.settings.scrollY + 'px');
-        }
-      }
-    }
-
-    document.addEventListener('fullscreenchange', onFullScreenChange);
-
-    /* Firefox */
-    document.addEventListener('mozfullscreenchange', onFullScreenChange);
-
-    /* Chrome, Safari and Opera */
-    document.addEventListener('webkitfullscreenchange', onFullScreenChange);
-
-    /* IE / Edge */
-    document.addEventListener('msfullscreenchange', onFullScreenChange);
 
     $(el).find('.data-grid-fullscreen').click(function settingsIconClick() {
       if (document.fullscreenElement ||
@@ -864,10 +857,7 @@
       table = $('<table class="' + tableClasses.join(' ') + '" data-sort="' + footableSort + '" />').appendTo(el);
       addHeader(el, table);
       // We always want a table body for the data.
-      tbody = $('<tbody />').appendTo(table);
-      if (el.settings.scrollY) {
-        $(tbody).css('max-height', el.settings.scrollY);
-      }
+      $('<tbody />').appendTo(table);
       // Output a footer if we want a pager.
       if (el.settings.includePager && !(el.settings.sourceTable || el.settings.aggregation === 'simple')) {
         totalCols = el.settings.columns.length
@@ -877,6 +867,7 @@
           '<span class="buttons"><button class="prev">Previous</button><button class="next">Next</button></span>' +
           '</td></tr></tfoot>').appendTo(table);
       }
+      setTableHeight(el);
       // Add icons for table settings.
       tools = '<span class="fas fa-wrench data-grid-show-settings" title="Click to show grid column settings"></span>';
       if (document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled) {
@@ -902,6 +893,7 @@
           $(table).trigger('footable_expand_all');
         });
       }
+      window.addEventListener('resize', function resize() { setTableHeight(el); });
     },
 
     /**
