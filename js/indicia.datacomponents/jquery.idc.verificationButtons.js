@@ -344,7 +344,7 @@
    * Get HTML for the query by comment tab's form.
    */
   function getQueryCommentTab(doc, commentInstruct, warning) {
-    var commentTab = $('<fieldset class="comment-popup" data-ids="' + JSON.stringify([parseInt(doc.id, 10)]) + '"  />');
+    var commentTab = $('<fieldset class="comment-popup" data-ids="' + JSON.stringify([parseInt(doc.id, 10)]) + '" data-query="Q" />');
     $('<legend><span class="fas fa-question-circle fa-2x"></span>' +
       indiciaData.lang.verificationButtons.commentTabTitle + '</legend>')
       .appendTo(commentTab);
