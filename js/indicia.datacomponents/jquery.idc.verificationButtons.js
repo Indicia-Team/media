@@ -73,6 +73,7 @@
     };
     var indiciaPostUrl;
     var requests = 0;
+    var sep = indiciaData.esProxyAjaxUrl.match(/\?/) ? '&' : '?';
     // Since this might be slow.
     $('body').append('<div class="loading-spinner"><div>Loading...</div></div>');
     if (status.status) {
@@ -107,7 +108,7 @@
       // Post update to Indicia.
       requests++;
       $.post(
-        indiciaPostUrl,
+        indiciaPostUrl + sep + 'refresh=true',
         data,
         function success(response) {
           if (allTableMode) {
@@ -115,10 +116,7 @@
             // Unset all table mode as this is a "dangerous" state that should be explicitly chosen each time.
             $(dataGrid).find('.multi-mode-table.active').removeClass('active');
             $(dataGrid).find('.multi-mode-selected').addClass('active');
-            // Wait a moment before refresh as Elastic updates not quite immediate.
-            setTimeout(function doPopulate() {
-              indiciaFns.populateDataSources();
-            }, 500);
+            indiciaFns.populateDataSources();
           } else if (response !== 'OK') {
             alert('Indicia records update failed');
           }
@@ -165,7 +163,7 @@
       doc: doc
     };
     $.ajax({
-      url: indiciaData.esProxyAjaxUrl + '/updateids/' + indiciaData.nid,
+      url: indiciaData.esProxyAjaxUrl + '/updateids/' + indiciaData.nid + sep + 'refresh=true',
       type: 'post',
       data: data,
       success: function success(response) {
@@ -177,10 +175,7 @@
           } else {
             $('body > .loading-spinner').remove();
             if (occurrenceIds.length > 1) {
-              // Wait a moment before refresh as Elastic updates not quite immediate.
-              setTimeout(function doPopulate() {
-                indiciaFns.populateDataSources();
-              }, 500);
+              indiciaFns.populateDataSources();
             }
           }
           if (occurrenceIds.length === 1) {
