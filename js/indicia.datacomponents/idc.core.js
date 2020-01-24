@@ -747,7 +747,8 @@
             query_type: this.query_type,
             field: this.field ? this.field : null,
             query: this.query ? this.query : null,
-            value: this.value ? this.value : null
+            value: this.value ? this.value : null,
+            nested: this.nested ? this.nested : null
           });
         });
       });
