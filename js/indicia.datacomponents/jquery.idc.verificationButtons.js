@@ -108,7 +108,7 @@
       // Post update to Indicia.
       requests++;
       $.post(
-        indiciaPostUrl + sep + 'refresh=true',
+        indiciaPostUrl,
         data,
         function success(response) {
           if (allTableMode) {
@@ -163,7 +163,7 @@
       doc: doc
     };
     $.ajax({
-      url: indiciaData.esProxyAjaxUrl + '/updateids/' + indiciaData.nid + sep + 'refresh=true',
+      url: indiciaData.esProxyAjaxUrl + '/updateids/' + indiciaData.nid,
       type: 'post',
       data: data,
       success: function success(response) {
