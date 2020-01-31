@@ -174,6 +174,60 @@
   };
 
   /**
+   * Detect date/time patterns and convert to a suitable ES query string.
+   */
+  indiciaFns.dateToEsFilter = function dateToEsFilter(text, field) {
+    // A series of possible date patterns, with the info required to build
+    // a query string.
+    var tests = [
+      {
+        // yyyy format.
+        pattern: '(\\d{4})',
+        format: '[`1`-01-01 TO `1`-12-31]'
+      },
+      {
+        // yyyy format.
+        pattern: '(\\d{4})-(\\d{4})',
+        format: '[`1`-01-01 TO `2`-12-31]'
+      },
+      {
+        // dd/mm/yyyy format.
+        pattern: '(\\d{2})\\/(\\d{2})\\/(\\d{4})',
+        format: '`3`-`2`-`1`'
+      },
+      {
+        // yyyy-mm-dd format.
+        pattern: '(\\d{4})\\-(\\d{2})\\-(\\d{2})',
+        format: '`1`-`2`-`3`'
+      },
+      {
+        // dd/mm/yyyy hh:mm format.
+        pattern: '(\\d{2})\\/(\\d{2})\\/(\\d{4}) (\\d{2})\\:(\\d{2})',
+        format: '["`3`-`2`-`1` `4`:`5`:00" TO "`3`-`2`-`1` `4`:`5`:59"]'
+      }
+    ];
+    var filter = false;
+    // Loop the patterns to find a match.
+    $.each(tests, function eachTest() {
+      var regex = new RegExp('^' + this.pattern + '$');
+      var match = text.match(regex);
+      var value = this.format;
+      var i;
+      if (match) {
+        // Got a match, so reformat and build the filter string.
+        for (i = 1; i < match.length; i++) {
+          value = value.replace(new RegExp('`' + i + '`', 'g'), match[i]);
+        }
+        filter = field + ':' + value;
+        // Abort the search.
+        return false;
+      }
+      return true;
+    });
+    return filter;
+  };
+
+  /**
    * Utility function to retrieve status icon HTML from a status code.
    *
    * @param object flags
@@ -443,53 +497,7 @@
      * Supports yyyy, mm/dd/yyyy or yyyy-mm-dd formats.
      */
     event_date: function eventDate(text) {
-      // A series of possible date patterns, with the info required to build
-      // a query string.
-      var tests = [
-        {
-          // yyyy format.
-          pattern: '(\\d{4})',
-          field: 'event.year',
-          format: '{1}'
-        },
-        {
-          // yyyy format.
-          pattern: '(\\d{4})-(\\d{4})',
-          field: 'event.year',
-          format: '[{1} TO {2}]'
-        },
-        {
-          // dd/mm/yyyy format.
-          pattern: '(\\d{2})\\/(\\d{2})\\/(\\d{4})',
-          field: 'event.date_start',
-          format: '{3}-{2}-{1}'
-        },
-        {
-          // yyyy-mm-dd format.
-          pattern: '(\\d{4})\\-(\\d{2})\\-(\\d{2})',
-          field: 'event.date_start',
-          format: '{1}-{2}-{3}'
-        }
-      ];
-      var filter = false;
-      // Loop the patterns to find a match.
-      $.each(tests, function eachTest() {
-        var regex = new RegExp('^' + this.pattern + '$');
-        var match = text.match(regex);
-        var value = this.format;
-        var i;
-        if (match) {
-          // Got a match, so reformat and build the filter string.
-          for (i = 1; i < match.length; i++) {
-            value = value.replace('{' + i + '}', match[i]);
-          }
-          filter = this.field + ':' + value;
-          // Abort the search.
-          return false;
-        }
-        return true;
-      });
-      return filter;
+      return indiciaFns.dateToEsFilter(text, 'event.date_start');
     },
 
     /**
@@ -663,8 +671,20 @@
               });
             }
           } else if (indiciaData.esMappings[field].type === 'keyword' || indiciaData.esMappings[field].type === 'text') {
-            // Normal text filter
+            // Normal text filter.
             data.textFilters[field] = $(this).val().trim();
+          } else if (indiciaData.esMappings[field].type === 'date') {
+            // Date filter.
+            query = indiciaFns.dateToEsFilter($(this).val().trim(), field);
+            if (query === false) {
+              $(this).after('<span title="Invalid search text" class="fas fa-exclamation-circle"></span>');
+            } else {
+              data.bool_queries.push({
+                bool_clause: 'must',
+                query_type: 'query_string',
+                value: query
+              });
+            }
           } else {
             // Normal numeric filter.
             data.numericFilters[field] = $(this).val().trim();
