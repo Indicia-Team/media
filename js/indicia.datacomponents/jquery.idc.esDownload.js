@@ -177,7 +177,8 @@
     $(el).find('.do-download').click(function doDownload() {
       var data;
       var source = indiciaData.esSourceObjects[el.settings.sourceId];
-      var query = '&state=initial';
+      var sep = indiciaData.esProxyAjaxUrl.match(/\?/) ? '&' : '?';
+      var query = sep + 'state=initial';
       $(el).find('.progress-circle-container').removeClass('download-done');
       $(el).find('.progress-circle-container').show();
       done = false;
