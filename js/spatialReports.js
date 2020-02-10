@@ -124,7 +124,7 @@
   };
 
   indiciaFns.enableBuffering = function enableBuffering() {
-    if (indiciaData.bufferingEnabled) {
+    if (!mapInitialisationHooks || indiciaData.bufferingEnabled) {
       return;
     }
     indiciaData.bufferingEnabled = true;
