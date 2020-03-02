@@ -533,7 +533,9 @@
           item = this.title;
         }
         if (this.path) {
-          link = this.path.replace('{rootFolder}', indiciaData.rootFolder);
+          link = this.path
+            .replace(/{rootFolder}/g, indiciaData.rootFolder)
+            .replace(/\{language\}/g, indiciaData.currentLanguage);
           if (this.urlParams) {
             link += link.indexOf('?') === -1 ? '?' : '&';
             $.each(this.urlParams, function eachParam(name, value) {
