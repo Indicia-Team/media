@@ -120,7 +120,8 @@
     var minutes;
     var data = {};
     var description = '';
-    var query = '&state=nextPage&uniq_id=' + lastResponse.uniq_id;
+    var sep = indiciaData.esProxyAjaxUrl.match(/\?/) ? '&' : '?';
+    var query = sep + 'state=nextPage&uniq_id=' + lastResponse.uniq_id;
     if (lastResponse.scroll_id) {
       // Scrolls remember the search query so only need the scroll ID.
       query += '&scroll_id=' + lastResponse.scroll_id;
