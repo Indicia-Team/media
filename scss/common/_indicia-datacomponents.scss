@@ -115,6 +115,9 @@ table.es-data-grid {
         color: $colour-select-row;
         background-color: $colour-select-row-bg;
       }
+      &.zero-abundance {
+        text-decoration: line-through;
+      }
       img {
         max-height: 60px;
         border-radius: 4px;

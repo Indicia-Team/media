@@ -71,7 +71,8 @@
     Q: 'fas fa-question-circle',
     A: 'fas fa-reply',
     Sensitive: 'fas fa-exclamation-circle',
-    Confidential: 'fas fa-exclamation-triangle'
+    Confidential: 'fas fa-exclamation-triangle',
+    ZeroAbundance: 'fas fa-ban'
   };
 
   /**
@@ -90,7 +91,8 @@
     Q: 'Queried',
     A: 'Answered',
     Sensitive: 'Sensitive',
-    Confidential: 'Confidential'
+    Confidential: 'Confidential',
+    ZeroAbundance: 'Absence record'
   };
 
   /**
@@ -272,6 +274,9 @@
     if (flags.confidential && flags.confidential !== 'false') {
       addIcon('Confidential');
     }
+    if (flags.confidential && flags.confidential !== 'false') {
+      addIcon('ZeroAbundance');
+    }
     return html;
   };
 
@@ -346,7 +351,8 @@
         substatus: doc.identification.verification_substatus,
         query: doc.identification.query ? doc.identification.query : '',
         sensitive: doc.metadata.sensitive,
-        confidential: doc.metadata.confidential
+        confidential: doc.metadata.confidential,
+        zero_abundance: doc.occurrence.zero_abundance,
       });
     },
 
