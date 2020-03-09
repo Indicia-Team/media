@@ -951,18 +951,29 @@
         var hit = this;
         var cells = [];
         var row;
-        var selectedClass;
+        var classes = ['data-row'];
         var doc = hit._source ? hit._source : hit;
-        var dataRowId;
+        var dataRowIdAttr;
         cells = getRowBehaviourCells(el);
         cells = cells.concat(getDataCells(el, doc, maxCharsPerCol));
         if (el.settings.actions.length) {
           cells.push('<td class="col-actions">' + getActionsForRow(el.settings.actions, doc) + '</td>');
         }
-        selectedClass = (el.settings.selectIdsOnNextLoad && $.inArray(hit._id, el.settings.selectIdsOnNextLoad) !== -1)
-          ? ' selected' : '';
-        dataRowId = hit._id ? ' data-row-id="' + hit._id + '"' : '';
-        row = $('<tr class="data-row' + selectedClass + '"' + dataRowId + '>'
+        if (el.settings.selectIdsOnNextLoad && $.inArray(hit._id, el.settings.selectIdsOnNextLoad) !== -1) {
+          classes.push('selected');
+        }
+        // Automatically add class for zero abundance data so it can be struck
+        // through.
+        if (doc.occurrence && doc.occurrence.zero_abundance === 'true') {
+          classes.push('zero-abundance');
+        }
+        if (el.settings.rowClasses) {
+          $.each(el.settings.rowClasses, function eachClass() {
+            classes.push(applyFieldReplacements(doc, this));
+          });
+        }
+        dataRowIdAttr = hit._id ? ' data-row-id="' + hit._id + '"' : '';
+        row = $('<tr class="' + classes.join(' ') + '"' + dataRowIdAttr + '>'
            + cells.join('') +
            '</tr>').appendTo($(el).find('tbody'));
         $(row).attr('data-doc-source', JSON.stringify(doc));
