@@ -342,6 +342,24 @@
    * doc which are not simple values.
    */
   indiciaFns.fieldConvertors = {
+
+    /**
+     * Output an associations summary.
+     */
+    associations: function associations(doc) {
+      var output = [];
+      if (doc.occurrence.associations) {
+        $.each(doc.occurrence.associations, function eachAssociation() {
+          var label = '<em>' + this.accepted_name + '</a>';
+          if (this.vernacular_name) {
+            label = this.vernacular_name + '(' + label + ')';
+          }
+          output.push(label);
+        });
+      }
+      return output.join('; ');
+    },
+
     /**
      * Record status and other flag icons.
      */
@@ -478,6 +496,34 @@
    * The builder can assume that the input text value is already trimmed.
    */
   indiciaFns.fieldConvertorQueryBuilders = {
+
+    /**
+     * Builds a nested query for association columns.
+     */
+    associations: function associations(text) {
+      var query = {
+        nested: {
+          path: 'occurrence.associations',
+          query: {
+            bool: {
+              must: [
+                {
+                  query_string: {
+                    query: text
+                  }
+                }
+              ]
+            }
+          }
+        }
+      };
+      return {
+        bool_clause: 'must',
+        value: '',
+        query: JSON.stringify(query)
+      };
+    },
+
     /**
      * Handle datasource_code filtering in format website_id [| survey ID].
      */
