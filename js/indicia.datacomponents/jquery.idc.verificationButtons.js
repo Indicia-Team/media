@@ -170,7 +170,9 @@
         if (typeof response.error !== 'undefined' || (response.code && response.code !== 200)) {
           alert(indiciaData.lang.verificationButtons.elasticsearchUpdateError);
         } else {
-          if (response.updated !== occurrenceIds.length) {
+          // Tolerate ES not updating a small percentage immediately. They will
+          // be picked up by Logstash.
+          if (response.updated < occurrenceIds.length * 0.8) {
             alert(indiciaData.lang.verificationButtons.elasticsearchUpdateError);
           } else {
             $('body > .loading-spinner').remove();
