@@ -16,6 +16,9 @@ table.species-grid {
   .attrs-container .attrs-container legend {
     font-size: 120%; }
 
+#map-container, #filter-map-container {
+  position: relative; }
+
 .layer_list ul li label.layer-title {
   display: initial; }
 
