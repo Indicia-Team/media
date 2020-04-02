@@ -361,6 +361,31 @@
     },
 
     /**
+     * Output an attribute value.
+     *
+     * Pass 2 parameters:
+     * * The entity name (event (=sample) or occurrence).
+     * * The attribute ID.
+     *
+     * Multiple attribute values are returned as a single semi-colon separated
+     * value.
+     */
+    attr_value: function attr_value(doc, params) {
+      var output = [];
+      var entity = params && params.length > 1 ? params[0] : '';
+      // Tolerate sample or event for entity parameter.
+      entity = entity === 'sample' ? 'event' : entity;
+      if (doc[entity] && doc[entity].attributes) {
+        $.each(doc[entity].attributes, function eachAttr() {
+          if (this.id === params[1]) {
+            output.push(this.value);
+          }
+        });
+      }
+      return output.join('; ');
+    },
+
+    /**
      * Record status and other flag icons.
      */
     status_icons: function statusIcons(doc) {
@@ -512,6 +537,35 @@
                     query: text
                   }
                 }
+              ]
+            }
+          }
+        }
+      };
+      return {
+        bool_clause: 'must',
+        value: '',
+        query: JSON.stringify(query)
+      };
+    },
+
+    /**
+     * Builds a nested query for association columns.
+     */
+    attr_value: function attr_value(text, params) {
+      var filter1 = {};
+      var filter2 = {};
+      var query;
+      filter1[params[0] + '.attributes.id'] = params[1];
+      filter2[params[0] + '.attributes.value'] = text;
+      query = {
+        nested: {
+          path: params[0] + '.attributes',
+          query: {
+            bool: {
+              must: [
+                { match: filter1 },
+                { match: filter2 }
               ]
             }
           }
