@@ -77,7 +77,6 @@ var IdcEsDataSource;
           }
         });
       });
-
     }
     // If limited to a map's bounds, redraw when the map is zoomed or panned.
     if (ds.settings.filterBoundsUsingMap) {
@@ -91,6 +90,11 @@ var IdcEsDataSource;
    * Track the last request so we avoid duplicate requests.
    */
   IdcEsDataSource.prototype.lastRequestStr = '';
+
+  /**
+   * Track the last count request so we avoid duplicate requests.
+   */
+  IdcEsDataSource.prototype.lastCountRequestStr = '';
 
   /**
    * If any source's outputs are on a hidden tab, the population may be delayed.
@@ -124,6 +128,7 @@ var IdcEsDataSource;
     var source = this;
     var request = indiciaFns.getFormQueryData(source);
     var url;
+    var countRequest;
     // Pagination support for composite aggregations.
     if (source.settings.after_key) {
       indiciaFns.findValue(request, 'composite').after = source.settings.after_key;
@@ -143,6 +148,8 @@ var IdcEsDataSource;
         type: 'post',
         data: request,
         success: function success(response) {
+          var countAggregateControls = [];
+          var pageSize;
           if (response.error || (response.code && response.code !== 200)) {
             source.hideAllSpinners(source);
             alert('Elasticsearch query failed');
@@ -157,9 +164,44 @@ var IdcEsDataSource;
               $.each(source.outputs[pluginClass], function eachOutput() {
                 if (!onlyForControl || onlyForControl === this) {
                   $(this)[pluginClass]('populate', source.settings, response, request);
+                  if (pluginClass === 'idcDataGrid' && source.settings.countAggregation) {
+                    // For composite aggregations we may specify a separate
+                    // aggregation to provide the count for grid pager.
+                    countAggregateControls.push(this);
+                  }
                 }
               });
             });
+            if (countAggregateControls.length > 0) {
+              // Separate aggregation to get total record count, e.g. where
+              // composite aggregation doesn't return total hit count.
+              countRequest = indiciaFns.getFormQueryData(source, true);
+              pageSize = indiciaFns.findValue(source.settings.aggregation, 'composite').size;
+              // Only need to count on initial population or when filter changes.
+              if (countRequest && (JSON.stringify(countRequest) !== source.lastCountRequestStr || force)) {
+                source.lastCountRequestStr = JSON.stringify(countRequest);
+                $.ajax({
+                  url: url,
+                  type: 'post',
+                  data: countRequest,
+                  success: function success(countResponse) {
+                    // Update the grid pager data.
+                    $.each(countAggregateControls, function eachGrid() {
+                      var grid = this;
+                      $.each(countResponse.aggregations, function() {
+                        $(grid).idcDataGrid('updatePagerForCountAgg', pageSize, this.value);
+                      });
+                    });
+                  }
+                });
+              } else {
+                $.each(countAggregateControls, function eachGrid() {
+                  // Update the grid pager data. Use the old count but new page
+                  // location info.
+                  $(this).idcDataGrid('updatePagerForCountAgg', pageSize);
+                });
+              }
+            }
             source.hideAllSpinners(source);
           }
         },

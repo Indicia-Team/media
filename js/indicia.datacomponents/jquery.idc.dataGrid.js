@@ -982,10 +982,29 @@
       if (el.settings.responsive) {
         $(el).find('table').trigger('footable_redraw');
       }
-      el.settings.totalRowCount = el.settings.aggregation ? null : response.hits.total.value;
+      if (!el.settings.aggregation) {
+        el.settings.totalRowCount = response.hits.total.value;
+      }
       drawTableFooter(el, response, data, afterKey);
       fireAfterPopulationCallbacks(el);
       setColWidths(el, maxCharsPerCol);
+    },
+
+    /**
+     * Special handling for pager information when using countAggregation.
+     *
+     * @param int count
+     *   Optional new total row count.
+     */
+    updatePagerForCountAgg(pageSize, count) {
+      var pageInfo = this.settings.compositeInfo;
+      // Optionally update the total count.
+      if (count) {
+        this.totalRowCount = count;
+      }
+      $(this).find('tfoot .showing').html('Showing ' + (pageInfo.page * pageSize + 1) +
+          ' to ' + Math.min(this.totalRowCount, (pageInfo.page + 1) * pageSize) +
+          ' of ' + this.totalRowCount);
     },
 
     /**

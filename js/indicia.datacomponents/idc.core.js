@@ -842,8 +842,15 @@
    *
    * Returns false if the query is linked to a grid selection but there is no
    * selected row.
+   *
+   * @param object source
+   *   The source object.
+   * @param bool doingCount
+   *   Set to true if getting query data for a request intended to count a
+   *   dataset rather than retrieve data. Disables from, sort options and
+   *   uses the countAggregation if specified.
    */
-  indiciaFns.getFormQueryData = function getFormQueryData(source) {
+  indiciaFns.getFormQueryData = function getFormQueryData(source, doingCount) {
     var data = {
       textFilters: {},
       numericFilters: {},
@@ -858,11 +865,13 @@
     if (source.settings.size) {
       data.size = source.settings.size;
     }
-    if (source.settings.from) {
-      data.from = source.settings.from;
-    }
-    if (source.settings.sort) {
-      data.sort = source.settings.sort;
+    if (!doingCount) {
+      if (source.settings.from) {
+        data.from = source.settings.from;
+      }
+      if (source.settings.sort) {
+        data.sort = source.settings.sort;
+      }
     }
     if (source.settings.filterBoolClauses) {
       // Using filter paremeter controls.
@@ -950,10 +959,15 @@
       }
     }
     if (source.settings.aggregation) {
-      // Copy to avoid changing original.
-      $.extend(true, agg, source.settings.aggregation);
-      // Find the map bounds if limited to the viewport of a map.
-      if (source.settings.filterBoundsUsingMap) {
+      // Copy to avoid changing original. Use count aggregation where a
+      // separate agg needed to count against.
+      if (doingCount && source.settings.countAggregation) {
+        $.extend(true, agg, source.settings.countAggregation);
+      } else {
+        $.extend(true, agg, source.settings.aggregation);
+      }
+      // Find the map bounds if limited to the viewport of a map and not counting total.
+      if (source.settings.filterBoundsUsingMap && !doingCount) {
         mapToFilterTo = $('#' + source.settings.filterBoundsUsingMap);
         if (mapToFilterTo.length === 0 || !mapToFilterTo[0].map) {
           alert('Data source incorrectly configured. @filterBoundsUsingMap does not point to a valid map.');
