@@ -137,7 +137,8 @@
       var hideBreakpoints = colDef.hideBreakpoints || colDef['hide-breakpoints'];
       var dataType = colDef.dataType || colDef['data-type'];
       sortableField = sortableField
-        || indiciaData.fieldConvertorSortFields[this.simpleFieldName()];
+        || indiciaData.fieldConvertorSortFields[this.simpleFieldName()]
+        || (el.settings.aggregation && el.settings.aggregation === 'composite');
       if (el.settings.sortable !== false && sortableField) {
         heading += '<span class="sort fas fa-sort"></span>';
       }
@@ -294,28 +295,59 @@
         var source = indiciaData.esSourceObjects[sourceId];
         var field = $(sortButton).closest('th').attr('data-field');
         var sortDesc = $(sortButton).hasClass('fa-sort-up');
-        var sortData;
+        var sortFields;
         var fieldName = field.simpleFieldName();
+        var sources;
+        var newSources = [];
         $(row).find('.sort.fas').removeClass('fa-sort-down');
         $(row).find('.sort.fas').removeClass('fa-sort-up');
         $(row).find('.sort.fas').addClass('fa-sort');
         $(sortButton).removeClass('fa-sort');
         $(sortButton).addClass('fa-sort-' + (sortDesc ? 'down' : 'up'));
         source.settings.sort = {};
-        if (indiciaData.esMappings[fieldName]) {
+        if (el.settings.aggregation && el.settings.aggregation === 'composite') {
+          if (source.settings.originalCompositeSources) {
+            sources = $.extend({}, source.settings.originalCompositeSources)
+          } else {
+            sources = $.extend({}, indiciaFns.findValue(source.settings.aggregation, 'composite').sources);
+            source.settings.originalCompositeSources = $.extend({}, sources);
+          }
+          if (indiciaData.fieldConvertorSortFields[fieldName] && $.isArray(indiciaData.fieldConvertorSortFields[fieldName])) {
+            sortFields = indiciaData.fieldConvertorSortFields[fieldName];
+            $.each(sources, function() {
+              var pos = $.inArray(indiciaFns.findValue(this, 'field'), sortFields);
+              if (pos === -1) {
+                newSources.push(this);
+              } else {
+                indiciaFns.findValue(this, 'terms').order = sortDesc ? 'desc' : 'asc';
+                newSources.splice(pos, 0, this);
+              }
+            });
+          } else {
+            $.each(sources, function() {
+              if ($(this).prop(fieldName.replace(/^key\./, ''))) {
+                indiciaFns.findValue(this, 'terms').order = sortDesc ? 'desc' : 'asc';
+                newSources.splice(0, 0, this);
+              } else {
+                newSources.push(this);
+              }
+            });
+          }
+          indiciaFns.findValue(source.settings.aggregation, 'composite').sources = newSources;
+        } else if (indiciaData.esMappings[fieldName]) {
           source.settings.sort[indiciaData.esMappings[fieldName].sort_field] = {
             order: sortDesc ? 'desc' : 'asc'
           };
         } else if (indiciaData.fieldConvertorSortFields[fieldName]) {
-          sortData = indiciaData.fieldConvertorSortFields[fieldName];
-          if ($.isArray(sortData)) {
-            $.each(sortData, function eachField() {
+          sortFields = indiciaData.fieldConvertorSortFields[fieldName];
+          if ($.isArray(sortFields)) {
+            $.each(sortFields, function eachField() {
               source.settings.sort[this] = {
                 order: sortDesc ? 'desc' : 'asc'
               };
             });
-          } else if (typeof sortData === 'object') {
-            source.settings.sort = sortData;
+          } else if (typeof sortFields === 'object') {
+            source.settings.sort = sortFields;
             indiciaFns.findAndSetValue(source.settings.sort, 'order', sortDesc ? 'desc' : 'asc');
           }
         }
