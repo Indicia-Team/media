@@ -268,6 +268,60 @@
     $(sortButton).addClass('fa-sort-' + (sortDesc ? 'down' : 'up'));
   }
 
+  /**
+   * Apply changes to a source when sorting for a composite aggregation.
+   */
+  function handleSortForCompositeAgg(source, fieldName, sortDesc) {
+    var aggSources;
+    var newAggSources = [];
+    var sortFields;
+    if (source.settings.originalCompositeSources) {
+      aggSources = $.extend({}, source.settings.originalCompositeSources);
+    } else {
+      aggSources = $.extend({}, indiciaFns.findValue(source.settings.aggregation, 'composite').sources);
+      source.settings.originalCompositeSources = $.extend({}, aggSources);
+    }
+    if (indiciaData.fieldConvertorSortFields[fieldName] && $.isArray(indiciaData.fieldConvertorSortFields[fieldName])) {
+      sortFields = indiciaData.fieldConvertorSortFields[fieldName];
+      $.each(aggSources, function eachAggSource() {
+        var pos = $.inArray(indiciaFns.findValue(this, 'field'), sortFields);
+        if (pos === -1) {
+          newAggSources.push(this);
+        } else {
+          indiciaFns.findValue(this, 'terms').order = sortDesc ? 'desc' : 'asc';
+          newAggSources.splice(pos, 0, this);
+        }
+      });
+    } else {
+      $.each(aggSources, function eachAggSource() {
+        if ($(this).prop(fieldName.replace(/^key\./, ''))) {
+          indiciaFns.findValue(this, 'terms').order = sortDesc ? 'desc' : 'asc';
+          newAggSources.splice(0, 0, this);
+        } else {
+          newAggSources.push(this);
+        }
+      });
+    }
+    indiciaFns.findValue(source.settings.aggregation, 'composite').sources = newAggSources;
+  }
+
+  /**
+   * Apply changes to a source when sorting on a special field column.
+   */
+  function handleSortForSpecialField(source, fieldName, sortDesc) {
+    var sortFields = indiciaData.fieldConvertorSortFields[fieldName];
+    if ($.isArray(sortFields)) {
+      $.each(sortFields, function eachField() {
+        source.settings.sort[this] = {
+          order: sortDesc ? 'desc' : 'asc'
+        };
+      });
+    } else if (typeof sortFields === 'object') {
+      source.settings.sort = sortFields;
+      indiciaFns.findAndSetValue(source.settings.sort, 'order', sortDesc ? 'desc' : 'asc');
+    }
+  }
+
    /**
    * Register the various user interface event handlers.
    */
@@ -281,6 +335,11 @@
       });
     });
 
+    /**
+     * Double click grid row handler.
+     *
+     * Adds selected class and fires callbacks.
+     */
     indiciaFns.on('dblclick', '#' + el.id + ' .es-data-grid tbody tr', {}, function onDataGridRowDblClick() {
       var tr = this;
       if (!$(tr).hasClass('selected')) {
@@ -292,69 +351,38 @@
       });
     });
 
+    /**
+     * Next page click.
+     */
     $(el).find('.pager-row .next').click(function clickNext() {
       movePage(el, true);
     });
 
+    /**
+     * Previous page click.
+     */
     $(el).find('.pager-row .prev').click(function clickPrev() {
       movePage(el, false);
     });
 
+    /**
+     * Sort column headers click handler.
+     */
     indiciaFns.on('click', '#' + el.id + ' .sort', {}, function clickSort() {
       var fieldName = $(this).closest('th').attr('data-field').simpleFieldName();
       var sortDesc = $(this).hasClass('fa-sort-up');
       showHeaderSortInfo(this, sortDesc);
       $.each(el.settings.source, function eachSource(sourceId) {
         var source = indiciaData.esSourceObjects[sourceId];
-        var sortFields;
-        var aggSources;
-        var newAggSources = [];
         source.settings.sort = {};
         if (el.settings.aggregation && el.settings.aggregation === 'composite') {
-          if (source.settings.originalCompositeSources) {
-            aggSources = $.extend({}, source.settings.originalCompositeSources);
-          } else {
-            aggSources = $.extend({}, indiciaFns.findValue(source.settings.aggregation, 'composite').sources);
-            source.settings.originalCompositeSources = $.extend({}, aggSources);
-          }
-          if (indiciaData.fieldConvertorSortFields[fieldName] && $.isArray(indiciaData.fieldConvertorSortFields[fieldName])) {
-            sortFields = indiciaData.fieldConvertorSortFields[fieldName];
-            $.each(aggSources, function eachAggSource() {
-              var pos = $.inArray(indiciaFns.findValue(this, 'field'), sortFields);
-              if (pos === -1) {
-                newAggSources.push(this);
-              } else {
-                indiciaFns.findValue(this, 'terms').order = sortDesc ? 'desc' : 'asc';
-                newAggSources.splice(pos, 0, this);
-              }
-            });
-          } else {
-            $.each(aggSources, function eachAggSource() {
-              if ($(this).prop(fieldName.replace(/^key\./, ''))) {
-                indiciaFns.findValue(this, 'terms').order = sortDesc ? 'desc' : 'asc';
-                newAggSources.splice(0, 0, this);
-              } else {
-                newAggSources.push(this);
-              }
-            });
-          }
-          indiciaFns.findValue(source.settings.aggregation, 'composite').sources = newAggSources;
+          handleSortForCompositeAgg(source, fieldName, sortDesc);
         } else if (indiciaData.esMappings[fieldName]) {
           source.settings.sort[indiciaData.esMappings[fieldName].sort_field] = {
             order: sortDesc ? 'desc' : 'asc'
           };
         } else if (indiciaData.fieldConvertorSortFields[fieldName]) {
-          sortFields = indiciaData.fieldConvertorSortFields[fieldName];
-          if ($.isArray(sortFields)) {
-            $.each(sortFields, function eachField() {
-              source.settings.sort[this] = {
-                order: sortDesc ? 'desc' : 'asc'
-              };
-            });
-          } else if (typeof sortFields === 'object') {
-            source.settings.sort = sortFields;
-            indiciaFns.findAndSetValue(source.settings.sort, 'order', sortDesc ? 'desc' : 'asc');
-          }
+          handleSortForSpecialField(source, fieldName, sortDesc);
         }
         source.populate();
       });
