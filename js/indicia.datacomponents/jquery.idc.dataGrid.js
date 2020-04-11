@@ -188,8 +188,8 @@
         } else if (indiciaData.esMappings[this].type === 'text' || indiciaData.esMappings[this].type === 'keyword') {
           title = 'Search for words in the ' + caption + ' column. Prefix with ! to exclude rows which contain words ' +
             'beginning with the text you enter. Use * at the end of words to find words starting with. Use ' +
-            '&quot;&quot; to group words into phrases and | between words to request either/or searches. Use - before ' +
-            'a word to exclude that word from the search results.';
+            '&quot;&quot; to group words into phrases and | between words to request either/or searches. Use - ' +
+            'before a word to exclude that word from the search results.';
         } else if (indiciaData.esMappings[this].type === 'date') {
           title = 'Search for dates in the ' + caption + ' column. Searches can be in the format yyyy, yyyy-yyyy, ' +
             'dd/mm/yyyy or dd/mm/yyyy hh:mm.';
@@ -256,6 +256,18 @@
     }
   }
 
+  /**
+   * Assigns the classes required to show sort info icons in the header row.
+   */
+  function showHeaderSortInfo(sortButton, sortDesc) {
+    var headingRow = $(sortButton).closest('tr');
+    $(headingRow).find('.sort.fas').removeClass('fa-sort-down');
+    $(headingRow).find('.sort.fas').removeClass('fa-sort-up');
+    $(headingRow).find('.sort.fas').addClass('fa-sort');
+    $(sortButton).removeClass('fa-sort');
+    $(sortButton).addClass('fa-sort-' + (sortDesc ? 'down' : 'up'));
+  }
+
    /**
    * Register the various user interface event handlers.
    */
@@ -289,51 +301,44 @@
     });
 
     indiciaFns.on('click', '#' + el.id + ' .sort', {}, function clickSort() {
-      var sortButton = this;
-      var row = $(sortButton).closest('tr');
+      var fieldName = $(this).closest('th').attr('data-field').simpleFieldName();
+      var sortDesc = $(this).hasClass('fa-sort-up');
+      showHeaderSortInfo(this, sortDesc);
       $.each(el.settings.source, function eachSource(sourceId) {
         var source = indiciaData.esSourceObjects[sourceId];
-        var field = $(sortButton).closest('th').attr('data-field');
-        var sortDesc = $(sortButton).hasClass('fa-sort-up');
         var sortFields;
-        var fieldName = field.simpleFieldName();
-        var sources;
-        var newSources = [];
-        $(row).find('.sort.fas').removeClass('fa-sort-down');
-        $(row).find('.sort.fas').removeClass('fa-sort-up');
-        $(row).find('.sort.fas').addClass('fa-sort');
-        $(sortButton).removeClass('fa-sort');
-        $(sortButton).addClass('fa-sort-' + (sortDesc ? 'down' : 'up'));
+        var aggSources;
+        var newAggSources = [];
         source.settings.sort = {};
         if (el.settings.aggregation && el.settings.aggregation === 'composite') {
           if (source.settings.originalCompositeSources) {
-            sources = $.extend({}, source.settings.originalCompositeSources)
+            aggSources = $.extend({}, source.settings.originalCompositeSources);
           } else {
-            sources = $.extend({}, indiciaFns.findValue(source.settings.aggregation, 'composite').sources);
-            source.settings.originalCompositeSources = $.extend({}, sources);
+            aggSources = $.extend({}, indiciaFns.findValue(source.settings.aggregation, 'composite').sources);
+            source.settings.originalCompositeSources = $.extend({}, aggSources);
           }
           if (indiciaData.fieldConvertorSortFields[fieldName] && $.isArray(indiciaData.fieldConvertorSortFields[fieldName])) {
             sortFields = indiciaData.fieldConvertorSortFields[fieldName];
-            $.each(sources, function() {
+            $.each(aggSources, function eachAggSource() {
               var pos = $.inArray(indiciaFns.findValue(this, 'field'), sortFields);
               if (pos === -1) {
-                newSources.push(this);
+                newAggSources.push(this);
               } else {
                 indiciaFns.findValue(this, 'terms').order = sortDesc ? 'desc' : 'asc';
-                newSources.splice(pos, 0, this);
+                newAggSources.splice(pos, 0, this);
               }
             });
           } else {
-            $.each(sources, function() {
+            $.each(aggSources, function eachAggSource() {
               if ($(this).prop(fieldName.replace(/^key\./, ''))) {
                 indiciaFns.findValue(this, 'terms').order = sortDesc ? 'desc' : 'asc';
-                newSources.splice(0, 0, this);
+                newAggSources.splice(0, 0, this);
               } else {
-                newSources.push(this);
+                newAggSources.push(this);
               }
             });
           }
-          indiciaFns.findValue(source.settings.aggregation, 'composite').sources = newSources;
+          indiciaFns.findValue(source.settings.aggregation, 'composite').sources = newAggSources;
         } else if (indiciaData.esMappings[fieldName]) {
           source.settings.sort[indiciaData.esMappings[fieldName].sort_field] = {
             order: sortDesc ? 'desc' : 'asc'
@@ -532,7 +537,7 @@
       $.each(fieldOrList, function eachFieldName() {
         dataVal = indiciaFns.getValueForField(doc, this);
         // Drop out when we find a value.
-        return dataVal === '' ? true : false;
+        return dataVal === '';
       });
       updatedText = updatedText.replace(fieldToken, dataVal);
     });
@@ -846,7 +851,6 @@
     init: function init(options) {
       var el = this;
       var table;
-      var tbody;
       var totalCols;
       var showingAggregation;
       var footableSort;
@@ -1028,7 +1032,7 @@
      * @param int count
      *   Optional new total row count.
      */
-    updatePagerForCountAgg(pageSize, count) {
+    updatePagerForCountAgg: function updatePagerForCountAgg(pageSize, count) {
       var pageInfo = this.settings.compositeInfo;
       // Optionally update the total count.
       if (count) {
