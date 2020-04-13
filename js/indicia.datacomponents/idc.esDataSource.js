@@ -27,6 +27,115 @@ var IdcEsDataSource;
   var $ = jQuery;
 
   /**
+   * Finds the sort field and direction from the source config.
+   *
+   * For autoAggregationTable mode. Sets default to the unique field if not
+   * set.
+   */
+  function getSortInfo(source) {
+    var sortField;
+    var sortDir;
+    var settings = source.settings;
+    // Default source config to sort by the unique field unless otherwise specified.
+    if (!settings.sort || settings.sort.length === 0) {
+      settings.sort = {};
+      settings.sort[settings.autoAggregationTable.unique_field] = {
+        order: 'asc'
+      };
+    }
+    // Find the sort field and direction from the source config.
+    $.each(settings.sort, function eachSortField(field) {
+      sortField = field;
+      sortDir = this.order;
+      // Only support a single sort field.
+      return false;
+    });
+    return {
+      field: sortField,
+      dir: sortDir
+    };
+  }
+
+  /**
+   * Auto-build the aggregation if this mode enabled.
+   */
+  function buildAutoAggregationTable(source) {
+    var subAggs;
+    var sort;
+    var orderBy;
+    var settings = source.settings;
+    if (settings.autoAggregationTable) {
+      settings.size = 0;
+      sort = getSortInfo(source);
+      // List of sub-aggregations within the outer terms agg for the unique field must
+      // always contain a top_hits agg to retrieve field values.
+      subAggs = {
+        fieldlist: {
+          top_hits: {
+            size: 1,
+            _source: {
+              includes: source.settings.autoAggregationTable.fields
+            }
+          }
+        }
+      };
+      // Add the additional aggs for column data output values.
+      $.each(settings.autoAggregationTable.aggs, function eachAgg(name) {
+        subAggs[name] = this;
+        if (name === sort.field && settings.autoAggregationTable.orderby_aggs &&
+            settings.autoAggregationTable.orderby_aggs[sort.field]) {
+          // Aggregation has a different aggregation to simplify the sort
+          // e.g. where agg is costly.
+          sort.field = 'orderby_' + name;
+          subAggs[sort.field] = settings.autoAggregationTable.orderby_aggs[name];
+        }
+      });
+      // Include the unique field in the list of fields request even if not specified.
+      if ($.inArray(settings.autoAggregationTable.unique_field, settings.autoAggregationTable.fields) === -1) {
+        settings.autoAggregationTable.fields.push(settings.autoAggregationTable.unique_field);
+      }
+      if ($.inArray(sort.field, settings.autoAggregationTable.fields) > -1) {
+        // Sorting by a standard field.
+        if (sort.field === settings.autoAggregationTable.unique_field) {
+          // Using the outer agg to sort, so simple use of _key.
+          orderBy = '_key';
+        } else {
+          // Using another field to sort, so add an aggregation to get a single
+          // bucket value which we can sort on.
+          subAggs.sortfield = {
+            max: {
+              field: sort.field
+            }
+          };
+          orderBy = 'sortfield';
+        }
+      } else {
+        // Sorting by a named aggregation.
+        orderBy = sort.field;
+      }
+      // Create the final aggregation object for the request.
+      settings.aggregation = {
+        idfield: {
+          terms: {
+            size: settings.autoAggregationTable.size,
+            field: settings.autoAggregationTable.unique_field,
+            order: {
+              // Will be filled in.
+            }
+          },
+          aggs: subAggs
+        },
+        count: {
+          cardinality: {
+            field: settings.autoAggregationTable.unique_field
+          }
+        }
+      };
+      settings.aggregation.idfield.terms.order[orderBy] = sort.dir;
+    }
+  }
+
+  /**
    * Constructor for an IdcEsDataSource.
    *
    * @param object settings
@@ -126,9 +235,11 @@ var IdcEsDataSource;
    */
   IdcEsDataSource.prototype.doPopulation = function doPopulation(force, onlyForControl) {
     var source = this;
-    var request = indiciaFns.getFormQueryData(source);
+    var request;
     var url;
     var countRequest;
+    buildAutoAggregationTable(source);
+    request = indiciaFns.getFormQueryData(source);
     // Pagination support for composite aggregations.
     if (source.settings.after_key) {
       indiciaFns.findValue(request, 'composite').after = source.settings.after_key;

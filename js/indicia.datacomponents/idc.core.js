@@ -695,6 +695,23 @@
   };
 
   /**
+   * Walk down a path in a document to find a value.
+   */
+  indiciaFns.iterateDownPath = function iterateDownPath(doc, path) {
+    var pathArray = path.split('.');
+    var i;
+    var thisPath = doc;
+    for (i = 0; i < pathArray.length; i++) {
+      if (typeof thisPath[pathArray[i]] === 'undefined') {
+        thisPath = '';
+        break;
+      }
+      thisPath = thisPath[pathArray[i]];
+    }
+    return thisPath;
+  };
+
+  /**
    * Retrieves a field value from the document.
    *
    * @param object doc
@@ -703,34 +720,34 @@
    *   Name of the field. Either a path to the field in the document (such as
    *   taxon.accepted_name) or a special field name surrounded by # characters,
    *   e.g. #locality.
+   * @param object colDef
+   *   Definition of the column.
    */
-  indiciaFns.getValueForField = function getValueForField(doc, field) {
-    var i;
-    var valuePath = doc;
-    var fieldPath = field.split('.');
+  indiciaFns.getValueForField = function getValueForField(doc, field, colDef) {
     var convertor;
+    // Find location of fields nested in ES response.
+    var valuePath = colDef.path ? indiciaFns.iterateDownPath(doc, colDef.path) : doc;
     // Special field handlers are in the list of convertors.
     if (field.match(/^#/)) {
       // Find the convertor definition between the hashes. If there are
       // colons, stuff that follows the first colon are parameters.
       convertor = field.replace(/^#(.+)#$/, '$1').split(':');
       if (typeof indiciaFns.fieldConvertors[convertor[0]] !== 'undefined') {
-        return indiciaFns.fieldConvertors[convertor[0]](doc, convertor.slice(1));
+        return indiciaFns.fieldConvertors[convertor[0]](valuePath, convertor.slice(1));
       }
     }
     // If not a special field, work down the document hierarchy according to
     // the field's path components.
-    for (i = 0; i < fieldPath.length; i++) {
-      if (typeof valuePath[fieldPath[i]] === 'undefined') {
-        valuePath = '';
-        break;
-      }
-      valuePath = valuePath[fieldPath[i]];
-    }
+    valuePath = indiciaFns.iterateDownPath(valuePath, field);
     // Reformat date fields to user-friendly format.
     // @todo Localisation for non-UK dates.
     if (field.match(/_on$/)) {
       valuePath = valuePath.replace(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}).*/, '$3/$2/$1 $4:$5');
+    }
+    // Path might be to an aggregation response object, in which case we just
+    // want the value.
+    if (typeof valuePath === 'object' && colDef.agg) {
+      return valuePath.value;
     }
     return valuePath;
   };
@@ -862,14 +879,15 @@
     var bounds;
     var agg = {};
     var filterRows = [];
-    if (source.settings.size) {
+    if (typeof source.settings.size !== 'undefined') {
       data.size = source.settings.size;
     }
     if (!doingCount) {
       if (source.settings.from) {
         data.from = source.settings.from;
       }
-      if (source.settings.sort) {
+      // Sort order of returned documents - only useful for non-aggregated data.
+      if (source.settings.sort && !source.settings.aggregation) {
         data.sort = source.settings.sort;
       }
     }

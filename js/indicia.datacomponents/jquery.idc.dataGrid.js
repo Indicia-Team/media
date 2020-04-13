@@ -138,7 +138,8 @@
       var dataType = colDef.dataType || colDef['data-type'];
       sortableField = sortableField
         || indiciaData.fieldConvertorSortFields[this.simpleFieldName()]
-        || (el.settings.aggregation && el.settings.aggregation === 'composite');
+        || (el.settings.aggregation && el.settings.aggregation === 'composite')
+        || (el.settings.aggregation && el.settings.aggregation === 'autoAggregationTable');
       if (el.settings.sortable !== false && sortableField) {
         heading += '<span class="sort fas fa-sort"></span>';
       }
@@ -306,6 +307,21 @@
   }
 
   /**
+   * Apply changes to a source when sorting for an auto aggregation table.
+   */
+  function handleSortForAutoAggregationTable(source, fieldName, sortDesc) {
+    var sortFields;
+    if (indiciaData.fieldConvertorSortFields[fieldName] && $.isArray(indiciaData.fieldConvertorSortFields[fieldName])) {
+      sortFields = indiciaData.fieldConvertorSortFields[fieldName];
+    } else {
+      sortFields = [fieldName];
+    }
+    source.settings.sort[sortFields[0]] = {
+      order: sortDesc ? 'desc' : 'asc'
+    };
+  }
+
+  /**
    * Apply changes to a source when sorting on a special field column.
    */
   function handleSortForSpecialField(source, fieldName, sortDesc) {
@@ -377,6 +393,8 @@
         source.settings.sort = {};
         if (el.settings.aggregation && el.settings.aggregation === 'composite') {
           handleSortForCompositeAgg(source, fieldName, sortDesc);
+        } else if (el.settings.aggregation && el.settings.aggregation === 'autoAggregationTable') {
+          handleSortForAutoAggregationTable(source, fieldName, sortDesc);
         } else if (indiciaData.esMappings[fieldName]) {
           source.settings.sort[indiciaData.esMappings[fieldName].sort_field] = {
             order: sortDesc ? 'desc' : 'asc'
@@ -701,25 +719,41 @@
    */
   function drawTableFooter(el, response, data, afterKey) {
     var fromRowIndex = typeof data.from === 'undefined' ? 1 : (data.from + 1);
-    var ofLabel;
+    var ofLabel = '';
+    var toLabel;
+    var total;
+    var pageSize = $(el).find('tbody tr').length;
     // Set up the count info in the footer.
-    if (!el.settings.aggregation) {
-      if (response.hits.hits.length > 0) {
-        ofLabel = response.hits.total.relation === 'gte' ? 'at least ' : '';
-        $(el).find('tfoot .showing').html('Showing ' + fromRowIndex +
-          ' to ' + (fromRowIndex + (response.hits.hits.length - 1)) + ' of ' + ofLabel + response.hits.total.value);
-      } else {
-        $(el).find('tfoot .showing').html('No hits');
-      }
-      // Enable or disable the paging buttons.
-      $(el).find('.pager-row .prev').prop('disabled', fromRowIndex <= 1);
-      $(el).find('.pager-row .next').prop('disabled', fromRowIndex + response.hits.hits.length >= response.hits.total.value);
-    } else if (el.settings.aggregation === 'composite') {
+    if (el.settings.aggregation && el.settings.aggregation === 'composite') {
+      // Composite aggs use after_key for simple paging.
       if (afterKey) {
         el.settings.compositeInfo.pageAfterKeys[el.settings.compositeInfo.page + 1] = afterKey;
       }
       $(el).find('.pager-row .next').prop('disabled', !afterKey);
       $(el).find('.pager-row .prev').prop('disabled', el.settings.compositeInfo.page === 0);
+    } else {
+      if (el.settings.aggregation && el.settings.aggregation === 'autoAggregationTable') {
+        // The count agg is always added in this mode.
+        total = response.aggregations.count.value;
+        // Can't page through a standard aggregation.
+        $(el).find('.pager-row .buttons').hide();
+      } else {
+        total = response.hits.total.value;
+        // Enable or disable the paging buttons.
+        $(el).find('.pager-row .prev').prop('disabled', fromRowIndex <= 1);
+        $(el).find('.pager-row .next').prop('disabled', fromRowIndex + response.hits.hits.length >= response.hits.total.value);
+      }
+      // Output text describing loaded hits.
+      if (pageSize > 0) {
+        if (fromRowIndex === 1 && pageSize === total) {
+          $(el).find('tfoot .showing').html('Showing all ' + total + ' hits');
+        } else {
+          toLabel = fromRowIndex === 1 ? 'first ' : fromRowIndex + ' to ';
+          $(el).find('tfoot .showing').html('Showing ' + toLabel + (fromRowIndex + (pageSize - 1)) + ' of ' + ofLabel + total);
+        }
+      } else {
+        $(el).find('tfoot .showing').html('No hits');
+      }
     }
   }
 
@@ -755,7 +789,7 @@
       var date;
       // Extra space in last col to account for tool icons.
       var extraSpace = idx === el.settings.columns.length - 1 && !el.settings.actions.length ? 2 : 0;
-      value = indiciaFns.getValueForField(doc, this);
+      value = indiciaFns.getValueForField(doc, this, colDef);
       if (colDef.rangeField) {
         rangeValue = indiciaFns.getValueForField(doc, colDef.rangeField);
         if (value !== rangeValue) {
