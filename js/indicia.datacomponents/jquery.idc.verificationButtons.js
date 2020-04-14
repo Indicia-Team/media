@@ -186,17 +186,15 @@
         if (typeof response.error !== 'undefined' || (response.code && response.code !== 200)) {
           alert(indiciaData.lang.verificationButtons.elasticsearchUpdateError);
         } else {
-          // Tolerate ES not updating a small percentage immediately. They will
-          // be picked up by Logstash.
-          if (response.updated < occurrenceIds.length * 0.8) {
+          // Check updated count is as expected.
+          if (response.updated < occurrenceIds.length) {
             alert(indiciaData.lang.verificationButtons.elasticsearchUpdateError);
-          } else {
-            $('body > .loading-spinner').remove();
-            if (occurrenceIds.length > 1) {
-              indiciaFns.populateDataSources();
-            }
           }
-          if (occurrenceIds.length === 1) {
+          // Refresh and cleanup.
+          $('body > .loading-spinner').remove();
+          if (occurrenceIds.length > 1) {
+            indiciaFns.populateDataSources();
+          } else if (occurrenceIds.length === 1) {
             $(dataGrid).idcDataGrid('hideRowAndMoveNext');
           }
           $(dataGrid).find('.multiselect-all').prop('checked', false);
