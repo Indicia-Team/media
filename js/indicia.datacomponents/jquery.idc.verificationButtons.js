@@ -74,6 +74,22 @@
     var indiciaPostUrl;
     var requests = 0;
     var currentDoc;
+    if (email && indiciaData.workflowEnabled) {
+      // This will only be the case when querying a single record. If the
+      // species requires fully logged comms, add the email body to the
+      // comment.
+      currentDoc = JSON.parse($(dataGrid).find('tr.selected').attr('data-doc-source'));
+      if (indiciaData.workflowTaxonMeaningIDsLogAllComms.indexOf(currentDoc.taxon.taxon_meaning_id) !== -1) {
+        data['occurrence_comment:correspondence_data'] = JSON.stringify({
+          email: [{
+            from: indiciaData.siteEmail,
+            to: email.to,
+            subject: email.subject,
+            body: email.body
+          }]
+        });
+      }
+    }
     // Since this might be slow.
     $('body').append('<div class="loading-spinner"><div>Loading...</div></div>');
     if (status.status) {
@@ -96,25 +112,7 @@
         });
       } else {
         indiciaPostUrl = indiciaData.ajaxFormPostSingleVerify;
-        $.extend(data, {
-          'occurrence:ids': occurrenceIds.join(',')
-        });
-        if (email && indiciaData.workflowEnabled) {
-          // This will only be the case when querying a single record. If the
-          // species requires fully logged comms, add the email body to the
-          // comment.
-          currentDoc = JSON.parse($(dataGrid).find('tr.selected').attr('data-doc-source'));
-          if (indiciaData.workflowTaxonMeaningIDsLogAllComms.indexOf(currentDoc.taxon.taxon_meaning_id) !== -1) {
-            data['occurrence_comment:correspondence_data'] = JSON.stringify({
-              email: [{
-                from: indiciaData.siteEmail,
-                to: email.to,
-                subject: email.subject,
-                body: email.body
-              }]
-            });
-          }
-        }
+        data['occurrence:ids'] = occurrenceIds.join(',');
       }
       docUpdates.identification.verification_status = status.status[0];
       if (status.status.length > 1) {
