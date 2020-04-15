@@ -721,12 +721,12 @@
    *   taxon.accepted_name) or a special field name surrounded by # characters,
    *   e.g. #locality.
    * @param object colDef
-   *   Definition of the column.
+   *   Optional definition of the column.
    */
   indiciaFns.getValueForField = function getValueForField(doc, field, colDef) {
     var convertor;
     // Find location of fields nested in ES response.
-    var valuePath = colDef.path ? indiciaFns.iterateDownPath(doc, colDef.path) : doc;
+    var valuePath = (colDef && colDef.path) ? indiciaFns.iterateDownPath(doc, colDef.path) : doc;
     // Special field handlers are in the list of convertors.
     if (field.match(/^#/)) {
       // Find the convertor definition between the hashes. If there are
@@ -746,7 +746,7 @@
     }
     // Path might be to an aggregation response object, in which case we just
     // want the value.
-    if (typeof valuePath === 'object' && colDef.agg) {
+    if (typeof valuePath === 'object' && colDef && colDef.agg) {
       return valuePath.value;
     }
     return valuePath;
