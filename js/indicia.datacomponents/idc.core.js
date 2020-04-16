@@ -395,7 +395,7 @@
         query: doc.identification.query ? doc.identification.query : '',
         sensitive: doc.metadata.sensitive,
         confidential: doc.metadata.confidential,
-        zero_abundance: doc.occurrence.zero_abundance,
+        zero_abundance: doc.occurrence.zero_abundance
       });
     },
 
@@ -550,7 +550,7 @@
     },
 
     /**
-     * Builds a nested query for association columns.
+     * Builds a query for attribute values.
      */
     attr_value: function attr_value(text, params) {
       var filter1 = {};
@@ -848,7 +848,7 @@
       }
     }
     val = $(input).attr(dataName);
-    return val ? val : null;
+    return val || null;
   };
 
   /**
