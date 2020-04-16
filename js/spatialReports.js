@@ -63,18 +63,11 @@
     indiciaData.bufferLayer.removeAllFeatures();
     // re-add each object from the edit layer using the spatial buffering service
     $.each(indiciaData.mapdiv.map.editLayer.features, function eachFeature(idx, feature) {
-      indiciaFns.bufferFeature(indiciaData.mapdiv, feature, $('#geom_buffer').val(0));
+      indiciaFns.bufferQueryParamFeature(indiciaData.mapdiv, feature, $('#geom_buffer').val(0));
     });
   }
 
-  indiciaFns.bufferFeature = function bufferFeature(feature, bufferSize, segmentsInQuarterCircle, projection) {
-    var geom;
-    var i;
-    var j;
-    var objFpt;
-    var segments = typeof segmentsInQuarterCircle === 'undefined' ? 8 : segmentsInQuarterCircle;
-    var prj = typeof projection === 'undefined' ? 3857 : projection;
-
+  indiciaFns.bufferQueryParamFeature = function bufferQueryParamFeature(feature, bufferSize, segmentsInQuarterCircle, projection) {
     function storeBuffer(buffer) {
       feature.buffer = buffer;
       indiciaData.bufferLayer.addFeatures([buffer]);
@@ -90,41 +83,18 @@
         storeBuffer(new OpenLayers.Feature.Vector(feature.geometry));
       } else {
         indiciaData.buffering = true;
-        geom = feature.geometry.clone();
-        // remove unnecessary precision, as we can't sent much data via GET
-        if (geom.CLASS_NAME === 'OpenLayers.Geometry.LineString') {
-          for (j = 0; j < geom.components.length; j++) {
-            geom.components[j].x = Math.round(geom.components[j].x);
-            geom.components[j].y = Math.round(geom.components[j].y);
-          }
-        } else if (geom.CLASS_NAME === 'Polygon') {
-          objFpt = geom.components[0].components;
-          for (i = 0; i < objFpt.length; i++) {
-            objFpt[i].x = Math.round(objFpt[i].x);
-            objFpt[i].y = Math.round(objFpt[i].y);
-          }
-          objFpt[i - 1].x = objFpt[0].x;
-        }
-        $.ajax({
-          url: indiciaData.mapdiv.settings.indiciaSvc + 'index.php/services/spatial/buffer?callback=?',
-          data: {
-            wkt: geom.toString(),
-            buffer: bufferSize,
-            segmentsInQuarterCircle: segments,
-            projection: prj
-          },
-          success: function success(buffered) {
+        indiciaFns.bufferFeature(feature, bufferSize, segmentsInQuarterCircle, projection,
+          function success(buffered) {
             var buffer = new OpenLayers.Feature.Vector(OpenLayers.Geometry.fromWKT(buffered.response));
             storeBuffer(buffer);
-          },
-          dataType: 'jsonp'
-        });
+          }
+        );
       }
     }
   };
 
   indiciaFns.enableBuffering = function enableBuffering() {
-    if (indiciaData.bufferingEnabled) {
+    if (!mapInitialisationHooks || indiciaData.bufferingEnabled) {
       return;
     }
     indiciaData.bufferingEnabled = true;
@@ -149,7 +119,7 @@
       div.map.editLayer.events.register('featureadded', div.map.editLayer, function featureadded(evt) {
         // don't buffer special polygons
         if (typeof evt.feature.tag === 'undefined') {
-          indiciaFns.bufferFeature(div, evt.feature);
+          indiciaFns.bufferQueryParamFeature(div, evt.feature);
         }
       });
       div.map.editLayer.events.register('featuresremoved', div.map.editLayer, function featuresremoved(evt) {

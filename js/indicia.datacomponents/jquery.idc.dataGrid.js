@@ -137,7 +137,9 @@
       var hideBreakpoints = colDef.hideBreakpoints || colDef['hide-breakpoints'];
       var dataType = colDef.dataType || colDef['data-type'];
       sortableField = sortableField
-        || indiciaData.fieldConvertorSortFields[this.simpleFieldName()];
+        || indiciaData.fieldConvertorSortFields[this.simpleFieldName()]
+        || (el.settings.aggregation && el.settings.aggregation === 'composite')
+        || (el.settings.aggregation && el.settings.aggregation === 'autoAggregationTable');
       if (el.settings.sortable !== false && sortableField) {
         heading += '<span class="sort fas fa-sort"></span>';
       }
@@ -187,8 +189,11 @@
         } else if (indiciaData.esMappings[this].type === 'text' || indiciaData.esMappings[this].type === 'keyword') {
           title = 'Search for words in the ' + caption + ' column. Prefix with ! to exclude rows which contain words ' +
             'beginning with the text you enter. Use * at the end of words to find words starting with. Use ' +
-            '&quot;&quot; to group words into phrases and | between words to request either/or searches. Use - before ' +
-            'a word to exclude that word from the search results.';
+            '&quot;&quot; to group words into phrases and | between words to request either/or searches. Use - ' +
+            'before a word to exclude that word from the search results.';
+        } else if (indiciaData.esMappings[this].type === 'date') {
+          title = 'Search for dates in the ' + caption + ' column. Searches can be in the format yyyy, yyyy-yyyy, ' +
+            'dd/mm/yyyy or dd/mm/yyyy hh:mm.';
         } else {
           title = 'Search for a number in the ' + caption + ' column. Prefix with ! to exclude rows which match the ' +
             'number you enter or separate a range with a hyphen (e.g. 123-456).';
@@ -252,6 +257,87 @@
     }
   }
 
+  /**
+   * Assigns the classes required to show sort info icons in the header row.
+   */
+  function showHeaderSortInfo(sortButton, sortDesc) {
+    var headingRow = $(sortButton).closest('tr');
+    $(headingRow).find('.sort.fas').removeClass('fa-sort-down');
+    $(headingRow).find('.sort.fas').removeClass('fa-sort-up');
+    $(headingRow).find('.sort.fas').addClass('fa-sort');
+    $(sortButton).removeClass('fa-sort');
+    $(sortButton).addClass('fa-sort-' + (sortDesc ? 'down' : 'up'));
+  }
+
+  /**
+   * Apply changes to a source when sorting for a composite aggregation.
+   */
+  function handleSortForCompositeAgg(source, fieldName, sortDesc) {
+    var aggSources;
+    var newAggSources = [];
+    var sortFields;
+    if (source.settings.originalCompositeSources) {
+      aggSources = $.extend({}, source.settings.originalCompositeSources);
+    } else {
+      aggSources = $.extend({}, indiciaFns.findValue(source.settings.aggregation, 'composite').sources);
+      source.settings.originalCompositeSources = $.extend({}, aggSources);
+    }
+    if (indiciaData.fieldConvertorSortFields[fieldName] && $.isArray(indiciaData.fieldConvertorSortFields[fieldName])) {
+      sortFields = indiciaData.fieldConvertorSortFields[fieldName];
+      $.each(aggSources, function eachAggSource() {
+        var pos = $.inArray(indiciaFns.findValue(this, 'field'), sortFields);
+        if (pos === -1) {
+          newAggSources.push(this);
+        } else {
+          indiciaFns.findValue(this, 'terms').order = sortDesc ? 'desc' : 'asc';
+          newAggSources.splice(pos, 0, this);
+        }
+      });
+    } else {
+      $.each(aggSources, function eachAggSource() {
+        if ($(this).prop(fieldName.replace(/^key\./, ''))) {
+          indiciaFns.findValue(this, 'terms').order = sortDesc ? 'desc' : 'asc';
+          newAggSources.splice(0, 0, this);
+        } else {
+          newAggSources.push(this);
+        }
+      });
+    }
+    indiciaFns.findValue(source.settings.aggregation, 'composite').sources = newAggSources;
+  }
+
+  /**
+   * Apply changes to a source when sorting for an auto aggregation table.
+   */
+  function handleSortForAutoAggregationTable(source, fieldName, sortDesc) {
+    var sortFields;
+    if (indiciaData.fieldConvertorSortFields[fieldName] && $.isArray(indiciaData.fieldConvertorSortFields[fieldName])) {
+      sortFields = indiciaData.fieldConvertorSortFields[fieldName];
+    } else {
+      sortFields = [fieldName];
+    }
+    source.settings.sort[sortFields[0]] = {
+      order: sortDesc ? 'desc' : 'asc'
+    };
+  }
+
+  /**
+   * Apply changes to a source when sorting on a special field column.
+   */
+  function handleSortForSpecialField(source, fieldName, sortDesc) {
+    var sortFields = indiciaData.fieldConvertorSortFields[fieldName];
+    if ($.isArray(sortFields)) {
+      $.each(sortFields, function eachField() {
+        source.settings.sort[this] = {
+          order: sortDesc ? 'desc' : 'asc'
+        };
+      });
+    } else if (typeof sortFields === 'object') {
+      source.settings.sort = sortFields;
+      indiciaFns.findAndSetValue(source.settings.sort, 'order', sortDesc ? 'desc' : 'asc');
+    }
+  }
+
    /**
    * Register the various user interface event handlers.
    */
@@ -265,6 +351,11 @@
       });
     });
 
+    /**
+     * Double click grid row handler.
+     *
+     * Adds selected class and fires callbacks.
+     */
     indiciaFns.on('dblclick', '#' + el.id + ' .es-data-grid tbody tr', {}, function onDataGridRowDblClick() {
       var tr = this;
       if (!$(tr).hasClass('selected')) {
@@ -276,45 +367,40 @@
       });
     });
 
+    /**
+     * Next page click.
+     */
     $(el).find('.pager-row .next').click(function clickNext() {
       movePage(el, true);
     });
 
+    /**
+     * Previous page click.
+     */
     $(el).find('.pager-row .prev').click(function clickPrev() {
       movePage(el, false);
     });
 
+    /**
+     * Sort column headers click handler.
+     */
     indiciaFns.on('click', '#' + el.id + ' .sort', {}, function clickSort() {
-      var sortButton = this;
-      var row = $(sortButton).closest('tr');
+      var fieldName = $(this).closest('th').attr('data-field').simpleFieldName();
+      var sortDesc = $(this).hasClass('fa-sort-up');
+      showHeaderSortInfo(this, sortDesc);
       $.each(el.settings.source, function eachSource(sourceId) {
         var source = indiciaData.esSourceObjects[sourceId];
-        var field = $(sortButton).closest('th').attr('data-field');
-        var sortDesc = $(sortButton).hasClass('fa-sort-up');
-        var sortData;
-        var fieldName = field.simpleFieldName();
-        $(row).find('.sort.fas').removeClass('fa-sort-down');
-        $(row).find('.sort.fas').removeClass('fa-sort-up');
-        $(row).find('.sort.fas').addClass('fa-sort');
-        $(sortButton).removeClass('fa-sort');
-        $(sortButton).addClass('fa-sort-' + (sortDesc ? 'down' : 'up'));
         source.settings.sort = {};
-        if (indiciaData.esMappings[fieldName]) {
+        if (el.settings.aggregation && el.settings.aggregation === 'composite') {
+          handleSortForCompositeAgg(source, fieldName, sortDesc);
+        } else if (el.settings.aggregation && el.settings.aggregation === 'autoAggregationTable') {
+          handleSortForAutoAggregationTable(source, fieldName, sortDesc);
+        } else if (indiciaData.esMappings[fieldName]) {
           source.settings.sort[indiciaData.esMappings[fieldName].sort_field] = {
             order: sortDesc ? 'desc' : 'asc'
           };
         } else if (indiciaData.fieldConvertorSortFields[fieldName]) {
-          sortData = indiciaData.fieldConvertorSortFields[fieldName];
-          if ($.isArray(sortData)) {
-            $.each(sortData, function eachField() {
-              source.settings.sort[this] = {
-                order: sortDesc ? 'desc' : 'asc'
-              };
-            });
-          } else if (typeof sortData === 'object') {
-            source.settings.sort = sortData;
-            indiciaFns.findAndSetValue(source.settings.sort, 'order', sortDesc ? 'desc' : 'asc');
-          }
+          handleSortForSpecialField(source, fieldName, sortDesc);
         }
         source.populate();
       });
@@ -497,7 +583,7 @@
       $.each(fieldOrList, function eachFieldName() {
         dataVal = indiciaFns.getValueForField(doc, this);
         // Drop out when we find a value.
-        return dataVal === '' ? true : false;
+        return dataVal === '';
       });
       updatedText = updatedText.replace(fieldToken, dataVal);
     });
@@ -530,7 +616,9 @@
           item = this.title;
         }
         if (this.path) {
-          link = this.path.replace('{rootFolder}', indiciaData.rootFolder);
+          link = this.path
+            .replace(/{rootFolder}/g, indiciaData.rootFolder)
+            .replace(/\{language\}/g, indiciaData.currentLanguage);
           if (this.urlParams) {
             link += link.indexOf('?') === -1 ? '?' : '&';
             $.each(this.urlParams, function eachParam(name, value) {
@@ -631,25 +719,41 @@
    */
   function drawTableFooter(el, response, data, afterKey) {
     var fromRowIndex = typeof data.from === 'undefined' ? 1 : (data.from + 1);
-    var ofLabel;
+    var ofLabel = '';
+    var toLabel;
+    var total;
+    var pageSize = $(el).find('tbody tr').length;
     // Set up the count info in the footer.
-    if (!el.settings.aggregation) {
-      if (response.hits.hits.length > 0) {
-        ofLabel = response.hits.total.relation === 'gte' ? 'at least ' : '';
-        $(el).find('tfoot .showing').html('Showing ' + fromRowIndex +
-          ' to ' + (fromRowIndex + (response.hits.hits.length - 1)) + ' of ' + ofLabel + response.hits.total.value);
-      } else {
-        $(el).find('tfoot .showing').html('No hits');
-      }
-      // Enable or disable the paging buttons.
-      $(el).find('.pager-row .prev').prop('disabled', fromRowIndex <= 1);
-      $(el).find('.pager-row .next').prop('disabled', fromRowIndex + response.hits.hits.length >= response.hits.total.value);
-    } else if (el.settings.aggregation === 'composite') {
+    if (el.settings.aggregation && el.settings.aggregation === 'composite') {
+      // Composite aggs use after_key for simple paging.
       if (afterKey) {
         el.settings.compositeInfo.pageAfterKeys[el.settings.compositeInfo.page + 1] = afterKey;
       }
       $(el).find('.pager-row .next').prop('disabled', !afterKey);
       $(el).find('.pager-row .prev').prop('disabled', el.settings.compositeInfo.page === 0);
+    } else {
+      if (el.settings.aggregation && el.settings.aggregation === 'autoAggregationTable') {
+        // The count agg is always added in this mode.
+        total = response.aggregations.count.value;
+        // Can't page through a standard aggregation.
+        $(el).find('.pager-row .buttons').hide();
+      } else {
+        total = response.hits.total.value;
+        // Enable or disable the paging buttons.
+        $(el).find('.pager-row .prev').prop('disabled', fromRowIndex <= 1);
+        $(el).find('.pager-row .next').prop('disabled', fromRowIndex + response.hits.hits.length >= response.hits.total.value);
+      }
+      // Output text describing loaded hits.
+      if (pageSize > 0) {
+        if (fromRowIndex === 1 && pageSize === total) {
+          $(el).find('tfoot .showing').html('Showing all ' + total + ' hits');
+        } else {
+          toLabel = fromRowIndex === 1 ? 'first ' : fromRowIndex + ' to ';
+          $(el).find('tfoot .showing').html('Showing ' + toLabel + (fromRowIndex + (pageSize - 1)) + ' of ' + ofLabel + total);
+        }
+      } else {
+        $(el).find('tfoot .showing').html('No hits');
+      }
     }
   }
 
@@ -685,7 +789,7 @@
       var date;
       // Extra space in last col to account for tool icons.
       var extraSpace = idx === el.settings.columns.length - 1 && !el.settings.actions.length ? 2 : 0;
-      value = indiciaFns.getValueForField(doc, this);
+      value = indiciaFns.getValueForField(doc, this, colDef);
       if (colDef.rangeField) {
         rangeValue = indiciaFns.getValueForField(doc, colDef.rangeField);
         if (value !== rangeValue) {
@@ -809,7 +913,6 @@
     init: function init(options) {
       var el = this;
       var table;
-      var tbody;
       var totalCols;
       var showingAggregation;
       var footableSort;
@@ -946,18 +1049,29 @@
         var hit = this;
         var cells = [];
         var row;
-        var selectedClass;
+        var classes = ['data-row'];
         var doc = hit._source ? hit._source : hit;
-        var dataRowId;
+        var dataRowIdAttr;
         cells = getRowBehaviourCells(el);
         cells = cells.concat(getDataCells(el, doc, maxCharsPerCol));
         if (el.settings.actions.length) {
           cells.push('<td class="col-actions">' + getActionsForRow(el.settings.actions, doc) + '</td>');
         }
-        selectedClass = (el.settings.selectIdsOnNextLoad && $.inArray(hit._id, el.settings.selectIdsOnNextLoad) !== -1)
-          ? ' selected' : '';
-        dataRowId = hit._id ? ' data-row-id="' + hit._id + '"' : '';
-        row = $('<tr class="data-row' + selectedClass + '"' + dataRowId + '>'
+        if (el.settings.selectIdsOnNextLoad && $.inArray(hit._id, el.settings.selectIdsOnNextLoad) !== -1) {
+          classes.push('selected');
+        }
+        // Automatically add class for zero abundance data so it can be struck
+        // through.
+        if (doc.occurrence && doc.occurrence.zero_abundance === 'true') {
+          classes.push('zero-abundance');
+        }
+        if (el.settings.rowClasses) {
+          $.each(el.settings.rowClasses, function eachClass() {
+            classes.push(applyFieldReplacements(doc, this));
+          });
+        }
+        dataRowIdAttr = hit._id ? ' data-row-id="' + hit._id + '"' : '';
+        row = $('<tr class="' + classes.join(' ') + '"' + dataRowIdAttr + '>'
            + cells.join('') +
            '</tr>').appendTo($(el).find('tbody'));
         $(row).attr('data-doc-source', JSON.stringify(doc));
@@ -966,10 +1080,29 @@
       if (el.settings.responsive) {
         $(el).find('table').trigger('footable_redraw');
       }
-      el.settings.totalRowCount = el.settings.aggregation ? null : response.hits.total.value;
+      if (!el.settings.aggregation) {
+        el.settings.totalRowCount = response.hits.total.value;
+      }
       drawTableFooter(el, response, data, afterKey);
       fireAfterPopulationCallbacks(el);
       setColWidths(el, maxCharsPerCol);
+    },
+
+    /**
+     * Special handling for pager information when using countAggregation.
+     *
+     * @param int count
+     *   Optional new total row count.
+     */
+    updatePagerForCountAgg: function updatePagerForCountAgg(pageSize, count) {
+      var pageInfo = this.settings.compositeInfo;
+      // Optionally update the total count.
+      if (count) {
+        this.totalRowCount = count;
+      }
+      $(this).find('tfoot .showing').html('Showing ' + (pageInfo.page * pageSize + 1) +
+          ' to ' + Math.min(this.totalRowCount, (pageInfo.page + 1) * pageSize) +
+          ' of ' + this.totalRowCount);
     },
 
     /**

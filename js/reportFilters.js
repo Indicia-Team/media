@@ -832,7 +832,7 @@ jQuery(document).ready(function ($) {
   }
   // Event handler for a draw tool boundary being added which clears the other controls on the map pane.
   function addedFeature() {
-    $('#controls-filter_where').find(':input').not('.locked-value,#imp-sref-system,:checkbox,[type=button],[name="location_list\[\]"]').val('');
+    $('#controls-filter_where').find('#site-type,#location_list\\:search\\:name,#location_name,#imp-sref').val('');
     $('#controls-filter_where').find(':checkbox').attr('checked', false);
     // If a selected site but switching to freehand, we need to clear the site boundary.
     if (siteOrGridRefSelected()) {
@@ -1382,6 +1382,13 @@ jQuery(document).ready(function ($) {
           $(indiciaData.mapdiv).css('width', '100%');
           $(indiciaData.mapdiv).css('height', '100%');
           $('#filter-map-container').append(element);
+          if ($('#click-buffer').length > 0) {
+            // Show tolerance control only if any draw control enabled.
+            $('#click-buffer').hide();
+            if ($('.olControlDrawFeaturePolygonItemActive,.olControlDrawFeaturePathItemActive,.olControlDrawFeaturePointItemActive').length) {
+              $('#click-buffer').show();
+            }
+          }
           indiciaData.mapdiv.map.updateSize();
           indiciaData.mapdiv.settings.drawObjectType = 'queryPolygon';
         } else {
@@ -1406,6 +1413,14 @@ jQuery(document).ready(function ($) {
         $(indiciaData.mapdiv).css('width', indiciaData.origMapSize.width);
         $(indiciaData.mapdiv).css('height', indiciaData.origMapSize.height);
         $(indiciaData.origMapParent).append(element);
+        if ($('#click-buffer').length > 0) {
+          $(indiciaData.origMapParent).append($('#click-buffer'));
+          // Show tolerance control only if select feataure control enabled.
+          $('#click-buffer').hide();
+          if (!$('.olControlSelectFeatureItemActive').length) {
+            $('#click-buffer').show();
+          }
+        }
         indiciaData.mapdiv.map.setCenter(indiciaData.mapOrigCentre, indiciaData.mapOrigZoom);
         indiciaData.mapdiv.map.updateSize();
         indiciaData.mapdiv.settings.drawObjectType = 'boundary';

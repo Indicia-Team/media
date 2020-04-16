@@ -106,15 +106,19 @@
   /**
    * Add a feature to the map (marker, circle etc).
    *
+   * @param string geom
+   *   Well Known Text for the geometry.
    * @param string filterField
    *   Optional field for filter to apply if this feature selected.
    * @param string filterValue
    *   Optional value for filter to apply if this feature selected.
    */
-  function addFeature(el, sourceId, location, metric, filterField, filterValue) {
+  function addFeature(el, sourceId, location, geom, metric, filterField, filterValue) {
     var layerIds = getLayerIdsForSource(el, sourceId);
     var circle;
     var config;
+    var wkt;
+    var obj;
     $.each(layerIds, function eachLayer() {
       var layerConfig = el.settings.layerConfig[this];
       config = {
@@ -125,7 +129,7 @@
       if (typeof layerConfig.style !== 'undefined') {
         $.extend(config.options, layerConfig.style);
       }
-      if (config.type === 'circle' || config.type === 'square') {
+      if (config.type === 'circle' || config.type === 'square' || config.type === 'geom') {
         config.options = $.extend({ radius: 'metric', fillOpacity: 0.5 }, config.options);
         indiciaFns.findAndSetValue(config.options, 'size', $(el).idcLeafletMap('getAutoSquareSize'), 'autoGridSquareSize');
         // Apply metric to any options that are supposed to use it.
@@ -151,6 +155,10 @@
         config.options.filterField = filterField;
         config.options.filterValue = filterValue;
       }
+      if (config.type === 'geom' && geom.indexOf('POINT') === 0) {
+        config.type = 'circle';
+        config.options.radius = 5;
+      }
       switch (config.type) {
         // Circle markers on layer.
         case 'circle':
@@ -166,6 +174,13 @@
           circle = L.circle(location, config.options).addTo(el.map);
           el.outputLayers[this].addLayer(L.rectangle(circle.getBounds(), config.options));
           circle.removeFrom(el.map);
+          break;
+        case 'geom':
+
+          wkt = new Wkt.Wkt();
+          wkt.read(geom);
+          obj = wkt.toObject(config.options);
+          obj.addTo(el.outputLayers[this]);
           break;
         // Default layer type is markers.
         default:
@@ -591,7 +606,8 @@
       // Are there document hits to map?
       $.each(response.hits.hits, function eachHit() {
         var latlon = this._source.location.point.split(',');
-        addFeature(el, sourceSettings.id, latlon, this._source.location.coordinate_uncertainty_in_meters, '_id', this._id);
+        addFeature(el, sourceSettings.id, latlon, this._source.location.geom,
+          this._source.location.coordinate_uncertainty_in_meters, '_id', this._id);
       });
       // Are there aggregations to map?
       if (typeof response.aggregations !== 'undefined') {

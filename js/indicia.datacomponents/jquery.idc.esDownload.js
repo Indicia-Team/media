@@ -120,7 +120,8 @@
     var minutes;
     var data = {};
     var description = '';
-    var query = '&state=nextPage&uniq_id=' + lastResponse.uniq_id;
+    var sep = indiciaData.esProxyAjaxUrl.match(/\?/) ? '&' : '?';
+    var query = sep + 'state=nextPage&uniq_id=' + lastResponse.uniq_id;
     if (lastResponse.scroll_id) {
       // Scrolls remember the search query so only need the scroll ID.
       query += '&scroll_id=' + lastResponse.scroll_id;
@@ -177,7 +178,8 @@
     $(el).find('.do-download').click(function doDownload() {
       var data;
       var source = indiciaData.esSourceObjects[el.settings.sourceId];
-      var query = '&state=initial';
+      var sep = indiciaData.esProxyAjaxUrl.match(/\?/) ? '&' : '?';
+      var query = sep + 'state=initial';
       $(el).find('.progress-circle-container').removeClass('download-done');
       $(el).find('.progress-circle-container').show();
       done = false;

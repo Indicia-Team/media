@@ -445,6 +445,45 @@ if (typeof window.indiciaData === 'undefined') {
     }
   };
 
+  /**
+   * Buffers a map feature by a supplied amount.
+   */
+  indiciaFns.bufferFeature = function bufferFeature(feature, bufferSize, segmentsInQuarterCircle, projection, callback) {
+    var geom;
+    var i;
+    var j;
+    var objFpt;
+    var segments = typeof segmentsInQuarterCircle === 'undefined' ? 8 : segmentsInQuarterCircle;
+    var prj = typeof projection === 'undefined' ? 3857 : projection;
+
+    geom = feature.geometry.clone();
+    // remove unnecessary precision, as we can't sent much data via GET
+    if (geom.CLASS_NAME === 'OpenLayers.Geometry.LineString') {
+      for (j = 0; j < geom.components.length; j++) {
+        geom.components[j].x = Math.round(geom.components[j].x);
+        geom.components[j].y = Math.round(geom.components[j].y);
+      }
+    } else if (geom.CLASS_NAME === 'Polygon') {
+      objFpt = geom.components[0].components;
+      for (i = 0; i < objFpt.length; i++) {
+        objFpt[i].x = Math.round(objFpt[i].x);
+        objFpt[i].y = Math.round(objFpt[i].y);
+      }
+      objFpt[i - 1].x = objFpt[0].x;
+    }
+    $.ajax({
+      url: indiciaData.mapdiv.settings.indiciaSvc + 'index.php/services/spatial/buffer?callback=?',
+      data: {
+        wkt: geom.toString(),
+        buffer: bufferSize,
+        segmentsInQuarterCircle: segments,
+        projection: prj
+      },
+      success: callback,
+      dataType: 'jsonp'
+    });
+  }
+
   indiciaFns.afterFancyboxLoad = function(upcoming, previous) {
     var info = $(upcoming.element).parent().find('.image-info');
     var fancybox = $('.fancybox-outer');
