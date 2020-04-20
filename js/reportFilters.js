@@ -1189,7 +1189,6 @@ jQuery(document).ready(function ($) {
   function filterLoaded(data) {
     indiciaData.filter.def = $.extend(JSON.parse(data[0].definition), filterOverride);
     indiciaData.filter.id = data[0].id;
-    delete indiciaData.filter.filters_user_id;
     indiciaData.filter.title = data[0].title;
     $('#filter\\:title').val(data[0].title);
     indiciaFns.applyFilterToReports();
@@ -1299,8 +1298,6 @@ jQuery(document).ready(function ($) {
       definition: fu.filter_definition,
       created_by_id: fu.filter_created_by_id
     }]);
-    // Remember the ID so saves don't duplicate.
-    indiciaData.filter.filters_user_id = fu.id;
   };
 
   function filterParamsChanged() {
@@ -1607,23 +1604,22 @@ jQuery(document).ready(function ($) {
     var filter = {
       website_id: indiciaData.website_id,
       user_id: indiciaData.user_id,
-      'filters_user:user_id': userId,
       'filter:title': $('#filter\\:title').val(),
       'filter:description': $('#filter\\:description').val(),
       'filter:definition': JSON.stringify(indiciaData.filter.def),
       'filter:sharing': sharing,
       'filter:defines_permissions': adminMode ? 't' : 'f'
     };
-    // if existing filter and the title has not changed, or in admin mode, overwrite
+    // If existing filter and the title has not changed, or in admin mode, overwrite.
     if (indiciaData.filter.id && ($('#filter\\:title').val() === indiciaData.filter.title || adminMode)) {
       filter['filter:id'] = indiciaData.filter.id;
+      // Note, as overwriting, the filters_users record already exists.
+      url = indiciaData.filterPostUrl;
+    } else {
+      // New filter, so need to link to the user.
+      filter['filters_user:user_id'] = userId;
+      url = indiciaData.filterAndUserPostUrl;
     }
-    // if existing filters_users then hook to same record
-    if (typeof indiciaData.filter.filters_user_id !== 'undefined') {
-      filter['filters_user:id'] = indiciaData.filter.filters_user_id;
-    }
-    // If a new filter or admin mode, then also need to create a filters_users record.
-    url = (typeof indiciaData.filter.id !== 'number' || adminMode) ? indiciaData.filterAndUserPostUrl : indiciaData.filterPostUrl;
     $.post(url, filter,
       function (data) {
         var handled;
@@ -1631,7 +1627,6 @@ jQuery(document).ready(function ($) {
           alert(indiciaData.lang.reportFilters.FilterSaved);
           indiciaData.filter.id = data.outer_id;
           indiciaData.filter.title = $('#filter\\:title').val();
-          indiciaData.filter.filters_user_id = data.struct.children[0].id;
           $('#active-filter-label').html('Active filter: ' + $('#filter\\:title').val());
           $('#standard-params .header span.changed').hide();
           $('#select-filter').val(indiciaData.filter.id);
