@@ -287,7 +287,7 @@
         var count = indiciaFns.findValue(this, 'count');
         var metric = Math.round((Math.sqrt(count) / maxMetric) * 20000);
         if (typeof location !== 'undefined') {
-          addFeature(el, sourceSettings.id, location, metric);
+          addFeature(el, sourceSettings.id, location, null, metric);
         }
       });
     }
@@ -323,7 +323,7 @@
               coords = this.key.split(' ');
               metric = Math.round((Math.sqrt(this.doc_count) / maxMetric) * 20000);
               if (typeof location !== 'undefined') {
-                addFeature(el, sourceSettings.id, { lat: coords[1], lon: coords[0] }, metric, filterField, this.key);
+                addFeature(el, sourceSettings.id, { lat: coords[1], lon: coords[0] }, null, metric, filterField, this.key);
               }
             }
           });
