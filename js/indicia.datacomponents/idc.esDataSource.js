@@ -33,8 +33,6 @@ var IdcEsDataSource;
    * set.
    */
   function getAutoAggSortInfo(source) {
-    var sortField;
-    var sortDir;
     var settings = source.settings;
     // Default source config to sort by the unique field unless otherwise specified.
     if (!settings.sort || settings.sort.length === 0) {
@@ -42,9 +40,10 @@ var IdcEsDataSource;
       settings.sort[settings.autoAggregationTable.unique_field] = 'asc';
     }
     // Find the sort field and direction from the source config. Only single
-    // supported in autoAggregationTable mode at present.
+    // supported in autoAggregationTable mode at present. Doc_count is a
+    // special value that sorts by _count.
     return {
-      field: Object.keys(settings.sort)[0],
+      field: Object.keys(settings.sort)[0] === 'doc_count' ? '_count' : Object.keys(settings.sort)[0],
       dir: settings.sort[Object.keys(settings.sort)[0]]
     };
   }
