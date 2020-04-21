@@ -32,27 +32,20 @@ var IdcEsDataSource;
    * For autoAggregationTable mode. Sets default to the unique field if not
    * set.
    */
-  function getSortInfo(source) {
+  function getAutoAggSortInfo(source) {
     var sortField;
     var sortDir;
     var settings = source.settings;
     // Default source config to sort by the unique field unless otherwise specified.
     if (!settings.sort || settings.sort.length === 0) {
       settings.sort = {};
-      settings.sort[settings.autoAggregationTable.unique_field] = {
-        order: 'asc'
-      };
+      settings.sort[settings.autoAggregationTable.unique_field] = 'asc';
     }
-    // Find the sort field and direction from the source config.
-    $.each(settings.sort, function eachSortField(field) {
-      sortField = field;
-      sortDir = this.order;
-      // Only support a single sort field.
-      return false;
-    });
+    // Find the sort field and direction from the source config. Only single
+    // supported in autoAggregationTable mode at present.
     return {
-      field: sortField,
-      dir: sortDir
+      field: Object.keys(settings.sort)[0],
+      dir: settings.sort[Object.keys(settings.sort)[0]]
     };
   }
 
@@ -66,7 +59,7 @@ var IdcEsDataSource;
     var settings = source.settings;
     if (settings.autoAggregationTable) {
       settings.size = 0;
-      sort = getSortInfo(source);
+      sort = getAutoAggSortInfo(source);
       // List of sub-aggregations within the outer terms agg for the unique field must
       // always contain a top_hits agg to retrieve field values.
       subAggs = {

@@ -316,9 +316,7 @@
     } else {
       sortFields = [fieldName];
     }
-    source.settings.sort[sortFields[0]] = {
-      order: sortDesc ? 'desc' : 'asc'
-    };
+    source.settings.sort[sortFields[0]] = sortDesc ? 'desc' : 'asc';
   }
 
   /**
