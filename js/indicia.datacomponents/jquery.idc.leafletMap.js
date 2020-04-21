@@ -53,7 +53,11 @@
         type: 'OpenTopoMap'
       }
     },
-    cookies: true
+    cookies: true,
+    selectedFeatureStyle: {
+      color: '#FF0000',
+      fillColor: '#FF0000',
+    }
   };
 
   /**
@@ -186,7 +190,6 @@
           circle.removeFrom(el.map);
           break;
         case 'geom':
-
           wkt = new Wkt.Wkt();
           wkt.read(geom);
           obj = wkt.toObject(config.options);
@@ -203,13 +206,16 @@
    * Thicken the borders of selected features when zoomed out to aid visibility.
    */
   function ensureFeatureClear(el, feature) {
-    var weight = Math.min(20, Math.max(1, 20 - (el.map.getZoom())));
-    var opacity = Math.min(1, Math.max(0.6, el.map.getZoom() / 18));
+    var style;
     if (typeof feature.setStyle !== 'undefined') {
-      feature.setStyle({
-        weight: weight,
-        opacity: opacity
-      });
+      style = $.extend({}, el.settings.selectedFeatureStyle);
+      if (!style.weight) {
+        style.weight = Math.min(20, Math.max(1, 20 - (el.map.getZoom())));
+      }
+      if (!style.opacity) {
+        style.opacity = Math.min(1, Math.max(0.6, el.map.getZoom() / 18));
+      }
+      feature.setStyle(style);
     }
   }
 
@@ -654,7 +660,7 @@
         }
       });
       // Are there document hits to map?
-      $.each(response.hits.hits, function eachHit() {
+      $.each(response.hits.hits, function eachHit(i) {
         var latlon = this._source.location.point.split(',');
         addFeature(el, sourceSettings.id, latlon, this._source.location.geom,
           this._source.location.coordinate_uncertainty_in_meters, '_id', this._id);
