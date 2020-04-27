@@ -56,6 +56,8 @@ var IdcEsDataSource;
     var sort;
     var orderBy;
     var settings = source.settings;
+    var uniqueFieldWithoutSuffix;
+    var sortFieldWithoutSuffix;
     if (settings.autoAggregationTable) {
       settings.size = 0;
       sort = getAutoAggSortInfo(source);
@@ -83,12 +85,15 @@ var IdcEsDataSource;
         }
       });
       // Include the unique field in the list of fields request even if not specified.
-      if ($.inArray(settings.autoAggregationTable.unique_field, settings.autoAggregationTable.fields) === -1) {
-        settings.autoAggregationTable.fields.push(settings.autoAggregationTable.unique_field);
+      // Don't include .keyword suffix for source filtering.
+      uniqueFieldWithoutSuffix = settings.autoAggregationTable.unique_field.replace(/\.keyword$/, '');
+      if ($.inArray(uniqueFieldWithoutSuffix, settings.autoAggregationTable.fields) === -1) {
+        settings.autoAggregationTable.fields.push(uniqueFieldWithoutSuffix);
       }
-      if ($.inArray(sort.field, settings.autoAggregationTable.fields) > -1) {
+      sortFieldWithoutSuffix = sort.field.replace(/\.keyword$/, '');
+      if ($.inArray(sortFieldWithoutSuffix, settings.autoAggregationTable.fields) > -1) {
         // Sorting by a standard field.
-        if (sort.field === settings.autoAggregationTable.unique_field) {
+        if (sortFieldWithoutSuffix === uniqueFieldWithoutSuffix) {
           // Using the outer agg to sort, so simple use of _key.
           orderBy = '_key';
         } else {
