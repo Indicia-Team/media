@@ -95,17 +95,68 @@
    */
   function getColumnSettings(el) {
     var data = {};
+    var source = indiciaData.esSourceObjects[el.settings.sourceId];
+    var agg;
     // Note, columnsTemplate can be blank.
     if (typeof el.settings.columnsTemplate !== 'undefined') {
       data.columnsTemplate = el.settings.columnsTemplate;
+    } else if (el.settings.aggregation && el.settings.aggregation === 'composite') {
+      data.columnsTemplate = '';
     }
     if (el.settings.addColumns) {
       data.addColumns = el.settings.addColumns;
+    } else if (el.settings.aggregation && el.settings.aggregation === 'composite' && data.columnsTemplate === '') {
+      // Find the first aggregation defined for this source.
+      agg = source.settings.aggregation[Object.keys(source.settings.aggregation)[0]];
+      data.addColumns = [];
+      // The agg should contain sources (which are the columns aggregated on).
+      $.each(agg.composite.sources, function eachSource() {
+        $.each(this, function eachField(key) {
+          data.addColumns.push({
+            field: 'key.' + key,
+            caption: key
+          });
+        });
+      });
+      // The agg should also contain aggregation for calculated columns.
+      $.each(agg.aggs, function eachAgg(key) {
+        data.addColumns.push({
+          agg: key,
+          caption: key
+        });
+      });
+
+
+      // Ensure dates are formatted correctly.
+
     }
     if (el.settings.removeColumns) {
       data.removeColumns = el.settings.removeColumns;
     }
     return data;
+  }
+
+  function initSource(el) {
+    var settings = el.settings;
+    var gridSettings;
+    if (settings.linkToDataGrid) {
+      if ($('#' + settings.linkToDataGrid).length !== 1) {
+        throw new Error('Failed to find dataGrid ' + settings.linkToDataGrid + ' linked to download');
+      }
+      // Refresh the columns according to those currently in the dataGrid.
+      gridSettings = $('#' + settings.linkToDataGrid)[0].settings;
+      settings.source = gridSettings.source;
+      settings.columnsTemplate = '';
+      settings.addColumns = [];
+      $.each(gridSettings.columns, function() {
+        settings.addColumns.push({
+          caption: gridSettings.availableColumnInfo[this].caption,
+          field: this
+        });
+      });
+    }
+    // Only allow a single source for download, so simplify the sources.
+    settings.sourceId = Object.keys(settings.source)[0];
   }
 
   /**
@@ -114,7 +165,7 @@
    * @param obj lastResponse
    *   Response body from the ES proxy containing progress data.
    */
-  function doPages(el, lastResponse) {
+  function doPages(el, lastResponse, columnSettings) {
     var date;
     var hours;
     var minutes;
@@ -133,7 +184,7 @@
       query += '&aggregation_type=composite';
     }
     if (lastResponse.state === 'nextPage') {
-      $.extend(data, getColumnSettings(el));
+      $.extend(data, columnSettings);
       // Post to the ES proxy. Pass scroll_id (docs) or after_key (composite aggregations)
       // parameter to request the next chunk of the dataset.
       $.ajax({
@@ -143,7 +194,7 @@
         data: data,
         success: function success(response) {
           updateProgress(el, response);
-          doPages(el, response);
+          doPages(el, response, columnSettings);
         }
       });
     } else {
@@ -177,9 +228,13 @@
      */
     $(el).find('.do-download').click(function doDownload() {
       var data;
-      var source = indiciaData.esSourceObjects[el.settings.sourceId];
+      var source;
       var sep = indiciaData.esProxyAjaxUrl.match(/\?/) ? '&' : '?';
       var query = sep + 'state=initial';
+      var columnSettings;
+      initSource(el);
+      source = indiciaData.esSourceObjects[el.settings.sourceId];
+      columnSettings = getColumnSettings(el);
       $(el).find('.progress-circle-container').removeClass('download-done');
       $(el).find('.progress-circle-container').show();
       done = false;
@@ -189,7 +244,7 @@
       if (el.settings.aggregation && el.settings.aggregation === 'composite') {
         query += '&aggregation_type=composite';
       }
-      $.extend(data, getColumnSettings(el));
+      $.extend(data, columnSettings);
       // Post to the ES proxy.
       $.ajax({
         url: indiciaData.esProxyAjaxUrl + '/download/' + indiciaData.nid + query,
@@ -202,7 +257,7 @@
             $('.progress-circle-container').hide();
           } else {
             updateProgress(el, response);
-            doPages(el, response);
+            doPages(el, response, columnSettings);
           }
         }
       });
@@ -232,11 +287,8 @@
       if (typeof options !== 'undefined') {
         $.extend(el.settings, options);
       }
-      // Only allow a single source for download, so simplify the sources.
-      $.each(el.settings.source, function eachSource(sourceId) {
-        el.settings.sourceId = sourceId;
-        return false;
-      });
+      // Don't do any more init at this point, as might be using a not-yet
+      // instantiated dataGrid for config.
       initHandlers(el);
     },
 

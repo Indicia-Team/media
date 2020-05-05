@@ -139,7 +139,7 @@
       sortableField = sortableField
         || indiciaData.fieldConvertorSortFields[this.simpleFieldName()]
         || (el.settings.aggregation && el.settings.aggregation === 'composite')
-        || (el.settings.aggregation && el.settings.aggregation === 'autoAggregationTable');
+        || (el.settings.sourceObject.settings.mode === 'termAggregation');
       if (el.settings.sortable !== false && sortableField) {
         heading += '<span class="sort fas fa-sort"></span>';
       }
@@ -212,34 +212,41 @@
     });
   }
 
+  function applySourceModeSettings(el) {
+    var sourceSettings = el.settings.sourceObject.settings;
+    if (sourceSettings.mode === 'termAggregation') {
+      $.each(el.settings.availableColumnInfo, function eachCol(field, colDef) {
+        if ($.inArray(field, sourceSettings.fields) > -1) {
+          colDef.path = 'fieldlist.hits.hits.0._source';
+        }
+      });
+    }
+  }
+
   function movePage(el, forward) {
+    var sourceSettings = indiciaData.sourceObject.settings;
     if (el.settings.aggregation === 'composite') {
       el.settings.compositeInfo.page += (forward ? 1 : -1);
-    }
-    $.each(el.settings.source, function eachSource(sourceId) {
-      var source = indiciaData.esSourceObjects[sourceId];
-      if (el.settings.aggregation === 'composite') {
-        // Composite aggregations use after_key to find next page.
-        if (el.settings.compositeInfo.pageAfterKeys[el.settings.compositeInfo.page]) {
-          source.settings.after_key = el.settings.compositeInfo.pageAfterKeys[el.settings.compositeInfo.page];
-        } else {
-          delete source.settings.after_key;
-        }
+      // Composite aggregations use after_key to find next page.
+      if (el.settings.compositeInfo.pageAfterKeys[el.settings.compositeInfo.page]) {
+        sourceSettings.after_key = el.settings.compositeInfo.pageAfterKeys[el.settings.compositeInfo.page];
       } else {
-        if (typeof source.settings.from === 'undefined') {
-          source.settings.from = 0;
-        }
-        if (forward) {
-          // Move to next page based on currently visible row count, in case some
-          // have been removed.
-          source.settings.from += $(el).find('tbody tr.data-row').length;
-        } else {
-          source.settings.from -= source.settings.size;
-        }
-        source.settings.from = Math.max(0, source.settings.from);
+        delete sourceSettings.after_key;
       }
-      source.populate();
-    });
+    } else {
+      if (typeof sourceSettings.from === 'undefined') {
+        sourceSettings.from = 0;
+      }
+      if (forward) {
+        // Move to next page based on currently visible row count, in case some
+        // have been removed.
+        sourceSettings.from += $(el).find('tbody tr.data-row').length;
+      } else {
+        sourceSettings.from -= sourceSettings.size;
+      }
+      sourceSettings.from = Math.max(0, sourceSettings.from);
+    }
+    indiciaData.sourceObject.populate();
   }
 
   /**
@@ -307,16 +314,19 @@
   }
 
   /**
-   * Apply changes to a source when sorting for an auto aggregation table.
+   * Apply changes to a source when sorting in a term aggregation table.
    */
-  function handleSortForAutoAggregationTable(source, fieldName, sortDesc) {
-    var sortFields;
+  function handleSortForTermAggregation(source, fieldName, sortDesc) {
+    var sortFieldName;
     if (indiciaData.fieldConvertorSortFields[fieldName] && $.isArray(indiciaData.fieldConvertorSortFields[fieldName])) {
-      sortFields = indiciaData.fieldConvertorSortFields[fieldName];
+      // The terms we aggregate on can be special fields with underlying
+      // mappings, but we only support sort by the first field not nested
+      // sort.
+      sortFieldName = indiciaData.fieldConvertorSortFields[fieldName][0];
     } else {
-      sortFields = [fieldName];
+      sortFieldName = fieldName;
     }
-    source.settings.sort[sortFields[0]] = sortDesc ? 'desc' : 'asc';
+    source.settings.sort[sortFieldName] = sortDesc ? 'desc' : 'asc';
   }
 
   /**
@@ -326,11 +336,13 @@
     var sortFields = indiciaData.fieldConvertorSortFields[fieldName];
     if ($.isArray(sortFields)) {
       $.each(sortFields, function eachField() {
+        // A simple list of fields to sort on, so set the direction on each.
         source.settings.sort[this] = {
           order: sortDesc ? 'desc' : 'asc'
         };
       });
     } else if (typeof sortFields === 'object') {
+      // A complex sort object (e.g. lat_lon distance).
       source.settings.sort = sortFields;
       indiciaFns.findAndSetValue(source.settings.sort, 'order', sortDesc ? 'desc' : 'asc');
     }
@@ -385,25 +397,26 @@
     indiciaFns.on('click', '#' + el.id + ' .sort', {}, function clickSort() {
       var fieldName = $(this).closest('th').attr('data-field').simpleFieldName();
       var sortDesc = $(this).hasClass('fa-sort-up');
+      var sourceObj = el.settings.sourceObject;
       showHeaderSortInfo(this, sortDesc);
-      $.each(el.settings.source, function eachSource(sourceId) {
-        var source = indiciaData.esSourceObjects[sourceId];
-        source.settings.sort = {};
-        if (el.settings.aggregation && el.settings.aggregation === 'composite') {
-          handleSortForCompositeAgg(source, fieldName, sortDesc);
-        } else if (el.settings.aggregation && el.settings.aggregation === 'autoAggregationTable') {
-          handleSortForAutoAggregationTable(source, fieldName, sortDesc);
-        } else if (indiciaData.esMappings[fieldName]) {
-          source.settings.sort[indiciaData.esMappings[fieldName].sort_field] = {
-            order: sortDesc ? 'desc' : 'asc'
-          };
-        } else if (indiciaData.fieldConvertorSortFields[fieldName]) {
-          handleSortForSpecialField(source, fieldName, sortDesc);
-        }
-        source.populate();
-      });
+      el.settings.sourceObject.settings.sort = {};
+      if (el.settings.aggregation && el.settings.aggregation === 'composite') {
+        handleSortForCompositeAgg(sourceObj, fieldName, sortDesc);
+      } else if (sourceObj.settings.mode === 'termAggregation') {
+        handleSortForTermAggregation(sourceObj, fieldName, sortDesc);
+      } else if (indiciaData.esMappings[fieldName]) {
+        sourceObj.settings.sort[indiciaData.esMappings[fieldName].sort_field] = {
+          order: sortDesc ? 'desc' : 'asc'
+        };
+      } else if (indiciaData.fieldConvertorSortFields[fieldName]) {
+        handleSortForSpecialField(sourceObj, fieldName, sortDesc);
+      }
+      sourceObj.populate();
     });
 
+    /**
+     * Filter row input change handler.
+     */
     indiciaFns.on('change', '#' + el.id + ' .es-filter-row input', {}, function changeFilterInput() {
       var sources = Object.keys(el.settings.source);
       if (el.settings.applyFilterRowToSources) {
@@ -417,6 +430,9 @@
       });
     });
 
+    /**
+     * Multi-select switch toggle handler.
+     */
     $(el).find('.multiselect-switch').click(function clickMultiselectSwitch() {
       var table = $(el).find('table');
       if ($(el).hasClass('multiselect-mode')) {
@@ -525,10 +541,7 @@
       if (el.settings.includeFilterRow !== false) {
         addFilterRow(el, header);
       }
-      $.each(el.settings.source, function eachSource(sourceId) {
-        var source = indiciaData.esSourceObjects[sourceId];
-        source.populate(true);
-      });
+      el.settings.sourceObject.populate(true);
       removeConfigPane(el);
     });
 
@@ -639,57 +652,19 @@
    * documents), the buckets of an aggregation, or a custom built source table.
    */
   function getSourceDataList(el, response) {
+    if (el.settings.sourceObject.settings.mode === 'termAggregation') {
+      return indiciaFns.findValue(response.aggregations, 'buckets');
+    }
     if (el.settings.sourceTable) {
       // A custom table built from an aggregation by the source.
       return response[$(el)[0].settings.sourceTable];
-    } else if (el.settings.aggregation && typeof response.aggregations !== 'undefined') {
+    }
+    if (el.settings.aggregation && typeof response.aggregations !== 'undefined') {
       // A standard aggregation.
       return indiciaFns.findValue(response.aggregations, 'buckets');
     }
     // A standard list of records.
     return response.hits.hits;
-  }
-
-  function drawMediaFile(i, doc, file, sizeClass) {
-    // Check if an extenral URL.
-    var match = file.path.match(/^http(s)?:\/\/(www\.)?([a-z(\.kr)]+)/);
-    var captionItems = [];
-    var captionAttr;
-    var html = '';
-    if (file.caption) {
-      captionItems.push(file.caption);
-    }
-    if (file.licence) {
-      captionItems.push('Licence is ' + file.licence);
-    }
-    captionAttr = captionItems.length ? ' title="' + captionItems.join(' | ').replace('"', '&quot;') + '"' : '';
-    if (match !== null) {
-      // If so, is it iNat? We can work out the image file names if so.
-      if (file.path.match(/^https:\/\/static\.inaturalist\.org/)) {
-        html += '<a ' + captionAttr +
-          'href="' + file.path.replace('/square.', '/large.') + '" ' +
-          'class="inaturalist fancybox" rel="group-' + doc.id + '">' +
-          '<img class="' + sizeClass + '" src="' + file.path + '" /></a>';
-      } else {
-        html += '<a ' +
-          'href="' + file.path + '" class="social-icon ' + match[3].replace('.', '') + '"></a>';
-        if (captionItems.length) {
-          html += '<p>' + captionItems.join(' | ').replace('"', '&quot;') + '</p>';
-        }
-      }
-    } else if ($.inArray(file.path.split('.').pop(), ['mp3', 'wav']) > -1) {
-      // Audio files can have a player control.
-      html += '<audio controls ' +
-        'src="' + indiciaData.warehouseUrl + 'upload/' + file.path + '" type="audio/mpeg"/>';
-    } else {
-      // Standard link to Indicia image.
-      html += '<a ' + captionAttr +
-        'href="' + indiciaData.warehouseUrl + 'upload/' + file.path + '" ' +
-        'class="fancybox" rel="group-' + doc.id + '">' +
-        '<img class="' + sizeClass + '" src="' + indiciaData.warehouseUrl + 'upload/thumb-' + file.path + '" />' +
-        '</a>';
-    }
-    return html;
   }
 
   function addHeader(el, table) {
@@ -730,7 +705,7 @@
       $(el).find('.pager-row .next').prop('disabled', !afterKey);
       $(el).find('.pager-row .prev').prop('disabled', el.settings.compositeInfo.page === 0);
     } else {
-      if (el.settings.aggregation && el.settings.aggregation === 'autoAggregationTable') {
+      if (el.settings.sourceObject.settings.mode === 'termAggregation') {
         // The count agg is always added in this mode.
         total = response.aggregations.count.value;
         // Can't page through a standard aggregation.
@@ -776,17 +751,17 @@
    */
   function getDataCells(el, doc, maxCharsPerCol) {
     var cells = [];
+    var sourceSettings = el.settings.sourceObject.settings;
     $.each(el.settings.columns, function eachColumn(idx) {
       var value;
       var rangeValue;
-      var sizeClass;
       var classes = ['col-' + idx];
       var style = '';
       var colDef = el.settings.availableColumnInfo[this];
-      var media = '';
       var date;
       // Extra space in last col to account for tool icons.
       var extraSpace = idx === el.settings.columns.length - 1 && !el.settings.actions.length ? 2 : 0;
+      var charWidth;
       value = indiciaFns.getValueForField(doc, this, colDef);
       if (colDef.rangeField) {
         rangeValue = indiciaFns.getValueForField(doc, colDef.rangeField);
@@ -801,16 +776,10 @@
         date = new Date(value);
         value = date.toLocaleString();
       }
-      if (value && colDef.handler && colDef.handler === 'media') {
-        // Tweak image sizes if more than 1.
-        sizeClass = value.length === 1 ? 'single' : 'multi';
-        // Build media HTML.
-        $.each(value, function eachFile(i, file) {
-          media += drawMediaFile(i, doc, file, sizeClass);
-        });
-        value = media;
-        // Approximate a column size to accomodate the thumbnails.
-        maxCharsPerCol['col-' + idx] = Math.max(maxCharsPerCol['col-' + idx], extraSpace + value.length === 1 ? 8 : 14);
+      if (value && typeof value === 'string' && value.match(/class="(single|multi)"/)) {
+        // Thumbnail(s) so give approx column size.
+        charWidth = value.match(/class="single"/) ? 8 : 14;
+        maxCharsPerCol['col-' + idx] = Math.max(maxCharsPerCol['col-' + idx], extraSpace + charWidth);
       } else {
         maxCharsPerCol['col-' + idx] =
           Math.max(maxCharsPerCol['col-' + idx], $('<p>' + value + '</p>').text().length + extraSpace);
@@ -917,6 +886,7 @@
       var tableClasses = ['table', 'es-data-grid'];
       var savedCols;
       var tools;
+
       indiciaFns.registerOutputPluginClass('idcDataGrid');
       el.settings = $.extend(true, {}, defaults);
       // Apply settings passed in the HTML data-* attribute.
@@ -927,6 +897,8 @@
       if (typeof options !== 'undefined') {
         $.extend(el.settings, options);
       }
+      // dataGrid does not make use of multiple sources.
+      el.settings.sourceObject = indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]];
       // Disable cookies unless id specified.
       if (!el.id || !$.cookie) {
         el.settings.cookies = false;
@@ -1012,6 +984,7 @@
       var dataList = getSourceDataList(el, response);
       var maxCharsPerCol = {};
       var afterKey = indiciaFns.findValue(response, 'after_key');
+      applySourceModeSettings(el);
       if (el.settings.aggregation === 'composite' && !afterKey && el.settings.compositeInfo.page > 0) {
         // Moved past last page, so abort.
         $(el).find('.next').prop('disabled', true);
@@ -1130,7 +1103,7 @@
       var newSelectedId;
       var showingLabel = $(el).find('.showing');
       var selectedIds = [];
-
+      var sourceSettings = el.settings.sourceObject.settings;
       if ($(el).find('table.multiselect-mode').length > 0) {
         $.each($(el).find('input.multiselect:checked'), function eachRow() {
           var tr = $(this).closest('tr');
@@ -1146,44 +1119,41 @@
         selectedIds.push($(oldSelected).attr('data-row-id'));
         $(oldSelected).remove();
       }
-      $.each(el.settings.source, function eachSource(sourceId) {
-        var source = indiciaData.esSourceObjects[sourceId];
-        // If the number of rows below 75% of page size, reresh the grid.
-        if ($(el).find('table tbody tr.data-row').length < source.settings.size * 0.75) {
-          // As ES updates are not instant, we need a temporary must_not match
-          // filter to prevent the verified records reappearing.
-          if (!source.settings.filterBoolClauses) {
-            source.settings.filterBoolClauses = {};
-          }
-          if (!source.settings.filterBoolClauses.must_not) {
-            source.settings.filterBoolClauses.must_not = [];
-          }
-          source.settings.filterBoolClauses.must_not.push({
-            query_type: 'terms',
-            field: '_id',
-            value: JSON.stringify(selectedIds)
-          });
-          $(el)[0].settings.selectIdsOnNextLoad = [newSelectedId];
-          // Reload the grid page.
-          source.populate(true);
-          // Clean up the temporary exclusion filter.
-          source.settings.filterBoolClauses.must_not.pop();
-          if (!source.settings.filterBoolClauses.must_not.length) {
-            delete source.settings.filterBoolClauses.must_not;
-          }
-        } else {
-          // Update the paging info if some rows left.
-          showingLabel.html(showingLabel.html().replace(/\d+ of /, $(el).find('tbody tr.data-row').length + ' of '));
-          // Immediately select the next row.
-          if (typeof newSelectedId !== 'undefined') {
-            $(el).find('table tbody tr.data-row[data-row-id="' + newSelectedId + '"]').addClass('selected');
-          }
-          // Fire callbacks for selected row.
-          $.each(el.settings.callbacks.rowSelect, function eachCallback() {
-            this($(el).find('tr.selected').length === 0 ? null : $(el).find('tr.selected')[0]);
-          });
+      // If the number of rows below 75% of page size, refresh the grid.
+      if ($(el).find('table tbody tr.data-row').length < sourceSettings.size * 0.75) {
+        // As ES updates are not instant, we need a temporary must_not match
+        // filter to prevent the verified records reappearing.
+        if (!sourceSettings.filterBoolClauses) {
+          sourceSettings.filterBoolClauses = {};
         }
-      });
+        if (!sourceSettings.filterBoolClauses.must_not) {
+          sourceSettings.filterBoolClauses.must_not = [];
+        }
+        sourceSettings.filterBoolClauses.must_not.push({
+          query_type: 'terms',
+          field: '_id',
+          value: JSON.stringify(selectedIds)
+        });
+        $(el)[0].settings.selectIdsOnNextLoad = [newSelectedId];
+        // Reload the grid page.
+        el.settings.sourceObject.populate(true);
+        // Clean up the temporary exclusion filter.
+        sourceSettings.filterBoolClauses.must_not.pop();
+        if (!sourceSettings.filterBoolClauses.must_not.length) {
+          delete sourceSettings.filterBoolClauses.must_not;
+        }
+      } else {
+        // Update the paging info if some rows left.
+        showingLabel.html(showingLabel.html().replace(/\d+ of /, $(el).find('tbody tr.data-row').length + ' of '));
+        // Immediately select the next row.
+        if (typeof newSelectedId !== 'undefined') {
+          $(el).find('table tbody tr.data-row[data-row-id="' + newSelectedId + '"]').addClass('selected');
+        }
+        // Fire callbacks for selected row.
+        $.each(el.settings.callbacks.rowSelect, function eachCallback() {
+          this($(el).find('tr.selected').length === 0 ? null : $(el).find('tr.selected')[0]);
+        });
+      }
     },
 
     /**
