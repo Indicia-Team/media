@@ -182,8 +182,6 @@ var IdcEsDataSource;
         if (response.hits.total && indiciaData.esVersion === 6) {
           response.hits.total = { value: response.hits.total, relation: 'eq' };
         }
-        // Build any configured output tables.
-        this.buildTableXY(response);
         $.each(indiciaData.outputPluginClasses, function eachPluginClass(i, pluginClass) {
           $.each(source.outputs[pluginClass], function eachOutput() {
             if (!onlyForControl || onlyForControl === this) {
@@ -384,51 +382,6 @@ var IdcEsDataSource;
       });
       if (needsPopulation) {
         doPopulation.call(this, force, onlyForControl);
-      }
-    };
-
-    /**
-     * IdcEsDataSource function to tablify 2 tier aggregation responses.
-     *
-     * Use this method if there is an outer aggregation which corresponds to the
-     * table columns (X) and an inner aggregation which corresponds to the table
-     * rows (Y).
-     *
-     * @param object response
-     *   Response from an ES aggregation search request.
-     */
-    IdcEsDataSource.prototype.buildTableXY = function buildTableXY(response) {
-      var source = this;
-      if (source.settings.buildTableXY) {
-        $.each(source.settings.buildTableXY, function eachTable(name, aggs) {
-          var data = {};
-          var colsTemplate = {
-            key: ''
-          };
-          // Collect the list of columns
-          $.each(response.aggregations[aggs[0]].buckets, function eachOuterBucket() {
-            colsTemplate[this.key] = 0;
-          });
-          // Now for each column, collect the rows.
-          $.each(response.aggregations[aggs[0]].buckets, function eachOuterBucket() {
-            var thisCol = this.key;
-            var aggsPath = aggs[1].split(',');
-            var obj = this;
-            // Drill down the required level of nesting.
-            $.each(aggsPath, function eachPathLevel() {
-              obj = obj[this];
-            });
-            $.each(obj.buckets, function eachInnerBucket() {
-              if (typeof data[this.key] === 'undefined') {
-                data[this.key] = $.extend({}, colsTemplate);
-                data[this.key].key = this.key;
-              }
-              data[this.key][thisCol] = this.doc_count;
-            });
-          });
-          // Attach the data table to the response.
-          response[name] = data;
-        });
       }
     };
 

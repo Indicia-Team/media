@@ -520,7 +520,6 @@
      */
     indiciaFns.on('click', '#' + el.id + ' .data-grid-settings .save', {}, function onClick() {
       var header = $(el).find('thead');
-      var showingAggregation = el.settings.aggregation || el.settings.sourceTable;
       var colsList = [];
       $.each($(el).find('.data-grid-settings ol :checkbox:checked'), function eachCheckedCol() {
         colsList.push($(this).val());
@@ -536,7 +535,7 @@
         addColumnHeadings(el, header);
       }
       // Disable filter row for aggregations.
-      el.settings.includeFilterRow = el.settings.includeFilterRow && !showingAggregation;
+      el.settings.includeFilterRow = el.settings.includeFilterRow && !el.settings.aggregation;
       // Output header row for filtering.
       if (el.settings.includeFilterRow !== false) {
         addFilterRow(el, header);
@@ -654,10 +653,6 @@
   function getSourceDataList(el, response) {
     if (el.settings.sourceObject.settings.mode === 'termAggregation') {
       return indiciaFns.findValue(response.aggregations, 'buckets');
-    }
-    if (el.settings.sourceTable) {
-      // A custom table built from an aggregation by the source.
-      return response[$(el)[0].settings.sourceTable];
     }
     if (el.settings.aggregation && typeof response.aggregations !== 'undefined') {
       // A standard aggregation.
@@ -881,7 +876,6 @@
       var el = this;
       var table;
       var totalCols;
-      var showingAggregation;
       var footableSort;
       var tableClasses = ['table', 'es-data-grid'];
       var savedCols;
@@ -919,20 +913,19 @@
       if (el.settings.columns.length === 0) {
         el.settings.columns = el.settings.defaultColumns.slice();
       }
-      showingAggregation = el.settings.aggregation || el.settings.sourceTable;
-      footableSort = showingAggregation && el.settings.sortable ? 'true' : 'false';
+      footableSort = el.settings.aggregation && el.settings.sortable ? 'true' : 'false';
       if (el.settings.scrollY) {
         tableClasses.push('fixed-header');
       }
       // Disable filter row for aggregations.
-      el.settings.includeFilterRow = el.settings.includeFilterRow && !showingAggregation;
+      el.settings.includeFilterRow = el.settings.includeFilterRow && !el.settings.aggregation;
       // Build the elements required for the table.
       table = $('<table class="' + tableClasses.join(' ') + '" data-sort="' + footableSort + '" />').appendTo(el);
       addHeader(el, table);
       // We always want a table body for the data.
       $('<tbody />').appendTo(table);
       // Output a footer if we want a pager.
-      if (el.settings.includePager && !(el.settings.sourceTable || el.settings.aggregation === 'simple')) {
+      if (el.settings.includePager && !(el.settings.aggregation === 'simple')) {
         totalCols = el.settings.columns.length
           + (el.settings.responsive ? 1 : 0)
           + (el.settings.actions.length > 0 ? 1 : 0);
