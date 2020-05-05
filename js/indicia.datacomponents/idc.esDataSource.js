@@ -185,7 +185,7 @@ var IdcEsDataSource;
         $.each(indiciaData.outputPluginClasses, function eachPluginClass(i, pluginClass) {
           $.each(source.outputs[pluginClass], function eachOutput() {
             if (!onlyForControl || onlyForControl === this) {
-              $(this)[pluginClass]('populate', this.settings, response, request);
+              $(this)[pluginClass]('populate', source.settings, response, request);
               if (pluginClass === 'idcDataGrid' && source.settings.countAggregation) {
                 // For composite aggregations we may specify a separate
                 // aggregation to provide the count for grid pager.
@@ -309,8 +309,8 @@ var IdcEsDataSource;
       });
       // If datasource mode for mapping, use the map to limit the bounds retrieved.
       if (ds.settings.mode.match(/^map/) && !ds.settings.filterBoundsUsingMap) {
-        if (!ds.outputs.idcLeafletMap) {
-          throw new Error('Source using a mapping mode without a linked map.');
+        if (!ds.outputs.idcLeafletMap || ds.outputs.idcLeafletMap.length === 0) {
+          throw new Error('Source ' + ds.settings.id + ' using a mapping mode without a linked map.');
         }
         ds.settings.filterBoundsUsingMap = ds.outputs.idcLeafletMap[0].id;
       }
@@ -367,7 +367,7 @@ var IdcEsDataSource;
               var tabSelectFn = function eachTabSet() {
                 if ($(tab).filter(':visible').length > 0) {
                   $(output).find('.loading-spinner').show();
-                  doPopulation.call(this, force, onlyForControl);
+                  doPopulation.call(source, force, onlyForControl);
                   indiciaFns.unbindTabsActivate($(tab).closest('.ui-tabs'), tabSelectFn);
                 }
               };

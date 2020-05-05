@@ -963,7 +963,7 @@
     }
     // Path might be to an aggregation response object, in which case we just
     // want the value.
-    if (typeof valuePath === 'object' && typeof valuePath.value !== 'undefined') {
+    if (valuePath && typeof valuePath === 'object' && typeof valuePath.value !== 'undefined') {
       return valuePath.value;
     }
     return valuePath;

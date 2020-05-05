@@ -141,14 +141,14 @@
     var gridSettings;
     if (settings.linkToDataGrid) {
       if ($('#' + settings.linkToDataGrid).length !== 1) {
-        throw new Error('Failed to find dataGrid ' + settings.linkToDataGrid + ' linked to download');
+        indiciaFns.controlFail(el, 'Failed to find dataGrid ' + settings.linkToDataGrid + ' linked to download');
       }
       // Refresh the columns according to those currently in the dataGrid.
       gridSettings = $('#' + settings.linkToDataGrid)[0].settings;
       settings.source = gridSettings.source;
       settings.columnsTemplate = '';
       settings.addColumns = [];
-      $.each(gridSettings.columns, function() {
+      $.each(gridSettings.columns, function eachCol() {
         settings.addColumns.push({
           caption: gridSettings.availableColumnInfo[this].caption,
           field: this

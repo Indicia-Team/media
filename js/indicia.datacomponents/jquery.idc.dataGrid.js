@@ -224,7 +224,7 @@
   }
 
   function movePage(el, forward) {
-    var sourceSettings = indiciaData.sourceObject.settings;
+    var sourceSettings = el.settings.sourceObject.settings;
     if (el.settings.aggregation === 'composite') {
       el.settings.compositeInfo.page += (forward ? 1 : -1);
       // Composite aggregations use after_key to find next page.
@@ -246,7 +246,7 @@
       }
       sourceSettings.from = Math.max(0, sourceSettings.from);
     }
-    indiciaData.sourceObject.populate();
+    el.settings.sourceObject.populate();
   }
 
   /**
