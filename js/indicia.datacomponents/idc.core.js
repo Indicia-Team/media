@@ -906,7 +906,19 @@
     var pathArray = path.split('.');
     var i;
     var thisPath = doc;
+    var filterInfo;
     for (i = 0; i < pathArray.length; i++) {
+      // Special case when the path element is [...] as this is a filter on an
+      // array of buckets.
+      filterInfo = pathArray[i].match(/^\[(.+)=(.+)\]$/);
+      if (filterInfo) {
+        $.each(thisPath, function(idx) {
+          if (this[filterInfo[1]] === filterInfo[2]) {
+            pathArray[i] = idx;
+            return false;
+          }
+        });
+      }
       if (typeof thisPath[pathArray[i]] === 'undefined') {
         thisPath = '';
         break;
