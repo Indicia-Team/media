@@ -41,6 +41,17 @@
   };
 
   /**
+   * Convert an ES field to a name suitable for composite aggregation keys.
+   *
+   * When auto-generating a composite aggregation we want the name given to
+   * each field's key to have hyphens instead of full stops, so the names are
+   * not confused with paths in the document.
+   */
+  String.prototype.asCompositeKeyName = function simpleFieldName() {
+    return this.replace(/\./g, '-');
+  };
+
+  /**
    * Keep track of a list of all the plugin instances that output something.
    */
   indiciaData.outputPluginClasses = [];
@@ -912,7 +923,7 @@
       // array of buckets.
       filterInfo = pathArray[i].match(/^\[(.+)=(.+)\]$/);
       if (filterInfo) {
-        $.each(thisPath, function(idx) {
+        $.each(thisPath, function eachPathEntry(idx) {
           if (this[filterInfo[1]] === filterInfo[2]) {
             pathArray[i] = idx;
             return false;

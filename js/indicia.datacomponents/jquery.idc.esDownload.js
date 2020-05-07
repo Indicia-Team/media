@@ -95,8 +95,8 @@
    */
   function getColumnSettings(el) {
     var data = {};
-    var source = indiciaData.esSourceObjects[el.settings.sourceId];
     var agg;
+    var sourceSettings = el.settings.sourceObject.settings;
     // Note, columnsTemplate can be blank.
     if (typeof el.settings.columnsTemplate !== 'undefined') {
       data.columnsTemplate = el.settings.columnsTemplate;
@@ -107,7 +107,7 @@
       data.addColumns = el.settings.addColumns;
     } else if (el.settings.aggregation && el.settings.aggregation === 'composite' && data.columnsTemplate === '') {
       // Find the first aggregation defined for this source.
-      agg = source.settings.aggregation[Object.keys(source.settings.aggregation)[0]];
+      agg = sourceSettings.aggregation[Object.keys(sourceSettings.aggregation)[0]];
       data.addColumns = [];
       // The agg should contain sources (which are the columns aggregated on).
       $.each(agg.composite.sources, function eachSource() {
@@ -156,7 +156,18 @@
       });
     }
     // Only allow a single source for download, so simplify the sources.
-    settings.sourceId = Object.keys(settings.source)[0];
+    settings.sourceObject = indiciaData.esSourceObjects[Object.keys(settings.source)[0]];
+    if (!settings.columnsTemplate && !settings.addColumns && !settings.removeColumns) {
+      settings.columnsTemplate = '';
+      settings.addColumns = [];
+      // No column specification given, so use the source to work this out.
+      $.each(settings.sourceObject.settings.fields, function eachField() {
+        settings.addColumns.push({
+          caption: this,
+          field: this
+        });
+      });
+    }
   }
 
   /**
@@ -178,7 +189,7 @@
       query += '&scroll_id=' + lastResponse.scroll_id;
     } else if (el.settings.aggregation && el.settings.aggregation === 'composite') {
       // Paging composite aggregations requires the full search query.
-      data = indiciaFns.getFormQueryData(indiciaData.esSourceObjects[el.settings.sourceId]);
+      data = indiciaFns.getFormQueryData(el.settings.sourceObject);
       // Inform the warehouse as composite paging behaviour different. The
       // uniq_id allows the warehouse to relocate the last request's after_key.
       query += '&aggregation_type=composite';
@@ -228,19 +239,17 @@
      */
     $(el).find('.do-download').click(function doDownload() {
       var data;
-      var source;
       var sep = indiciaData.esProxyAjaxUrl.match(/\?/) ? '&' : '?';
       var query = sep + 'state=initial';
       var columnSettings;
       initSource(el);
-      source = indiciaData.esSourceObjects[el.settings.sourceId];
       columnSettings = getColumnSettings(el);
       $(el).find('.progress-circle-container').removeClass('download-done');
       $(el).find('.progress-circle-container').show();
       done = false;
       $(el).find('.circle').attr('style', 'stroke-dashoffset: 503px');
       $(el).find('.progress-text').text('Loading...');
-      data = indiciaFns.getFormQueryData(source);
+      data = indiciaFns.getFormQueryData(el.settings.sourceObject);
       if (el.settings.aggregation && el.settings.aggregation === 'composite') {
         query += '&aggregation_type=composite';
       }

@@ -138,8 +138,7 @@
       var dataType = colDef.dataType || colDef['data-type'];
       sortableField = sortableField
         || indiciaData.fieldConvertorSortFields[this.simpleFieldName()]
-        || (el.settings.aggregation && el.settings.aggregation === 'composite')
-        || (el.settings.sourceObject.settings.mode === 'termAggregation');
+        || (el.settings.sourceObject.settings.aggregation);
       if (el.settings.sortable !== false && sortableField) {
         heading += '<span class="sort fas fa-sort"></span>';
       }
@@ -214,10 +213,14 @@
 
   function applySourceModeSettings(el) {
     var sourceSettings = el.settings.sourceObject.settings;
-    if (sourceSettings.mode === 'termAggregation') {
+    if (sourceSettings.mode.match(/Aggregation$/)) {
       $.each(el.settings.availableColumnInfo, function eachCol(field, colDef) {
         if ($.inArray(field, sourceSettings.fields) > -1) {
-          colDef.path = 'fieldlist.hits.hits.0._source';
+          if (sourceSettings.mode === 'termAggregation') {
+            colDef.path = 'fieldlist.hits.hits.0._source';
+          } else if (sourceSettings.mode === 'compositeAggregation') {
+            colDef.path = 'key';
+          }
         }
       });
     }
@@ -225,7 +228,7 @@
 
   function movePage(el, forward) {
     var sourceSettings = el.settings.sourceObject.settings;
-    if (el.settings.aggregation === 'composite') {
+    if (el.settings.sourceObject.settings.mode === 'compositeAggregation') {
       el.settings.compositeInfo.page += (forward ? 1 : -1);
       // Composite aggregations use after_key to find next page.
       if (el.settings.compositeInfo.pageAfterKeys[el.settings.compositeInfo.page]) {
@@ -302,7 +305,7 @@
       });
     } else {
       $.each(aggSources, function eachAggSource() {
-        if ($(this).prop(fieldName.replace(/^key\./, ''))) {
+        if ($(this).prop(fieldName.asCompositeKeyName())) {
           indiciaFns.findValue(this, 'terms').order = sortDesc ? 'desc' : 'asc';
           newAggSources.splice(0, 0, this);
         } else {
@@ -399,8 +402,8 @@
       var sortDesc = $(this).hasClass('fa-sort-up');
       var sourceObj = el.settings.sourceObject;
       showHeaderSortInfo(this, sortDesc);
-      el.settings.sourceObject.settings.sort = {};
-      if (el.settings.aggregation && el.settings.aggregation === 'composite') {
+      sourceObj.settings.sort = {};
+      if (sourceObj.settings.mode === 'compositeAggregation') {
         handleSortForCompositeAgg(sourceObj, fieldName, sortDesc);
       } else if (sourceObj.settings.mode === 'termAggregation') {
         handleSortForTermAggregation(sourceObj, fieldName, sortDesc);
@@ -535,7 +538,8 @@
         addColumnHeadings(el, header);
       }
       // Disable filter row for aggregations.
-      el.settings.includeFilterRow = el.settings.includeFilterRow && !el.settings.aggregation;
+      el.settings.includeFilterRow =
+        el.settings.includeFilterRow && !el.settings.sourceObject.settings.mode.match(/aggregation$/);
       // Output header row for filtering.
       if (el.settings.includeFilterRow !== false) {
         addFilterRow(el, header);
@@ -651,11 +655,8 @@
    * documents), the buckets of an aggregation, or a custom built source table.
    */
   function getSourceDataList(el, response) {
-    if (el.settings.sourceObject.settings.mode === 'termAggregation') {
-      return indiciaFns.findValue(response.aggregations, 'buckets');
-    }
-    if (el.settings.aggregation && typeof response.aggregations !== 'undefined') {
-      // A standard aggregation.
+    if (el.settings.sourceObject.settings.mode.match(/Aggregation$/)) {
+      // Aggregated data so use the buckets.
       return indiciaFns.findValue(response.aggregations, 'buckets');
     }
     // A standard list of records.
@@ -692,7 +693,7 @@
     var total;
     var pageSize = $(el).find('tbody tr').length;
     // Set up the count info in the footer.
-    if (el.settings.aggregation && el.settings.aggregation === 'composite') {
+    if (el.settings.sourceObject.settings.mode === 'compositeAggregation') {
       // Composite aggs use after_key for simple paging.
       if (afterKey) {
         el.settings.compositeInfo.pageAfterKeys[el.settings.compositeInfo.page + 1] = afterKey;
@@ -757,7 +758,11 @@
       // Extra space in last col to account for tool icons.
       var extraSpace = idx === el.settings.columns.length - 1 && !el.settings.actions.length ? 2 : 0;
       var charWidth;
-      value = indiciaFns.getValueForField(doc, this, colDef);
+      // In compositeAggregation mode, fields are replaced by key names. We replace
+      // . with - to avoid confusion when iterating down paths.
+      var field = sourceSettings.mode === 'compositeAggregation' && $.inArray(this, sourceSettings.fields) > -1
+        ? this.asCompositeKeyName() : this;
+      value = indiciaFns.getValueForField(doc, field, colDef);
       if (colDef.rangeField) {
         rangeValue = indiciaFns.getValueForField(doc, colDef.rangeField);
         if (value !== rangeValue) {
@@ -913,19 +918,20 @@
       if (el.settings.columns.length === 0) {
         el.settings.columns = el.settings.defaultColumns.slice();
       }
-      footableSort = el.settings.aggregation && el.settings.sortable ? 'true' : 'false';
+      footableSort = el.settings.sourceObject.settings.mode === 'compositeAggregation' && el.settings.sortable
+        ? 'true' : 'false';
       if (el.settings.scrollY) {
         tableClasses.push('fixed-header');
       }
       // Disable filter row for aggregations.
-      el.settings.includeFilterRow = el.settings.includeFilterRow && !el.settings.aggregation;
+      el.settings.includeFilterRow = el.settings.includeFilterRow && !el.settings.sourceObject.settings.mode.match(/Aggregation$/);
       // Build the elements required for the table.
       table = $('<table class="' + tableClasses.join(' ') + '" data-sort="' + footableSort + '" />').appendTo(el);
       addHeader(el, table);
       // We always want a table body for the data.
       $('<tbody />').appendTo(table);
       // Output a footer if we want a pager.
-      if (el.settings.includePager && !(el.settings.aggregation === 'simple')) {
+      if (el.settings.includePager) {
         totalCols = el.settings.columns.length
           + (el.settings.responsive ? 1 : 0)
           + (el.settings.actions.length > 0 ? 1 : 0);
@@ -978,7 +984,7 @@
       var maxCharsPerCol = {};
       var afterKey = indiciaFns.findValue(response, 'after_key');
       applySourceModeSettings(el);
-      if (el.settings.aggregation === 'composite' && !afterKey && el.settings.compositeInfo.page > 0) {
+      if (sourceSettings.mode === 'compositeAggregation' && !afterKey && el.settings.compositeInfo.page > 0) {
         // Moved past last page, so abort.
         $(el).find('.next').prop('disabled', true);
         el.settings.compositeInfo.page--;
@@ -1044,7 +1050,7 @@
       if (el.settings.responsive) {
         $(el).find('table').trigger('footable_redraw');
       }
-      if (!el.settings.aggregation) {
+      if (el.settings.sourceObject.settings.mode === 'docs') {
         el.settings.totalRowCount = response.hits.total.value;
       }
       drawTableFooter(el, response, data, afterKey);

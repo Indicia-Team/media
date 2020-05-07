@@ -66,6 +66,52 @@ var IdcEsDataSource;
     /** Private methods for specific setup for each source mode. */
 
     /**
+     * Auto-build the composite aggregation if this mode enabled.
+     */
+    modeSpecificSetupFns.initCompositeAggregation = function initCompositeAggregation() {
+      var subAggs = {};
+      var settings = this.settings;
+      var compositeSources = [];
+      settings.aggregationSize = settings.aggregationSize || settings.size || 10000;
+      settings.size = 0;
+      // Capture supplied aggregation so we can rebuild each time.
+      settings.suppliedAggregation = settings.suppliedAggregation || settings.aggregation;
+      // Include the unique field in the list of fields request even if not specified.
+      if ($.inArray(settings.uniqueField, settings.fields) === -1) {
+        settings.fields.push(settings.uniqueField);
+      }
+      // Convert the fields list to the sources format required for composite agg.
+      $.each(settings.fields, function eachField() {
+        var srcObj = {};
+        srcObj[this.asCompositeKeyName()] = { terms: { field: indiciaFns.esFieldWithKeywordSuffix(this) } };
+        compositeSources.push(srcObj);
+      });
+      // Add the additional aggs for the aggregations requested in config.
+      $.each(settings.suppliedAggregation, function eachAgg(name) {
+        subAggs[name] = this;
+      });
+      // @todo handle sort
+      settings.aggregation = {
+        rows: {
+          composite: {
+            size: settings.aggregationSize,
+            sources: compositeSources
+          },
+          aggs: subAggs
+        }
+      };
+      if (settings.uniqueField) {
+        settings.countAggregation = {
+          count: {
+            cardinality: {
+              field: indiciaFns.esFieldWithKeywordSuffix(settings.uniqueField)
+            }
+          }
+        };
+      }
+    };
+
+    /**
      * Auto-build the term aggregation if this mode enabled.
      */
     modeSpecificSetupFns.initTermAggregation = function initTermAggregation() {
@@ -76,7 +122,7 @@ var IdcEsDataSource;
       var uniqueFieldWithSuffix = indiciaFns.esFieldWithKeywordSuffix(settings.uniqueField);
       var sortFieldWithoutSuffix;
       // Use the specified size to limit aggregation buckets, not docs.
-      settings.aggregationSize = settings.size || 10000;
+      settings.aggregationSize = settings.aggregationSize || settings.size || 10000;
       settings.size = 0;
       sort = getTermAggregationSortInfo(this.settings);
       // Capture supplied aggregation so we can rebuild each time.
@@ -294,7 +340,7 @@ var IdcEsDataSource;
       $.each(indiciaData.outputPluginClasses, function eachPluginClass() {
         ds.outputs[this] = [];
       });
-      // Make a collection of the output controls linked to this data ds.
+      // Make a collection of the output controls linked to this data source.
       $.each($('.idc-output'), function eachOutput() {
         var el = this;
         if (el.settings.source && Object.prototype.hasOwnProperty.call(el.settings.source, ds.settings.id)) {
@@ -402,5 +448,4 @@ var IdcEsDataSource;
     }
     return this;
   };
-
 }());
