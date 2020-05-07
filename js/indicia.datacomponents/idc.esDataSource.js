@@ -49,27 +49,6 @@ var IdcEsDataSource;
     var modeSpecificSetupFns = {};
 
     /**
-     * Converts sort info in settings into a list of actual field/direction pairs.
-     *
-     * Expands special fields into their constituent field list to sort on.
-     */
-    function expandSpecialFieldSortInfo(settings) {
-      var sortInfo = {};
-      $.each(settings.sort, function eachSortField(field, dir) {
-        if (indiciaData.fieldConvertorSortFields[field] && $.isArray(indiciaData.fieldConvertorSortFields[field])) {
-          $.each(indiciaData.fieldConvertorSortFields[field], function eachUnderlyingField() {
-            sortInfo[this] = dir;
-          });
-        } else {
-          // For consistency, don't want keyword version of field, we'll add
-          // it in when required.
-          sortInfo[field.replace(/\.keyword$/, '')] = dir;
-        }
-      });
-      return sortInfo;
-    }
-
-    /**
      * Some generic preparation for modes that aggregate data.
      */
     function prepareAggregationMode() {
@@ -99,7 +78,7 @@ var IdcEsDataSource;
      */
     modeSpecificSetupFns.initCompositeAggregation = function initCompositeAggregation() {
       var subAggs = {};
-      var sortInfo = expandSpecialFieldSortInfo(this.settings);
+      var sortInfo = indiciaFns.expandSpecialFieldSortInfo(this.settings.sort);
       var settings = this.settings;
       var compositeSources = [];
       var uniqueFieldWithSuffix = indiciaFns.esFieldWithKeywordSuffix(settings.uniqueField);
@@ -156,7 +135,7 @@ var IdcEsDataSource;
      */
     modeSpecificSetupFns.initTermAggregation = function initTermAggregation() {
       var subAggs;
-      var sortInfo = expandSpecialFieldSortInfo(this.settings);
+      var sortInfo = indiciaFns.expandSpecialFieldSortInfo(this.settings.sort);
       // Term aggregation sorts by single field only.
       var sortField = Object.keys(sortInfo)[0];
       var sortDir = sortInfo[sortField];

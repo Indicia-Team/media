@@ -487,6 +487,33 @@
   };
 
   /**
+   * Converts sort info in settings into a list of actual field/direction pairs.
+   *
+   * Expands special fields into their constituent field list to sort on.
+   */
+  indiciaFns.expandSpecialFieldSortInfo = function expandSpecialFieldSortInfo(sort, withKeyword) {
+    var sortInfo = {};
+    $.each(sort, function eachSortField(field, dir) {
+      if (indiciaData.fieldConvertorSortFields[field.simpleFieldName()] &&
+          $.isArray(indiciaData.fieldConvertorSortFields[field.simpleFieldName()])) {
+        $.each(indiciaData.fieldConvertorSortFields[field.simpleFieldName()], function eachUnderlyingField() {
+          sortInfo[this] = dir;
+        });
+      } else if (indiciaData.fieldConvertorSortFields[field.simpleFieldName()]) {
+        sortInfo = indiciaData.fieldConvertorSortFields[field.simpleFieldName()];
+      } else if (withKeyword) {
+        // Normal field with keyword ready to send to ES.
+        sortInfo[indiciaFns.esFieldWithKeywordSuffix(field)] = dir;
+      } else {
+        // If just getting sort info, not sending to ES, then easier without keyword
+        // for comparison with field names.
+        sortInfo[field.replace(/\.keyword$/, '')] = dir;
+      }
+    });
+    return sortInfo;
+  };
+
+  /**
    * A list of functions which provide HTML generation for special fields.
    *
    * These are field values in HTML that can be extracted from an Elasticsearch
@@ -855,6 +882,10 @@
     lat_lon: function latLon(text) {
       var coords = text.split(/[, ]/);
       var query;
+      if (coords.length !== 2) {
+        // Invalid format.
+        return false;
+      }
       coords[0] = coords[0].match(/S$/) ? 0 - coords[0].replace(/S$/, '') : parseFloat(coords[0].replace(/[^\d\.]$/, ''))
       coords[1] = coords[1].match(/W$/) ? 0 - coords[1].replace(/[^\d\.]$/, '') : parseFloat(coords[1].replace(/[^\d\.]$/, ''));
       query = {
@@ -1107,6 +1138,7 @@
     var bounds;
     var agg = {};
     var filterRows = [];
+    var sortInfo;
     if (typeof source.settings.size !== 'undefined') {
       data.size = source.settings.size;
     }
@@ -1114,9 +1146,10 @@
       if (source.settings.from) {
         data.from = source.settings.from;
       }
-      // Sort order of returned documents - only useful for non-aggregated data.
+      // Sort order of returned documents - only useful for non-aggregated data which have to store
+      // sort info in the aggregation itself.
       if (source.settings.sort && !source.settings.aggregation) {
-        data.sort = source.settings.sort;
+        data.sort = indiciaFns.expandSpecialFieldSortInfo(source.settings.sort, true);
       }
     }
     if (source.settings.filterBoolClauses) {

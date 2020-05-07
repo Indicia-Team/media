@@ -91,13 +91,13 @@
     var done = [];
     var ol = $(el).find('.data-grid-settings ol');
     $.each(columns, function eachColumn() {
-      var colInfo = el.settings.availableColumnInfo[this];
+      var colInfo = el.settings.availableColumnInfo[this.field];
       var caption = colInfo.caption ? colInfo.caption : '<em>no heading</em>';
       var description = colInfo.description ? colInfo.description : '';
-      done.push(this);
+      done.push(this.field);
       $('<li>' +
         '<div class="checkbox">' +
-        '<label><input type="checkbox" checked="checked" value="' + this + '">' + caption + '</label>' +
+        '<label><input type="checkbox" checked="checked" value="' + this.field + '">' + caption + '</label>' +
         '</div>' + description +
         '</li>').appendTo(ol);
     });
@@ -117,6 +117,7 @@
   function addColumnHeadings(el, header) {
     var headerRow = $('<tr/>').appendTo(header);
     var breakpointsByIdx = [];
+    var aggInfo = el.settings.sourceObject.settings.aggregation;
     if (el.settings.autoResponsiveCols) {
       // Build list of breakpoints to use by column position.
       $.each(el.settings.responsiveOptions.breakpoints, function eachPoint(name, point) {
@@ -133,19 +134,20 @@
       $('<th class="footable-toggle-col" data-sort-ignore="true"></th>').appendTo(headerRow);
     }
     $.each(el.settings.columns, function eachColumn(idx) {
-      var colDef = el.settings.availableColumnInfo[this];
+      var colDef = el.settings.availableColumnInfo[this.field];
       var heading = colDef.caption;
       var footableExtras = '';
-      var sortableField = typeof indiciaData.esMappings[this] !== 'undefined'
-        && indiciaData.esMappings[this].sort_field;
+      var sortableField = typeof indiciaData.esMappings[this.field] !== 'undefined'
+        && indiciaData.esMappings[this.field].sort_field;
       // Tolerate hyphen or camelCase.
       var hideBreakpoints = colDef.hideBreakpoints || colDef['hide-breakpoints'];
       var dataType = colDef.dataType || colDef['data-type'];
       sortableField = sortableField
-        || indiciaData.fieldConvertorSortFields[this.simpleFieldName()]
-        // Composite aggregation mode disables sort on aggregation columns. Assume
-        // other aggregation modes allow sort (hopefully).
-        || (el.settings.sourceObject.settings.aggregation && el.settings.sourceObject.settings.mode !== 'compositeAggregation');
+        || indiciaData.fieldConvertorSortFields[this.field.simpleFieldName()]
+        // Simple top level terms agg columns should sort OK.
+        || (aggInfo && aggInfo[this.field])
+        // Doc_count treated like a special agg - supports sort.
+        || (aggInfo && this.field === 'doc_count');
       if (el.settings.sortable !== false && sortableField) {
         heading += '<span class="sort fas fa-sort"></span>';
       }
@@ -158,7 +160,7 @@
       if (dataType) {
         footableExtras += ' data-type="' + dataType + '"';
       }
-      $('<th class="col-' + idx + '" data-field="' + this + '"' + footableExtras + '>' + heading + '</th>')
+      $('<th class="col-' + idx + '" data-field="' + this.field + '"' + footableExtras + '>' + heading + '</th>')
         .appendTo(headerRow);
     });
     if (el.settings.actions.length) {
@@ -179,25 +181,25 @@
       $('<td class="footable-toggle-col"></td>').appendTo(filterRow);
     }
     $.each(el.settings.columns, function eachColumn(idx) {
-      var td = $('<td class="col-' + idx + '" data-field="' + this + '"></td>').appendTo(filterRow);
+      var td = $('<td class="col-' + idx + '" data-field="' + this.field + '"></td>').appendTo(filterRow);
       var title;
-      var caption = el.settings.availableColumnInfo[this].caption;
+      var caption = el.settings.availableColumnInfo[this.field].caption;
       // No filter input if this column has no mapping unless there is a
       // special field function that can work out the query.
-      if (typeof indiciaData.esMappings[this] !== 'undefined'
-          || typeof indiciaFns.fieldConvertorQueryBuilders[this.simpleFieldName()] !== 'undefined') {
-        if (indiciaFns.fieldConvertorQueryBuilders[this.simpleFieldName()]) {
-          if (indiciaFns.fieldConvertorQueryDescriptions[this.simpleFieldName()]) {
-            title = indiciaFns.fieldConvertorQueryDescriptions[this.simpleFieldName()];
+      if (typeof indiciaData.esMappings[this.field] !== 'undefined'
+          || typeof indiciaFns.fieldConvertorQueryBuilders[this.field.simpleFieldName()] !== 'undefined') {
+        if (indiciaFns.fieldConvertorQueryBuilders[this.field.simpleFieldName()]) {
+          if (indiciaFns.fieldConvertorQueryDescriptions[this.field.simpleFieldName()]) {
+            title = indiciaFns.fieldConvertorQueryDescriptions[this.field.simpleFieldName()];
           } else {
             title = 'Enter a value to find matches in the ' + caption + ' column.';
           }
-        } else if (indiciaData.esMappings[this].type === 'text' || indiciaData.esMappings[this].type === 'keyword') {
+        } else if (indiciaData.esMappings[this.field].type === 'text' || indiciaData.esMappings[this.field].type === 'keyword') {
           title = 'Search for words in the ' + caption + ' column. Prefix with ! to exclude rows which contain words ' +
             'beginning with the text you enter. Use * at the end of words to find words starting with. Use ' +
             '&quot;&quot; to group words into phrases and | between words to request either/or searches. Use - ' +
             'before a word to exclude that word from the search results.';
-        } else if (indiciaData.esMappings[this].type === 'date') {
+        } else if (indiciaData.esMappings[this.field].type === 'date') {
           title = 'Search for dates in the ' + caption + ' column. Searches can be in the format yyyy, yyyy-yyyy, ' +
             'dd/mm/yyyy or dd/mm/yyyy hh:mm.';
         } else {
@@ -213,7 +215,7 @@
     el.settings.columns = [];
     $.each(colsList, function eachCol() {
       if (el.settings.availableColumnInfo[this]) {
-        el.settings.columns.push(this);
+        el.settings.columns.push(el.settings.availableColumnInfo[this]);
       }
     });
   }
@@ -710,15 +712,15 @@
       var rangeValue;
       var classes = ['col-' + idx];
       var style = '';
-      var colDef = el.settings.availableColumnInfo[this];
+      var colDef = el.settings.availableColumnInfo[this.field];
       var date;
       // Extra space in last col to account for tool icons.
       var extraSpace = idx === el.settings.columns.length - 1 && !el.settings.actions.length ? 2 : 0;
       var charWidth;
       // In compositeAggregation mode, fields are replaced by key names. We replace
       // . with - to avoid confusion when iterating down paths.
-      var field = sourceSettings.mode === 'compositeAggregation' && $.inArray(this, sourceSettings.fields) > -1
-        ? this.asCompositeKeyName() : this;
+      var field = sourceSettings.mode === 'compositeAggregation' && $.inArray(this.field, sourceSettings.fields) > -1
+        ? this.field.asCompositeKeyName() : this.field;
       value = indiciaFns.getValueForField(doc, field, colDef);
       if (colDef.rangeField) {
         rangeValue = indiciaFns.getValueForField(doc, colDef.rangeField);
@@ -741,7 +743,7 @@
         maxCharsPerCol['col-' + idx] =
           Math.max(maxCharsPerCol['col-' + idx], $('<p>' + value + '</p>').text().length + extraSpace);
       }
-      classes.push('field-' + this.replace(/\./g, '--').replace(/_/g, '-'));
+      classes.push('field-' + this.field.replace(/\./g, '--').replace(/_/g, '-'));
       // Copy across responsive hidden cols.
       if ($(el).find('table th.col-' + idx).css('display') === 'none') {
         style = ' style="display: none"';
@@ -825,6 +827,31 @@
     return longestWord;
   }
 
+  function setupColumnInfo(el) {
+    el.settings.availableColumnInfo = {};
+    // Keep the list of names in order.
+    el.settings.availableColumnNames = [];
+    // Specified columns must appear first.
+    $.each(el.settings.columns, function eachCol() {
+      el.settings.availableColumnInfo[this.field] = {
+        field: this.field,
+        caption: this.caption
+      };
+      el.settings.availableColumnNames.push(this.field);
+    });
+    // Add other mappings if in docs mode, unless overridden by availableColumns
+    // setting.
+    if (el.settings.sourceObject.settings.mode === 'docs') {
+      $.each(indiciaData.gridMappingFields, function eachMapping(key, obj) {
+        if ($.inArray(key, el.settings.availableColumnInfo) === -1 &&
+            (!el.settings.availableColumns || $.inArray(key, el.settings.availableColumns) > -1)) {
+          el.settings.availableColumnInfo[key] = $.extend({}, obj, {field: key});
+          el.settings.availableColumnNames.push(key);
+        }
+      });
+    }
+  }
+
   /**
    * Declare public methods.
    */
@@ -863,8 +890,10 @@
       if (typeof el.settings.columns === 'undefined') {
         indiciaFns.controlFail(el, 'Missing columns config for table.');
       }
+      setupColumnInfo(el);
       // Store original column settings.
       el.settings.defaultColumns = el.settings.columns.slice();
+      // Load from cookie.
       if (el.settings.cookies) {
         savedCols = $.cookie('cols-' + el.id);
         // Don't recall cookie if empty, as this is unlikely to be deliberate.
@@ -872,6 +901,7 @@
           applyColumnsList(el, JSON.parse(savedCols));
         }
       }
+      // Revert to default in case of broken cookie.
       if (el.settings.columns.length === 0) {
         el.settings.columns = el.settings.defaultColumns.slice();
       }
@@ -958,8 +988,8 @@
       $.each(el.settings.columns, function eachColumn(idx) {
         // Only use the longest word in the caption as we'd rather break the
         // heading than the data rows.
-        maxCharsPerCol['col-' + idx] = Math.max(longestWordLength(el.settings.availableColumnInfo[this].caption), 3);
-        if (typeof indiciaData.esMappings[this] !== 'undefined' && indiciaData.esMappings[this].sort_field) {
+        maxCharsPerCol['col-' + idx] = Math.max(longestWordLength(el.settings.availableColumnInfo[this.field].caption), 3);
+        if (typeof indiciaData.esMappings[this] !== 'undefined' && indiciaData.esMappings[this.field].sort_field) {
           // Add 2 chars to allow for the sort icon.
           maxCharsPerCol['col-' + idx] += 2;
         }
