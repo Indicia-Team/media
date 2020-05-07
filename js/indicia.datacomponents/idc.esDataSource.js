@@ -49,19 +49,48 @@ var IdcEsDataSource;
     var modeSpecificSetupFns = {};
 
     /**
-     * Finds the sort field and direction from the source config.
+     * Converts sort info in settings into a list of actual field/direction pairs.
      *
-     * For termAggregation mode. Sets default to the unique field if not set.
+     * Expands special fields into their constituent field list to sort on.
      */
-    function getTermAggregationSortInfo(settings) {
-      // Find the sort field and direction from the source config. Only single
-      // supported in termAggregation mode at present. Doc_count is a special
-      // value that sorts by _count.
-      return {
-        field: Object.keys(settings.sort)[0] === 'doc_count' ? '_count' : Object.keys(settings.sort)[0],
-        dir: settings.sort[Object.keys(settings.sort)[0]]
-      };
+    function expandSpecialFieldSortInfo(settings) {
+      var sortInfo = {};
+      $.each(settings.sort, function eachSortField(field, dir) {
+        if (indiciaData.fieldConvertorSortFields[field] && $.isArray(indiciaData.fieldConvertorSortFields[field])) {
+          $.each(indiciaData.fieldConvertorSortFields[field], function eachUnderlyingField() {
+            sortInfo[this] = dir;
+          });
+        } else {
+          // For consistency, don't want keyword version of field, we'll add
+          // it in when required.
+          sortInfo[field.replace(/\.keyword$/, '')] = dir;
+        }
+      });
+      return sortInfo;
     }
+
+    /**
+     * Some generic preparation for modes that aggregate data.
+     */
+    function prepareAggregationMode() {
+      var settings = this.settings;
+      var countingRequest;
+      // Include the unique field in the list of fields request even if not specified.
+      if ($.inArray(settings.uniqueField, settings.fields) === -1) {
+        settings.fields.unshift(settings.uniqueField);
+      }
+      // Output aggregated, so size applies to agg not the docs list.
+      settings.aggregationSize = settings.aggregationSize || settings.size || 10000;
+      settings.size = 0;
+      // Capture supplied aggregation so we can rebuild each time.
+      settings.suppliedAggregation = settings.suppliedAggregation || settings.aggregation;
+      settings.aggregation = settings.suppliedAggregation;
+      // Work out if the request required to count the data has changed.
+      countingRequest = indiciaFns.getFormQueryData(this, true);
+      settings.needsRecount = JSON.stringify(countingRequest) !== lastCountRequestStr;
+      lastCountRequestStr = JSON.stringify(countingRequest);
+    }
+
 
     /** Private methods for specific setup for each source mode. */
 
@@ -70,27 +99,39 @@ var IdcEsDataSource;
      */
     modeSpecificSetupFns.initCompositeAggregation = function initCompositeAggregation() {
       var subAggs = {};
+      var sortInfo = expandSpecialFieldSortInfo(this.settings);
       var settings = this.settings;
       var compositeSources = [];
-      settings.aggregationSize = settings.aggregationSize || settings.size || 10000;
-      settings.size = 0;
+      var uniqueFieldWithSuffix = indiciaFns.esFieldWithKeywordSuffix(settings.uniqueField);
+      prepareAggregationMode.call(this);
       // Capture supplied aggregation so we can rebuild each time.
       settings.suppliedAggregation = settings.suppliedAggregation || settings.aggregation;
-      // Include the unique field in the list of fields request even if not specified.
-      if ($.inArray(settings.uniqueField, settings.fields) === -1) {
-        settings.fields.push(settings.uniqueField);
-      }
       // Convert the fields list to the sources format required for composite agg.
+      // Sorted fields must go first.
+      $.each(sortInfo, function eachSortField(field, dir) {
+        var srcObj = {};
+        if ($.inArray(field, settings.fields) > -1) {
+          srcObj[field.asCompositeKeyName()] = { terms: {
+            field: indiciaFns.esFieldWithKeywordSuffix(field),
+            order: dir
+          } };
+          compositeSources.push(srcObj);
+        }
+      });
       $.each(settings.fields, function eachField() {
         var srcObj = {};
-        srcObj[this.asCompositeKeyName()] = { terms: { field: indiciaFns.esFieldWithKeywordSuffix(this) } };
-        compositeSources.push(srcObj);
+        // Only the ones we haven't already added to sort on.
+        if ($.inArray(this, Object.keys(sortInfo)) === -1) {
+          srcObj[this.asCompositeKeyName()] = { terms: { field: indiciaFns.esFieldWithKeywordSuffix(this) } };
+          compositeSources.push(srcObj);
+        }
       });
       // Add the additional aggs for the aggregations requested in config.
       $.each(settings.suppliedAggregation, function eachAgg(name) {
         subAggs[name] = this;
       });
       // @todo handle sort
+      // @todo optimise - only recount if filter changed.
       settings.aggregation = {
         rows: {
           composite: {
@@ -100,12 +141,11 @@ var IdcEsDataSource;
           aggs: subAggs
         }
       };
-      if (settings.uniqueField) {
-        settings.countAggregation = {
-          count: {
-            cardinality: {
-              field: indiciaFns.esFieldWithKeywordSuffix(settings.uniqueField)
-            }
+      // Add a count agg only if filter changed.
+      if (this.settings.needsRecount) {
+        settings.aggregation.count = {
+          cardinality: {
+            field: uniqueFieldWithSuffix
           }
         };
       }
@@ -116,17 +156,13 @@ var IdcEsDataSource;
      */
     modeSpecificSetupFns.initTermAggregation = function initTermAggregation() {
       var subAggs;
-      var sort;
-      var orderBy;
+      var sortInfo = expandSpecialFieldSortInfo(this.settings);
+      // Term aggregation sorts by single field only.
+      var sortField = Object.keys(sortInfo)[0];
+      var sortDir = sortInfo[sortField];
       var settings = this.settings;
       var uniqueFieldWithSuffix = indiciaFns.esFieldWithKeywordSuffix(settings.uniqueField);
-      var sortFieldWithoutSuffix;
-      // Use the specified size to limit aggregation buckets, not docs.
-      settings.aggregationSize = settings.aggregationSize || settings.size || 10000;
-      settings.size = 0;
-      sort = getTermAggregationSortInfo(this.settings);
-      // Capture supplied aggregation so we can rebuild each time.
-      settings.suppliedAggregation = settings.suppliedAggregation || settings.aggregation;
+      prepareAggregationMode.call(this);
       // List of sub-aggregations within the outer terms agg for the unique field must
       // always contain a top_hits agg to retrieve field values.
       subAggs = {
@@ -142,39 +178,35 @@ var IdcEsDataSource;
       // Add the additional aggs for the aggregations requested in config.
       $.each(settings.suppliedAggregation, function eachAgg(name) {
         subAggs[name] = this;
-        if (name === sort.field && settings.sortAggregation &&
-            settings.sortAggregation[sort.field]) {
+        if (name === sortField && settings.sortAggregation &&
+            settings.sortAggregation[sortField]) {
           // Aggregation has a different aggregation to simplify the sort
           // e.g. where agg is costly.
-          sort.field = 'orderby_' + name;
-          subAggs[sort.field] = settings.sortAggregation[name];
+          sortField = 'orderby_' + name;
+          subAggs[sortField] = settings.sortAggregation[name];
         }
       });
-      // Include the unique field in the list of fields request even if not specified.
-      if ($.inArray(settings.uniqueField, settings.fields) === -1) {
-        settings.fields.push(settings.uniqueField);
-      }
-      sortFieldWithoutSuffix = sort.field.replace(/\.keyword$/, '');
-      if ($.inArray(sortFieldWithoutSuffix, settings.fields) > -1) {
+      if ($.inArray(sortField, settings.fields) > -1) {
         // Sorting by a standard field.
-        if (sortFieldWithoutSuffix === settings.uniqueField) {
+        if (sortField === settings.uniqueField) {
           // Using the outer agg to sort, so simple use of _key.
-          orderBy = '_key';
+          sortField = '_key';
         } else {
           // Using another field to sort, so add an aggregation to get a single
           // bucket value which we can sort on.
           subAggs.sortfield = {
             max: {
-              field: sort.field
+              field: indiciaFns.esFieldWithKeywordSuffix(sortField)
             }
           };
-          orderBy = 'sortfield';
+          sortField = 'sortfield';
         }
       } else {
-        // Sorting by a named aggregation.
-        orderBy = sort.field;
+        // Sorting by a named aggregation. Special case - sort by _count not doc_count.
+        sortField = sortField === 'doc_count' ? '_count' : sortField;
       }
       // Create the final aggregation object for the request.
+      // @todo optimise - only recount if filter changed.
       settings.aggregation = {
         idfield: {
           terms: {
@@ -185,14 +217,17 @@ var IdcEsDataSource;
             }
           },
           aggs: subAggs
-        },
-        count: {
+        }
+      };
+      settings.aggregation.idfield.terms.order[sortField] = sortDir;
+      // Add a count agg only if filter changed.
+      if (this.settings.needsRecount) {
+        settings.aggregation.count = {
           cardinality: {
             field: uniqueFieldWithSuffix
           }
-        }
-      };
-      settings.aggregation.idfield.terms.order[orderBy] = sort.dir;
+        };
+      }
     };
 
     /** Private methods **/
@@ -216,9 +251,6 @@ var IdcEsDataSource;
      * AJAX success handler for the population call.
      */
     function handlePopulationResponse(url, request, response, force, onlyForControl) {
-      var countAggregateControls = [];
-      var countRequest;
-      var pageSize;
       var source = this;
       if (response.error || (response.code && response.code !== 200)) {
         hideAllSpinners.call(this);
@@ -232,44 +264,9 @@ var IdcEsDataSource;
           $.each(source.outputs[pluginClass], function eachOutput() {
             if (!onlyForControl || onlyForControl === this) {
               $(this)[pluginClass]('populate', source.settings, response, request);
-              if (pluginClass === 'idcDataGrid' && source.settings.countAggregation) {
-                // For composite aggregations we may specify a separate
-                // aggregation to provide the count for grid pager.
-                countAggregateControls.push(this);
-              }
             }
           });
         });
-        if (countAggregateControls.length > 0) {
-          // Separate aggregation to get total record count, e.g. where
-          // composite aggregation doesn't return total hit count.
-          countRequest = indiciaFns.getFormQueryData(source, true);
-          pageSize = indiciaFns.findValue(source.settings.aggregation, 'composite').size;
-          // Only need to count on initial population or when filter changes.
-          if (countRequest && (JSON.stringify(countRequest) !== lastCountRequestStr || force)) {
-            lastCountRequestStr = JSON.stringify(countRequest);
-            $.ajax({
-              url: url,
-              type: 'post',
-              data: countRequest,
-              success: function countSuccess(countResponse) {
-                // Update the grid pager data.
-                $.each(countAggregateControls, function eachGrid() {
-                  var grid = this;
-                  $.each(countResponse.aggregations, function eachAgg() {
-                    $(grid).idcDataGrid('updatePagerForCountAgg', pageSize, this.value);
-                  });
-                });
-              }
-            });
-          } else {
-            $.each(countAggregateControls, function eachGrid() {
-              // Update the grid pager data. Use the old count but new page
-              // location info.
-              $(this).idcDataGrid('updatePagerForCountAgg', pageSize);
-            });
-          }
-        }
         hideAllSpinners.call(source);
       }
     }

@@ -73,6 +73,11 @@
   };
 
   /**
+   * Somewhere to keep the count if not bothering to
+   */
+  var lastCount;
+
+  /**
    * Removes the configuration overlay pane.
    */
   function removeConfigPane(el) {
@@ -138,7 +143,9 @@
       var dataType = colDef.dataType || colDef['data-type'];
       sortableField = sortableField
         || indiciaData.fieldConvertorSortFields[this.simpleFieldName()]
-        || (el.settings.sourceObject.settings.aggregation);
+        // Composite aggregation mode disables sort on aggregation columns. Assume
+        // other aggregation modes allow sort (hopefully).
+        || (el.settings.sourceObject.settings.aggregation && el.settings.sourceObject.settings.mode !== 'compositeAggregation');
       if (el.settings.sortable !== false && sortableField) {
         heading += '<span class="sort fas fa-sort"></span>';
       }
@@ -280,59 +287,6 @@
   }
 
   /**
-   * Apply changes to a source when sorting for a composite aggregation.
-   */
-  function handleSortForCompositeAgg(source, fieldName, sortDesc) {
-    var aggSources;
-    var newAggSources = [];
-    var sortFields;
-    if (source.settings.originalCompositeSources) {
-      aggSources = $.extend({}, source.settings.originalCompositeSources);
-    } else {
-      aggSources = $.extend({}, indiciaFns.findValue(source.settings.aggregation, 'composite').sources);
-      source.settings.originalCompositeSources = $.extend({}, aggSources);
-    }
-    if (indiciaData.fieldConvertorSortFields[fieldName] && $.isArray(indiciaData.fieldConvertorSortFields[fieldName])) {
-      sortFields = indiciaData.fieldConvertorSortFields[fieldName];
-      $.each(aggSources, function eachAggSource() {
-        var pos = $.inArray(indiciaFns.findValue(this, 'field'), sortFields);
-        if (pos === -1) {
-          newAggSources.push(this);
-        } else {
-          indiciaFns.findValue(this, 'terms').order = sortDesc ? 'desc' : 'asc';
-          newAggSources.splice(pos, 0, this);
-        }
-      });
-    } else {
-      $.each(aggSources, function eachAggSource() {
-        if ($(this).prop(fieldName.asCompositeKeyName())) {
-          indiciaFns.findValue(this, 'terms').order = sortDesc ? 'desc' : 'asc';
-          newAggSources.splice(0, 0, this);
-        } else {
-          newAggSources.push(this);
-        }
-      });
-    }
-    indiciaFns.findValue(source.settings.aggregation, 'composite').sources = newAggSources;
-  }
-
-  /**
-   * Apply changes to a source when sorting in a term aggregation table.
-   */
-  function handleSortForTermAggregation(source, fieldName, sortDesc) {
-    var sortFieldName;
-    if (indiciaData.fieldConvertorSortFields[fieldName] && $.isArray(indiciaData.fieldConvertorSortFields[fieldName])) {
-      // The terms we aggregate on can be special fields with underlying
-      // mappings, but we only support sort by the first field not nested
-      // sort.
-      sortFieldName = indiciaData.fieldConvertorSortFields[fieldName][0];
-    } else {
-      sortFieldName = fieldName;
-    }
-    source.settings.sort[sortFieldName] = sortDesc ? 'desc' : 'asc';
-  }
-
-  /**
    * Apply changes to a source when sorting on a special field column.
    */
   function handleSortForSpecialField(source, fieldName, sortDesc) {
@@ -398,22 +352,17 @@
      * Sort column headers click handler.
      */
     indiciaFns.on('click', '#' + el.id + ' .sort', {}, function clickSort() {
-      var fieldName = $(this).closest('th').attr('data-field').simpleFieldName();
+      var fieldName = $(this).closest('th').attr('data-field');
       var sortDesc = $(this).hasClass('fa-sort-up');
       var sourceObj = el.settings.sourceObject;
       showHeaderSortInfo(this, sortDesc);
       sourceObj.settings.sort = {};
-      if (sourceObj.settings.mode === 'compositeAggregation') {
-        handleSortForCompositeAgg(sourceObj, fieldName, sortDesc);
-      } else if (sourceObj.settings.mode === 'termAggregation') {
-        handleSortForTermAggregation(sourceObj, fieldName, sortDesc);
-      } else if (indiciaData.esMappings[fieldName]) {
-        sourceObj.settings.sort[indiciaData.esMappings[fieldName].sort_field] = {
-          order: sortDesc ? 'desc' : 'asc'
-        };
+      sourceObj.settings.sort[fieldName] = sortDesc ? 'desc' : 'asc';
+      /*
+
       } else if (indiciaData.fieldConvertorSortFields[fieldName]) {
         handleSortForSpecialField(sourceObj, fieldName, sortDesc);
-      }
+      }*/
       sourceObj.populate();
     });
 
@@ -687,42 +636,50 @@
    *   Data sent in request.
    */
   function drawTableFooter(el, response, data, afterKey) {
-    var fromRowIndex = typeof data.from === 'undefined' ? 1 : (data.from + 1);
+    var fromRowIndex;
     var ofLabel = '';
     var toLabel;
-    var total;
     var pageSize = $(el).find('tbody tr').length;
+    var sourceSettings = el.settings.sourceObject.settings;
+    var total;
+    if (sourceSettings.mode === 'docs') {
+      total = response.hits.total.value;
+    } else if (response.aggregations.count) {
+      // Aggregation modes use a separate agg to count only when the filter changes.
+      total = response.aggregations.count.value;
+      lastCount = total;
+    } else if (lastCount) {
+      total = lastCount;
+    }
     // Set up the count info in the footer.
-    if (el.settings.sourceObject.settings.mode === 'compositeAggregation') {
+    if (sourceSettings.mode === 'compositeAggregation') {
       // Composite aggs use after_key for simple paging.
       if (afterKey) {
         el.settings.compositeInfo.pageAfterKeys[el.settings.compositeInfo.page + 1] = afterKey;
       }
       $(el).find('.pager-row .next').prop('disabled', !afterKey);
       $(el).find('.pager-row .prev').prop('disabled', el.settings.compositeInfo.page === 0);
+      fromRowIndex = (el.settings.compositeInfo.page * sourceSettings.aggregationSize) + 1;
+    } else if (sourceSettings.mode === 'termAggregation') {
+      // Can't page through a standard terms aggregation.
+      $(el).find('.pager-row .buttons').hide();
+      fromRowIndex = 1;
     } else {
-      if (el.settings.sourceObject.settings.mode === 'termAggregation') {
-        // The count agg is always added in this mode.
-        total = response.aggregations.count.value;
-        // Can't page through a standard aggregation.
-        $(el).find('.pager-row .buttons').hide();
+      fromRowIndex = typeof data.from === 'undefined' ? 1 : (data.from + 1);
+      // Enable or disable the paging buttons.
+      $(el).find('.pager-row .prev').prop('disabled', fromRowIndex <= 1);
+      $(el).find('.pager-row .next').prop('disabled', fromRowIndex + response.hits.hits.length >= response.hits.total.value);
+    }
+    // Output text describing loaded hits.
+    if (pageSize > 0) {
+      if (fromRowIndex === 1 && pageSize === total) {
+        $(el).find('tfoot .showing').html('Showing all ' + total + ' hits');
       } else {
-        total = response.hits.total.value;
-        // Enable or disable the paging buttons.
-        $(el).find('.pager-row .prev').prop('disabled', fromRowIndex <= 1);
-        $(el).find('.pager-row .next').prop('disabled', fromRowIndex + response.hits.hits.length >= response.hits.total.value);
+        toLabel = fromRowIndex === 1 ? 'first ' : fromRowIndex + ' to ';
+        $(el).find('tfoot .showing').html('Showing ' + toLabel + (fromRowIndex + (pageSize - 1)) + ' of ' + ofLabel + total);
       }
-      // Output text describing loaded hits.
-      if (pageSize > 0) {
-        if (fromRowIndex === 1 && pageSize === total) {
-          $(el).find('tfoot .showing').html('Showing all ' + total + ' hits');
-        } else {
-          toLabel = fromRowIndex === 1 ? 'first ' : fromRowIndex + ' to ';
-          $(el).find('tfoot .showing').html('Showing ' + toLabel + (fromRowIndex + (pageSize - 1)) + ' of ' + ofLabel + total);
-        }
-      } else {
-        $(el).find('tfoot .showing').html('No hits');
-      }
+    } else {
+      $(el).find('tfoot .showing').html('No hits');
     }
   }
 
@@ -1056,23 +1013,6 @@
       drawTableFooter(el, response, data, afterKey);
       fireAfterPopulationCallbacks(el);
       setColWidths(el, maxCharsPerCol);
-    },
-
-    /**
-     * Special handling for pager information when using countAggregation.
-     *
-     * @param int count
-     *   Optional new total row count.
-     */
-    updatePagerForCountAgg: function updatePagerForCountAgg(pageSize, count) {
-      var pageInfo = this.settings.compositeInfo;
-      // Optionally update the total count.
-      if (count) {
-        this.totalRowCount = count;
-      }
-      $(this).find('tfoot .showing').html('Showing ' + (pageInfo.page * pageSize + 1) +
-          ' to ' + Math.min(this.totalRowCount, (pageInfo.page + 1) * pageSize) +
-          ' of ' + this.totalRowCount);
     },
 
     /**

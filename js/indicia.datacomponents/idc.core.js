@@ -1092,8 +1092,8 @@
    *   The source object.
    * @param bool doingCount
    *   Set to true if getting query data for a request intended to count a
-   *   dataset rather than retrieve data. Disables from, sort options and
-   *   uses the countAggregation if specified.
+   *   dataset rather than retrieve data. Disables from and sort options,
+   *   allowing unnecessary recounts to be avoided.
    */
   indiciaFns.getFormQueryData = function getFormQueryData(source, doingCount) {
     var data = {
@@ -1205,15 +1205,13 @@
       }
     }
     if (source.settings.aggregation) {
-      // Copy to avoid changing original. Use count aggregation where a
-      // separate agg needed to count against.
-      if (doingCount && source.settings.countAggregation) {
-        $.extend(true, agg, source.settings.countAggregation);
-      } else {
-        $.extend(true, agg, source.settings.aggregation);
+      // Copy to avoid changing original.
+      $.extend(true, agg, source.settings.aggregation);
+      if (doingCount && source.settings.mode === 'termAggregation' && agg.idfield) {
+        delete agg.idfield.terms.order;
       }
       // Find the map bounds if limited to the viewport of a map and not counting total.
-      if (source.settings.filterBoundsUsingMap && !doingCount) {
+      if (!doingCount && source.settings.filterBoundsUsingMap) {
         mapToFilterTo = $('#' + source.settings.filterBoundsUsingMap);
         if (mapToFilterTo.length === 0 || !mapToFilterTo[0].map) {
           alert('Data source incorrectly configured. @filterBoundsUsingMap does not point to a valid map.');
