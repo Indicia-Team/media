@@ -44,6 +44,16 @@
   };
 
   /**
+   * Save rebuilding request data for each page
+   */
+  var currentRequestData;
+
+  /**
+   * Total rows to download. In some settings we only get this on first page.
+   */
+  var rowsToDownload;
+
+  /**
    * Wind the progress spinner forward to a certain percentage.
    *
    * @param element el
@@ -72,16 +82,14 @@
    *   Response body from the ES proxy containing progress data.
    */
   function updateProgress(el, response) {
-    var done;
-    if (el.settings.aggregation === 'composite') {
-      // Can't get progress, but show something happening.
-      $(el).find('.progress-text').text(response.done + ' items');
-    } else {
-      // ES V7 seems to overshoot, reporting whole rather than partial last page size.
-      done = Math.min(response.done, response.total);
-      $(el).find('.progress-text').text(done + ' of ' + response.total);
-      animateTo(el, done / response.total);
+    var rowsDone = response.done;
+    if (response.total) {
+      rowsToDownload = response.total;
     }
+    // ES V7 seems to overshoot, reporting whole rather than partial last page size.
+    rowsDone = Math.min(rowsDone, rowsToDownload);
+    $(el).find('.progress-text').text(rowsDone + ' of ' + rowsToDownload);
+    animateTo(el, rowsDone / rowsToDownload);
   }
 
   /**
@@ -100,29 +108,26 @@
     // Note, columnsTemplate can be blank.
     if (typeof el.settings.columnsTemplate !== 'undefined') {
       data.columnsTemplate = el.settings.columnsTemplate;
-    } else if (el.settings.aggregation && el.settings.aggregation === 'composite') {
+    } else if (el.settings.sourceObject.settings.mode.match(/Aggregation$/)) {
       data.columnsTemplate = '';
     }
-    if (el.settings.addColumns) {
+    if (el.settings.addColumns && el.settings.addColumns.length !== 0) {
       data.addColumns = el.settings.addColumns;
-    } else if (el.settings.aggregation && el.settings.aggregation === 'composite' && data.columnsTemplate === '') {
+    } else if (el.settings.sourceObject.settings.mode.match(/Aggregation$/) && data.columnsTemplate === '') {
       // Find the first aggregation defined for this source.
       agg = sourceSettings.aggregation[Object.keys(sourceSettings.aggregation)[0]];
       data.addColumns = [];
-      // The agg should contain sources (which are the columns aggregated on).
-      $.each(agg.composite.sources, function eachSource() {
-        $.each(this, function eachField(key) {
-          data.addColumns.push({
-            field: 'key.' + key,
-            caption: key
-          });
+      $.each(sourceSettings.fields, function eachField() {
+        data.addColumns.push({
+          field: 'key.' + this.asCompositeKeyName(),
+          caption: this.asReadableKeyName(),
         });
       });
       // The agg should also contain aggregation for calculated columns.
       $.each(agg.aggs, function eachAgg(key) {
         data.addColumns.push({
-          agg: key,
-          caption: key
+          field: key,
+          caption: key.asReadableKeyName()
         });
       });
 
@@ -139,6 +144,7 @@
   function initSource(el) {
     var settings = el.settings;
     var gridSettings;
+    var sourceSettings;
     if (settings.linkToDataGrid) {
       if ($('#' + settings.linkToDataGrid).length !== 1) {
         indiciaFns.controlFail(el, 'Failed to find dataGrid ' + settings.linkToDataGrid + ' linked to download');
@@ -146,28 +152,24 @@
       // Refresh the columns according to those currently in the dataGrid.
       gridSettings = $('#' + settings.linkToDataGrid)[0].settings;
       settings.source = gridSettings.source;
+      sourceSettings = indiciaData.esSourceObjects[Object.keys(settings.source)[0]].settings;
       settings.columnsTemplate = '';
       settings.addColumns = [];
       $.each(gridSettings.columns, function eachCol() {
+        var field;
+        if (sourceSettings.mode.match(/Aggregation$/) && $.inArray(this.field, sourceSettings.fields) > -1) {
+          field = 'key.' + this.field.asCompositeKeyName();
+        } else {
+          field = this.field;
+        }
         settings.addColumns.push({
-          caption: gridSettings.availableColumnInfo[this].caption,
-          field: this
+          caption: gridSettings.availableColumnInfo[this.field].caption,
+          field: field
         });
       });
     }
     // Only allow a single source for download, so simplify the sources.
     settings.sourceObject = indiciaData.esSourceObjects[Object.keys(settings.source)[0]];
-    if (!settings.columnsTemplate && !settings.addColumns && !settings.removeColumns) {
-      settings.columnsTemplate = '';
-      settings.addColumns = [];
-      // No column specification given, so use the source to work this out.
-      $.each(settings.sourceObject.settings.fields, function eachField() {
-        settings.addColumns.push({
-          caption: this,
-          field: this
-        });
-      });
-    }
   }
 
   /**
@@ -180,32 +182,36 @@
     var date;
     var hours;
     var minutes;
-    var data = {};
     var description = '';
     var sep = indiciaData.esProxyAjaxUrl.match(/\?/) ? '&' : '?';
     var query = sep + 'state=nextPage&uniq_id=' + lastResponse.uniq_id;
-    if (lastResponse.scroll_id) {
-      // Scrolls remember the search query so only need the scroll ID.
-      query += '&scroll_id=' + lastResponse.scroll_id;
-    } else if (el.settings.aggregation && el.settings.aggregation === 'composite') {
-      // Paging composite aggregations requires the full search query.
-      data = indiciaFns.getFormQueryData(el.settings.sourceObject);
-      // Inform the warehouse as composite paging behaviour different. The
-      // uniq_id allows the warehouse to relocate the last request's after_key.
-      query += '&aggregation_type=composite';
-    }
     if (lastResponse.state === 'nextPage') {
-      $.extend(data, columnSettings);
+      if (lastResponse.scroll_id) {
+        // Scrolls remember the search query so only need the scroll ID.
+        query += '&scroll_id=' + lastResponse.scroll_id;
+        // Scrolling remembers all the settings server-side.
+        currentRequestData = {};
+      } else if (el.settings.sourceObject.settings.mode.match(/Aggregation$/)) {
+        // Inform the warehouse as composite paging behaviour different. The
+        // uniq_id allows the warehouse to relocate the last request's after_key.
+        query += '&aggregation_type=composite';
+        // No need to recount!
+        delete currentRequestData.aggs.count;
+      }
       // Post to the ES proxy. Pass scroll_id (docs) or after_key (composite aggregations)
       // parameter to request the next chunk of the dataset.
       $.ajax({
         url: indiciaData.esProxyAjaxUrl + '/download/' + indiciaData.nid + query,
         type: 'POST',
         dataType: 'json',
-        data: data,
+        data: currentRequestData,
         success: function success(response) {
           updateProgress(el, response);
           doPages(el, response, columnSettings);
+        },
+        error: function error(jqXHR, textStatus, errorThrown) {
+          alert('An error occurred with the request to download data.');
+          console.log(errorThrown);
         }
       });
     } else {
@@ -219,7 +225,7 @@
       minutes = '0' + date.getMinutes();
       minutes = minutes.substr(minutes.length - 2);
       description = 'File containing ' + lastResponse.done +
-        (el.settings.aggregation && el.settings.aggregation === 'composite' ? ' items. ' : ' occurrences. ');
+        (el.settings.sourceObject.settings.mode === 'compositeAggregation' ? ' items. ' : ' occurrences. ');
 
       $(el).find('.progress-circle-container').addClass('download-done');
       $(el).find('.idc-download-files').append('<div><a href="' + lastResponse.filename + '">' +
@@ -238,28 +244,36 @@
      * Download button click handler.
      */
     $(el).find('.do-download').click(function doDownload() {
-      var data;
       var sep = indiciaData.esProxyAjaxUrl.match(/\?/) ? '&' : '?';
       var query = sep + 'state=initial';
       var columnSettings;
+      var srcSettings = el.settings.sourceObject.settings;
       initSource(el);
+      // Prepare the source aggregations in composite mode if using automatic
+      // aggregation as it supports scrolling and is faster.
+      el.settings.sourceObject.prepare(srcSettings.mode.match(/Aggregation$/)
+        ? 'compositeAggregation' : srcSettings.mode);
       columnSettings = getColumnSettings(el);
       $(el).find('.progress-circle-container').removeClass('download-done');
       $(el).find('.progress-circle-container').show();
       done = false;
       $(el).find('.circle').attr('style', 'stroke-dashoffset: 503px');
       $(el).find('.progress-text').text('Loading...');
-      data = indiciaFns.getFormQueryData(el.settings.sourceObject);
-      if (el.settings.aggregation && el.settings.aggregation === 'composite') {
+      currentRequestData = indiciaFns.getFormQueryData(el.settings.sourceObject);
+      if (srcSettings.mode.match(/Aggregation$/)) {
         query += '&aggregation_type=composite';
+        // Arbitrary choice of page size.
+        currentRequestData.aggs.rows.composite.size = 500;
       }
-      $.extend(data, columnSettings);
+      $.extend(currentRequestData, columnSettings);
+      // Reset.
+      rowsToDownload = null;
       // Post to the ES proxy.
       $.ajax({
         url: indiciaData.esProxyAjaxUrl + '/download/' + indiciaData.nid + query,
         type: 'POST',
         dataType: 'json',
-        data: data,
+        data: currentRequestData,
         success: function success(response) {
           if (typeof response.code !== 'undefined' && response.code === 401) {
             alert('Elasticsearch alias configuration user or secret incorrect in the form configuration.');
@@ -268,6 +282,10 @@
             updateProgress(el, response);
             doPages(el, response, columnSettings);
           }
+        },
+        error: function error(jqXHR, textStatus, errorThrown) {
+          alert('An error occurred with the request to download data.');
+          console.log(errorThrown);
         }
       });
     });
@@ -296,6 +314,7 @@
       if (typeof options !== 'undefined') {
         $.extend(el.settings, options);
       }
+      el.settings.sourceObject = indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]];
       // Don't do any more init at this point, as might be using a not-yet
       // instantiated dataGrid for config.
       initHandlers(el);

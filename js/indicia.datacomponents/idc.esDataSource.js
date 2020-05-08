@@ -54,6 +54,7 @@ var IdcEsDataSource;
     function prepareAggregationMode() {
       var settings = this.settings;
       var countingRequest;
+      $.extend(settings, { fields: [] });
       // Include the unique field in the list of fields request even if not specified.
       if ($.inArray(settings.uniqueField, settings.fields) === -1) {
         settings.fields.unshift(settings.uniqueField);
@@ -263,11 +264,6 @@ var IdcEsDataSource;
       var source = this;
       var request;
       var url;
-      // Call any special initialisation for this source mode.
-      var initMethodFn = 'init' + source.settings.mode.charAt(0).toUpperCase() + source.settings.mode.slice(1);
-      if (typeof modeSpecificSetupFns[initMethodFn] !== 'undefined') {
-        modeSpecificSetupFns[initMethodFn].call(this);
-      }
       request = indiciaFns.getFormQueryData(source);
       // Pagination support for composite aggregations.
       if (source.settings.after_key) {
@@ -360,6 +356,18 @@ var IdcEsDataSource;
     };
 
     /**
+     * Prepares the aggregations for this source if in an automatic aggregation mode.
+     */
+    IdcEsDataSource.prototype.prepare = function prepare(forceMode) {
+      var mode = forceMode || this.settings.mode;
+      // Call any special initialisation for this source mode.
+      var initMethodFn = 'init' + mode.charAt(0).toUpperCase() + mode.slice(1);
+      if (typeof modeSpecificSetupFns[initMethodFn] !== 'undefined') {
+        modeSpecificSetupFns[initMethodFn].call(this);
+      }
+    };
+
+    /**
      * Request a datasource to repopulate from current parameters.
      *
      * @param bool force
@@ -389,6 +397,7 @@ var IdcEsDataSource;
               var tabSelectFn = function eachTabSet() {
                 if ($(tab).filter(':visible').length > 0) {
                   $(output).find('.loading-spinner').show();
+                  this.prepare();
                   doPopulation.call(source, force, onlyForControl);
                   indiciaFns.unbindTabsActivate($(tab).closest('.ui-tabs'), tabSelectFn);
                 }
@@ -403,6 +412,7 @@ var IdcEsDataSource;
         });
       });
       if (needsPopulation) {
+        this.prepare();
         doPopulation.call(this, force, onlyForControl);
       }
     };

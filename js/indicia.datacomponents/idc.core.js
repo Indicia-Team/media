@@ -47,8 +47,18 @@
    * each field's key to have hyphens instead of full stops, so the names are
    * not confused with paths in the document.
    */
-  String.prototype.asCompositeKeyName = function simpleFieldName() {
+  String.prototype.asCompositeKeyName = function asCompositeKeyName() {
     return this.replace(/\./g, '-');
+  };
+
+  /**
+   * String function to make a field name readable.
+   */
+  String.prototype.asReadableKeyName = function asReadableKeyName() {
+    // Spaces instead of .-_
+    var name = this.replace(/[\.-_]/g, ' ');
+    // Leading caps.
+    return name.charAt(0).toUpperCase() + name.slice(1);
   };
 
   /**
@@ -1138,7 +1148,6 @@
     var bounds;
     var agg = {};
     var filterRows = [];
-    var sortInfo;
     if (typeof source.settings.size !== 'undefined') {
       data.size = source.settings.size;
     }
