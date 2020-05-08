@@ -368,6 +368,13 @@ var IdcEsDataSource;
     };
 
     /**
+     * Ensure next request includes a count.
+     */
+    IdcEsDataSource.prototype.forceRecount = function forceRecount() {
+      lastCountRequestStr = '';
+    };
+
+    /**
      * Request a datasource to repopulate from current parameters.
      *
      * @param bool force
@@ -377,18 +384,18 @@ var IdcEsDataSource;
      *   source are populated.
      */
     IdcEsDataSource.prototype.populate = function datasourcePopulate(force, onlyForControl) {
-      var source = this;
+      var src = this;
       var needsPopulation = false;
-      if (!source.outputs) {
+      if (!src.outputs) {
         // Not initialised yet, so don't populate.
         return;
       }
       // Check we have an output other than the download plugin, which only
       // outputs when you click Download.
       $.each(indiciaData.outputPluginClasses, function eachPluginClass(i, pluginClass) {
-        $.each(source.outputs[pluginClass], function eachOutput() {
+        $.each(src.outputs[pluginClass], function eachOutput() {
           var output = this;
-          var populateThis = $(output)[pluginClass]('getNeedsPopulation', source);
+          var populateThis = $(output)[pluginClass]('getNeedsPopulation', src);
           if ($(output).parents('.ui-tabs-panel:hidden').length > 0) {
             // Don't bother if on a hidden tab.
             populateThis = false;
@@ -397,8 +404,8 @@ var IdcEsDataSource;
               var tabSelectFn = function eachTabSet() {
                 if ($(tab).filter(':visible').length > 0) {
                   $(output).find('.loading-spinner').show();
-                  this.prepare();
-                  doPopulation.call(source, force, onlyForControl);
+                  src.prepare();
+                  doPopulation.call(src, force, onlyForControl);
                   indiciaFns.unbindTabsActivate($(tab).closest('.ui-tabs'), tabSelectFn);
                 }
               };
@@ -412,8 +419,8 @@ var IdcEsDataSource;
         });
       });
       if (needsPopulation) {
-        this.prepare();
-        doPopulation.call(this, force, onlyForControl);
+        src.prepare();
+        doPopulation.call(src, force, onlyForControl);
       }
     };
 

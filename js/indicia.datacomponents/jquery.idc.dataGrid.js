@@ -606,7 +606,7 @@
    * documents), the buckets of an aggregation, or a custom built source table.
    */
   function getSourceDataList(el, response) {
-    if (el.settings.sourceObject.settings.mode.match(/Aggregation$/)) {
+    if (el.settings.sourceObject.settings.aggregation) {
       // Aggregated data so use the buckets.
       return indiciaFns.findValue(response.aggregations, 'buckets');
     }
@@ -1130,7 +1130,15 @@
      */
     getNeedsPopulation: function getNeedsPopulation() {
       return true;
+    },
+
+    /**
+     * Return the count of the entire table.
+     */
+    getDatasetCount: function getDatasetCount() {
+      return lastCount;
     }
+
   };
 
   /**

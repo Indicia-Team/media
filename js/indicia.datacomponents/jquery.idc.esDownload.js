@@ -85,6 +85,8 @@
     var rowsDone = response.done;
     if (response.total) {
       rowsToDownload = response.total;
+    } else if (el.settings.linkToDataGrid) {
+      rowsToDownload = $('#' + el.settings.linkToDataGrid).idcDataGrid('getDatasetCount');
     }
     // ES V7 seems to overshoot, reporting whole rather than partial last page size.
     rowsDone = Math.min(rowsDone, rowsToDownload);
@@ -170,6 +172,10 @@
     }
     // Only allow a single source for download, so simplify the sources.
     settings.sourceObject = indiciaData.esSourceObjects[Object.keys(settings.source)[0]];
+    if (!settings.linkToDataGrid) {
+      // Ensure we get count data, in case source has already done a count for another control.
+      settings.sourceObject.forceRecount();
+    }
   }
 
   /**
@@ -247,8 +253,9 @@
       var sep = indiciaData.esProxyAjaxUrl.match(/\?/) ? '&' : '?';
       var query = sep + 'state=initial';
       var columnSettings;
-      var srcSettings = el.settings.sourceObject.settings;
+      var srcSettings;
       initSource(el);
+      srcSettings = el.settings.sourceObject.settings;
       // Prepare the source aggregations in composite mode if using automatic
       // aggregation as it supports scrolling and is faster.
       el.settings.sourceObject.prepare(srcSettings.mode.match(/Aggregation$/)
@@ -314,7 +321,6 @@
       if (typeof options !== 'undefined') {
         $.extend(el.settings, options);
       }
-      el.settings.sourceObject = indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]];
       // Don't do any more init at this point, as might be using a not-yet
       // instantiated dataGrid for config.
       initHandlers(el);
