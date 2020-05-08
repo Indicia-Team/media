@@ -351,6 +351,19 @@
     });
 
     /**
+     * Rows per page change.
+     */
+    $(el).find('.rows-per-page select').change(function rowsPerPageChange() {
+      var newRowsPerPage = $(el).find('.rows-per-page select option:selected').val();
+      if (el.settings.sourceObject.settings.mode.match(/Aggregation$/)) {
+        el.settings.sourceObject.settings.aggregationSize = newRowsPerPage;
+      } else {
+        el.settings.sourceObject.settings.size = newRowsPerPage;
+      }
+      el.settings.sourceObject.populate();
+    });
+
+    /**
      * Sort column headers click handler.
      */
     indiciaFns.on('click', '#' + el.id + ' .sort', {}, function clickSort() {
@@ -845,13 +858,39 @@
       $.each(indiciaData.gridMappingFields, function eachMapping(key, obj) {
         if ($.inArray(key, el.settings.availableColumnInfo) === -1 &&
             (!el.settings.availableColumns || $.inArray(key, el.settings.availableColumns) > -1)) {
-          el.settings.availableColumnInfo[key] = $.extend({}, obj, {field: key});
+          el.settings.availableColumnInfo[key] = $.extend({}, obj, { field: key });
           el.settings.availableColumnNames.push(key);
         }
       });
     }
   }
 
+  /**
+   * A select box for changing the rows per grid page.
+   */
+  function getRowsPerPageControl(el) {
+    var opts = [];
+    var sourceSize = el.settings.sourceObject.settings.aggregationSize || el.settings.sourceObject.settings.size;
+    // Set default rowsPerPageOptions unless explicitly empty.
+    if (!el.settings.rowsPerPageOptions) {
+      el.settings.rowsPerPageOptions = [];
+      if (sourceSize >= 40) {
+        el.settings.rowsPerPageOptions.push(sourceSize % 2);
+      }
+      el.settings.rowsPerPageOptions.push(sourceSize);
+      el.settings.rowsPerPageOptions.push(sourceSize * 2);
+      if (sourceSize < 40) {
+        el.settings.rowsPerPageOptions.push(sourceSize * 4);
+      }
+    }
+    if (el.settings.rowsPerPageOptions.length > 0) {
+      $.each(el.settings.rowsPerPageOptions, function eachOpt() {
+        opts.push('<option value="' + this + '">' + this + '</option>');
+      });
+      return '<span class="rows-per-page">Rows per page: <select>' + opts.join('') + '</select>';
+    }
+    return '';
+  }
   /**
    * Declare public methods.
    */
@@ -924,6 +963,7 @@
           + (el.settings.actions.length > 0 ? 1 : 0);
         $('<tfoot><tr class="pager-row"><td colspan="' + totalCols + '"><span class="showing"></span>' +
           '<span class="buttons"><button class="prev">Previous</button><button class="next">Next</button></span>' +
+          getRowsPerPageControl(el) +
           '</td></tr></tfoot>').appendTo(table);
       }
       setTableHeight(el);
