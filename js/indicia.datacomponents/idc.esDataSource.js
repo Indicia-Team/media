@@ -54,7 +54,6 @@ var IdcEsDataSource;
     function prepareAggregationMode() {
       var settings = this.settings;
       var countingRequest;
-      $.extend(settings, { fields: [] });
       // Include the unique field in the list of fields request even if not specified.
       if ($.inArray(settings.uniqueField, settings.fields) === -1) {
         settings.fields.unshift(settings.uniqueField);

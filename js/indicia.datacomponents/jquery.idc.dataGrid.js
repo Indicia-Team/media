@@ -841,6 +841,28 @@
   }
 
   function setupColumnInfo(el) {
+    var srcSettings = el.settings.sourceObject.settings;
+    if (!el.settings.columns && srcSettings.mode.match(/Aggregation$/)) {
+      el.settings.columns = [];
+      el.settings.columns.push({
+        field: srcSettings.uniqueField,
+        caption: srcSettings.uniqueField.asReadableKeyName()
+      });
+      $.each(srcSettings.fields, function eachField() {
+        if (this !== srcSettings.uniqueField) {
+          el.settings.columns.push({
+            field: this,
+            caption: this.asReadableKeyName()
+          });
+        }
+      });
+      $.each(srcSettings.aggregation, function eachAgg(key) {
+        el.settings.columns.push({
+          field: key,
+          caption: key.asReadableKeyName()
+        });
+      });
+    }
     el.settings.availableColumnInfo = {};
     // Keep the list of names in order.
     el.settings.availableColumnNames = [];
@@ -854,7 +876,7 @@
     });
     // Add other mappings if in docs mode, unless overridden by availableColumns
     // setting.
-    if (el.settings.sourceObject.settings.mode === 'docs') {
+    if (srcSettings.mode === 'docs') {
       $.each(indiciaData.gridMappingFields, function eachMapping(key, obj) {
         if ($.inArray(key, el.settings.availableColumnInfo) === -1 &&
             (!el.settings.availableColumns || $.inArray(key, el.settings.availableColumns) > -1)) {
@@ -871,21 +893,28 @@
   function getRowsPerPageControl(el) {
     var opts = [];
     var sourceSize = el.settings.sourceObject.settings.aggregationSize || el.settings.sourceObject.settings.size;
+    var buildPageSizeOptionsFrom = sourceSize || 30;
     // Set default rowsPerPageOptions unless explicitly empty.
     if (!el.settings.rowsPerPageOptions) {
       el.settings.rowsPerPageOptions = [];
-      if (sourceSize >= 40) {
-        el.settings.rowsPerPageOptions.push(sourceSize % 2);
+      if (buildPageSizeOptionsFrom >= 40) {
+        el.settings.rowsPerPageOptions.push(buildPageSizeOptionsFrom % 2);
       }
-      el.settings.rowsPerPageOptions.push(sourceSize);
-      el.settings.rowsPerPageOptions.push(sourceSize * 2);
-      if (sourceSize < 40) {
-        el.settings.rowsPerPageOptions.push(sourceSize * 4);
+      el.settings.rowsPerPageOptions.push(buildPageSizeOptionsFrom);
+      el.settings.rowsPerPageOptions.push(buildPageSizeOptionsFrom * 2);
+      if (buildPageSizeOptionsFrom < 40) {
+        el.settings.rowsPerPageOptions.push(buildPageSizeOptionsFrom * 4);
       }
+    }
+    // If no size specified, we are showing some arbitrary ES limit on row count.
+    if ($.inArray(sourceSize, el.settings.rowsPerPageOptions) === -1) {
+      // Add a non-visible default option to represent initial state.
+      opts.push('<option selected disabled hidden style="display: none"></option>');
     }
     if (el.settings.rowsPerPageOptions.length > 0) {
       $.each(el.settings.rowsPerPageOptions, function eachOpt() {
-        opts.push('<option value="' + this + '">' + this + '</option>');
+        var selected = this === sourceSize ? ' selected="selected"' : '';
+        opts.push('<option value="' + this + '"' + selected + '>' + this + '</option>');
       });
       return '<span class="rows-per-page">Rows per page: <select>' + opts.join('') + '</select>';
     }
@@ -925,10 +954,6 @@
       if (!el.id || !$.cookie) {
         el.settings.cookies = false;
       }
-      // Validate settings.
-      if (typeof el.settings.columns === 'undefined') {
-        indiciaFns.controlFail(el, 'Missing columns config for table.');
-      }
       setupColumnInfo(el);
       // Store original column settings.
       el.settings.defaultColumns = el.settings.columns.slice();
@@ -961,8 +986,8 @@
         totalCols = el.settings.columns.length
           + (el.settings.responsive ? 1 : 0)
           + (el.settings.actions.length > 0 ? 1 : 0);
-        $('<tfoot><tr class="pager-row"><td colspan="' + totalCols + '"><span class="showing"></span>' +
-          '<span class="buttons"><button class="prev">Previous</button><button class="next">Next</button></span>' +
+        $('<tfoot><tr class="pager-row"><td colspan="' + totalCols + '"><span class="showing"></span> ' +
+          '<span class="buttons"><button class="prev">Previous</button><button class="next">Next</button></span> ' +
           getRowsPerPageControl(el) +
           '</td></tr></tfoot>').appendTo(table);
       }
