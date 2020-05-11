@@ -1272,13 +1272,16 @@
               }
             }
           });
-          indiciaFns.findAndSetValue(agg, 'geohash_grid', {
-            field: 'location.point',
-            precision: Math.min(Math.max(mapToFilterTo[0].map.getZoom() - 3, 4), 10)
-          });
-          indiciaFns.findAndSetValue(agg, 'field', $(mapToFilterTo).idcLeafletMap('getAutoSquareField'), 'autoGridSquareField');
-          data.numericFilters['location.coordinate_uncertainty_in_meters'] = '0-' + $(mapToFilterTo).idcLeafletMap('getAutoSquareSize');
         }
+      }
+      if (source.settings.mode === 'mapGridSquare') {
+        // Set grid square size if auto.
+        indiciaFns.findAndSetValue(agg, 'field', $(mapToFilterTo).idcLeafletMap('getAutoSquareField'), 'autoGridSquareField');
+        // Don't display unsuitably imprecise data.
+        data.numericFilters['location.coordinate_uncertainty_in_meters'] = '0-' + $(mapToFilterTo).idcLeafletMap('getAutoSquareSize');
+      } else if (source.settings.mode === 'mapGeoHash') {
+        // Set geohash_grid precision.
+        indiciaFns.findAndSetValue(agg, 'precision', Math.min(Math.max(mapToFilterTo[0].map.getZoom() - 3, 4), 10));
       }
       data.aggs = agg;
     }

@@ -840,28 +840,51 @@
     return longestWord;
   }
 
+  /**
+   * Column setup.
+   *
+   * * Applies default list of columns if not specified.
+   * * Defines the list of available columns for selection.
+   */
   function setupColumnInfo(el) {
     var srcSettings = el.settings.sourceObject.settings;
-    if (!el.settings.columns && srcSettings.mode.match(/Aggregation$/)) {
+    if (!el.settings.columns) {
       el.settings.columns = [];
-      el.settings.columns.push({
-        field: srcSettings.uniqueField,
-        caption: srcSettings.uniqueField.asReadableKeyName()
-      });
-      $.each(srcSettings.fields, function eachField() {
-        if (this !== srcSettings.uniqueField) {
-          el.settings.columns.push({
-            field: this,
-            caption: this.asReadableKeyName()
-          });
-        }
-      });
-      $.each(srcSettings.aggregation, function eachAgg(key) {
+      // In aggregation mode, defaults are the field list + aggs list.
+      if (srcSettings.mode.match(/Aggregation$/)) {
         el.settings.columns.push({
-          field: key,
-          caption: key.asReadableKeyName()
+          field: srcSettings.uniqueField,
+          caption: srcSettings.uniqueField.asReadableKeyName()
         });
-      });
+        $.each(srcSettings.fields, function eachField() {
+          if (this !== srcSettings.uniqueField) {
+            el.settings.columns.push({
+              field: this,
+              caption: this.asReadableKeyName()
+            });
+          }
+        });
+        $.each(srcSettings.aggregation, function eachAgg(key) {
+          el.settings.columns.push({
+            field: key,
+            caption: key.asReadableKeyName()
+          });
+        });
+      } else {
+        // Docs mode.
+        el.settings.columns.push({
+          field: 'taxon.accepted_name',
+          caption: indiciaData.gridMappingFields['taxon.accepted_name'].caption
+        });
+        el.settings.columns.push({
+          field: '#event_date#',
+          caption: 'Date'
+        });
+        el.settings.columns.push({
+          field: 'location.output_sref',
+          caption: indiciaData.gridMappingFields['location.output_sref'].caption
+        });
+      }
     }
     el.settings.availableColumnInfo = {};
     // Keep the list of names in order.
