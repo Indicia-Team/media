@@ -117,7 +117,8 @@
   function addColumnHeadings(el, header) {
     var headerRow = $('<tr/>').appendTo(header);
     var breakpointsByIdx = [];
-    var aggInfo = el.settings.sourceObject.settings.aggregation;
+    var srcSettings = el.settings.sourceObject.settings;
+    var aggInfo = srcSettings.aggregation;
     if (el.settings.autoResponsiveCols) {
       // Build list of breakpoints to use by column position.
       $.each(el.settings.responsiveOptions.breakpoints, function eachPoint(name, point) {
@@ -145,9 +146,9 @@
       sortableField = sortableField
         || indiciaData.fieldConvertorSortFields[this.field.simpleFieldName()]
         // Simple top level terms agg columns should sort OK.
-        || (aggInfo && aggInfo[this.field])
+        || (srcSettings.mode !== 'compositeAggregation' && aggInfo && aggInfo[this.field])
         // Doc_count treated like a special agg - supports sort.
-        || (aggInfo && this.field === 'doc_count');
+        || (srcSettings.mode !== 'compositeAggregation' && aggInfo && this.field === 'doc_count');
       if (el.settings.sortable !== false && sortableField) {
         heading += '<span class="sort fas fa-sort"></span>';
       }
