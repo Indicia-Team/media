@@ -247,13 +247,22 @@
    */
   function initHandlers(el) {
     /**
-     * Download button click handler.
+     * Download button click handler. Note that the selector must directly
+     * find the button as it might not be a child of the element.
      */
-    $(el).find('.do-download').click(function doDownload() {
+    $('#' + el.id + '-button').click(function doDownload() {
       var sep = indiciaData.esProxyAjaxUrl.match(/\?/) ? '&' : '?';
       var query = sep + 'state=initial';
       var columnSettings;
       var srcSettings;
+      var tab;
+      // If possibly not on outputs tab, switch.
+      if (el.settings.buttonContainerElement) {
+        tab = $(el).closest('.ui-tabs-panel');
+        if (tab.length > 0) {
+          indiciaFns.activeTab($(tab).parent(), tab[0].id);
+        }
+      }
       initSource(el);
       srcSettings = el.settings.sourceObject.settings;
       // Prepare the source aggregations in composite mode if using automatic
@@ -320,6 +329,12 @@
       // Apply settings passed to the constructor.
       if (typeof options !== 'undefined') {
         $.extend(el.settings, options);
+      }
+      if (el.settings.buttonContainerElement) {
+        if ($(el.settings.buttonContainerElement).length === 0) {
+          indiciaFns.controlFail(el, 'Invalid @buttonContainerElement option for ' + el.id);
+        }
+        $(el).find('button').appendTo($(el.settings.buttonContainerElement));
       }
       // Don't do any more init at this point, as might be using a not-yet
       // instantiated dataGrid for config.
