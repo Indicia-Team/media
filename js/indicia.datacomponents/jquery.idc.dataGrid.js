@@ -841,6 +841,23 @@
     return longestWord;
   }
 
+  function buildColDef(field, agg) {
+    var colDef = {
+      field: field,
+      caption: field.asReadableKeyName()
+    };
+    var aggField;
+    if (indiciaData.esMappings[field] && indiciaData.esMappings[field].type === 'date') {
+      colDef.handler = 'date';
+    } else if (agg) {
+      aggField = indiciaFns.findValue(agg, 'field');
+      if (aggField && indiciaData.esMappings[aggField] && indiciaData.esMappings[aggField].type === 'date') {
+        colDef.handler = 'date';
+      }
+    }
+    return colDef;
+  }
+
   /**
    * Column setup.
    *
@@ -853,23 +870,14 @@
       el.settings.columns = [];
       // In aggregation mode, defaults are the field list + aggs list.
       if (srcSettings.mode.match(/Aggregation$/)) {
-        el.settings.columns.push({
-          field: srcSettings.uniqueField,
-          caption: srcSettings.uniqueField.asReadableKeyName()
-        });
+        el.settings.columns.push(buildColDef(srcSettings.uniqueField));
         $.each(srcSettings.fields, function eachField() {
           if (this !== srcSettings.uniqueField) {
-            el.settings.columns.push({
-              field: this,
-              caption: this.asReadableKeyName()
-            });
+            el.settings.columns.push(buildColDef(this));
           }
         });
         $.each(srcSettings.aggregation, function eachAgg(key) {
-          el.settings.columns.push({
-            field: key,
-            caption: key.asReadableKeyName()
-          });
+          el.settings.columns.push(buildColDef(key, this));
         });
       } else {
         // Docs mode.
