@@ -360,6 +360,8 @@ table.es-data-grid {
   table.es-data-grid.fixed-header .multiselect-cell {
     padding: 0;
     width: 12px; }
+  table.es-data-grid tfoot span {
+    margin: 0 1em; }
 
 /* idcLeafletMap plugin */
 .idc-output-leafletMap {

@@ -78,6 +78,7 @@
       var tokenRegex = /{{ ([a-z_\.]+) }}/g;
       var tokens = [];
       var matches;
+      var rows = [];
       while (matches = tokenRegex.exec(el.settings.content)) {
         tokens.push(matches[1]);
       }
@@ -90,15 +91,16 @@
       }
 
       $.each(outputRows, function eachRow() {
-        var outputContent = el.settings.content;
+        var rowContent = el.settings.content;
         var rowData = this;
         var value;
         $.each(tokens, function eachToken() {
           value = indiciaFns.getValueForField(rowData, this);
-          outputContent = outputContent.replace('{{ ' + this + ' }}', value);
+          rowContent = rowContent.replace('{{ ' + this + ' }}', value);
         });
-        $(outputContent).appendTo(el);
+        rows.push(rowContent);
       });
+      $(el).html(rows.join(''));
       if (el.settings.footer) {
         $('<div class="idcTemplatedOutput-footer">' + el.settings.footer + '</div>').appendTo(el);
       }

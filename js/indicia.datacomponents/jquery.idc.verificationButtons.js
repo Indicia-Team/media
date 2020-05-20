@@ -545,7 +545,7 @@
     var popup = $(e.currentTarget).closest('.query-popup');
     var occurrenceId = $(popup).attr('data-id');
     var sampleId = $(popup).attr('data-sample-id');
-    var urlSep = indiciaData.ajaxUrl.indexOf('?') === -1 ? '?' : '&';
+    var urlSep = indiciaData.esProxyAjaxUrl.indexOf('?') === -1 ? '?' : '&';
     // Setup the quick reply page link and get an authorisation number.
     // Note: The quick reply page does actually support supplying a user_id parameter to it, however we don't do that in practice here as
     // we don't actually know if the user has an account (we would also have to collect the user_id for the entered email)

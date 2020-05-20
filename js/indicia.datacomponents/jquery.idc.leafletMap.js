@@ -43,7 +43,21 @@
     initialLng: -2.89479,
     initialZoom: 5,
     baseLayer: 'OpenStreetMap',
-    cookies: true
+    baseLayerConfig: {
+      OpenStreetMap: {
+        title: 'Open Street Map',
+        type: 'OpenStreetMap'
+      },
+      OpenTopoMap: {
+        title: 'Open Topo Map',
+        type: 'OpenTopoMap'
+      }
+    },
+    cookies: true,
+    selectedFeatureStyle: {
+      color: '#FF0000',
+      fillColor: '#FF0000',
+    }
   };
 
   /**
@@ -131,6 +145,14 @@
       }
       if (config.type === 'circle' || config.type === 'square' || config.type === 'geom') {
         config.options = $.extend({ radius: 'metric', fillOpacity: 0.5 }, config.options);
+        if (!config.options.size && indiciaData.esSourceObjects[sourceId].settings.mapGridSquareSize) {
+          config.options.size = indiciaData.esSourceObjects[sourceId].settings.mapGridSquareSize;
+          if (config.options.size === 'autoGridSquareSize') {
+            // Calculate according to map zoom.
+            config.options.size = $(el).idcLeafletMap('getAutoSquareSize');
+          }
+        }
+        // If size is auto, override it.
         indiciaFns.findAndSetValue(config.options, 'size', $(el).idcLeafletMap('getAutoSquareSize'), 'autoGridSquareSize');
         // Apply metric to any options that are supposed to use it.
         $.each(config.options, function eachOption(key, value) {
@@ -176,7 +198,6 @@
           circle.removeFrom(el.map);
           break;
         case 'geom':
-
           wkt = new Wkt.Wkt();
           wkt.read(geom);
           obj = wkt.toObject(config.options);
@@ -193,13 +214,16 @@
    * Thicken the borders of selected features when zoomed out to aid visibility.
    */
   function ensureFeatureClear(el, feature) {
-    var weight = Math.min(20, Math.max(1, 20 - (el.map.getZoom())));
-    var opacity = Math.min(1, Math.max(0.6, el.map.getZoom() / 18));
+    var style;
     if (typeof feature.setStyle !== 'undefined') {
-      feature.setStyle({
-        weight: weight,
-        opacity: opacity
-      });
+      style = $.extend({}, el.settings.selectedFeatureStyle);
+      if (!style.weight) {
+        style.weight = Math.min(20, Math.max(1, 20 - (el.map.getZoom())));
+      }
+      if (!style.opacity) {
+        style.opacity = Math.min(1, Math.max(0.6, el.map.getZoom() / 18));
+      }
+      feature.setStyle(style);
     }
   }
 
@@ -406,6 +430,48 @@
   }
 
   /**
+   * Build the list of base map layers.
+   */
+  function getBaseMaps(el) {
+    var baseLayers = {};
+    var subType;
+    var wmsOptions;
+    $.each(el.settings.baseLayerConfig, function eachLayer(title) {
+      if (this.type === 'OpenStreetMap') {
+        baseLayers[title] = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        });
+      } else if (this.type === 'OpenTopoMap') {
+        baseLayers[title] = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+          maxZoom: 17,
+          attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
+            '<a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> ' +
+            '(<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA</a>)'
+        });
+      } else if (this.type === 'Google') {
+        subType = this.config && this.config.subType;
+        if ($.inArray(subType, ['roadmap', 'satellite', 'terrain', 'hybrid']) === -1) {
+          indiciaFns.controlFail(el, 'Unknown Google layer subtype ' + subType);
+        }
+        baseLayers[title] = L.gridLayer.googleMutant({
+          type: subType
+        });
+      } else if (this.type === 'WMS') {
+        wmsOptions = {
+          format: 'image/png'
+        };
+        if (typeof this.config.wmsOptions !== 'undefined') {
+          $.extend(wmsOptions, this.config.wmsOptions);
+        }
+        baseLayers[title] = L.tileLayer.wms(this.config.sourceUrl, wmsOptions);
+      } else {
+        indiciaFns.controlFail(el, 'Unknown baseLayerConfig type ' + this.type);
+      }
+    });
+    return baseLayers;
+  }
+
+  /**
    * Declare public methods.
    */
   methods = {
@@ -470,19 +536,17 @@
           }
           justClickedOnFeature = false;
         });
-      baseMaps = {
-        OpenStreetMap: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }),
-        OpenTopoMap: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-          maxZoom: 17,
-          attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
-            '<a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> ' +
-            '(<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA</a>)'
-        })
-      };
+      baseMaps = getBaseMaps(el);
+      if (baseMaps.length === 0) {
+        indiciaFns.controlFail(el, 'No base maps configured for map');
+      }
       // Add the active base layer to the map.
-      baseMaps[el.settings.baseLayer].addTo(el.map);
+      if (baseMaps[el.settings.baseLayer]) {
+        baseMaps[el.settings.baseLayer].addTo(el.map);
+      } else {
+        // Fallback if layer missing, e.g. due to out of date cookie.
+        baseMaps[Object.keys(baseMaps)[0]].addTo(el.map);
+      }
       $.each(el.settings.layerConfig, function eachLayer(id, layer) {
         var group;
         var wmsOptions;
@@ -604,16 +668,16 @@
         }
       });
       // Are there document hits to map?
-      $.each(response.hits.hits, function eachHit() {
+      $.each(response.hits.hits, function eachHit(i) {
         var latlon = this._source.location.point.split(',');
         addFeature(el, sourceSettings.id, latlon, this._source.location.geom,
           this._source.location.coordinate_uncertainty_in_meters, '_id', this._id);
       });
       // Are there aggregations to map?
       if (typeof response.aggregations !== 'undefined') {
-        if (sourceSettings.aggregationMapMode === 'geoHash') {
+        if (sourceSettings.mode === 'mapGeoHash') {
           mapGeoHashAggregation(el, response, sourceSettings);
-        } else if (sourceSettings.aggregationMapMode === 'gridSquare') {
+        } else if (sourceSettings.mode === 'mapGridSquare') {
           mapGridSquareAggregation(el, response, sourceSettings);
         }
       }
