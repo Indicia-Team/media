@@ -892,10 +892,7 @@
     el.settings.availableColumnNames = [];
     // Specified columns must appear first.
     $.each(el.settings.columns, function eachCol() {
-      el.settings.availableColumnInfo[this.field] = {
-        field: this.field,
-        caption: this.caption
-      };
+      el.settings.availableColumnInfo[this.field] = this;
       el.settings.availableColumnNames.push(this.field);
     });
     // Add other mappings if in docs mode, unless overridden by availableColumns
