@@ -922,7 +922,7 @@
     if (!el.settings.rowsPerPageOptions) {
       el.settings.rowsPerPageOptions = [];
       if (buildPageSizeOptionsFrom >= 40) {
-        el.settings.rowsPerPageOptions.push(buildPageSizeOptionsFrom % 2);
+        el.settings.rowsPerPageOptions.push(Math.round(buildPageSizeOptionsFrom / 2));
       }
       el.settings.rowsPerPageOptions.push(buildPageSizeOptionsFrom);
       el.settings.rowsPerPageOptions.push(buildPageSizeOptionsFrom * 2);
