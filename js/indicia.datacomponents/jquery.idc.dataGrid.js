@@ -138,17 +138,24 @@
       var colDef = el.settings.availableColumnInfo[this.field];
       var heading = colDef.caption;
       var footableExtras = '';
-      var sortableField = typeof indiciaData.esMappings[this.field] !== 'undefined'
-        && indiciaData.esMappings[this.field].sort_field;
+      var sortableField = false;
       // Tolerate hyphen or camelCase.
       var hideBreakpoints = colDef.hideBreakpoints || colDef['hide-breakpoints'];
       var dataType = colDef.dataType || colDef['data-type'];
-      sortableField = sortableField
-        || indiciaData.fieldConvertorSortFields[this.field.simpleFieldName()]
-        // Simple top level terms agg columns should sort OK.
-        || (srcSettings.mode !== 'compositeAggregation' && aggInfo && aggInfo[this.field])
-        // Doc_count treated like a special agg - supports sort.
-        || (srcSettings.mode !== 'compositeAggregation' && aggInfo && this.field === 'doc_count');
+      if (srcSettings.mode === 'docs') {
+        // Either a standard field, or a special field which provides an
+        // associated sort field.
+        sortableField = (indiciaData.esMappings[this.field] && indiciaData.esMappings[this.field].sort_field) ||
+          indiciaData.fieldConvertorSortFields[this.field.simpleFieldName()];
+      } else if (srcSettings.mode === 'compositeAggregation') {
+        // CompositeAggregation can sort on any field column, not aggregations.
+        sortableField = !(aggInfo[this.field] || this.field === 'doc_count');
+      } else if (srcSettings.mode === 'termAggregation') {
+        // Term aggregations allow sort on the aggregation cols, or fields if
+        // numeric or date, but not normal text fields.
+        sortableField = aggInfo[this.field] || this.field === 'doc_count' ||
+          (indiciaData.esMappings[this.field] && !indiciaData.esMappings[this.field].type.match(/^(text|keyword)$/));
+      }
       if (el.settings.sortable !== false && sortableField) {
         heading += '<span class="sort fas fa-sort"></span>';
       }
@@ -841,6 +848,23 @@
     return longestWord;
   }
 
+  function buildColDef(field, agg) {
+    var colDef = {
+      field: field,
+      caption: field.asReadableKeyName()
+    };
+    var aggField;
+    if (indiciaData.esMappings[field] && indiciaData.esMappings[field].type === 'date') {
+      colDef.handler = 'date';
+    } else if (agg) {
+      aggField = indiciaFns.findValue(agg, 'field');
+      if (aggField && indiciaData.esMappings[aggField] && indiciaData.esMappings[aggField].type === 'date') {
+        colDef.handler = 'date';
+      }
+    }
+    return colDef;
+  }
+
   /**
    * Column setup.
    *
@@ -853,23 +877,14 @@
       el.settings.columns = [];
       // In aggregation mode, defaults are the field list + aggs list.
       if (srcSettings.mode.match(/Aggregation$/)) {
-        el.settings.columns.push({
-          field: srcSettings.uniqueField,
-          caption: srcSettings.uniqueField.asReadableKeyName()
-        });
+        el.settings.columns.push(buildColDef(srcSettings.uniqueField));
         $.each(srcSettings.fields, function eachField() {
           if (this !== srcSettings.uniqueField) {
-            el.settings.columns.push({
-              field: this,
-              caption: this.asReadableKeyName()
-            });
+            el.settings.columns.push(buildColDef(this));
           }
         });
         $.each(srcSettings.aggregation, function eachAgg(key) {
-          el.settings.columns.push({
-            field: key,
-            caption: key.asReadableKeyName()
-          });
+          el.settings.columns.push(buildColDef(key, this));
         });
       } else {
         // Docs mode.
@@ -892,10 +907,7 @@
     el.settings.availableColumnNames = [];
     // Specified columns must appear first.
     $.each(el.settings.columns, function eachCol() {
-      el.settings.availableColumnInfo[this.field] = {
-        field: this.field,
-        caption: this.caption
-      };
+      el.settings.availableColumnInfo[this.field] = this;
       el.settings.availableColumnNames.push(this.field);
     });
     // Add other mappings if in docs mode, unless overridden by availableColumns
@@ -922,7 +934,7 @@
     if (!el.settings.rowsPerPageOptions) {
       el.settings.rowsPerPageOptions = [];
       if (buildPageSizeOptionsFrom >= 40) {
-        el.settings.rowsPerPageOptions.push(buildPageSizeOptionsFrom % 2);
+        el.settings.rowsPerPageOptions.push(Math.round(buildPageSizeOptionsFrom / 2));
       }
       el.settings.rowsPerPageOptions.push(buildPageSizeOptionsFrom);
       el.settings.rowsPerPageOptions.push(buildPageSizeOptionsFrom * 2);
