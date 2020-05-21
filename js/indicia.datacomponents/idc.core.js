@@ -503,23 +503,25 @@
    */
   indiciaFns.expandSpecialFieldSortInfo = function expandSpecialFieldSortInfo(sort, withKeyword) {
     var sortInfo = {};
-    $.each(sort, function eachSortField(field, dir) {
-      if (indiciaData.fieldConvertorSortFields[field.simpleFieldName()] &&
-          $.isArray(indiciaData.fieldConvertorSortFields[field.simpleFieldName()])) {
-        $.each(indiciaData.fieldConvertorSortFields[field.simpleFieldName()], function eachUnderlyingField() {
-          sortInfo[this] = dir;
-        });
-      } else if (indiciaData.fieldConvertorSortFields[field.simpleFieldName()]) {
-        sortInfo = indiciaData.fieldConvertorSortFields[field.simpleFieldName()];
-      } else if (withKeyword) {
-        // Normal field with keyword ready to send to ES.
-        sortInfo[indiciaFns.esFieldWithKeywordSuffix(field)] = dir;
-      } else {
-        // If just getting sort info, not sending to ES, then easier without keyword
-        // for comparison with field names.
-        sortInfo[field.replace(/\.keyword$/, '')] = dir;
-      }
-    });
+    if (sort) {
+      $.each(sort, function eachSortField(field, dir) {
+        if (indiciaData.fieldConvertorSortFields[field.simpleFieldName()] &&
+            $.isArray(indiciaData.fieldConvertorSortFields[field.simpleFieldName()])) {
+          $.each(indiciaData.fieldConvertorSortFields[field.simpleFieldName()], function eachUnderlyingField() {
+            sortInfo[this] = dir;
+          });
+        } else if (indiciaData.fieldConvertorSortFields[field.simpleFieldName()]) {
+          sortInfo = indiciaData.fieldConvertorSortFields[field.simpleFieldName()];
+        } else if (withKeyword) {
+          // Normal field with keyword ready to send to ES.
+          sortInfo[indiciaFns.esFieldWithKeywordSuffix(field)] = dir;
+        } else {
+          // If just getting sort info, not sending to ES, then easier without keyword
+          // for comparison with field names.
+          sortInfo[field.replace(/\.keyword$/, '')] = dir;
+        }
+      });
+    }
     return sortInfo;
   };
 
