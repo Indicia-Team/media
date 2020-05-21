@@ -914,9 +914,10 @@
     // setting.
     if (srcSettings.mode === 'docs') {
       $.each(indiciaData.gridMappingFields, function eachMapping(key, obj) {
-        if ($.inArray(key, el.settings.availableColumnInfo) === -1 &&
-            (!el.settings.availableColumns || $.inArray(key, el.settings.availableColumns) > -1)) {
-          el.settings.availableColumnInfo[key] = $.extend({}, obj, { field: key });
+        var exist = el.settings.availableColumnInfo[key] || {};
+        // Include unless not in configured list of available cols.
+        if (!el.settings.availableColumns || $.inArray(key, el.settings.availableColumns) > -1) {
+          el.settings.availableColumnInfo[key] = $.extend({}, obj, exist, { field: key });
           el.settings.availableColumnNames.push(key);
         }
       });
