@@ -296,25 +296,6 @@
     $(sortButton).addClass('fa-sort-' + (sortDesc ? 'down' : 'up'));
   }
 
-  /**
-   * Apply changes to a source when sorting on a special field column.
-   */
-  function handleSortForSpecialField(source, fieldName, sortDesc) {
-    var sortFields = indiciaData.fieldConvertorSortFields[fieldName];
-    if ($.isArray(sortFields)) {
-      $.each(sortFields, function eachField() {
-        // A simple list of fields to sort on, so set the direction on each.
-        source.settings.sort[this] = {
-          order: sortDesc ? 'desc' : 'asc'
-        };
-      });
-    } else if (typeof sortFields === 'object') {
-      // A complex sort object (e.g. lat_lon distance).
-      source.settings.sort = sortFields;
-      indiciaFns.findAndSetValue(source.settings.sort, 'order', sortDesc ? 'desc' : 'asc');
-    }
-  }
-
    /**
    * Register the various user interface event handlers.
    */
@@ -381,11 +362,6 @@
       showHeaderSortInfo(this, sortDesc);
       sourceObj.settings.sort = {};
       sourceObj.settings.sort[fieldName] = sortDesc ? 'desc' : 'asc';
-      /*
-
-      } else if (indiciaData.fieldConvertorSortFields[fieldName]) {
-        handleSortForSpecialField(sourceObj, fieldName, sortDesc);
-      }*/
       sourceObj.populate();
     });
 
@@ -673,7 +649,6 @@
     } else if (response.aggregations.count) {
       // Aggregation modes use a separate agg to count only when the filter changes.
       total = response.aggregations.count.value;
-
       lastCount = total;
     } else if (lastCount) {
       total = lastCount;
