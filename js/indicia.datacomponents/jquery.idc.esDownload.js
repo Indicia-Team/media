@@ -195,8 +195,9 @@
       if (lastResponse.scroll_id) {
         // Scrolls remember the search query so only need the scroll ID.
         query += '&scroll_id=' + lastResponse.scroll_id;
-        // Scrolling remembers all the settings server-side.
-        currentRequestData = {};
+        // Scrolling remembers all the settings server-side except for cols
+        // template.
+        currentRequestData = getColumnSettings(el);
       } else if (el.settings.sourceObject.settings.mode.match(/Aggregation$/)) {
         // Inform the warehouse as composite paging behaviour different. The
         // uniq_id allows the warehouse to relocate the last request's after_key.
