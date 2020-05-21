@@ -49,6 +49,11 @@ var IdcEsDataSource;
     var modeSpecificSetupFns = {};
 
     /**
+     * List of tabs that this source is due to populate on activation of.
+     */
+    var boundToTabs = [];
+
+    /**
      * Some generic preparation for modes that aggregate data.
      */
     function prepareAggregationMode() {
@@ -109,7 +114,6 @@ var IdcEsDataSource;
       $.each(settings.suppliedAggregation, function eachAgg(name) {
         subAggs[name] = this;
       });
-      // @todo handle sort
       // @todo optimise - only recount if filter changed.
       settings.aggregation = {
         rows: {
@@ -175,7 +179,7 @@ var IdcEsDataSource;
           // bucket value which we can sort on.
           subAggs.sortfield = {
             max: {
-              field: indiciaFns.esFieldWithKeywordSuffix(sortField)
+              field: sortField
             }
           };
           sortField = 'sortfield';
@@ -400,15 +404,21 @@ var IdcEsDataSource;
             populateThis = false;
             $.each($(output).parents('.ui-tabs-panel:hidden'), function eachHiddenTab() {
               var tab = this;
-              var tabSelectFn = function eachTabSet() {
-                if ($(tab).filter(':visible').length > 0) {
-                  $(output).find('.loading-spinner').show();
-                  src.prepare();
-                  doPopulation.call(src, force, onlyForControl);
-                  indiciaFns.unbindTabsActivate($(tab).closest('.ui-tabs'), tabSelectFn);
-                }
-              };
-              indiciaFns.bindTabsActivate($(tab).closest('.ui-tabs'), tabSelectFn);
+              var tabSelectFn;
+              var index;
+              if ($.inArray(tab.id, boundToTabs) === -1) {
+                tabSelectFn = function eachTabSet(e, tabInfo) {
+                  if (tabInfo.newPanel[0] === tab) {
+                    $(output).find('.loading-spinner').show();
+                    src.prepare();
+                    doPopulation.call(src, force, onlyForControl);
+                    indiciaFns.unbindTabsActivate($(tab).closest('.ui-tabs'), tabSelectFn);
+                    boundToTabs = boundToTabs.splice(index, $.inArray(tab.id, boundToTabs));
+                  }
+                };
+                indiciaFns.bindTabsActivate($(tab).closest('.ui-tabs'), tabSelectFn);
+                boundToTabs.push(tab.id);
+              }
             });
           }
           needsPopulation = needsPopulation || populateThis;
