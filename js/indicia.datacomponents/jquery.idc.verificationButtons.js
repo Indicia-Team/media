@@ -262,7 +262,7 @@
     }
     $('<div class="form-group">' +
         '<label for="comment-textarea">Add the following comment:</label>' +
-        '<textarea id="comment-textarea" class="form-control" rows="6" />' +
+        '<textarea id="comment-textarea" class="form-control" rows="6"></textarea>' +
       '</div>').appendTo(fs);
     $('<button class="btn btn-primary">Save</button>').appendTo(fs);
     $.fancybox(fs);
@@ -362,7 +362,7 @@
       .appendTo(commentTab);
     $('<div class="form-group">' +
         '<label for="comment-textarea">Add the following comment:</label>' +
-        '<textarea id="comment-textarea" class="form-control" rows="6" />' +
+        '<textarea id="comment-textarea" class="form-control" rows="6"></textarea>' +
       '</div>').appendTo(commentTab);
     $('<button class="btn btn-primary">Add comment</button>').appendTo(commentTab);
     return commentTab;
