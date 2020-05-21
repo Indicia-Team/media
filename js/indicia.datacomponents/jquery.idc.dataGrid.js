@@ -667,9 +667,13 @@
     var total;
     if (sourceSettings.mode === 'docs') {
       total = response.hits.total.value;
+      if (response.hits.total.relation && response.hits.total.relation === 'gte') {
+        ofLabel = 'at least ';
+      }
     } else if (response.aggregations.count) {
       // Aggregation modes use a separate agg to count only when the filter changes.
       total = response.aggregations.count.value;
+
       lastCount = total;
     } else if (lastCount) {
       total = lastCount;
