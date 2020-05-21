@@ -228,9 +228,14 @@
     });
   }
 
+  /**
+   * Apply settings that are dependent on the source's mode.
+   */
   function applySourceModeSettings(el) {
     var sourceSettings = el.settings.sourceObject.settings;
     if (sourceSettings.mode.match(/Aggregation$/)) {
+      // Columns linked to aggregation's fields array need to have a path
+      // in the response document defined.
       $.each(el.settings.availableColumnInfo, function eachCol(field, colDef) {
         if ($.inArray(field, sourceSettings.fields) > -1) {
           if (sourceSettings.mode === 'termAggregation') {
@@ -548,6 +553,8 @@
   /**
    * Takes a string and applies token replacement for field values.
    *
+   * @param object el
+   *   The dataGrid element.
    * @param object doc
    *   The ES document for the row.
    * @param string text
@@ -556,7 +563,7 @@
    * @return string
    *   Updated text.
    */
-  function applyFieldReplacements(doc, text) {
+  function applyFieldReplacements(el, doc, text) {
     // Find any field name replacements.
     var fieldMatches = text.match(/\[(.*?)\]/g);
     var updatedText = text;
@@ -567,7 +574,17 @@
       // Field names can be separated by OR if we want to pick the first.
       var fieldOrList = field.split(' OR ');
       $.each(fieldOrList, function eachFieldName() {
-        dataVal = indiciaFns.getValueForField(doc, this);
+        var fieldDef = {};
+        var srcSettings = el.settings.sourceObject.settings;
+        if ($.inArray(this, el.settings.sourceObject.settings.fields) > -1) {
+          // Auto-locate aggregation fields in document.
+          if (srcSettings.mode === 'termAggregation') {
+            fieldDef.path = 'fieldlist.hits.hits.0._source';
+          } else if (srcSettings.mode === 'compositeAggregation') {
+            fieldDef.path = 'key';
+          }
+        }
+        dataVal = indiciaFns.getValueForField(doc, this, fieldDef);
         // Drop out when we find a value.
         return dataVal === '';
       });
@@ -579,6 +596,8 @@
   /**
    * Retrieve any action links to attach to an idcDataGrid row.
    *
+   * @param object el
+   *   The dataGrid element.
    * @param array actions
    *   List of actions from configuration.
    * @param object doc
@@ -587,7 +606,7 @@
    * @return string
    *   Action link HTML.
    */
-  function getActionsForRow(actions, doc) {
+  function getActionsForRow(el, actions, doc) {
     var html = '';
     $.each(actions, function eachActions() {
       var item;
@@ -612,7 +631,7 @@
             });
             link += params.join('&');
           }
-          item = applyFieldReplacements(doc, '<a href="' + link + '" title="' + this.title + '">' + item + '</a>');
+          item = applyFieldReplacements(el, doc, '<a href="' + link + '" title="' + this.title + '">' + item + '</a>');
         }
         html += item;
       }
@@ -1114,7 +1133,7 @@
         cells = getRowBehaviourCells(el);
         cells = cells.concat(getDataCells(el, doc, maxCharsPerCol));
         if (el.settings.actions.length) {
-          cells.push('<td class="col-actions">' + getActionsForRow(el.settings.actions, doc) + '</td>');
+          cells.push('<td class="col-actions">' + getActionsForRow(el, el.settings.actions, doc) + '</td>');
         }
         if (el.settings.selectIdsOnNextLoad && $.inArray(hit._id, el.settings.selectIdsOnNextLoad) !== -1) {
           classes.push('selected');
@@ -1126,7 +1145,7 @@
         }
         if (el.settings.rowClasses) {
           $.each(el.settings.rowClasses, function eachClass() {
-            classes.push(applyFieldReplacements(doc, this));
+            classes.push(applyFieldReplacements(el, doc, this));
           });
         }
         dataRowIdAttr = hit._id ? ' data-row-id="' + hit._id + '"' : '';
