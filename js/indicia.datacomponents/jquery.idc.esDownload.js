@@ -232,8 +232,7 @@
       minutes = '0' + date.getMinutes();
       minutes = minutes.substr(minutes.length - 2);
       description = 'File containing ' + lastResponse.done +
-        (el.settings.sourceObject.settings.mode === 'compositeAggregation' ? ' items. ' : ' occurrences. ');
-
+        (el.settings.sourceObject.settings.mode.match(/Aggregation$/) ? ' items. ' : ' occurrences. ');
       $(el).find('.progress-circle-container').addClass('download-done');
       $(el).find('.idc-download-files').append('<div><a href="' + lastResponse.filename + '">' +
         '<span class="fas fa-file-archive fa-2x"></span>' +
