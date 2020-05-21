@@ -109,7 +109,6 @@ var IdcEsDataSource;
       $.each(settings.suppliedAggregation, function eachAgg(name) {
         subAggs[name] = this;
       });
-      // @todo handle sort
       // @todo optimise - only recount if filter changed.
       settings.aggregation = {
         rows: {
@@ -175,7 +174,7 @@ var IdcEsDataSource;
           // bucket value which we can sort on.
           subAggs.sortfield = {
             max: {
-              field: indiciaFns.esFieldWithKeywordSuffix(sortField)
+              field: sortField
             }
           };
           sortField = 'sortfield';
