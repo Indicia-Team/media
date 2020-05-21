@@ -1,6 +1,6 @@
 /**
  * @file
- * Data source cmoponent for linking controls to Elasticsearch.
+ * Data source component for linking controls to Elasticsearch.
  *
  * Indicia, the OPAL Online Recording Toolkit.
  *
@@ -106,7 +106,10 @@ var IdcEsDataSource;
         var srcObj = {};
         // Only the ones we haven't already added to sort on.
         if ($.inArray(this, Object.keys(sortInfo)) === -1) {
-          srcObj[this.asCompositeKeyName()] = { terms: { field: indiciaFns.esFieldWithKeywordSuffix(this) } };
+          srcObj[this.asCompositeKeyName()] = { terms: {
+            field: indiciaFns.esFieldWithKeywordSuffix(this),
+            missing_bucket: true
+          } };
           compositeSources.push(srcObj);
         }
       });
