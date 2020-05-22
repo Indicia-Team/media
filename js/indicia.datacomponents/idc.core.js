@@ -269,7 +269,8 @@
     var date;
     var month;
     var day;
-    if (typeof dateString === 'string' && dateString.trim() === '') {
+    if (typeof dateString === 'undefined' ||
+        (typeof dateString === 'string' && dateString.trim() === '')) {
       return '';
     }
     date = new Date(dateString);
@@ -636,8 +637,8 @@
      */
     event_date: function eventDate(doc) {
       var root = doc.event || doc.key || doc;
-      var start = root.date_start ? indiciaFns.formatDate(root.date_start) : '';
-      var end = root.date_end ? indiciaFns.formatDate(root.date_end) : '';
+      var start = indiciaFns.formatDate(root.date_start || root['event-date_start']);
+      var end = indiciaFns.formatDate(root.date_end || root['event-date_end']);
       if (!start && !end) {
         return 'Unknown';
       }
