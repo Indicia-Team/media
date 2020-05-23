@@ -48,7 +48,7 @@
    * not confused with paths in the document.
    */
   String.prototype.asCompositeKeyName = function asCompositeKeyName() {
-    return this.replace(/\./g, '-');
+    return this.replace(/[\.#:]/g, '-');
   };
 
   /**
