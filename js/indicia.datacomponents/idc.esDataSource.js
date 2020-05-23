@@ -75,6 +75,44 @@ var IdcEsDataSource;
       lastCountRequestStr = JSON.stringify(countingRequest);
     }
 
+    /**
+     * Adds an entry from the @fields configuration to sources.
+     *
+     * Provides correct structure for the sources required for a composite
+     * aggregation request. Includes converting attr_value special fields to
+     * a painless script.
+     */
+    function addFieldToCompositeSources(compositeSources, field, sortDir) {
+      var matches = field.match(/^#attr_value:([^:]+):([^:]+)#$/);
+      var fieldObj;
+      var srcObj = {};
+      // Is this field a custom attribute definition?
+      if (matches) {
+        // Tolerate event or sample.
+        matches[1] = matches[1] === 'sample' ? 'event' : matches[1];
+        fieldObj = {
+          script: {
+            source: 'String r = \'\'; if (params._source.' + matches[1] + '.attributes != null) { ' +
+              'for ( item in params._source.event.attributes ) { ' +
+                'if (item.id == \'' + matches[2] + '\') { r = item.value; } ' +
+              '} ' +
+            '} return r;',
+            lang: 'painless'
+          }
+        };
+      } else {
+        // Normal field.
+        fieldObj = {
+          field: indiciaFns.esFieldWithKeywordSuffix(field),
+          missing_bucket: true
+        };
+      }
+      if (sortDir) {
+        fieldObj.order = sortDir;
+      }
+      srcObj[field.asCompositeKeyName()] = { terms: fieldObj };
+      compositeSources.push(srcObj);
+    }
 
     /** Private methods for specific setup for each source mode. */
 
@@ -92,25 +130,16 @@ var IdcEsDataSource;
       settings.suppliedAggregation = settings.suppliedAggregation || settings.aggregation;
       // Convert the fields list to the sources format required for composite agg.
       // Sorted fields must go first.
-      $.each(sortInfo, function eachSortField(field, dir) {
-        var srcObj = {};
+      $.each(sortInfo, function eachSortField(field, sortDir) {
         if ($.inArray(field, settings.fields) > -1) {
-          srcObj[field.asCompositeKeyName()] = { terms: {
-            field: indiciaFns.esFieldWithKeywordSuffix(field),
-            order: dir
-          } };
-          compositeSources.push(srcObj);
+          addFieldToCompositeSources(compositeSources, field, sortDir);
         }
       });
+      // Now add the rest of the unsorted fields.
       $.each(settings.fields, function eachField() {
-        var srcObj = {};
         // Only the ones we haven't already added to sort on.
         if ($.inArray(this, Object.keys(sortInfo)) === -1) {
-          srcObj[this.asCompositeKeyName()] = { terms: {
-            field: indiciaFns.esFieldWithKeywordSuffix(this),
-            missing_bucket: true
-          } };
-          compositeSources.push(srcObj);
+          addFieldToCompositeSources(compositeSources, this);
         }
       });
       // Add the additional aggs for the aggregations requested in config.
