@@ -20,7 +20,7 @@
  * @link https://github.com/indicia-team/client_helpers
  */
 
-/* eslint no-underscore-dangle: ["error", { "allow": ["_id", "_source", "_latlng"] }] */
+/* eslint no-underscore-dangle: ["error", { "allow": ["_id", "_source", "_latlng", "_idfield"] }] */
 /* eslint no-extend-native: ["error", { "exceptions": ["String"] }] */
 /* eslint no-param-reassign: ["error", { "props": false }]*/
 
@@ -1252,8 +1252,8 @@
     if (source.settings.aggregation) {
       // Copy to avoid changing original.
       $.extend(true, agg, source.settings.aggregation);
-      if (doingCount && source.settings.mode === 'termAggregation' && agg.idfield) {
-        delete agg.idfield.terms.order;
+      if (doingCount && source.settings.mode === 'termAggregation' && agg._idfield) {
+        delete agg._idfield.terms.order;
       }
       // Find the map bounds if limited to the viewport of a map and not counting total.
       if (!doingCount && source.settings.filterBoundsUsingMap) {

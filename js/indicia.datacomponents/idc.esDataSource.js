@@ -20,6 +20,8 @@
  * @link https://github.com/indicia-team/client_helpers
  */
 
+/* eslint no-underscore-dangle: ["error", { "allow": ["_idfield", "_count", "_rows"] }] */
+
 var IdcEsDataSource;
 
 (function enclose() {
@@ -128,6 +130,7 @@ var IdcEsDataSource;
       prepareAggregationMode.call(this);
       // Capture supplied aggregation so we can rebuild each time.
       settings.suppliedAggregation = settings.suppliedAggregation || settings.aggregation;
+      settings.aggregation = settings.suppliedAggregation;
       // Convert the fields list to the sources format required for composite agg.
       // Sorted fields must go first.
       $.each(sortInfo, function eachSortField(field, sortDir) {
@@ -148,7 +151,7 @@ var IdcEsDataSource;
       });
       // @todo optimise - only recount if filter changed.
       settings.aggregation = {
-        rows: {
+        _rows: {
           composite: {
             size: settings.aggregationSize,
             sources: compositeSources
@@ -158,7 +161,7 @@ var IdcEsDataSource;
       };
       // Add a count agg only if filter changed.
       if (this.settings.needsRecount) {
-        settings.aggregation.count = {
+        settings.aggregation._count = {
           cardinality: {
             field: uniqueFieldWithSuffix
           }
@@ -223,7 +226,7 @@ var IdcEsDataSource;
       // Create the final aggregation object for the request.
       // @todo optimise - only recount if filter changed.
       settings.aggregation = {
-        idfield: {
+        _idfield: {
           terms: {
             size: settings.aggregationSize,
             field: uniqueFieldWithSuffix,
@@ -234,10 +237,10 @@ var IdcEsDataSource;
           aggs: subAggs
         }
       };
-      settings.aggregation.idfield.terms.order[sortField] = sortDir;
+      settings.aggregation._idfield.terms.order[sortField] = sortDir;
       // Add a count agg only if filter changed.
       if (this.settings.needsRecount) {
-        settings.aggregation.count = {
+        settings.aggregation._count = {
           cardinality: {
             field: uniqueFieldWithSuffix
           }
@@ -479,6 +482,14 @@ var IdcEsDataSource;
       if (typeof this.settings.filterField === 'string') {
         this.settings.filterField = [this.settings.filterField];
       }
+    }
+    // Validation.
+    if (this.settings.aggregation) {
+      $.each(this.settings.aggregation, function eachAggKey(key) {
+        if (key.substr(0, 1) === '_') {
+          throw new Error('Aggregation names starting with underscore are reserved: ' + key + '.');
+        }
+      });
     }
     return this;
   };
