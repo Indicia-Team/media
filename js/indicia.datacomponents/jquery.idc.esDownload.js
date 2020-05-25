@@ -20,6 +20,8 @@
  * @link https://github.com/indicia-team/client_helpers
  */
 
+ /* eslint no-underscore-dangle: ["error", { "allow": ["_count"] }] */
+
  /**
  * Output plugin for data downloads.
  */
@@ -122,7 +124,7 @@
       $.each(sourceSettings.fields, function eachField() {
         data.addColumns.push({
           field: 'key.' + this.asCompositeKeyName(),
-          caption: this.asReadableKeyName(),
+          caption: this.asReadableKeyName()
         });
       });
       // The agg should also contain aggregation for calculated columns.
@@ -203,7 +205,7 @@
         // uniq_id allows the warehouse to relocate the last request's after_key.
         query += '&aggregation_type=composite';
         // No need to recount!
-        delete currentRequestData.aggs.count;
+        delete currentRequestData.aggs._count;
       }
       // Post to the ES proxy. Pass scroll_id (docs) or after_key (composite aggregations)
       // parameter to request the next chunk of the dataset.
@@ -279,7 +281,7 @@
       if (srcSettings.mode.match(/Aggregation$/)) {
         query += '&aggregation_type=composite';
         // Arbitrary choice of page size.
-        currentRequestData.aggs.rows.composite.size = 500;
+        currentRequestData.aggs._rows.composite.size = 500;
       }
       $.extend(currentRequestData, columnSettings);
       // Reset.

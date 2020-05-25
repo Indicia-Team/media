@@ -20,6 +20,8 @@
  * @link https://github.com/indicia-team/client_helpers
  */
 
+/* eslint no-underscore-dangle: ["error", { "allow": ["_idfield", "_count", "_rows"] }] */
+
 var IdcEsDataSource;
 
 (function enclose() {
@@ -75,6 +77,48 @@ var IdcEsDataSource;
       lastCountRequestStr = JSON.stringify(countingRequest);
     }
 
+    /**
+     * Adds an entry from the @fields configuration to sources.
+     *
+     * Provides correct structure for the sources required for a composite
+     * aggregation request. Includes converting attr_value special fields to
+     * a painless script.
+     */
+    function addFieldToCompositeSources(compositeSources, field, sortDir) {
+      var matches = field.match(/^#([^:]+)(:([^:]+):([^:]+))?#$/);
+      var fieldObj;
+      var srcObj = {};
+      // Is this field a custom attribute definition?
+      if (matches) {
+        if (matches[1] === 'attr_value') {
+          // Tolerate event or sample.
+          matches[3] = matches[3] === 'sample' ? 'event' : matches[3];
+          fieldObj = {
+            script: {
+              source: 'String r = \'\'; if (params._source.' + matches[3] + '.attributes != null) { ' +
+                'for ( item in params._source.event.attributes ) { ' +
+                  'if (item.id == \'' + matches[4] + '\') { r = item.value; } ' +
+                '} ' +
+              '} return r;',
+              lang: 'painless'
+            }
+          };
+        }
+      } else {
+        // Normal field.
+        fieldObj = {
+          field: indiciaFns.esFieldWithKeywordSuffix(field),
+          missing_bucket: true
+        };
+      }
+      if (fieldObj) {
+        if (sortDir) {
+          fieldObj.order = sortDir;
+        }
+        srcObj[field.asCompositeKeyName()] = { terms: fieldObj };
+        compositeSources.push(srcObj);
+      }
+    }
 
     /** Private methods for specific setup for each source mode. */
 
@@ -90,27 +134,19 @@ var IdcEsDataSource;
       prepareAggregationMode.call(this);
       // Capture supplied aggregation so we can rebuild each time.
       settings.suppliedAggregation = settings.suppliedAggregation || settings.aggregation;
+      settings.aggregation = settings.suppliedAggregation;
       // Convert the fields list to the sources format required for composite agg.
       // Sorted fields must go first.
-      $.each(sortInfo, function eachSortField(field, dir) {
-        var srcObj = {};
+      $.each(sortInfo, function eachSortField(field, sortDir) {
         if ($.inArray(field, settings.fields) > -1) {
-          srcObj[field.asCompositeKeyName()] = { terms: {
-            field: indiciaFns.esFieldWithKeywordSuffix(field),
-            order: dir
-          } };
-          compositeSources.push(srcObj);
+          addFieldToCompositeSources(compositeSources, field, sortDir);
         }
       });
+      // Now add the rest of the unsorted fields.
       $.each(settings.fields, function eachField() {
-        var srcObj = {};
         // Only the ones we haven't already added to sort on.
         if ($.inArray(this, Object.keys(sortInfo)) === -1) {
-          srcObj[this.asCompositeKeyName()] = { terms: {
-            field: indiciaFns.esFieldWithKeywordSuffix(this),
-            missing_bucket: true
-          } };
-          compositeSources.push(srcObj);
+          addFieldToCompositeSources(compositeSources, this);
         }
       });
       // Add the additional aggs for the aggregations requested in config.
@@ -119,7 +155,7 @@ var IdcEsDataSource;
       });
       // @todo optimise - only recount if filter changed.
       settings.aggregation = {
-        rows: {
+        _rows: {
           composite: {
             size: settings.aggregationSize,
             sources: compositeSources
@@ -129,7 +165,7 @@ var IdcEsDataSource;
       };
       // Add a count agg only if filter changed.
       if (this.settings.needsRecount) {
-        settings.aggregation.count = {
+        settings.aggregation._count = {
           cardinality: {
             field: uniqueFieldWithSuffix
           }
@@ -148,7 +184,21 @@ var IdcEsDataSource;
       var sortDir = sortInfo[sortField];
       var settings = this.settings;
       var uniqueFieldWithSuffix = indiciaFns.esFieldWithKeywordSuffix(settings.uniqueField);
+      var termSources = [];
       prepareAggregationMode.call(this);
+      // Convert list of fields to one suitable for top_hits _source.
+      $.each(this.settings.fields, function eachField() {
+        var matches = this.match(/^#([^:]+)(:([^:]+):([^:]+))?#$/);
+        var type;
+        var sources;
+        if (matches && matches[1] === 'attr_value') {
+          type = matches[3] === 'sample' ? 'event' : matches[3];
+          sources = [type + '.attributes'];
+        } else {
+          sources = [this];
+        }
+        termSources = termSources.concat(sources.filter((item) => termSources.indexOf(item) < 0));
+      });
       // List of sub-aggregations within the outer terms agg for the unique field must
       // always contain a top_hits agg to retrieve field values.
       subAggs = {
@@ -156,7 +206,7 @@ var IdcEsDataSource;
           top_hits: {
             size: 1,
             _source: {
-              includes: this.settings.fields
+              includes: termSources
             }
           }
         }
@@ -194,7 +244,7 @@ var IdcEsDataSource;
       // Create the final aggregation object for the request.
       // @todo optimise - only recount if filter changed.
       settings.aggregation = {
-        idfield: {
+        _idfield: {
           terms: {
             size: settings.aggregationSize,
             field: uniqueFieldWithSuffix,
@@ -205,10 +255,10 @@ var IdcEsDataSource;
           aggs: subAggs
         }
       };
-      settings.aggregation.idfield.terms.order[sortField] = sortDir;
+      settings.aggregation._idfield.terms.order[sortField] = sortDir;
       // Add a count agg only if filter changed.
       if (this.settings.needsRecount) {
-        settings.aggregation.count = {
+        settings.aggregation._count = {
           cardinality: {
             field: uniqueFieldWithSuffix
           }
@@ -450,6 +500,14 @@ var IdcEsDataSource;
       if (typeof this.settings.filterField === 'string') {
         this.settings.filterField = [this.settings.filterField];
       }
+    }
+    // Validation.
+    if (this.settings.aggregation) {
+      $.each(this.settings.aggregation, function eachAggKey(key) {
+        if (key.substr(0, 1) === '_') {
+          throw new Error('Aggregation names starting with underscore are reserved: ' + key + '.');
+        }
+      });
     }
     return this;
   };
