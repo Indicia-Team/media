@@ -1017,9 +1017,9 @@
       valuePath = valuePath.replace(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}).*/, '$3/$2/$1 $4:$5');
     }
     // Path might be to an aggregation response object, in which case we just
-    // want the value.
-    if (valuePath && typeof valuePath === 'object' && typeof valuePath.value !== 'undefined') {
-      return valuePath.value;
+    // want the value (or value_as_string if aggregation format specified).
+    if (valuePath && typeof (valuePath.value_as_string || valuePath.value) !== 'undefined') {
+      return valuePath.value_as_string || valuePath.value;
     }
     return valuePath;
   };
