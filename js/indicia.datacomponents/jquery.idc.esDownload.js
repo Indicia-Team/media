@@ -281,7 +281,7 @@
       if (srcSettings.mode.match(/Aggregation$/)) {
         query += '&aggregation_type=composite';
         // Arbitrary choice of page size.
-        currentRequestData.aggs.rows.composite.size = 500;
+        currentRequestData.aggs._rows.composite.size = 500;
       }
       $.extend(currentRequestData, columnSettings);
       // Reset.
