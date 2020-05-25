@@ -20,7 +20,7 @@
  * @link https://github.com/indicia-team/client_helpers
  */
 
- /* eslint no-underscore-dangle: ["error", { "allow": ["_id", "_source"] }] */
+ /* eslint no-underscore-dangle: ["error", { "allow": ["_id", "_source", "_count"] }] */
  /* eslint no-param-reassign: ["error", { "props": false }]*/
 
 /**
@@ -233,16 +233,17 @@
    */
   function applySourceModeSettings(el) {
     var sourceSettings = el.settings.sourceObject.settings;
+    var pathsPerMode = {
+      compositeAggregation: 'key',
+      termAggregation: 'fieldlist.hits.hits.0._source'
+    };
     if (sourceSettings.mode.match(/Aggregation$/)) {
       // Columns linked to aggregation's fields array need to have a path
       // in the response document defined.
       $.each(el.settings.availableColumnInfo, function eachCol(field, colDef) {
-        if ($.inArray(field, sourceSettings.fields) > -1) {
-          if (sourceSettings.mode === 'termAggregation') {
-            colDef.path = 'fieldlist.hits.hits.0._source';
-          } else if (sourceSettings.mode === 'compositeAggregation') {
-            colDef.path = 'key';
-          }
+        // Everything not in the aggregations list must be a field.
+        if (!sourceSettings.suppliedAggregation[field]) {
+          colDef.path = pathsPerMode[sourceSettings.mode];
         }
       });
     }
@@ -665,9 +666,9 @@
       if (response.hits.total.relation && response.hits.total.relation === 'gte') {
         ofLabel = 'at least ';
       }
-    } else if (response.aggregations.count) {
+    } else if (response.aggregations._count) {
       // Aggregation modes use a separate agg to count only when the filter changes.
-      total = response.aggregations.count.value;
+      total = response.aggregations._count.value;
       lastCount = total;
     } else if (lastCount) {
       total = lastCount;
