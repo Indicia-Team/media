@@ -85,23 +85,25 @@ var IdcEsDataSource;
      * a painless script.
      */
     function addFieldToCompositeSources(compositeSources, field, sortDir) {
-      var matches = field.match(/^#attr_value:([^:]+):([^:]+)#$/);
+      var matches = field.match(/^#([^:]+)(:([^:]+):([^:]+))?#$/);
       var fieldObj;
       var srcObj = {};
       // Is this field a custom attribute definition?
       if (matches) {
-        // Tolerate event or sample.
-        matches[1] = matches[1] === 'sample' ? 'event' : matches[1];
-        fieldObj = {
-          script: {
-            source: 'String r = \'\'; if (params._source.' + matches[1] + '.attributes != null) { ' +
-              'for ( item in params._source.event.attributes ) { ' +
-                'if (item.id == \'' + matches[2] + '\') { r = item.value; } ' +
-              '} ' +
-            '} return r;',
-            lang: 'painless'
-          }
-        };
+        if (matches[1] === 'attr_value') {
+          // Tolerate event or sample.
+          matches[3] = matches[3] === 'sample' ? 'event' : matches[3];
+          fieldObj = {
+            script: {
+              source: 'String r = \'\'; if (params._source.' + matches[3] + '.attributes != null) { ' +
+                'for ( item in params._source.event.attributes ) { ' +
+                  'if (item.id == \'' + matches[4] + '\') { r = item.value; } ' +
+                '} ' +
+              '} return r;',
+              lang: 'painless'
+            }
+          };
+        }
       } else {
         // Normal field.
         fieldObj = {
@@ -109,11 +111,13 @@ var IdcEsDataSource;
           missing_bucket: true
         };
       }
-      if (sortDir) {
-        fieldObj.order = sortDir;
+      if (fieldObj) {
+        if (sortDir) {
+          fieldObj.order = sortDir;
+        }
+        srcObj[field.asCompositeKeyName()] = { terms: fieldObj };
+        compositeSources.push(srcObj);
       }
-      srcObj[field.asCompositeKeyName()] = { terms: fieldObj };
-      compositeSources.push(srcObj);
     }
 
     /** Private methods for specific setup for each source mode. */
@@ -180,7 +184,21 @@ var IdcEsDataSource;
       var sortDir = sortInfo[sortField];
       var settings = this.settings;
       var uniqueFieldWithSuffix = indiciaFns.esFieldWithKeywordSuffix(settings.uniqueField);
+      var termSources = [];
       prepareAggregationMode.call(this);
+      // Convert list of fields to one suitable for top_hits _source.
+      $.each(this.settings.fields, function eachField() {
+        var matches = this.match(/^#([^:]+)(:([^:]+):([^:]+))?#$/);
+        var type;
+        var sources;
+        if (matches && matches[1] === 'attr_value') {
+          type = matches[3] === 'sample' ? 'event' : matches[3];
+          sources = [type + '.attributes'];
+        } else {
+          sources = [this];
+        }
+        termSources = termSources.concat(sources.filter((item) => termSources.indexOf(item) < 0));
+      });
       // List of sub-aggregations within the outer terms agg for the unique field must
       // always contain a top_hits agg to retrieve field values.
       subAggs = {
@@ -188,7 +206,7 @@ var IdcEsDataSource;
           top_hits: {
             size: 1,
             _source: {
-              includes: this.settings.fields
+              includes: termSources
             }
           }
         }
