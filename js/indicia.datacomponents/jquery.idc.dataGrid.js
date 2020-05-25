@@ -242,7 +242,7 @@
       // in the response document defined.
       $.each(el.settings.availableColumnInfo, function eachCol(field, colDef) {
         // Everything not in the aggregations list must be a field.
-        if (!sourceSettings.suppliedAggregation[field]) {
+        if (!sourceSettings.suppliedAggregation[field] && field !== 'doc_count') {
           colDef.path = pathsPerMode[sourceSettings.mode];
         }
       });
