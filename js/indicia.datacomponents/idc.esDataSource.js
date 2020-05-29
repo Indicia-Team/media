@@ -197,7 +197,10 @@ var IdcEsDataSource;
         } else {
           sources = [this];
         }
-        termSources = termSources.concat(sources.filter((item) => termSources.indexOf(item) < 0));
+        // Build unique list.
+        termSources = termSources.concat(sources.filter(function filter(item) {
+          return termSources.indexOf(item) < 0;
+        }));
       });
       // List of sub-aggregations within the outer terms agg for the unique field must
       // always contain a top_hits agg to retrieve field values.
