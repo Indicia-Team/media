@@ -566,7 +566,6 @@
       email.body = email.body
         .replace('{{ emailReplyOption }}', indiciaData.lang.verificationButtons.emailReplyInstruct)
         .replace('{{ commentReplyOption }}', commentQuickReplyPageLink);
-      console.log(email.body);
       // Ensure media and comments are loaded.
       $.ajax({
         url: indiciaData.esProxyAjaxUrl + '/mediaAndComments/' + indiciaData.nid + urlSep +
