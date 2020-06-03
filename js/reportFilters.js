@@ -1094,49 +1094,47 @@ jQuery(document).ready(function ($) {
     delete filterDef.taxon_group_names_context;
     delete filterDef.taxa_taxon_list_names_context;
     delete filterDef.taxon_designation_list_names_context;
-    if (indiciaData.reports) {
-      // apply the filter to any reports on the page
-      $.each(indiciaData.reports, function (i, group) {
-        $.each(group, function () {
-          var grid = this[0];
-          // reset to first page
-          grid.settings.offset = 0;
-          // Reset the parameters which are fixed for the grid.
-          grid.settings.extraParams = $.extend({}, grid.settings.fixedParams);
-          // merge in the filter. Supplied filter overrides other location settings (since indexed_location_list and
-          // location_list are logically the same filter setting.
-          if ((typeof grid.settings.extraParams.indexed_location_list !== 'undefined' ||
-              typeof grid.settings.extraParams.indexed_location_id !== 'undefined') &&
-              typeof filterDef.location_list !== 'undefined') {
-            delete grid.settings.extraParams.indexed_location_list;
-            delete grid.settings.extraParams.indexed_location_id;
-          } else if ((typeof grid.settings.extraParams.location_list !== 'undefined' ||
-              typeof grid.settings.extraParams.location_id !== 'undefined') &&
-              typeof filterDef.indexed_location_list !== 'undefined') {
-            delete grid.settings.extraParams.location_list;
-            delete grid.settings.extraParams.location_id;
-          }
-          grid.settings.extraParams = $.extend(grid.settings.extraParams, filterDef);
-          if ($('#filter\\:sharing').length > 0) {
-            grid.settings.extraParams.sharing = codeToSharingTerm($('#filter\\:sharing').val()).replace(' ', '_');
-          }
-          if (reload) {
-            // reload the report grid
-            this.ajaxload();
-          }
-        });
+    // apply the filter to any reports on the page
+    $.each(indiciaData.reports, function (i, group) {
+      $.each(group, function () {
+        var grid = this[0];
+        // reset to first page
+        grid.settings.offset = 0;
+        // Reset the parameters which are fixed for the grid.
+        grid.settings.extraParams = $.extend({}, grid.settings.fixedParams);
+        // merge in the filter. Supplied filter overrides other location settings (since indexed_location_list and
+        // location_list are logically the same filter setting.
+        if ((typeof grid.settings.extraParams.indexed_location_list !== 'undefined' ||
+            typeof grid.settings.extraParams.indexed_location_id !== 'undefined') &&
+            typeof filterDef.location_list !== 'undefined') {
+          delete grid.settings.extraParams.indexed_location_list;
+          delete grid.settings.extraParams.indexed_location_id;
+        } else if ((typeof grid.settings.extraParams.location_list !== 'undefined' ||
+            typeof grid.settings.extraParams.location_id !== 'undefined') &&
+            typeof filterDef.indexed_location_list !== 'undefined') {
+          delete grid.settings.extraParams.location_list;
+          delete grid.settings.extraParams.location_id;
+        }
+        grid.settings.extraParams = $.extend(grid.settings.extraParams, filterDef);
+        if ($('#filter\\:sharing').length > 0) {
+          grid.settings.extraParams.sharing = codeToSharingTerm($('#filter\\:sharing').val()).replace(' ', '_');
+        }
+        if (reload) {
+          // reload the report grid
+          this.ajaxload();
+        }
       });
-      if (typeof indiciaData.mapdiv !== 'undefined' && typeof indiciaData.mapReportControllerGrid !== 'undefined') {
-        indiciaData.mapReportControllerGrid.mapRecords();
-      }
-      // Integrate with Elasticsearch reports as well.
-      if (indiciaData.esSourceObjects) {
-        $.each(indiciaData.esSourceObjects, function eachSource() {
-          // Reset to first page.
-          this.settings.from = 0;
-          this.populate();
-        });
-      }
+    });
+    if (typeof indiciaData.mapdiv !== 'undefined' && typeof indiciaData.mapReportControllerGrid !== 'undefined') {
+      indiciaData.mapReportControllerGrid.mapRecords();
+    }
+    // Integrate with Elasticsearch reports as well.
+    if (indiciaData.esSourceObjects) {
+      $.each(indiciaData.esSourceObjects, function eachSource() {
+        // Reset to first page.
+        this.settings.from = 0;
+        this.populate();
+      });
     }
   };
 
