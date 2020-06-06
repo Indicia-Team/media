@@ -690,7 +690,7 @@ span.ind-cancel-icon {
   padding-left: 16px;
 }
 
-.report-grid-container, #map-container {
+.report-grid-container {
   position: relative;
 }
 

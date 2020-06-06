@@ -66,6 +66,25 @@ var resetSpeciesTextOnEscape;
     if ($('#existingSampleGeomsBySref')) {
       mapInitialisationHooks.push(showExistingSubsamplesOnMap);
     }
+
+    if (indiciaData.loadExistingDynamicAttrs) {
+      $.each($('table.species-grid'), function() {
+        var gridId = this.id;
+        var rows = [];
+        var taxaTaxonListIds = [];
+        var occurrenceIds = [];
+        $.each($('table.species-grid tbody tr'), function() {
+          var scCtrl = $(this).find('.scPresence[name]');
+          if (!indiciaData['limitDynamicAttrsTaxonGroupIds-' + gridId] ||
+              $.inArray(parseInt($(this).find('.scTaxonGroupId').val()), indiciaData['limitDynamicAttrsTaxonGroupIds-' + gridId]) !== -1) {
+            rows.push(this);
+            taxaTaxonListIds.push($(this).find('.scTaxaTaxonListId').val());
+            occurrenceIds.push(scCtrl[0].name.match(/species-grid-\d+-\d+:([a-z0-9\-]+)/)[1]);
+          }
+        });
+        loadDynamicAttrs(gridId, taxaTaxonListIds, rows, occurrenceIds);
+      });
+    }
   });
 
   /*
@@ -149,7 +168,7 @@ var resetSpeciesTextOnEscape;
      from the previous row if that option is set to be used on the edit tab.
      $(this).closest('table').attr('id') gets the gridId for use in the option check.
      */
-    if (indiciaData['copyDataFromPreviousRow-'+$(this).closest('table').attr('id')] == true) {
+    if (indiciaData['copyDataFromPreviousRow-' + $(this).closest('table').attr('id')]) {
       if (deltaX + deltaY !== 0) {
         changeIn2ndToLastRow(this);
       }
@@ -315,18 +334,18 @@ var resetSpeciesTextOnEscape;
       /* Create edit icons for taxon cells. Only add the edit icon if the user has this functionality available on the
       edit tab. Also create Notes and Delete icons when required */
       var linkPageIconSource = indiciaData.imagesPath + 'nuvola/find-22px.png';
-      if (indiciaData['editTaxaNames-' + gridId] == true) {
+      if (indiciaData['editTaxaNames-' + gridId]) {
         deleteAndEditHtml = "<td class='row-buttons'>\n\
             <img class='action-button remove-row' src=" + indiciaData.imagesPath + "nuvola/cancel-16px.png>\n"
         deleteAndEditHtml += "<img class='action-button edit-taxon-name' src=" + indiciaData.imagesPath + "nuvola/package_editors-16px.png>\n";
-        if (indiciaData['includeSpeciesGridLinkPage-'+gridId]==true) {
+        if (indiciaData['includeSpeciesGridLinkPage-' + gridId]) {
           deleteAndEditHtml += '<img class="species-grid-link-page-icon" title="'+indiciaData.speciesGridPageLinkTooltip+'" alt="Notes icon" src=' + linkPageIconSource + '>';
         }
         deleteAndEditHtml += '</td>';
       } else {
         deleteAndEditHtml = "<td class='row-buttons'>\n\
             <img class='action-button action-button remove-row' src=" + indiciaData.imagesPath + 'nuvola/cancel-16px.png>\n';
-        if (indiciaData['includeSpeciesGridLinkPage-' + gridId] == true) {
+        if (indiciaData['includeSpeciesGridLinkPage-' + gridId]) {
           deleteAndEditHtml += '<img class="species-grid-link-page-icon" title="' + indiciaData.speciesGridPageLinkTooltip+'" alt="Notes icon" src=' + linkPageIconSource + '>';
         }
         deleteAndEditHtml += '</td>';
@@ -360,22 +379,35 @@ var resetSpeciesTextOnEscape;
       $(row).find('.species-checklist-select-species').hide();
       $(row).find('.add-media-link').show();
       // auto-check the row
-      checkbox = $(row).find('.scPresenceCell input.scPresence');
+      checkbox = $(row).find('.scPresenceCell input.scPresence').last();
       checkbox.attr('checked', 'checked');
-      // store the ttlId
+      // store the ttlId and other taxonomic info.
       checkbox.val(data.taxa_taxon_list_id);
-      if (indiciaData['subSpeciesColumn-' + gridId] == true) {
+      $(row).find('.scPresenceCell .scTaxaTaxonListId').val(data.taxa_taxon_list_id);
+      $(row).find('.scPresenceCell .scTaxonGroupId').val(data.taxon_group_id);
+      if (indiciaData['subSpeciesColumn-' + gridId]) {
         // Setup a subspecies picker if this option is enabled. Since we don't know for sure if this is matching the
         // last row in the grid (as the user might be typing ahead), use the presence checkbox to extract the row unique ID.
         rowId = checkbox[0].id.match(/sc:([a-z0-9\-]+)/)[1];
         subSpeciesCellIdBeginsWith = 'sc:' + rowId + ':';
         createSubSpeciesList(url, data.preferred_taxa_taxon_list_id, data.preferred_taxon, lookupListId, subSpeciesCellIdBeginsWith, readAuth, 0);
       }
+      if (indiciaData['enableDynamicAttrs-' + gridId]) {
+        if (!indiciaData['limitDynamicAttrsTaxonGroupIds-' + gridId] ||
+            $.inArray(parseInt(data.taxon_group_id), indiciaData['limitDynamicAttrsTaxonGroupIds-' + gridId]) !== -1) {
+          loadDynamicAttrs(gridId, [data.taxa_taxon_list_id], [$(row)]);
+        } else {
+          $(row).find('.hidden-by-dynamic-attr')
+            .removeClass('hidden-by-dynamic-attr')
+            .prop('disabled', false);
+          $(row).find('.dynamic-attr').remove();
+        }
+      }
       // Finally, a blank row is added for the next record
       makeSpareRow(gridId, readAuth, lookupListId, url, null, true);
       // When user selects a taxon then the new row is created, we want to copy data into that new row from previous row
       // automatically. when the option to do so is set.
-      if (indiciaData['copyDataFromPreviousRow-' + gridId] == true) {
+      if (indiciaData['copyDataFromPreviousRow-' + gridId]) {
         species_checklist_add_another_row(gridId);
       }
       // Allow forms to hook into the event of a new row being added
@@ -406,7 +438,7 @@ var resetSpeciesTextOnEscape;
         deleteAndEditHtml = '<td class="row-buttons">\n' +
             '<img class="action-button remove-row" src="' + indiciaData.imagesPath + 'nuvola/cancel-16px.png">\n' +
             '<img class="edit-taxon-name" src="' + indiciaData.imagesPath + 'nuvola/package_editors-16px.png">\n';
-        if (indiciaData['includeSpeciesGridLinkPage-' + gridId] == true) {
+        if (indiciaData['includeSpeciesGridLinkPage-' + gridId]) {
           linkPageIconSource = indiciaData.imagesPath + 'nuvola/find-22px.png';
           deleteAndEditHtml += '<img class="species-grid-link-page-icon" title="' +
             indiciaData.speciesGridPageLinkTooltip + '" alt="Notes icon" src=' + linkPageIconSource + '>\n';
@@ -825,6 +857,104 @@ var resetSpeciesTextOnEscape;
       e.preventDefault();
     }
   });
+
+  function loadDynamicAttrs(gridId, taxaTaxonListIds, rows, occurrenceIds) {
+    var urlSep = indiciaData.dynamicAttrProxyUrl.indexOf('?') === -1 ? '?' : '&';
+    occurrenceIds = occurrenceIds ? occurrenceIds : '0';
+    // Find available dynamic attributes for the selected species.
+    $.get(indiciaData.dynamicAttrProxyUrl + '/getSpeciesChecklistAttrs' + urlSep +
+        'survey_id=' + $('#survey_id').val() +
+        '&taxa_taxon_list_ids=' + taxaTaxonListIds +
+        '&occurrence_id=' + occurrenceIds +
+        '&type=occurrence' +
+        '&language=' + indiciaData.userLang +
+        // @todo: Otions may need to be passed through for individual attr controls.
+        '&options={}', null,
+      function getAttrsReportCallback(data) {
+        $.each(rows, function() {
+          var row = this;
+          // Capture all current attrs values for each row so they can be placed into new controls.
+          $.each($(row).find('td.scOccAttrCell'), function() {
+            var theInput = $(this).find(':input').not(':disabled');
+            if ($(theInput).is('select')) {
+              $(this).attr('data-oldval', $(theInput).text().trim());
+            } else if ($(theInput).is('input')) {
+              $(this).attr('data-oldval', $(theInput).val().trim());
+            } else {
+              $(this).removeAttr('data-oldval');
+            }
+          });
+          // If dynamic attrs previously loaded for the row, replace the original
+          // inputs before applying the new set (since the new set may not have
+          // attrs for the same columns as the old set).
+          $(row).find('.hidden-by-dynamic-attr')
+            .removeClass('hidden-by-dynamic-attr')
+            .prop('disabled', false);
+          $(row).find('.dynamic-attr').remove();
+        });
+        $.each(data, function() {
+          var dataRow = this;
+          var row = dataRow.attr.occurrence_id
+            ? $(rows).find('.scPresence[id$=":' + dataRow.attr.occurrence_id + ':present"]').closest('tr')
+            : rows[0];
+          var rowPrefix = $(row).find('.scPresence').last().attr('id').match(/(sc:[a-z0-9\-]+)/)[1];
+          var attrId = dataRow.attr.attribute_id;
+          var systemFunction = dataRow.attr.system_function;
+          var ctrl = $(dataRow.control);
+          if (systemFunction) {
+            ctrl
+              .attr('name', rowPrefix + '::occAttr:' + attrId)
+              .addClass('system-function-' + systemFunction)
+              .addClass('dynamic-attr');
+            $.each(indiciaData['dynamicAttrInfo-' + gridId][systemFunction], function(idx) {
+              var cell = $(row).find('td.' + this + 'Cell');
+              var values;
+              // If multiple columns for same sysfuncton, only use the first
+              // and empty the rest.
+              if (idx === 0) {
+                // Remove old dynamic attributes in the cell as well as errors.
+                cell.find('dynamic-attr, .inline-error').remove();
+                // Hide and disable the non-dynamic attr for this cell, so we don't lose it
+                // if the row is edited to a species without dynamic attrs.
+                cell.find('*')
+                  .addClass('hidden-by-dynamic-attr')
+                  .removeClass('ui-state-error')
+                  .prop('disabled', true);
+                // Tag the control against the column.
+                ctrl.addClass(this);
+                // Set any existint value into the control.
+                if (dataRow.attr.values) {
+                  values = JSON.parse(dataRow.attr.values);
+                  if (values.length) {
+                    ctrl.val(values[0]['raw_value']);
+                  }
+                }
+                if ($(cell).attr('data-oldval')) {
+                  if (ctrl.is('select')) {
+                    ctrl.find('option').filter(function () {
+                      return $(this).html().toLowerCase().trim() === $(cell).attr('data-oldval').toLowerCase();
+                    }).prop('selected', true);
+                  } else if (ctrl.is('input')) {
+                    ctrl.val($(cell).attr('data-oldval'));
+                  }
+                }
+                // Attach existing attrs to the correct occurrence ID.
+                if (dataRow.attr.occurrence_id) {
+                  ctrl.attr('name', ctrl.attr('name').replace('::', ':' + dataRow.attr.occurrence_id + ':'));
+                }
+                // Add the new dynamic attr control to the grid cell.
+                cell.append(ctrl);
+              } else {
+                // 2nd or later column for same sysfunction, so hide the control.
+                cell.html('');
+              }
+            });
+          }
+        });
+      },
+      'json'
+    );
+  }
 
 })(jQuery);
 

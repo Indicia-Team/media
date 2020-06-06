@@ -7,6 +7,10 @@
   bottom: 0;
   right: 0;
   background-color: rgba(230, 230, 230, 0.6);
+  /* Mod the loading spinner to only appear if a delay > 1s */
+  animation: 1.5s fadeIn;
+  animation-fill-mode: forwards;
+  visibility: hidden;
 
   /* :not(:required) hides these rules from IE9 and below */
   div:not(:required) {

@@ -1,4 +1,7 @@
 ﻿/**
+ * @file
+ * Place search for Luxembourg using ACT web services.
+ *
  * Indicia, the OPAL Online Recording Toolkit.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,35 +24,56 @@
 var Georeferencer;
 
 (function ($) {
-  Georeferencer = function(mapdiv, callback) {
-
+  Georeferencer = function georef(mapdiv, callback) {
     this.georeference = function(searchtext) {
       var request = indiciaData.proxyUrl +
-          '?url=http://api.geoportal.lu/locationsearch&query=' + searchtext + '&lang=' + mapdiv.georefOpts.georefLang;
-      $.getJSON(request, function(data) {
+          '?url=https://apiv3.geoportail.lu/fulltextsearch&query=' + searchtext;
+      $.getJSON(request, function onResponse(data) {
         // an array to store the responses in the required country
-        var places = [], converted={};
-        jQuery.each(data.results, function(i,place) {
+        var places = [];
+        var converted = {};
+        jQuery.each(data.features, function eachFeature() {
           converted = {
-            name : place.label,
-            display : place.listlabel,
-            epsg: 2169,
-            centroid: {
-              x: (place.bbox[0] + place.bbox[2])/2,
-              y: (place.bbox[1] + place.bbox[3])/2
-            },
-            boundingBox: {
+            name: this.properties.label,
+            display: this.properties.label + ' (' + this.properties.layer_name + ')',
+            epsg: 4326,
+            obj: this
+          };
+          if (Array.isArray(this.bbox) && this.bbox.length === 4) {
+            converted.centroid = {
+              x: (this.bbox[0] + this.bbox[2]) / 2,
+              y: (this.bbox[1] + this.bbox[3]) / 2
+            };
+            converted.boundingBox = {
               southWest: {
-                x: place.bbox[0],
-                y: place.bbox[1]
+                x: this.bbox[0],
+                y: this.bbox[1]
               },
               northEast: {
-                x: place.bbox[2],
-                y: place.bbox[3]
+                x: this.bbox[2],
+                y: this.bbox[3]
               }
-            },
-            obj: place
-          };
+            };
+          } else if (this.geometry.coordinates && mapdiv.settings.searchDisplaysPoint) {
+            converted.centroid = {
+              x: this.geometry.coordinates[0],
+              y: this.geometry.coordinates[1]
+            };
+            // Just take a guess at the bbox.
+            converted.boundingBox = {
+              southWest: {
+                x: this.geometry.coordinates[0] - 0.01,
+                y: this.geometry.coordinates[1] - 0.01
+              },
+              northEast: {
+                x: this.geometry.coordinates[0] + 0.01,
+                y: this.geometry.coordinates[1] + 0.01
+              }
+            };
+          } else {
+            // No centroid available so have to skip.
+            return true;
+          }
           places.push(converted);
         });
         callback(mapdiv, places);
@@ -59,8 +83,7 @@ var Georeferencer;
 }) (jQuery);
 
 /**
- * Default settings for this driver
+ * Default settings for this driver.
  */
 jQuery.fn.indiciaMapPanel.georeferenceDriverSettings = {
-  georefLang : 'en'
 };

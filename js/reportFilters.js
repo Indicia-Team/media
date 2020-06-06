@@ -77,9 +77,9 @@ jQuery(document).ready(function ($) {
     });
     $.each(ctrlIds, function (idx, ctrlId) {
       if (disable) {
-        $(ctrlId).attr('disabled', true);
+        $(ctrlId).prop('disabled', true);
       } else {
-        $(ctrlId).removeAttr('disabled');
+        $(ctrlId).prop('disabled', false);
       }
     });
   }
@@ -90,7 +90,7 @@ jQuery(document).ready(function ($) {
     var typeIds;
     if (context && context[type + '_list_op'] && context[type + '_list']) {
       typeIds = context[type + '_list'].split(',');
-      $('#filter-' + type + 's-mode').attr('disabled', true);
+      $('#filter-' + type + 's-mode').prop('disabled', true);
       // Get all the checkboxes relevant to this level (e.g. for surveys, it includes surveys and input forms.
       allRelevantCheckboxes = $('#' + type + '-list-checklist input');
       $.each(childTypes, function () {
@@ -103,16 +103,16 @@ jQuery(document).ready(function ($) {
           $('#check-website-' + type + '-' + this + ',.vis-' + type + '-' + this + ' input'));
       });
       if (context[type + '_list_op'] === 'not in') {
-        $(allRelevantCheckboxes).removeAttr('disabled');
-        $(allCheckboxesMatchingIds).attr('disabled', true);
+        $(allRelevantCheckboxes).prop('disabled', false);
+        $(allCheckboxesMatchingIds).prop('disabled', true);
       } else {
-        $(allRelevantCheckboxes).attr('disabled', true);
-        $(allCheckboxesMatchingIds).removeAttr('disabled');
+        $(allRelevantCheckboxes).prop('disabled', true);
+        $(allCheckboxesMatchingIds).prop('disabled', false);
       }
       // Force uncheck the websites you can't access
-      $('#' + type + '-list-checklist input:disabled').removeAttr('checked');
+      $('#' + type + '-list-checklist input:disabled').attr('checked', false);
     } else {
-      $('#filter-' + type + 's-mode').removeAttr('disabled');
+      $('#filter-' + type + 's-mode').prop('disabled', false);
     }
   }
 
@@ -302,19 +302,19 @@ jQuery(document).ready(function ($) {
         }
         if (context && context.marine_flag && context.marine_flag !== 'all') {
           $('#marine_flag').find('option[value=' + context.marine_flag + ']').attr('selected', 'selected');
-          $('#marine_flag').attr('disabled', 'disabled');
+          $('#marine_flag').prop('disabled', true);
           $('#flags-tab .context-instruct').show();
         } else {
-          $('#marine_flag').removeAttr('disabled');
+          $('#marine_flag').prop('disabled', false);
           $('#flags-tab .context-instruct').hide();
         }
         if (context && context.confidential && context.confidential !== 'all') {
-          $('#confidential').attr('disabled', 'disabled');
+          $('#confidential').prop('disabled', true);
           $('#confidential').find('option[value=' + context.confidential + ']').attr('selected', 'selected');
           $('#flags-tab .context-instruct').show();
         }
         if (context && context.release_status && context.release_status !== 'A') {
-          $('#release_status').attr('disabled', 'disabled');
+          $('#release_status').prop('disabled', true);
           $('#release_status').find('option[value=' + context.release_status + ']').attr('selected', 'selected');
           $('#flags-tab .context-instruct').show();
         }
@@ -560,8 +560,10 @@ jQuery(document).ready(function ($) {
           delete indiciaData.filter.def.indexed_location_id;
         }
         indiciaData.disableMapDataLoading = true;
-        indiciaData.mapOrigCentre = indiciaData.mapdiv.map.getCenter();
-        indiciaData.mapOrigZoom = indiciaData.mapdiv.map.getZoom();
+        if (indiciaData.mapdiv) {
+          indiciaData.mapOrigCentre = indiciaData.mapdiv.map.getCenter();
+          indiciaData.mapOrigZoom = indiciaData.mapdiv.map.getZoom();
+        }
         if (indiciaData.filter.def.indexed_location_list &&
           $("#site-type option[value='loc:" + indiciaData.filter.def.indexed_location_list + "']").length > 0) {
           $('#site-type').val('loc:' + indiciaData.filter.def.indexed_location_list);
@@ -584,13 +586,15 @@ jQuery(document).ready(function ($) {
           $('.olControlModifyFeatureItemInactive').hide();
         }
         // select the first draw... tool if allowed to draw on the map by permissions, else select navigate
-        $.each(indiciaData.mapdiv.map.controls, function (idx, ctrl) {
-          if (context && (((context.sref || context.searchArea) && ctrl.CLASS_NAME.indexOf('Control.Navigate') > -1) ||
-            ((!context.sref && !context.searchArea) && ctrl.CLASS_NAME.indexOf('Control.Draw') > -1))) {
-            ctrl.activate();
-            return false;
-          }
-        });
+        if (indiciaData.mapdiv) {
+          $.each(indiciaData.mapdiv.map.controls, function (idx, ctrl) {
+            if (context && (((context.sref || context.searchArea) && ctrl.CLASS_NAME.indexOf('Control.Navigate') > -1) ||
+              ((!context.sref && !context.searchArea) && ctrl.CLASS_NAME.indexOf('Control.Draw') > -1))) {
+              ctrl.activate();
+              return false;
+            }
+          });
+        }
         if (context && (context.location_id || context.indexed_location_id || context.location_name || context.searchArea)) {
           $('#controls-filter_where .context-instruct').show();
         }
@@ -647,11 +651,11 @@ jQuery(document).ready(function ($) {
       },
       loadForm: function (context) {
         if (context && context.my_records) {
-          $('#my_records').attr('disabled', true);
+          $('#my_records').prop('disabled', true);
           $('#controls-filter_who .context-instruct').show();
           $('#controls-filter_who button').hide();
         } else {
-          $('#my_records').removeAttr('disabled');
+          $('#my_records').prop('disabled', false);
           $('#controls-filter_who button').show();
         }
       }
@@ -722,26 +726,26 @@ jQuery(document).ready(function ($) {
       },
       loadForm: function (context) {
         if (context && context.quality && context.quality !== 'all') {
-          $('#quality-filter').attr('disabled', true);
+          $('#quality-filter').prop('disabled', true);
         } else {
-          $('#quality-filter').removeAttr('disabled');
+          $('#quality-filter').prop('disabled', false);
         }
         if (context && context.autochecks) {
-          $('#autochecks').attr('disabled', true);
+          $('#autochecks').prop('disabled', true);
         } else {
-          $('#autochecks').removeAttr('disabled');
+          $('#autochecks').prop('disabled', false);
         }
         if (context && context.identification_difficulty) {
-          $('#identification_difficulty').attr('disabled', true);
-          $('#identification_difficulty_op').attr('disabled', true);
+          $('#identification_difficulty').prop('disabled', true);
+          $('#identification_difficulty_op').prop('disabled', true);
         } else {
-          $('#identification_difficulty').removeAttr('disabled');
-          $('#identification_difficulty_op').removeAttr('disabled');
+          $('#identification_difficulty').prop('disabled', false);
+          $('#identification_difficulty_op').prop('disabled', false);
         }
         if (context && context.has_photos) {
-          $('#has_photos').attr('disabled', true);
+          $('#has_photos').prop('disabled', true);
         } else {
-          $('#has_photos').removeAttr('disabled');
+          $('#has_photos').prop('disabled', false);
         }
         if (context && ((context.quality && context.quality !== 'all') ||
           context.autochecks || context.identification_difficulty || context.has_photos)) {
@@ -781,27 +785,25 @@ jQuery(document).ready(function ($) {
           (context.survey_list && context.survey_list_op) || (context.input_form_list && context.input_form_list_op))) {
           $('#controls-filter_source .context-instruct').show();
         }
+        $('#controls-filter_source ul input')
+          .prop('checked', false)
+          .prop('disabled', false);
         if (indiciaData.filter.def.website_list) {
-          $('#website-list-checklist input').attr('checked', false);
           $.each(indiciaData.filter.def.website_list.split(','), function (idx, id) {
-            $('#check-website-' + id).attr('checked', true);
+            $('#check-website-' + id).prop('checked', true);
           });
           updateWebsiteSelection();
         }
         if (indiciaData.filter.def.survey_list) {
-          $('#survey_list input').attr('checked', false);
           $.each(indiciaData.filter.def.survey_list.split(','), function (idx, id) {
-            $('#check-survey-' + id).attr('checked', true);
+            $('#check-survey-' + id).prop('checked', true);
           });
         }
         if (indiciaData.filter.def.input_form_list) {
-          $('#input_form_list input').attr('checked', false);
           $.each(indiciaData.filter.def.input_form_list.split(','), function (idx, form) {
             $('#check-form-' + indiciaData.formsList[form.replace(/'/g, '')]).attr('checked', true);
           });
         }
-        $('#website-list-checklist,#survey-list-checklist,#input_form-list-checklist')
-          .find('input').removeAttr('disabled');
         disableSourceControlsForContext('website', context, ['survey', 'input_form']);
         disableSourceControlsForContext('survey', context, ['input_form']);
         disableSourceControlsForContext('input_form', context, []);
@@ -830,7 +832,7 @@ jQuery(document).ready(function ($) {
   }
   // Event handler for a draw tool boundary being added which clears the other controls on the map pane.
   function addedFeature() {
-    $('#controls-filter_where').find(':input').not('.locked-value,#imp-sref-system,:checkbox,[type=button],[name="location_list\[\]"]').val('');
+    $('#controls-filter_where').find('#site-type,#location_list\\:search\\:name,#location_name,#imp-sref').val('');
     $('#controls-filter_where').find(':checkbox').attr('checked', false);
     // If a selected site but switching to freehand, we need to clear the site boundary.
     if (siteOrGridRefSelected()) {
@@ -841,17 +843,6 @@ jQuery(document).ready(function ($) {
     }
   }
 
-  // Hook the addedFeature handler up to the draw controls on the map
-  mapInitialisationHooks.push(function (mapdiv) {
-    $.each(mapdiv.map.controls, function (idx, ctrl) {
-      if (ctrl.CLASS_NAME.indexOf('Control.Draw') > -1) {
-        ctrl.events.register('featureadded', ctrl, addedFeature);
-      }
-    });
-    // ensures that if part of a loaded filter description is a boundary, it gets loaded onto the map only when the map is ready
-    indiciaFns.updateFilterDescriptions();
-  });
-
   // Ensure that pane controls that are exclusive of others are only filled in one at a time
   $('.filter-controls fieldset :input').change(function (e) {
     var formDiv = $(e.currentTarget).parents('.filter-popup');
@@ -859,7 +850,7 @@ jQuery(document).ready(function ($) {
     $.each($(formDiv).find('fieldset.exclusive'), function (idx, fieldset) {
       if (fieldset !== thisFieldset) {
         $(fieldset).find(':input').not('#imp-sref-system,:checkbox,[type=button]').val('');
-        $(fieldset).find(':checkbox').attr('checked', false);
+        $(fieldset).find(':checkbox').prop('checked', false);
       }
     });
   });
@@ -991,12 +982,12 @@ jQuery(document).ready(function ($) {
       // list only the forms that can be picked
       $('#filter-input_forms li').filter(surveys.join(',')).removeClass('survey-hide');
       $('#filter-input_forms li').not(surveys.join(',')).addClass('survey-hide');
-      $('#filter-input_forms li').not(surveys.join(',')).find('input').attr('checked', false);
+      $('#filter-input_forms li').not(surveys.join(',')).find('input').prop('checked', false);
     } else {
       // list only the forms that can be picked - based on an exclusion of surveys
       $('#filter-input_forms li').filter(surveys.join(',')).addClass('survey-hide');
       $('#filter-input_forms li').not(surveys.join(',')).removeClass('survey-hide');
-      $('#filter-input_forms li').filter(surveys.join(',')).find('input').attr('checked', false);
+      $('#filter-input_forms li').filter(surveys.join(',')).find('input').prop('checked', false);
     }
   }
 
@@ -1014,12 +1005,12 @@ jQuery(document).ready(function ($) {
       // list only the surveys that can be picked
       lis.filter(websites.join(',')).removeClass('website-hide');
       lis.not(websites.join(',')).addClass('website-hide');
-      lis.not(websites.join(',')).find('input').attr('checked', false);
+      lis.not(websites.join(',')).find('input').prop('checked', false);
     } else {
       // list only the surveys that can be picked - based on an exclusion of websites
       lis.filter(websites.join(',')).addClass('website-hide');
       lis.not(websites.join(',')).removeClass('website-hide');
-      lis.filter(websites.join(',')).find('input').attr('checked', false);
+      lis.filter(websites.join(',')).find('input').prop('checked', false);
     }
   }
 
@@ -1103,41 +1094,47 @@ jQuery(document).ready(function ($) {
     delete filterDef.taxon_group_names_context;
     delete filterDef.taxa_taxon_list_names_context;
     delete filterDef.taxon_designation_list_names_context;
-    if (indiciaData.reports) {
-      // apply the filter to any reports on the page
-      $.each(indiciaData.reports, function (i, group) {
-        $.each(group, function () {
-          var grid = this[0];
-          // reset to first page
-          grid.settings.offset = 0;
-          // Reset the parameters which are fixed for the grid.
-          grid.settings.extraParams = $.extend({}, grid.settings.fixedParams);
-          // merge in the filter. Supplied filter overrides other location settings (since indexed_location_list and
-          // location_list are logically the same filter setting.
-          if ((typeof grid.settings.extraParams.indexed_location_list !== 'undefined' ||
-              typeof grid.settings.extraParams.indexed_location_id !== 'undefined') &&
-              typeof filterDef.location_list !== 'undefined') {
-            delete grid.settings.extraParams.indexed_location_list;
-            delete grid.settings.extraParams.indexed_location_id;
-          } else if ((typeof grid.settings.extraParams.location_list !== 'undefined' ||
-              typeof grid.settings.extraParams.location_id !== 'undefined') &&
-              typeof filterDef.indexed_location_list !== 'undefined') {
-            delete grid.settings.extraParams.location_list;
-            delete grid.settings.extraParams.location_id;
-          }
-          grid.settings.extraParams = $.extend(grid.settings.extraParams, filterDef);
-          if ($('#filter\\:sharing').length > 0) {
-            grid.settings.extraParams.sharing = codeToSharingTerm($('#filter\\:sharing').val()).replace(' ', '_');
-          }
-          if (reload) {
-            // reload the report grid
-            this.ajaxload();
-          }
-        });
+    // apply the filter to any reports on the page
+    $.each(indiciaData.reports, function (i, group) {
+      $.each(group, function () {
+        var grid = this[0];
+        // reset to first page
+        grid.settings.offset = 0;
+        // Reset the parameters which are fixed for the grid.
+        grid.settings.extraParams = $.extend({}, grid.settings.fixedParams);
+        // merge in the filter. Supplied filter overrides other location settings (since indexed_location_list and
+        // location_list are logically the same filter setting.
+        if ((typeof grid.settings.extraParams.indexed_location_list !== 'undefined' ||
+            typeof grid.settings.extraParams.indexed_location_id !== 'undefined') &&
+            typeof filterDef.location_list !== 'undefined') {
+          delete grid.settings.extraParams.indexed_location_list;
+          delete grid.settings.extraParams.indexed_location_id;
+        } else if ((typeof grid.settings.extraParams.location_list !== 'undefined' ||
+            typeof grid.settings.extraParams.location_id !== 'undefined') &&
+            typeof filterDef.indexed_location_list !== 'undefined') {
+          delete grid.settings.extraParams.location_list;
+          delete grid.settings.extraParams.location_id;
+        }
+        grid.settings.extraParams = $.extend(grid.settings.extraParams, filterDef);
+        if ($('#filter\\:sharing').length > 0) {
+          grid.settings.extraParams.sharing = codeToSharingTerm($('#filter\\:sharing').val()).replace(' ', '_');
+        }
+        if (reload) {
+          // reload the report grid
+          this.ajaxload();
+        }
       });
-      if (typeof indiciaData.mapdiv !== 'undefined' && typeof indiciaData.mapReportControllerGrid !== 'undefined') {
-        indiciaData.mapReportControllerGrid.mapRecords();
-      }
+    });
+    if (typeof indiciaData.mapdiv !== 'undefined' && typeof indiciaData.mapReportControllerGrid !== 'undefined') {
+      indiciaData.mapReportControllerGrid.mapRecords();
+    }
+    // Integrate with Elasticsearch reports as well.
+    if (indiciaData.esSourceObjects) {
+      $.each(indiciaData.esSourceObjects, function eachSource() {
+        // Reset to first page.
+        this.settings.from = 0;
+        this.populate();
+      });
     }
   };
 
@@ -1190,7 +1187,6 @@ jQuery(document).ready(function ($) {
   function filterLoaded(data) {
     indiciaData.filter.def = $.extend(JSON.parse(data[0].definition), filterOverride);
     indiciaData.filter.id = data[0].id;
-    delete indiciaData.filter.filters_user_id;
     indiciaData.filter.title = data[0].title;
     $('#filter\\:title').val(data[0].title);
     indiciaFns.applyFilterToReports();
@@ -1207,7 +1203,7 @@ jQuery(document).ready(function ($) {
     $('#filter-build').html(indiciaData.lang.reportFilters.ModifyFilter);
     $('#standard-params .header span.changed').hide();
     // can't delete a filter you didn't create.
-    if (data[0].created_by_id === indiciaData.user_id) {
+    if (data[0].created_by_id === indiciaData.user_id || indiciaData.admin === "1") {
       $('#filter-delete').show();
     } else {
       $('#filter-delete').hide();
@@ -1266,7 +1262,9 @@ jQuery(document).ready(function ($) {
           && typeof indiciaData.filterCustomDefs[id] !== 'undefined') {
         def = JSON.stringify(indiciaData.filterCustomDefs[id]);
       }
-      indiciaData.mapdiv.removeAllFeatures(indiciaData.mapdiv.map.editLayer, 'boundary');
+      if (indiciaData.mapdiv) {
+        indiciaData.mapdiv.removeAllFeatures(indiciaData.mapdiv.map.editLayer, 'boundary');
+      }
       if (def) {
         filterLoaded([{
           id: id,
@@ -1298,8 +1296,6 @@ jQuery(document).ready(function ($) {
       definition: fu.filter_definition,
       created_by_id: fu.filter_created_by_id
     }]);
-    // Remember the ID so saves don't duplicate.
-    indiciaData.filter.filters_user_id = fu.id;
   };
 
   function filterParamsChanged() {
@@ -1344,11 +1340,11 @@ jQuery(document).ready(function ($) {
         type = tokens[0];
         if (typeof indiciaData.filter.def[type + '_list'] !== 'undefined') {
           ids = indiciaData.filter.def[type + '_list'].split(',');
-          $(ctrl).attr('checked', $.inArray($(ctrl).val(), ids) > -1);
+          $(ctrl).prop('checked', $.inArray($(ctrl).val(), ids) > -1);
         }
       } else {
         // other checkboxes are simple on/off flags for filter parameters.
-        $(ctrl).attr('checked', typeof indiciaData.filter.def[$(ctrl).attr('name')] !== 'undefined'
+        $(ctrl).prop('checked', typeof indiciaData.filter.def[$(ctrl).attr('name')] !== 'undefined'
           && indiciaData.filter.def[$(ctrl).attr('name')] === $(ctrl).val());
       }
     });
@@ -1381,6 +1377,13 @@ jQuery(document).ready(function ($) {
           $(indiciaData.mapdiv).css('width', '100%');
           $(indiciaData.mapdiv).css('height', '100%');
           $('#filter-map-container').append(element);
+          if ($('#click-buffer').length > 0) {
+            // Show tolerance control only if any draw control enabled.
+            $('#click-buffer').hide();
+            if ($('.olControlDrawFeaturePolygonItemActive,.olControlDrawFeaturePathItemActive,.olControlDrawFeaturePointItemActive').length) {
+              $('#click-buffer').show();
+            }
+          }
           indiciaData.mapdiv.map.updateSize();
           indiciaData.mapdiv.settings.drawObjectType = 'queryPolygon';
         } else {
@@ -1392,10 +1395,10 @@ jQuery(document).ready(function ($) {
         });
       }
       // these auto-disable on form submission
-      $('#taxon_group_list\\:search\\:q').removeAttr('disabled');
-      $('#taxa_taxon_list_list\\:search\\:searchterm').removeAttr('disabled');
-      $('#taxon_designation_list\\:search').removeAttr('disabled');
-      $('#location_list\\:search\\:name').removeAttr('disabled');
+      $('#taxon_group_list\\:search\\:q').prop('disabled', false);
+      $('#taxa_taxon_list_list\\:search\\:searchterm').prop('disabled', false);
+      $('#taxon_designation_list\\:search').prop('disabled', false);
+      $('#location_list\\:search\\:name').prop('disabled', false);
     },
     afterClose: function () {
       var pane = $(this.href.replace(/^[^#]+/, ''));
@@ -1405,6 +1408,14 @@ jQuery(document).ready(function ($) {
         $(indiciaData.mapdiv).css('width', indiciaData.origMapSize.width);
         $(indiciaData.mapdiv).css('height', indiciaData.origMapSize.height);
         $(indiciaData.origMapParent).append(element);
+        if ($('#click-buffer').length > 0) {
+          $(indiciaData.origMapParent).append($('#click-buffer'));
+          // Show tolerance control only if select feataure control enabled.
+          $('#click-buffer').hide();
+          if (!$('.olControlSelectFeatureItemActive').length) {
+            $('#click-buffer').show();
+          }
+        }
         indiciaData.mapdiv.map.setCenter(indiciaData.mapOrigCentre, indiciaData.mapOrigZoom);
         indiciaData.mapdiv.map.updateSize();
         indiciaData.mapdiv.settings.drawObjectType = 'boundary';
@@ -1490,28 +1501,37 @@ jQuery(document).ready(function ($) {
     $('.olControlModifyFeatureItemInactive').hide();
   });
 
-  mapInitialisationHooks.push(function(div) {
-    // On initialisation of the map, hook event handlers to the draw feature control so we can link the modify feature
-    // control visibility to it.
-    $.each(div.map.controls, function() {
-      if (this.CLASS_NAME === 'OpenLayers.Control.DrawFeature' || this.CLASS_NAME === 'OpenLayers.Control.ModifyFeature') {
-        this.events.register('activate', '', function () {
-          $('.olControlModifyFeatureItemInactive, .olControlModifyFeatureItemActive').show();
-        });
-        this.events.register('deactivate', '', function () {
-          $('.olControlModifyFeatureItemInactive').hide();
-        });
-      }
-    });
-  });
 
-  mapClickForSpatialRefHooks.push(function (data, mapdiv) {
-    // on click to set a grid square, clear any other boundary data
-    mapdiv.removeAllFeatures(mapdiv.map.editLayer, 'clickPoint', true);
-    clearSites();
-    $('#controls-filter_where').find(':input')
-        .not('#imp-sref,#imp-sref-system,:checkbox,[type=button],[name="location_list[]"]').val('');
-  });
+  if (typeof mapInitialisationHooks !== 'undefined') {
+    mapInitialisationHooks.push(function(div) {
+      // On initialisation of the map, hook event handlers to the draw feature control so we can link the modify feature
+      // control visibility to it.
+      $.each(div.map.controls, function eachControl() {
+        if (this.CLASS_NAME === 'OpenLayers.Control.DrawFeature' || this.CLASS_NAME === 'OpenLayers.Control.ModifyFeature') {
+          this.events.register('activate', '', function () {
+            $('.olControlModifyFeatureItemInactive, .olControlModifyFeatureItemActive').show();
+          });
+          this.events.register('deactivate', '', function () {
+            $('.olControlModifyFeatureItemInactive').hide();
+          });
+        }
+        // Hook the addedFeature handler up to the draw controls on the map
+        if (this.CLASS_NAME.indexOf('Control.Draw') > -1) {
+          this.events.register('featureadded', this, addedFeature);
+        }
+      });
+      // ensures that if part of a loaded filter description is a boundary, it gets loaded onto the map only when the map is ready
+      indiciaFns.updateFilterDescriptions();
+    });
+
+    mapClickForSpatialRefHooks.push(function (data, mapdiv) {
+      // on click to set a grid square, clear any other boundary data
+      mapdiv.removeAllFeatures(mapdiv.map.editLayer, 'clickPoint', true);
+      clearSites();
+      $('#controls-filter_where').find(':input')
+          .not('#imp-sref,#imp-sref-system,:checkbox,[type=button],[name="location_list[]"]').val('');
+    });
+  }
 
   $('form.filter-controls').submit(function(e) {
     var arrays = {};
@@ -1582,23 +1602,22 @@ jQuery(document).ready(function ($) {
     var filter = {
       website_id: indiciaData.website_id,
       user_id: indiciaData.user_id,
-      'filters_user:user_id': userId,
       'filter:title': $('#filter\\:title').val(),
       'filter:description': $('#filter\\:description').val(),
       'filter:definition': JSON.stringify(indiciaData.filter.def),
       'filter:sharing': sharing,
       'filter:defines_permissions': adminMode ? 't' : 'f'
     };
-    // if existing filter and the title has not changed, or in admin mode, overwrite
+    // If existing filter and the title has not changed, or in admin mode, overwrite.
     if (indiciaData.filter.id && ($('#filter\\:title').val() === indiciaData.filter.title || adminMode)) {
       filter['filter:id'] = indiciaData.filter.id;
+      // Note, as overwriting, the filters_users record already exists.
+      url = indiciaData.filterPostUrl;
+    } else {
+      // New filter, so need to link to the user.
+      filter['filters_user:user_id'] = userId;
+      url = indiciaData.filterAndUserPostUrl;
     }
-    // if existing filters_users then hook to same record
-    if (typeof indiciaData.filter.filters_user_id !== 'undefined') {
-      filter['filters_user:id'] = indiciaData.filter.filters_user_id;
-    }
-    // If a new filter or admin mode, then also need to create a filters_users record.
-    url = (typeof indiciaData.filter.id !== 'number' || adminMode) ? indiciaData.filterAndUserPostUrl : indiciaData.filterPostUrl;
     $.post(url, filter,
       function (data) {
         var handled;
@@ -1606,7 +1625,6 @@ jQuery(document).ready(function ($) {
           alert(indiciaData.lang.reportFilters.FilterSaved);
           indiciaData.filter.id = data.outer_id;
           indiciaData.filter.title = $('#filter\\:title').val();
-          indiciaData.filter.filters_user_id = data.struct.children[0].id;
           $('#active-filter-label').html('Active filter: ' + $('#filter\\:title').val());
           $('#standard-params .header span.changed').hide();
           $('#select-filter').val(indiciaData.filter.id);

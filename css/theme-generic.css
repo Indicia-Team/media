@@ -3,6 +3,8 @@
 /* Set the species checklist entry grid width to 100% */
 table.species-grid {
   width: 100%; }
+  table.species-grid .hidden-by-dynamic-attr {
+    display: none; }
 
 .attrs-container {
   /* Indent contents */
@@ -13,6 +15,9 @@ table.species-grid {
     margin-left: -30px; }
   .attrs-container .attrs-container legend {
     font-size: 120%; }
+
+#map-container, #filter-map-container {
+  position: relative; }
 
 .layer_list ul li label.layer-title {
   display: initial; }
@@ -257,6 +262,12 @@ table.report-grid {
   .licence span.icon.licence-cc0 {
     background-position-y: -54px; }
 
+/* So we can absolute position the loading spinner */
+body {
+  position: relative; }
+  body > .loading-spinner {
+    position: fixed; }
+
 /* idcDataGrid plugin */
 .idc-output-dataGrid {
   position: relative;
@@ -265,7 +276,10 @@ table.report-grid {
   .idc-output-dataGrid .data-grid-tools {
     position: absolute;
     top: 0;
-    right: 0; }
+    right: 0;
+    border: solid silver 1px;
+    border-radius: 3px;
+    background-color: rgba(225, 235, 225, 0.9); }
     .idc-output-dataGrid .data-grid-tools span {
       font-size: 20px;
       padding: 0;
@@ -326,6 +340,8 @@ table.es-data-grid {
   table.es-data-grid tbody tr.selected, table.es-data-grid tbody tr.selected td {
     color: #ffffff;
     background-color: #3333ee; }
+  table.es-data-grid tbody tr.zero-abundance {
+    text-decoration: line-through; }
   table.es-data-grid tbody tr img {
     max-height: 60px;
     border-radius: 4px;
@@ -341,12 +357,11 @@ table.es-data-grid {
     width: 100%;
     /* even columns width , fix width of table too*/
     table-layout: fixed; }
-  table.es-data-grid.fixed-header thead {
-    /* scrollbar is average 1em/16px width, remove it from thead width */
-    width: calc( 100% - 1em ); }
   table.es-data-grid.fixed-header .multiselect-cell {
     padding: 0;
     width: 12px; }
+  table.es-data-grid tfoot span {
+    margin: 0 1em; }
 
 /* idcLeafletMap plugin */
 .idc-output-leafletMap {
@@ -365,16 +380,28 @@ table.es-data-grid {
   box-shadow: none;
   color: black;
   text-shadow: none;
-  min-height: 25px;
+  min-height: 22px;
   margin: 4px;
   padding: 6px; }
   .idc-verification-buttons-row button:hover, .idc-verification-buttons-row a:hover {
     background: silver; }
+  .idc-verification-buttons-row button:link, .idc-verification-buttons-row button:visited, .idc-verification-buttons-row a:link, .idc-verification-buttons-row a:visited {
+    color: black; }
+.idc-verification-buttons-row .multi-only {
+  display: none; }
 .idc-verification-buttons-row .sep {
   height: 20px;
   width: 1px;
   background-color: silver;
   margin: 0 8px; }
+
+.multiselect-mode .multi-only {
+  display: initial; }
+  .multiselect-mode .multi-only button {
+    margin: 0; }
+    .multiselect-mode .multi-only button.active {
+      background: #cde;
+      border: #999; }
 
 /* idcEsDownload */
 .idc-download-files {
@@ -421,14 +448,17 @@ table.es-data-grid {
 .details-container .record-details .attrs {
   position: relative;
   min-height: 120px; }
+.details-container .record-details .field-id {
+  font-weight: bold; }
 .details-container .recorder-experience {
   position: relative;
   min-height: 150px; }
   .details-container .recorder-experience th {
     width: 25%; }
   .details-container .recorder-experience td span {
-    margin-left: 15px;
+    margin-left: 8px;
     display: inline-block;
+    vertical-align: middle;
     height: 15px;
     border-radius: 4px;
     box-shadow: #aaa 0px 2px 4px 0px; }
@@ -438,12 +468,11 @@ table.es-data-grid {
       background-color: silver; }
     .details-container .recorder-experience td span.exp-R {
       background-color: red; }
-
-/* Mod the loading spinner to only appear if a delay > 1s */
-.loading-spinner {
-  animation: 1.5s fadeIn;
-  animation-fill-mode: forwards;
-  visibility: hidden; }
+  .details-container .recorder-experience td a {
+    min-width: 30px;
+    display: inline-block;
+    vertical-align: middle;
+    text-align: right; }
 
 @keyframes fadeIn {
   0% {
@@ -455,13 +484,8 @@ table.es-data-grid {
   100% {
     opacity: 1;
     visibility: visible; } }
-.comment-popup label {
-  display: block;
-  width: auto; }
-.comment-popup textarea {
-  min-width: 300px;
-  width: 100%;
-  min-height: 250px; }
+.verification-popup textarea {
+  min-width: 400px; }
 
 .field-taxon--accepted-name {
   font-style: italic; }
@@ -579,6 +603,10 @@ input.findme {
   bottom: 0;
   right: 0;
   background-color: rgba(230, 230, 230, 0.6);
+  /* Mod the loading spinner to only appear if a delay > 1s */
+  animation: 1.5s fadeIn;
+  animation-fill-mode: forwards;
+  visibility: hidden;
   /* :not(:required) hides these rules from IE9 and below */ }
   .loading-spinner div:not(:required) {
     /* hide "loading..." text */
@@ -760,6 +788,13 @@ label#click-buffer {
     .panel.panel-danger .panel-heading {
       background-color: white; }
 
+.btn {
+  padding: 6px 12px; }
+  .btn .btn-primary {
+    color: #fff;
+    background-color: #337ab7;
+    border-color: #2e6da4; }
+
 /* Data value lists */
 @media (min-width: 768px) {
   .dl-horizontal dt, .dl-horizontal dd {
@@ -775,5 +810,21 @@ label#click-buffer {
     white-space: nowrap; }
   .dl-horizontal dd {
     margin: 4px 0 4px 180px; } }
+.form-group label {
+  width: auto;
+  display: inline-block;
+  max-width: 100%;
+  margin-bottom: 5px;
+  font-weight: 700; }
+
+.form-control {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  border: solid #ccc 1px;
+  border-radius: 4px;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  box-sizing: border-box;
+  margin: 0; }
 
 /*# sourceMappingURL=theme-generic.css.map */

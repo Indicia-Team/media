@@ -43,7 +43,21 @@
     initialLng: -2.89479,
     initialZoom: 5,
     baseLayer: 'OpenStreetMap',
-    cookies: true
+    baseLayerConfig: {
+      OpenStreetMap: {
+        title: 'Open Street Map',
+        type: 'OpenStreetMap'
+      },
+      OpenTopoMap: {
+        title: 'Open Topo Map',
+        type: 'OpenTopoMap'
+      }
+    },
+    cookies: true,
+    selectedFeatureStyle: {
+      color: '#FF0000',
+      fillColor: '#FF0000',
+    }
   };
 
   /**
@@ -64,6 +78,18 @@
    * location boundary when relevant.
    */
   var selectedFeature = null;
+
+  /**
+   * If filtering applied due to selected feature, remember which sources need
+   * to be cleared when map clicked.
+   */
+  var sourcesToReloadOnMapClick = [];
+
+  /**
+   * Track if a feature has just been pre-clicked, so the map event click
+   * doesn't clear the associated filter.
+   */
+  var justClickedOnFeature = false;
 
   /**
    * Finds the list of layer IDs that use a given source id for population.
@@ -93,11 +119,20 @@
 
   /**
    * Add a feature to the map (marker, circle etc).
+   *
+   * @param string geom
+   *   Well Known Text for the geometry.
+   * @param string filterField
+   *   Optional field for filter to apply if this feature selected.
+   * @param string filterValue
+   *   Optional value for filter to apply if this feature selected.
    */
-  function addFeature(el, sourceId, location, metric) {
+  function addFeature(el, sourceId, location, geom, metric, filterField, filterValue) {
     var layerIds = getLayerIdsForSource(el, sourceId);
     var circle;
     var config;
+    var wkt;
+    var obj;
     $.each(layerIds, function eachLayer() {
       var layerConfig = el.settings.layerConfig[this];
       config = {
@@ -108,8 +143,16 @@
       if (typeof layerConfig.style !== 'undefined') {
         $.extend(config.options, layerConfig.style);
       }
-      if (config.type === 'circle' || config.type === 'square') {
+      if (config.type === 'circle' || config.type === 'square' || config.type === 'geom') {
         config.options = $.extend({ radius: 'metric', fillOpacity: 0.5 }, config.options);
+        if (!config.options.size && indiciaData.esSourceObjects[sourceId].settings.mapGridSquareSize) {
+          config.options.size = indiciaData.esSourceObjects[sourceId].settings.mapGridSquareSize;
+          if (config.options.size === 'autoGridSquareSize') {
+            // Calculate according to map zoom.
+            config.options.size = $(el).idcLeafletMap('getAutoSquareSize');
+          }
+        }
+        // If size is auto, override it.
         indiciaFns.findAndSetValue(config.options, 'size', $(el).idcLeafletMap('getAutoSquareSize'), 'autoGridSquareSize');
         // Apply metric to any options that are supposed to use it.
         $.each(config.options, function eachOption(key, value) {
@@ -127,6 +170,17 @@
           delete config.options.size;
         }
       }
+      // Store type so available in feature details.
+      config.options.type = config.type;
+      // Store filter data to apply if feature clicked on.
+      if (filterField && filterValue) {
+        config.options.filterField = filterField;
+        config.options.filterValue = filterValue;
+      }
+      if (config.type === 'geom' && geom.indexOf('POINT') === 0) {
+        config.type = 'circle';
+        config.options.radius = 5;
+      }
       switch (config.type) {
         // Circle markers on layer.
         case 'circle':
@@ -143,6 +197,12 @@
           el.outputLayers[this].addLayer(L.rectangle(circle.getBounds(), config.options));
           circle.removeFrom(el.map);
           break;
+        case 'geom':
+          wkt = new Wkt.Wkt();
+          wkt.read(geom);
+          obj = wkt.toObject(config.options);
+          obj.addTo(el.outputLayers[this]);
+          break;
         // Default layer type is markers.
         default:
           el.outputLayers[this].addLayer(L.marker(location, config.options));
@@ -154,13 +214,16 @@
    * Thicken the borders of selected features when zoomed out to aid visibility.
    */
   function ensureFeatureClear(el, feature) {
-    var weight = Math.min(20, Math.max(1, 20 - (el.map.getZoom())));
-    var opacity = Math.min(1, Math.max(0.6, el.map.getZoom() / 18));
+    var style;
     if (typeof feature.setStyle !== 'undefined') {
-      feature.setStyle({
-        weight: weight,
-        opacity: opacity
-      });
+      style = $.extend({}, el.settings.selectedFeatureStyle);
+      if (!style.weight) {
+        style.weight = Math.min(20, Math.max(1, 20 - (el.map.getZoom())));
+      }
+      if (!style.opacity) {
+        style.opacity = Math.min(1, Math.max(0.6, el.map.getZoom() / 18));
+      }
+      feature.setStyle(style);
     }
   }
 
@@ -220,17 +283,15 @@
    *
    * Zoom, lat, long and selected base layer can all be remembered in cookies.
    */
-  function loadSettingsFromCookies(cookieNames) {
+  function loadSettingsFromCookies(el, cookieNames) {
     var val;
     var settings = {};
-    if (typeof $.cookie !== 'undefined') {
-      $.each(cookieNames, function eachCookie() {
-        val = $.cookie(this);
-        if (val !== null && val !== 'undefined') {
-          settings[this] = val;
-        }
-      });
-    }
+    $.each(cookieNames, function eachCookie() {
+      val = $.cookie(this + '-' + el.id);
+      if (val !== null && val !== 'undefined') {
+        settings[this] = val;
+      }
+    });
     return settings;
   }
 
@@ -250,7 +311,7 @@
         var count = indiciaFns.findValue(this, 'count');
         var metric = Math.round((Math.sqrt(count) / maxMetric) * 20000);
         if (typeof location !== 'undefined') {
-          addFeature(el, sourceSettings.id, location, metric);
+          addFeature(el, sourceSettings.id, location, null, metric);
         }
       });
     }
@@ -266,6 +327,7 @@
     var buckets = indiciaFns.findValue(response.aggregations, 'buckets');
     var subBuckets;
     var maxMetric = 10;
+    var filterField = $(el).idcLeafletMap('getAutoSquareField');
     if (typeof buckets !== 'undefined') {
       $.each(buckets, function eachBucket() {
         subBuckets = indiciaFns.findValue(this, 'buckets');
@@ -285,7 +347,7 @@
               coords = this.key.split(' ');
               metric = Math.round((Math.sqrt(this.doc_count) / maxMetric) * 20000);
               if (typeof location !== 'undefined') {
-                addFeature(el, sourceSettings.id, { lat: coords[1], lon: coords[0] }, metric);
+                addFeature(el, sourceSettings.id, { lat: coords[1], lon: coords[0] }, null, metric, filterField, this.key);
               }
             }
           });
@@ -336,15 +398,15 @@
     if (indiciaData.esSourceObjects[el.settings.layerConfig[id].source]) {
       indiciaData.esSourceObjects[el.settings.layerConfig[id].source].populate();
     }
-    if (el.settings.cookies && $.cookie) {
-      layerState = $.cookie('layerState');
+    if (el.settings.cookies) {
+      layerState = $.cookie('layerState-' + el.id);
       if (layerState) {
         layerState = JSON.parse(layerState);
       } else {
         layerState = {};
       }
       layerState[id] = { enabled: true };
-      $.cookie('layerState', JSON.stringify(layerState));
+      $.cookie('layerState-' + el.id, JSON.stringify(layerState), { expires: 3650 });
     }
   }
 
@@ -355,16 +417,58 @@
    */
   function onRemoveLayer(el, id) {
     var layerState;
-    if (el.settings.cookies && $.cookie) {
-      layerState = $.cookie('layerState');
+    if (el.settings.cookies) {
+      layerState = $.cookie('layerState-' + el.id);
       if (layerState) {
         layerState = JSON.parse(layerState);
       } else {
         layerState = {};
       }
       layerState[id] = { enabled: false };
-      $.cookie('layerState', JSON.stringify(layerState));
+      $.cookie('layerState-' + el.id, JSON.stringify(layerState), { expires: 3650 });
     }
+  }
+
+  /**
+   * Build the list of base map layers.
+   */
+  function getBaseMaps(el) {
+    var baseLayers = {};
+    var subType;
+    var wmsOptions;
+    $.each(el.settings.baseLayerConfig, function eachLayer(title) {
+      if (this.type === 'OpenStreetMap') {
+        baseLayers[title] = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        });
+      } else if (this.type === 'OpenTopoMap') {
+        baseLayers[title] = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+          maxZoom: 17,
+          attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
+            '<a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> ' +
+            '(<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA</a>)'
+        });
+      } else if (this.type === 'Google') {
+        subType = this.config && this.config.subType;
+        if ($.inArray(subType, ['roadmap', 'satellite', 'terrain', 'hybrid']) === -1) {
+          indiciaFns.controlFail(el, 'Unknown Google layer subtype ' + subType);
+        }
+        baseLayers[title] = L.gridLayer.googleMutant({
+          type: subType
+        });
+      } else if (this.type === 'WMS') {
+        wmsOptions = {
+          format: 'image/png'
+        };
+        if (typeof this.config.wmsOptions !== 'undefined') {
+          $.extend(wmsOptions, this.config.wmsOptions);
+        }
+        baseLayers[title] = L.tileLayer.wms(this.config.sourceUrl, wmsOptions);
+      } else {
+        indiciaFns.controlFail(el, 'Unknown baseLayerConfig type ' + this.type);
+      }
+    });
+    return baseLayers;
   }
 
   /**
@@ -394,7 +498,9 @@
       // consumers.
       el.settings.source = {};
       $.each(el.settings.layerConfig, function eachLayer() {
-        el.settings.source[this.source] = typeof this.title === 'undefined' ? this.source : this.title;
+        if (this.type !== 'WMS') {
+          el.settings.source[this.source] = typeof this.title === 'undefined' ? this.source : this.title;
+        }
       })
 ;      // Apply settings passed to the constructor.
       if (typeof options !== 'undefined') {
@@ -404,9 +510,13 @@
       el.settings.configuredLat = el.settings.initialLat;
       el.settings.configuredLng = el.settings.initialLng;
       el.settings.configuredZoom = el.settings.initialZoom;
+      // Disable cookies unless id specified.
+      if (!el.id || !$.cookie) {
+        el.settings.cookies = false;
+      }
       // Apply settings stored in cookies.
       if (el.settings.cookies) {
-        $.extend(el.settings, loadSettingsFromCookies([
+        $.extend(el.settings, loadSettingsFromCookies(el, [
           'initialLat',
           'initialLng',
           'initialZoom',
@@ -414,33 +524,95 @@
           'layerState'
         ]));
       }
-      el.map = L.map(el.id).setView([el.settings.initialLat, el.settings.initialLng], el.settings.initialZoom);
-      baseMaps = {
-        OpenStreetMap: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }),
-        OpenTopoMap: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-          maxZoom: 17,
-          attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
-            '<a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> ' +
-            '(<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA</a>)'
-        })
-      };
+      el.map = L.map(el.id).setView([el.settings.initialLat, el.settings.initialLng], el.settings.initialZoom)
+        .on('click', function() {
+          // Clear filters on any sources that resulted from the click on a
+          // feature, unless it only just happened.
+          if (!justClickedOnFeature) {
+            sourcesToReloadOnMapClick.forEach(function eachSrc(src) {
+              src.populate(false);
+            });
+            sourcesToReloadOnMapClick = [];
+          }
+          justClickedOnFeature = false;
+        });
+      baseMaps = getBaseMaps(el);
+      if (baseMaps.length === 0) {
+        indiciaFns.controlFail(el, 'No base maps configured for map');
+      }
       // Add the active base layer to the map.
-      baseMaps[el.settings.baseLayer].addTo(el.map);
+      if (baseMaps[el.settings.baseLayer]) {
+        baseMaps[el.settings.baseLayer].addTo(el.map);
+      } else {
+        // Fallback if layer missing, e.g. due to out of date cookie.
+        baseMaps[Object.keys(baseMaps)[0]].addTo(el.map);
+      }
       $.each(el.settings.layerConfig, function eachLayer(id, layer) {
         var group;
-        if (layer.type && layer.type === 'heat') {
-          group = L.heatLayer([], $.extend({ radius: 10 }, layer.style ? layer.style : {}));
+        var wmsOptions;
+        if (layer.type === 'WMS') {
+          wmsOptions = {
+            layers: layer.layer,
+            format: 'image/png',
+            transparent: true
+          };
+          if (typeof layer.wmsOptions !== 'undefined') {
+            $.extend(wmsOptions, layer.wmsOptions);
+          }
+          group = L.tileLayer.wms(layer.sourceUrl, wmsOptions);
         } else {
-          group = L.featureGroup();
+          if (layer.type && layer.type === 'heat') {
+            group = L.heatLayer([], $.extend({ radius: 10 }, layer.style ? layer.style : {}));
+          } else {
+            group = L.featureGroup();
+            // If linked to rows in a dataGrid, then clicking on a feature can
+            // temporarily filter the grid.
+            if (typeof el.settings.showSelectedRow !== 'undefined') {
+              // Use preclick event as this must come before the map click for
+              // the filter reset to work at correct time.
+              group.on('preclick', function clickFeature(e) {
+                if (e.layer.options.filterField && e.layer.options.filterValue) {
+                  // Since we are applying a new set of filters, we can clear the
+                  // list of sources that needed to be reloaded next time the map
+                  // was clicked.
+                  sourcesToReloadOnMapClick = [];
+                  $.each($('#' + el.settings.showSelectedRow)[0].settings.source, function eachSrc(src) {
+                    var source = indiciaData.esSourceObjects[src];
+                    var origFilter;
+                    if (!source.settings.filterBoolClauses) {
+                      source.settings.filterBoolClauses = { };
+                    }
+                    if (!source.settings.filterBoolClauses.must) {
+                      source.settings.filterBoolClauses.must = [];
+                    }
+                    // Keep the old filter.
+                    origFilter = $.extend(true, {}, source.settings.filterBoolClauses);
+                    source.settings.filterBoolClauses.must.push({
+                      query_type: 'term',
+                      field: e.layer.options.filterField,
+                      value: e.layer.options.filterValue
+                    });
+                    // Temporarily populate just the linked grid with the
+                    // filter to show the selected row.
+                    source.populate(false, $('#' + el.settings.showSelectedRow)[0]);
+                    // Map click will later clear this filter.
+                    sourcesToReloadOnMapClick.push(source);
+                    // Tell the map click not to clear this filter just yet.
+                    justClickedOnFeature = true;
+                    // Reset the old filter.
+                    source.settings.filterBoolClauses = origFilter;
+                  });
+                }
+              });
+            }
+          }
+          group.on('add', function addEvent() {
+            onAddLayer(el, this, id);
+          });
+          group.on('remove', function removeEvent() {
+            onRemoveLayer(el, id);
+          });
         }
-        group.on('add', function addEvent() {
-          onAddLayer(el, this, id);
-        });
-        group.on('remove', function removeEvent() {
-          onRemoveLayer(el, id);
-        });
         // Leaflet wants layers keyed by title.
         overlays[typeof layer.title === 'undefined' ? id : layer.title] = group;
         // Plugin wants them keyed by source ID.
@@ -461,15 +633,15 @@
         $.each(callbacks.moveend, function eachCallback() {
           this(el);
         });
-        if (typeof $.cookie !== 'undefined' && el.settings.cookies) {
-          $.cookie('initialLat', el.map.getCenter().lat);
-          $.cookie('initialLng', el.map.getCenter().lng);
-          $.cookie('initialZoom', el.map.getZoom());
+        if (el.settings.cookies) {
+          $.cookie('initialLat-' + el.id, el.map.getCenter().lat, { expires: 3650 });
+          $.cookie('initialLng-' + el.id, el.map.getCenter().lng, { expires: 3650 });
+          $.cookie('initialZoom-' + el.id, el.map.getZoom(), { expires: 3650 });
         }
       });
-      if (typeof $.cookie !== 'undefined' && el.settings.cookies) {
+      if (el.settings.cookies) {
         el.map.on('baselayerchange', function baselayerchange(layer) {
-          $.cookie('baseLayer', layer.name);
+          $.cookie('baseLayer-' + el.id, layer.name, { expires: 3650 });
         });
       }
     },
@@ -495,17 +667,17 @@
           this.setLatLngs([]);
         }
       });
-
       // Are there document hits to map?
-      $.each(response.hits.hits, function eachHit() {
+      $.each(response.hits.hits, function eachHit(i) {
         var latlon = this._source.location.point.split(',');
-        addFeature(el, sourceSettings.id, latlon, this._source.location.coordinate_uncertainty_in_meters);
+        addFeature(el, sourceSettings.id, latlon, this._source.location.geom,
+          this._source.location.coordinate_uncertainty_in_meters, '_id', this._id);
       });
       // Are there aggregations to map?
       if (typeof response.aggregations !== 'undefined') {
-        if (sourceSettings.aggregationMapMode === 'geoHash') {
+        if (sourceSettings.mode === 'mapGeoHash') {
           mapGeoHashAggregation(el, response, sourceSettings);
-        } else if (sourceSettings.aggregationMapMode === 'gridSquare') {
+        } else if (sourceSettings.mode === 'mapGridSquare') {
           mapGridSquareAggregation(el, response, sourceSettings);
         }
       }

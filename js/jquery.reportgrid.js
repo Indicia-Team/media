@@ -887,7 +887,7 @@
      */
     function featureInSelectedRows(div, feature) {
       return typeof indiciaData.selectedRows !== 'undefined' && (
-        (typeof feature[div.settings.rowId] !== 'undefined' && $.inArray(div.settings.rowId, indiciaData.selectedRows)) ||
+        (typeof feature[div.settings.rowId] !== 'undefined' && $.inArray(div.settings.rowId, indiciaData.selectedRows) > -1) ||
         // plural - report returns list of IDs
         (typeof feature[div.settings.rowId + 's'] !== 'undefined' && hasIntersection(feature[div.settings.rowId + 's'].split(','), indiciaData.selectedRows))
       );

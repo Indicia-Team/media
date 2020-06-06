@@ -1217,6 +1217,7 @@ var destroyAllFeatures;
           function dynamicOSGoogleSat1() {
             return new OpenLayers.Layer.WMTS($.extend({}, osLeisureOptions, {
               name: 'Dynamic (OpenStreetMap > *Ordnance Survey Leisure* > Google Satellite)',
+              maxWidth: 500000,
               minZoom: 1,
               maxZoom: 11,
               layerId: 'dynamicOSGoogleSat.1',
@@ -1240,6 +1241,7 @@ var destroyAllFeatures;
               type: google.maps.MapTypeId.SATELLITE,
               numZoomLevels: 20,
               sphericalMercator: true,
+              maxWidth: 500,
               minZoom: 18,
               layerId: 'dynamicOSGoogleSat.2',
               dynamicLayerIndex: 2,
@@ -1540,6 +1542,21 @@ var destroyAllFeatures;
       }
     }
 
+    function addClickBufferCtrl(div) {
+      $(div).append(
+        '<label id="click-buffer" class="olButton" style="display: none">Tolerance:<input type="text" value="1000"/>m</label>');
+      $('#click-buffer').css('right', $('.olControlEditingToolbar').outerWidth() + 10);
+      $('#click-buffer input').keypress(function (evt) {
+        // Only accept numeric input.
+        if (evt.which < 48 || evt.which > 57) {
+          evt.preventDefault();
+        }
+      });
+      $('#click-buffer input').change(function () {
+        bufferRoundSelectedRecord(div, $('#click-buffer input').val());
+      });
+    }
+
     /**
      * Create tools required to click on features to drill into the data etc.
      */
@@ -1575,8 +1592,9 @@ var destroyAllFeatures;
             if(this.hoverControl !== null) {
               this.hoverControl.deactivate();
             }
-            // Disable the click buffer tolerance control.
-            $('#click-buffer').hide();
+            if ($('#click-buffer:visible')) {
+              $('#click-buffer').hide();
+            }
             //If the map is setup to use popups, then we need to switch off popups when moving to use a different tool icon
             //on the map (such as drawing boundaries) otheriwise they will continue to show.
             if (clickableVectorLayers.length > 0 && this.allowBox) {
@@ -1590,23 +1608,8 @@ var destroyAllFeatures;
             OpenLayers.Control.prototype.deactivate.call(this);
           },
           activate: function activate() {
-            if (div.settings.selectFeatureBufferProjection) {
-              if ($('#click-buffer').length === 0) {
-                $('#map-container').append(
-                  '<label id="click-buffer" class="olButton">Tolerance:<input type="text" value="1000"/>m</label>');
-                $('#click-buffer').css('right', $('.olControlEditingToolbar').outerWidth() + 10);
-                $('#click-buffer input').keypress(function (evt) {
-                  // Only accept numeric input.
-                  if (evt.which < 48 || evt.which > 57) {
-                    evt.preventDefault();
-                  }
-                });
-                $('#click-buffer input').change(function () {
-                  bufferRoundSelectedRecord(div, $('#click-buffer input').val());
-                });
-              } else {
-                $('#click-buffer').show();
-              }
+            if (div.settings.selectFeatureBufferProjection && $(div).closest('#map-container').length) {
+              $('#click-buffer').show();
             }
             var handlerOptions = {
               single: true,
@@ -1672,8 +1675,8 @@ var destroyAllFeatures;
                 VERSION: '1.1.0',
                 STYLES: '',
                 BBOX: div.map.getExtent().toBBOX(),
-                X: Math.round(geom.getCentroid().x),
-                Y: Math.round(geom.getCentroid().y),
+                X: Math.round(this.lastclick.x),
+                Y: Math.round(this.lastclick.y),
                 INFO_FORMAT: 'text/javascript',
                 LAYERS: clickableWMSLayerNames,
                 QUERY_LAYERS: clickableWMSLayerNames,
@@ -1847,6 +1850,7 @@ var destroyAllFeatures;
       var map = this.map;
       var div = map.div;
       var separateBoundary = $('#' + map.div.settings.boundaryGeomId).length > 0;
+      var geom;
       evt.feature.attributes.type = div.settings.drawObjectType;
       // When drawing new features onto the map, we only ask the user
       // if they want to replace the previous feature when they have the same type.
@@ -1857,6 +1861,17 @@ var destroyAllFeatures;
           oldFeatures.push(this);
         }
       });
+      if ($('#click-buffer:visible').length && $('#click-buffer input').val().trim() !== '' && $('#click-buffer input').val() !== '0') {
+        indiciaFns.bufferFeature(evt.feature, $('#click-buffer input').val(), 8, div.settings.selectFeatureBufferProjection,
+          function(buffered) {
+            var layer = evt.feature.layer;
+            var bufferedFeature = new OpenLayers.Feature.Vector(OpenLayers.Geometry.fromWKT(buffered.response));
+            layer.removeFeatures([evt.feature], {});
+            layer.addFeatures([bufferedFeature]);
+            bufferedFeature.attributes.type = div.settings.drawObjectType;
+          }
+        );
+      }
       if (oldFeatures.length > 0) {
         if (confirm(div.settings.msgReplaceBoundary)) {
           evt.feature.layer.removeFeatures(oldFeatures, {});
@@ -2356,7 +2371,7 @@ var destroyAllFeatures;
         }
       });
       // Hide the Google layer if it is not the current base layer.
-      if (map.baseLayer !== olLayer) {
+      if (typeof olLayer !== 'undefined' && map.baseLayer !== olLayer) {
         olLayer.display(false);
       }
     }
@@ -2430,7 +2445,6 @@ var destroyAllFeatures;
      * Handle the automatic switching between layers for the dynamic layer.
      */
     function handleDynamicLayerSwitching(div) {
-      var thisZoomLevel = div.map.getZoom();
       var onLayer;
       var switcherChange = false;
       var baseLayer = div.map.baseLayer;
@@ -2438,19 +2452,25 @@ var destroyAllFeatures;
       // dynamicOSLeisureGoogleSat.0.
       var baseLayerIdParts = baseLayer.layerId.split('.');
       var onLayerIdx;
+      var dynamicLayers;
+      var bb;
+      var mapWidth;
       // Careful about recursion. Also don't bother if not on a dynamic layer.
       if (indiciaData.settingBaseLayer || typeof baseLayer.dynamicLayerIndex === 'undefined') {
         return;
       }
       // If we need to switch dynamic layer because of the zoom, find the new
       // sub-layer's index.
-      if (baseLayer.maxZoom && thisZoomLevel > baseLayer.maxZoom) {
-        onLayerIdx = baseLayer.dynamicLayerIndex + 1;
-      } else if (baseLayer.minZoom && thisZoomLevel < baseLayer.minZoom) {
-        onLayerIdx = baseLayer.dynamicLayerIndex - 1;
-      } else {
-        onLayerIdx = baseLayer.dynamicLayerIndex;
-      }
+      dynamicLayers = _getPresetLayers(div.settings)[baseLayerIdParts[0]];
+      bb = div.map.getExtent().transform(div.map.projection, new OpenLayers.Projection('EPSG:27700'));
+      mapWidth = bb.right - bb.left;
+      onLayerIdx = dynamicLayers.reduce(function findLayer(index, lyr, i) {
+        var mapLayer = lyr();
+        if (!mapLayer.maxWidth || mapWidth < mapLayer.maxWidth) {
+          return i;
+        }
+        return index;
+      }, 0);
       indiciaData.settingBaseLayer = true;
       try {
         // Ensure switch is immediate.
@@ -2478,6 +2498,22 @@ var destroyAllFeatures;
           }
         });
       }
+    }
+
+    function activateDrawControl(div, ctrl) {
+      if (div.settings.selectFeatureBufferProjection && $(div).closest('#filter-map-container').length) {
+        $('#click-buffer').show();
+      }
+      // Continue with the activation.
+      OpenLayers.Control.prototype.activate.call(ctrl);
+    }
+
+    function deactivateDrawControl(div, ctrl) {
+      if ($('#click-buffer:visible')) {
+        $('#click-buffer').hide();
+      }
+      // Continue with the deactivation.
+      OpenLayers.Control.prototype.deactivate.call(ctrl);
     }
 
     // Extend our default options with those provided, basing this on an empty object
@@ -2666,11 +2702,19 @@ var destroyAllFeatures;
         div.georeferencer = new Georeferencer(div, _displayGeorefOutput);
       }
 
-      // Add any tile cache layers
-      var tcLayer;
-      $.each(this.settings.tilecacheLayers, function(i, item) {
-        tcLayer = new OpenLayers.Layer.TileCache(item.caption, item.servers, item.layerName, item.settings);
-        div.map.addLayer(tcLayer);
+      // Add any custom layers.
+      $.each(this.settings.otherBaseLayerConfig, function(i, item) {
+        var params = item.params;
+        var layer;
+        // Pad to max 4 params, just so the function call can be the same whatever.
+        while (params.length < 4) {
+          params.push(null);
+        }
+        layer = new OpenLayers.Layer[item.class](params[0], params[1], params[2], params[3]);
+        if (!layer.layerId) {
+          layer.layerId = 'custom-' + i;
+        }
+        div.map.addLayer(layer);
       });
 
       // Iterate over the preset layers, adding them to the map
@@ -3091,9 +3135,17 @@ var destroyAllFeatures;
           if (div.settings.reportGroup!==null) {
             hint += ' ' + div.settings.hintDrawForReportingHint;
           }
-          ctrlObj = new OpenLayers.Control.DrawFeature(div.map.editLayer,
-              OpenLayers.Handler.Polygon,
-              {'displayClass': align + 'olControlDrawFeaturePolygon', 'title':hint, handlerOptions:{style:drawStyle}});
+          ctrlObj = new OpenLayers.Control.DrawFeature(
+            div.map.editLayer,
+            OpenLayers.Handler.Polygon,
+            {
+              displayClass: align + 'olControlDrawFeaturePolygon',
+              title: hint,
+              handlerOptions: { style:drawStyle },
+              activate: function() { activateDrawControl(div, this); },
+              deactivate: function() { deactivateDrawControl(div, this); }
+            }
+          );
           pushDrawCtrl(ctrlObj);
         } else if (ctrl=='drawLine' && div.settings.editLayer) {
           hint = div.settings.hintDrawLineHint;
@@ -3101,8 +3153,15 @@ var destroyAllFeatures;
             hint += ' ' + div.settings.hintDrawForReportingHint;
           }
           ctrlObj = new OpenLayers.Control.DrawFeature(div.map.editLayer,
-              OpenLayers.Handler.Path,
-              {'displayClass': align + 'olControlDrawFeaturePath', 'title':hint, handlerOptions:{style:drawStyle}});
+            OpenLayers.Handler.Path,
+            {
+              displayClass: align + 'olControlDrawFeaturePath',
+              title: hint,
+              handlerOptions: { style:drawStyle },
+              activate: function() { activateDrawControl(div, this); },
+              deactivate: function() { deactivateDrawControl(div, this); }
+            }
+          );
           pushDrawCtrl(ctrlObj);
         } else if (ctrl=='drawPoint' && div.settings.editLayer) {
           hint = div.settings.hintDrawPointHint;
@@ -3110,8 +3169,15 @@ var destroyAllFeatures;
             hint += ' ' + div.settings.hintDrawForReportingHint;
           }
           ctrlObj = new OpenLayers.Control.DrawFeature(div.map.editLayer,
-              OpenLayers.Handler.Point,
-              {'displayClass': align + 'olControlDrawFeaturePoint', 'title':hint, handlerOptions:{style:drawStyle}});
+            OpenLayers.Handler.Point,
+            {
+              displayClass: align + 'olControlDrawFeaturePoint',
+              title: hint,
+              handlerOptions: { style:drawStyle },
+              activate: function() { activateDrawControl(div, this); },
+              deactivate: function() { deactivateDrawControl(div, this); }
+            }
+          );
           pushDrawCtrl(ctrlObj);
         } else if (ctrl=='selectFeature' && div.settings.editLayer) {
           ctrlObj = new OpenLayers.Control.SelectFeature(div.map.editLayer);
@@ -3222,6 +3288,10 @@ var destroyAllFeatures;
         toolbar.addControls([nav]);
         toolbar.addControls(toolbarControls);
         div.map.addControl(toolbar);
+        // Must be done after toolbar for alignment.
+        if (div.settings.selectFeatureBufferProjection) {
+          addClickBufferCtrl(div);
+        }
         if (clickInfoCtrl !== null && clickInfoCtrl.hoverControl !== null) {
           div.map.addControl(clickInfoCtrl.hoverControl);
         }
@@ -3301,7 +3371,7 @@ jQuery.fn.indiciaMapPanel.defaults = {
     os_api_key: '',
     proxy: '',
     presetLayers: [],
-    tilecacheLayers: [],
+    otherBaseLayerConfig: [],
     indiciaWMSLayers: {},
     indiciaWFSLayers : {},
     layers: [],

@@ -14,6 +14,13 @@ $colour-select-row-bg: #3333ee;
   word-wrap: break-word;
 }
 
+/* So we can absolute position the loading spinner */
+body {
+  position: relative;
+  > .loading-spinner {
+    position: fixed;
+  }
+}
 /* idcDataGrid plugin */
 .idc-output-dataGrid {
   position: relative;
@@ -23,6 +30,9 @@ $colour-select-row-bg: #3333ee;
     position: absolute;
     top: 0;
     right: 0;
+    border: solid silver 1px;
+    border-radius: 3px;
+    background-color: rgba(225, 235, 225, 0.9);
     span {
       font-size: 20px;
       padding: 0;
@@ -105,6 +115,9 @@ table.es-data-grid {
         color: $colour-select-row;
         background-color: $colour-select-row-bg;
       }
+      &.zero-abundance {
+        text-decoration: line-through;
+      }
       img {
         max-height: 60px;
         border-radius: 4px;
@@ -127,13 +140,14 @@ table.es-data-grid {
       /* even columns width , fix width of table too*/
       table-layout: fixed;
     }
-    thead {
-      /* scrollbar is average 1em/16px width, remove it from thead width */
-      width: calc( 100% - 1em );
-    }
     .multiselect-cell {
       padding: 0;
       width: 12px;
+    }
+  }
+  tfoot {
+    span {
+      margin: 0 1em;
     }
   }
 }
@@ -161,18 +175,37 @@ table.es-data-grid {
     box-shadow: none;
     color: black;
     text-shadow: none;
-    min-height: 25px;
+    min-height: 22px;
     margin: 4px;
     padding: 6px;
     &:hover {
       background: silver;
     }
+    &:link, &:visited {
+      color: black;
+    }
+  }
+  .multi-only {
+    display: none;
   }
   .sep {
     height: 20px;
     width: 1px;
     background-color: silver;
     margin: 0 8px;
+  }
+}
+
+.multiselect-mode {
+  .multi-only {
+    display: initial;
+    button {
+      margin: 0;
+      &.active {
+        background: #cde;
+        border: #999;
+      }
+    }
   }
 }
 
@@ -232,6 +265,9 @@ table.es-data-grid {
       position: relative;
       min-height: 120px;
     }
+    .field-id {
+      font-weight: bold;
+    }
   }
   .recorder-experience {
     position: relative;
@@ -241,8 +277,9 @@ table.es-data-grid {
     }
     td {
       span {
-        margin-left: 15px;
+        margin-left: 8px;
         display: inline-block;
+        vertical-align: middle;
         height: 15px;
         border-radius: 4px;
         box-shadow: #aaa 0px 2px 4px 0px;
@@ -256,15 +293,14 @@ table.es-data-grid {
           background-color: red;
         }
       }
+      a {
+        min-width: 30px;
+        display: inline-block;
+        vertical-align: middle;
+        text-align: right;
+      }
     }
   }
-}
-
-/* Mod the loading spinner to only appear if a delay > 1s */
-.loading-spinner {
-  animation: 1.5s fadeIn;
-  animation-fill-mode: forwards;
-  visibility: hidden;
 }
 
 @keyframes fadeIn {
@@ -282,18 +318,13 @@ table.es-data-grid {
   }
 }
 
-.comment-popup {
-  label {
-    display: block;
-    width: auto;
-  }
+.verification-popup {
   textarea {
-    min-width: 300px;
-    width: 100%;
-    min-height: 250px;
+    min-width: 400px;
   }
 }
 
 .field-taxon--accepted-name {
   font-style: italic;
 }
+

@@ -20,7 +20,7 @@
  * @link https://github.com/indicia-team/client_helpers
  */
 
-/* eslint no-underscore-dangle: ["error", { "allow": ["_id", "_source", "_latlng"] }] */
+/* eslint no-underscore-dangle: ["error", { "allow": ["_id", "_source", "_latlng", "_idfield"] }] */
 /* eslint no-extend-native: ["error", { "exceptions": ["String"] }] */
 /* eslint no-param-reassign: ["error", { "props": false }]*/
 
@@ -41,6 +41,27 @@
   };
 
   /**
+   * Convert an ES field to a name suitable for composite aggregation keys.
+   *
+   * When auto-generating a composite aggregation we want the name given to
+   * each field's key to have hyphens instead of full stops, so the names are
+   * not confused with paths in the document.
+   */
+  String.prototype.asCompositeKeyName = function asCompositeKeyName() {
+    return this.replace(/[\.#:]/g, '-');
+  };
+
+  /**
+   * String function to make a field name readable.
+   */
+  String.prototype.asReadableKeyName = function asReadableKeyName() {
+    // Spaces instead of .-_
+    var name = this.replace(/[\.-_]/g, ' ');
+    // Leading caps.
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  };
+
+  /**
    * Keep track of a list of all the plugin instances that output something.
    */
   indiciaData.outputPluginClasses = [];
@@ -51,11 +72,16 @@
   indiciaData.esSourceObjects = {};
 
   /**
+   * List of the user filters we've used, so we can refresh cache appropriately.
+   */
+  indiciaData.esUserFiltersLoaded = [];
+
+  /**
    * Font Awesome icon and other classes for record statuses and flags.
    */
   indiciaData.statusClasses = {
     V: 'far fa-check-circle status-V',
-    V1: 'far fa-check-double status-V1',
+    V1: 'fas fa-check-double status-V1',
     V2: 'fas fa-check status-V2',
     C: 'fas fa-clock status-C',
     C3: 'fas fa-check-square status-C3',
@@ -66,7 +92,8 @@
     Q: 'fas fa-question-circle',
     A: 'fas fa-reply',
     Sensitive: 'fas fa-exclamation-circle',
-    Confidential: 'fas fa-exclamation-triangle'
+    Confidential: 'fas fa-exclamation-triangle',
+    ZeroAbundance: 'fas fa-ban'
   };
 
   /**
@@ -85,7 +112,8 @@
     Q: 'Queried',
     A: 'Answered',
     Sensitive: 'Sensitive',
-    Confidential: 'Confidential'
+    Confidential: 'Confidential',
+    ZeroAbundance: 'Absence record'
   };
 
   /**
@@ -103,14 +131,33 @@
   };
 
   /**
-   * Initially populate the data sources.
+   * Instantiate the data sources.
    */
-  indiciaFns.populateDataSources = function populateDataSources() {
+  indiciaFns.initDataSources = function initDataSources() {
     // Build the Elasticsearch source objects and run initial population.
     $.each(indiciaData.esSources, function eachSource() {
       var sourceObject = new IdcEsDataSource(this);
       indiciaData.esSourceObjects[this.id] = sourceObject;
-      sourceObject.populate();
+    });
+  };
+
+  /**
+   * Hookup datasources to their controls.
+   */
+  indiciaFns.hookupDataSources = function hookupDataSources() {
+    // Build the Elasticsearch source objects and run initial population.
+    $.each(indiciaData.esSourceObjects, function eachSource() {
+      this.hookup();
+    });
+  };
+
+  /**
+   * Initially populate the data sources.
+   */
+  indiciaFns.populateDataSources = function populateDataSources() {
+    // Build the Elasticsearch source objects and run initial population.
+    $.each(indiciaData.esSourceObjects, function eachSource() {
+      this.populate();
     });
   };
 
@@ -141,6 +188,74 @@
   };
 
   /**
+   * Auto-add keyword suffix for aggregating/sorting on fields with keywords.
+   *
+   * Allows the configuration to not care about keyword sub-fields.
+   */
+  indiciaFns.esFieldWithKeywordSuffix = function esFieldWithKeywordSuffix(field) {
+    var keywordFields = [
+      'event.attributes.id',
+      'event.attributes.value',
+      'event.habitat',
+      'event.recorded_by',
+      'event.sampling_protocol',
+      'identification.auto_checks.output.message',
+      'identification.auto_checks.output.rule_type',
+      'identification.identified_by',
+      'identification.query',
+      'identification.recorder_certainty',
+      'identification.verification_decision_source',
+      'identification.verifier.name',
+      'indexed_location_ids',
+      'location.name',
+      'location.output_sref',
+      'location.output_sref_system',
+      'location.parent.name',
+      'location.verbatim_locality',
+      'message',
+      'metadata.group.title',
+      'metadata.input_form',
+      'metadata.licence_code',
+      'metadata.sensitivity_blur',
+      'metadata.survey.title',
+      'metadata.website.title',
+      'occurrence.associated_media',
+      'occurrence.attributes.id',
+      'occurrence.attributes.value',
+      'occurrence.life_stage',
+      'occurrence.media.caption',
+      'occurrence.media.licence',
+      'occurrence.media.path',
+      'occurrence.media.path2',
+      'occurrence.media.type',
+      'occurrence.organism_quantity',
+      'occurrence.sex',
+      'output_sref',
+      'tags',
+      'taxon.accepted_name',
+      'taxon.accepted_name_authorship',
+      'taxon.class',
+      'taxon.family',
+      'taxon.genus',
+      'taxon.group',
+      'taxon.kingdom',
+      'taxon.order',
+      'taxon.phylum',
+      'taxon.species',
+      'taxon.subfamily',
+      'taxon.taxon_name',
+      'taxon.taxon_name_authorship',
+      'taxon.taxon_rank',
+      'taxon.vernacular_name',
+      'warehouse'
+    ];
+    if ($.inArray(field, keywordFields) > -1) {
+      return field + '.keyword';
+    }
+    return field;
+  };
+
+  /**
    * Convert an ES (ISO) date to local display format.
    *
    * @param string dateString
@@ -154,7 +269,8 @@
     var date;
     var month;
     var day;
-    if (typeof dateString === 'string' && dateString.trim() === '') {
+    if (typeof dateString === 'undefined' ||
+        (typeof dateString === 'string' && dateString.trim() === '')) {
       return '';
     }
     date = new Date(dateString);
@@ -166,6 +282,113 @@
       .replace('d', day)
       .replace('m', month)
       .replace('Y', date.getFullYear());
+  };
+
+  /**
+   * Convert an ES media file to thumbnail HTML.
+   *
+   * @param integer id
+   *   Document ID.
+   * @param object file
+   *   Nested file object from ES document.
+   * @param string sizeClass
+   *   Class to attach to <img>, either single or multi depending on number of
+   *   thumbnails.
+   */
+  indiciaFns.drawMediaFile = function drawMediaFile(id, file, sizeClass) {
+    // Check if an extenral URL.
+    var match = file.path.match(/^http(s)?:\/\/(www\.)?([a-z(\.kr)]+)/);
+    var captionItems = [];
+    var captionAttr;
+    var html = '';
+    if (file.caption) {
+      captionItems.push(file.caption);
+    }
+    if (file.licence) {
+      captionItems.push('Licence is ' + file.licence);
+    }
+    captionAttr = captionItems.length ? ' title="' + captionItems.join(' | ').replace('"', '&quot;') + '"' : '';
+    if (match !== null) {
+      // If so, is it iNat? We can work out the image file names if so.
+      if (file.path.match(/^https:\/\/static\.inaturalist\.org/)) {
+        html += '<a ' + captionAttr +
+          'href="' + file.path.replace('/square.', '/large.') + '" ' +
+          'class="inaturalist fancybox" rel="group-' + id + '">' +
+          '<img class="' + sizeClass + '" src="' + file.path + '" /></a>';
+      } else {
+        html += '<a ' +
+          'href="' + file.path + '" class="social-icon ' + match[3].replace('.', '') + '"></a>';
+        if (captionItems.length) {
+          html += '<p>' + captionItems.join(' | ').replace('"', '&quot;') + '</p>';
+        }
+      }
+    } else if ($.inArray(file.path.split('.').pop(), ['mp3', 'wav']) > -1) {
+      // Audio files can have a player control.
+      html += '<audio controls ' +
+        'src="' + indiciaData.warehouseUrl + 'upload/' + file.path + '" type="audio/mpeg"/>';
+    } else {
+      // Standard link to Indicia image.
+      html += '<a ' + captionAttr +
+        'href="' + indiciaData.warehouseUrl + 'upload/' + file.path + '" ' +
+        'class="fancybox" rel="group-' + id + '">' +
+        '<img class="' + sizeClass + '" src="' + indiciaData.warehouseUrl + 'upload/thumb-' + file.path + '" />' +
+        '</a>';
+    }
+    return html;
+  };
+
+  /**
+   * Detect date/time patterns and convert to a suitable ES query string.
+   */
+  indiciaFns.dateToEsFilter = function dateToEsFilter(text, field) {
+    // A series of possible date patterns, with the info required to build
+    // a query string.
+    var tests = [
+      {
+        // yyyy format.
+        pattern: '(\\d{4})',
+        format: '[`1`-01-01 TO `1`-12-31]'
+      },
+      {
+        // yyyy format.
+        pattern: '(\\d{4})-(\\d{4})',
+        format: '[`1`-01-01 TO `2`-12-31]'
+      },
+      {
+        // dd/mm/yyyy format.
+        pattern: '(\\d{2})\\/(\\d{2})\\/(\\d{4})',
+        format: '`3`-`2`-`1`'
+      },
+      {
+        // yyyy-mm-dd format.
+        pattern: '(\\d{4})\\-(\\d{2})\\-(\\d{2})',
+        format: '`1`-`2`-`3`'
+      },
+      {
+        // dd/mm/yyyy hh:mm format.
+        pattern: '(\\d{2})\\/(\\d{2})\\/(\\d{4}) (\\d{2})\\:(\\d{2})',
+        format: '["`3`-`2`-`1` `4`:`5`:00" TO "`3`-`2`-`1` `4`:`5`:59"]'
+      }
+    ];
+    var filter = false;
+    // Loop the patterns to find a match.
+    $.each(tests, function eachTest() {
+      var regex = new RegExp('^' + this.pattern + '$');
+      var match = text.match(regex);
+      var value = this.format;
+      var i;
+      if (match) {
+        // Got a match, so reformat and build the filter string.
+        for (i = 1; i < match.length; i++) {
+          value = value.replace(new RegExp('`' + i + '`', 'g'), match[i]);
+        }
+        filter = field + ':' + value;
+        // Abort the search.
+        return false;
+      }
+      return true;
+    });
+    return filter;
   };
 
   /**
@@ -212,6 +435,9 @@
     }
     if (flags.confidential && flags.confidential !== 'false') {
       addIcon('Confidential');
+    }
+    if (flags.confidential && flags.confidential !== 'false') {
+      addIcon('ZeroAbundance');
     }
     return html;
   };
@@ -272,12 +498,84 @@
   };
 
   /**
+   * Converts sort info in settings into a list of actual field/direction pairs.
+   *
+   * Expands special fields into their constituent field list to sort on.
+   */
+  indiciaFns.expandSpecialFieldSortInfo = function expandSpecialFieldSortInfo(sort, withKeyword) {
+    var sortInfo = {};
+    if (sort) {
+      $.each(sort, function eachSortField(field, dir) {
+        if (indiciaData.fieldConvertorSortFields[field.simpleFieldName()] &&
+            $.isArray(indiciaData.fieldConvertorSortFields[field.simpleFieldName()])) {
+          $.each(indiciaData.fieldConvertorSortFields[field.simpleFieldName()], function eachUnderlyingField() {
+            sortInfo[this] = dir;
+          });
+        } else if (indiciaData.fieldConvertorSortFields[field.simpleFieldName()]) {
+          sortInfo = indiciaData.fieldConvertorSortFields[field.simpleFieldName()];
+        } else if (withKeyword) {
+          // Normal field with keyword ready to send to ES.
+          sortInfo[indiciaFns.esFieldWithKeywordSuffix(field)] = dir;
+        } else {
+          // If just getting sort info, not sending to ES, then easier without keyword
+          // for comparison with field names.
+          sortInfo[field.replace(/\.keyword$/, '')] = dir;
+        }
+      });
+    }
+    return sortInfo;
+  };
+
+  /**
    * A list of functions which provide HTML generation for special fields.
    *
    * These are field values in HTML that can be extracted from an Elasticsearch
    * doc which are not simple values.
    */
   indiciaFns.fieldConvertors = {
+
+    /**
+     * Output an associations summary.
+     */
+    associations: function associations(doc) {
+      var output = [];
+      if (doc.occurrence.associations) {
+        $.each(doc.occurrence.associations, function eachAssociation() {
+          var label = '<em>' + this.accepted_name + '</em>';
+          if (this.vernacular_name) {
+            label = this.vernacular_name + ' (' + label + ')';
+          }
+          output.push(label);
+        });
+      }
+      return output.join('; ');
+    },
+
+    /**
+     * Output an attribute value.
+     *
+     * Pass 2 parameters:
+     * * The entity name (event (=sample) or occurrence).
+     * * The attribute ID.
+     *
+     * Multiple attribute values are returned as a single semi-colon separated
+     * value.
+     */
+    attr_value: function attr_value(doc, params) {
+      var output = [];
+      var entity = params && params.length > 1 ? params[0] : '';
+      // Tolerate sample or event for entity parameter.
+      entity = entity === 'sample' ? 'event' : entity;
+      if (doc[entity] && doc[entity].attributes) {
+        $.each(doc[entity].attributes, function eachAttr() {
+          if (this.id === params[1]) {
+            output.push(this.value);
+          }
+        });
+      }
+      return output.join('; ');
+    },
+
     /**
      * Record status and other flag icons.
      */
@@ -287,7 +585,8 @@
         substatus: doc.identification.verification_substatus,
         query: doc.identification.query ? doc.identification.query : '',
         sensitive: doc.metadata.sensitive,
-        confidential: doc.metadata.confidential
+        confidential: doc.metadata.confidential,
+        zero_abundance: doc.occurrence.zero_abundance
       });
     },
 
@@ -320,12 +619,35 @@
     },
 
     /**
+     * A simple output of website and survey ID.
+     *
+     * Has a hint to show the underlying titles.
+     */
+    datasource_code: function datasourceCode(doc) {
+      return '<abbr title="' + doc.metadata.website.title + ' | ' + doc.metadata.survey.title + '">' +
+        doc.metadata.website.id + '|' + doc.metadata.survey.id +
+        '</abbr>';
+    },
+
+    /**
      * Output the event date or date range.
+     *
+     * Can also cope if date fields are embedded in key (e.g. in composite
+     * agg response).
      */
     event_date: function eventDate(doc) {
-      var root = doc.event || doc.key;
-      var start = root.date_start ? indiciaFns.formatDate(root.date_start) : '';
-      var end = root.date_end ? indiciaFns.formatDate(root.date_end) : '';
+      var root = doc.event || doc.key || doc;
+      var start = indiciaFns.formatDate(root.date_start || root['event-date_start']);
+      var end = indiciaFns.formatDate(root.date_end || root['event-date_end']);
+      if (!start && !end) {
+        return 'Unknown';
+      }
+      if (!start) {
+        return 'Before ' + end;
+      }
+      if (!end) {
+        return 'After ' + start;
+      }
       if (start !== end) {
         return start + ' - ' + end;
       }
@@ -341,17 +663,35 @@
      * {"caption":"VC code","field":"#higher_geography:Vice County:code#"}
      */
     higher_geography: function higherGeography(doc, params) {
-      var output = '';
+      var output = [];
+      var text = []
       if (doc.location.higher_geography) {
-        $.each(doc.location.higher_geography, function eachGeography() {
-          // If the correct type and not a combined geo-area (indicated by + in the code).
-          // See https://github.com/BiologicalRecordsCentre/iRecord/issues/606
-          if (this.type === params[0] && !this.code.match(/\+/)) {
-            output = this[params[1]];
-          }
-        });
+        if (params.length === 0 || !params[0]) {
+          output = doc.location.higher_geography;
+        } else {
+          $.each(doc.location.higher_geography, function eachGeography() {
+            // If the correct type and not a combined geo-area (indicated by + in the code).
+            // See https://github.com/BiologicalRecordsCentre/iRecord/issues/606
+            if (this.type === params[0] && !this.code.match(/\+/)) {
+              if (params.length >= 2 && params[1]) {
+                // Limiting to one field.
+                output.push(this[params[1]]);
+              } else {
+                // Include whole location object.
+                output.push(this);
+              }
+            }
+          });
+        }
       }
-      return output;
+      if (params.length >= 3 && params[2] === 'json') {
+        return JSON.stringify(output);
+      }
+      // Convert response to a string.
+      $.each(output, function eachRow() {
+        text.push(typeof this === 'string' ? this : Object.values(this).join('; '));
+      });
+      return text.join(' | ');
     },
 
     /**
@@ -379,21 +719,45 @@
      * A formatted lat long.
      */
     lat_lon: function latLon(doc) {
-      var coords = doc.location.point.split(',');
+      var point = doc.location.point || doc.point;
+      var coords = point.split(',') || doc.p;
       var lat = parseFloat(coords[0]);
       var lon = parseFloat(coords[1]);
       return Math.abs(lat).toFixed(3) + (lat >= 0 ? 'N' : 'S') + ' ' + Math.abs(lon).toFixed(3) + (lon >= 0 ? 'E' : 'W');
     },
 
     /**
-     * A simple output of website and survey ID.
+     * Retrieve a field value, or null if value is '0'.
      *
-     * Has a hint to show the underlying titles.
+     * The first parameter provided should be the field name from the ES document.
      */
-    datasource_code: function datasourceCode(doc) {
-      return '<abbr title="' + doc.metadata.website.title + ' | ' + doc.metadata.survey.title + '">' +
-        doc.metadata.website.id + '|' + doc.metadata.survey.id +
-        '</abbr>';
+    null_if_zero: function nullIfZero(doc, params) {
+      var value;
+      if (params.length !== 1) {
+        return 'Incorrect parameters for null_if_zero column configuration';
+      }
+      value = indiciaFns.getValueForField(doc, params[0]);
+      if (value === '0') {
+        return '';
+      }
+      return value;
+    },
+
+    /**
+     * Retrieve HTML representing media thumbnails.
+     */
+    occurrence_media: function occurrenceMedia(doc) {
+      var value = doc.occurrence.media;
+      // Tweak image sizes if more than 1.
+      var sizeClass = value && value.length === 1 ? 'single' : 'multi';
+      var media = [];
+      if (value) {
+        // Build media HTML.
+        $.each(value, function eachFile() {
+          media.push(indiciaFns.drawMediaFile(doc.id, this, sizeClass));
+        });
+      }
+      return media.join('');
     }
   };
 
@@ -413,6 +777,63 @@
    * The builder can assume that the input text value is already trimmed.
    */
   indiciaFns.fieldConvertorQueryBuilders = {
+
+    /**
+     * Builds a nested query for association columns.
+     */
+    associations: function associations(text) {
+      var query = {
+        nested: {
+          path: 'occurrence.associations',
+          query: {
+            bool: {
+              must: [
+                {
+                  query_string: {
+                    query: text
+                  }
+                }
+              ]
+            }
+          }
+        }
+      };
+      return {
+        bool_clause: 'must',
+        value: '',
+        query: JSON.stringify(query)
+      };
+    },
+
+    /**
+     * Builds a query for attribute values.
+     */
+    attr_value: function attr_value(text, params) {
+      var filter1 = {};
+      var filter2 = {};
+      var query;
+      filter1[params[0] + '.attributes.id'] = params[1];
+      filter2[params[0] + '.attributes.value'] = text;
+      query = {
+        nested: {
+          path: params[0] + '.attributes',
+          query: {
+            bool: {
+              must: [
+                { match: filter1 },
+                { match: filter2 }
+              ]
+            }
+          }
+        }
+      };
+      return {
+        bool_clause: 'must',
+        value: '',
+        query: JSON.stringify(query)
+      };
+    },
+
     /**
      * Handle datasource_code filtering in format website_id [| survey ID].
      */
@@ -425,7 +846,7 @@
         query = 'metadata.website.id:' + parts[0].trim();
         // Search can optionally include the survey ID.
         if (parts.length > 1 && parts[1].trim() !== '') {
-          query += 'AND metadata.survey.id:' + parts[1].trim();
+          query += ' AND metadata.survey.id:' + parts[1].trim();
         }
         return query;
       }
@@ -438,47 +859,7 @@
      * Supports yyyy, mm/dd/yyyy or yyyy-mm-dd formats.
      */
     event_date: function eventDate(text) {
-      // A series of possible date patterns, with the info required to build
-      // a query string.
-      var tests = [
-        {
-          // yyyy format.
-          pattern: '(\\d{4})',
-          field: 'event.year',
-          format: '{1}'
-        },
-        {
-          // dd/mm/yyyy format.
-          pattern: '(\\d{2})\\/(\\d{2})\\/(\\d{4})',
-          field: 'event.date_start',
-          format: '{3}-{2}-{1}'
-        },
-        {
-          // yyyy-mm-dd format.
-          pattern: '(\\d{4})\\-(\\d{2})\\-(\\d{2})',
-          field: 'event.date_start',
-          format: '{1}-{2}-{3}'
-        }
-      ];
-      var filter = false;
-      // Loop the patterns to find a match.
-      $.each(tests, function eachTest() {
-        var regex = new RegExp('^' + this.pattern + '$');
-        var match = text.match(regex);
-        var value = this.format;
-        var i;
-        if (match) {
-          // Got a match, so reformat and build the filter string.
-          for (i = 1; i < match.length; i++) {
-            value = value.replace('{' + i + '}', match[i]);
-          }
-          filter = this.field + ':' + value;
-          // Abort the search.
-          return false;
-        }
-        return true;
-      });
-      return filter;
+      return indiciaFns.dateToEsFilter(text, 'event.date_start');
     },
 
     /**
@@ -514,6 +895,10 @@
     lat_lon: function latLon(text) {
       var coords = text.split(/[, ]/);
       var query;
+      if (coords.length !== 2) {
+        // Invalid format.
+        return false;
+      }
       coords[0] = coords[0].match(/S$/) ? 0 - coords[0].replace(/S$/, '') : parseFloat(coords[0].replace(/[^\d\.]$/, ''))
       coords[1] = coords[1].match(/W$/) ? 0 - coords[1].replace(/[^\d\.]$/, '') : parseFloat(coords[1].replace(/[^\d\.]$/, ''));
       query = {
@@ -537,7 +922,9 @@
    * Allow special fields to provide custom hints for their filter row inputs.
    */
   indiciaFns.fieldConvertorQueryDescriptions = {
-    lat_lon: 'Enter a latitude and longitude value to filter to records in the vicinity.'
+    lat_lon: 'Enter a latitude and longitude value to filter to records in the vicinity.',
+    event_date: 'Enter a date in dd/mm/yyyy or yyyy-mm-dd format. Filtering to a year or range or years is possible ' +
+      'using yyyy or yyyy-yyyy format.'
   };
 
   /**
@@ -568,6 +955,35 @@
   };
 
   /**
+   * Walk down a path in a document to find a value.
+   */
+  indiciaFns.iterateDownPath = function iterateDownPath(doc, path) {
+    var pathArray = path.split('.');
+    var i;
+    var thisPath = doc;
+    var filterInfo;
+    for (i = 0; i < pathArray.length; i++) {
+      // Special case when the path element is [...] as this is a filter on an
+      // array of buckets.
+      filterInfo = pathArray[i].match(/^\[(.+)=(.+)\]$/);
+      if (filterInfo) {
+        $.each(thisPath, function eachPathEntry(idx) {
+          if (this[filterInfo[1]] === filterInfo[2]) {
+            pathArray[i] = idx;
+            return false;
+          }
+        });
+      }
+      if (typeof thisPath[pathArray[i]] === 'undefined') {
+        thisPath = '';
+        break;
+      }
+      thisPath = thisPath[pathArray[i]];
+    }
+    return thisPath;
+  };
+
+  /**
    * Retrieves a field value from the document.
    *
    * @param object doc
@@ -576,34 +992,34 @@
    *   Name of the field. Either a path to the field in the document (such as
    *   taxon.accepted_name) or a special field name surrounded by # characters,
    *   e.g. #locality.
+   * @param object colDef
+   *   Optional definition of the column.
    */
-  indiciaFns.getValueForField = function getValueForField(doc, field) {
-    var i;
-    var valuePath = doc;
-    var fieldPath = field.split('.');
+  indiciaFns.getValueForField = function getValueForField(doc, field, colDef) {
     var convertor;
+    // Find location of fields nested in ES response.
+    var valuePath = (colDef && colDef.path) ? indiciaFns.iterateDownPath(doc, colDef.path) : doc;
     // Special field handlers are in the list of convertors.
     if (field.match(/^#/)) {
       // Find the convertor definition between the hashes. If there are
       // colons, stuff that follows the first colon are parameters.
       convertor = field.replace(/^#(.+)#$/, '$1').split(':');
       if (typeof indiciaFns.fieldConvertors[convertor[0]] !== 'undefined') {
-        return indiciaFns.fieldConvertors[convertor[0]](doc, convertor.slice(1));
+        return indiciaFns.fieldConvertors[convertor[0]](valuePath, convertor.slice(1));
       }
     }
     // If not a special field, work down the document hierarchy according to
     // the field's path components.
-    for (i = 0; i < fieldPath.length; i++) {
-      if (typeof valuePath[fieldPath[i]] === 'undefined') {
-        valuePath = '';
-        break;
-      }
-      valuePath = valuePath[fieldPath[i]];
-    }
+    valuePath = indiciaFns.iterateDownPath(valuePath, field);
     // Reformat date fields to user-friendly format.
     // @todo Localisation for non-UK dates.
     if (field.match(/_on$/)) {
       valuePath = valuePath.replace(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}).*/, '$3/$2/$1 $4:$5');
+    }
+    // Path might be to an aggregation response object, in which case we just
+    // want the value (or value_as_string if aggregation format specified).
+    if (valuePath && typeof (valuePath.value_as_string || valuePath.value) !== 'undefined') {
+      return valuePath.value_as_string || valuePath.value;
     }
     return valuePath;
   };
@@ -650,8 +1066,20 @@
               });
             }
           } else if (indiciaData.esMappings[field].type === 'keyword' || indiciaData.esMappings[field].type === 'text') {
-            // Normal text filter
+            // Normal text filter.
             data.textFilters[field] = $(this).val().trim();
+          } else if (indiciaData.esMappings[field].type === 'date') {
+            // Date filter.
+            query = indiciaFns.dateToEsFilter($(this).val().trim(), field);
+            if (query === false) {
+              $(this).after('<span title="Invalid search text" class="fas fa-exclamation-circle"></span>');
+            } else {
+              data.bool_queries.push({
+                bool_clause: 'must',
+                query_type: 'query_string',
+                value: query
+              });
+            }
           } else {
             // Normal numeric filter.
             data.numericFilters[field] = $(this).val().trim();
@@ -659,6 +1087,20 @@
         }
       });
     });
+  }
+
+  /**
+   * If a standard params filter active on the page, copy it into the ES filter.
+   */
+  function setFilterDef(data) {
+    var geom;
+    if (indiciaData.filter && indiciaData.filter.def) {
+      data.filter_def = $.extend({}, indiciaData.filter.def);
+    }
+    if (data.filter_def && data.filter_def.searchArea && OpenLayers) {
+      geom = OpenLayers.Geometry.fromWKT(data.filter_def.searchArea);
+      data.filter_def.searchArea = geom.transform('EPSG:3857', 'EPSG:4326').toString();
+    }
   }
 
   /**
@@ -678,8 +1120,8 @@
       }
     }
     val = $(input).attr(dataName);
-    return val ? val : null;
-  }
+    return val || null;
+  };
 
   /**
    * Build query data to send to ES proxy.
@@ -689,26 +1131,38 @@
    *
    * Returns false if the query is linked to a grid selection but there is no
    * selected row.
+   *
+   * @param object source
+   *   The source object.
+   * @param bool doingCount
+   *   Set to true if getting query data for a request intended to count a
+   *   dataset rather than retrieve data. Disables from and sort options,
+   *   allowing unnecessary recounts to be avoided.
    */
-  indiciaFns.getFormQueryData = function getFormQueryData(source) {
+  indiciaFns.getFormQueryData = function getFormQueryData(source, doingCount) {
     var data = {
       textFilters: {},
       numericFilters: {},
       bool_queries: [],
-      user_filters: []
+      user_filters: [],
+      refresh_user_filters: false
     };
     var mapToFilterTo;
     var bounds;
     var agg = {};
     var filterRows = [];
-    if (source.settings.size) {
+    if (typeof source.settings.size !== 'undefined') {
       data.size = source.settings.size;
     }
-    if (source.settings.from) {
-      data.from = source.settings.from;
-    }
-    if (source.settings.sort) {
-      data.sort = source.settings.sort;
+    if (!doingCount) {
+      if (source.settings.from) {
+        data.from = source.settings.from;
+      }
+      // Sort order of returned documents - only useful for non-aggregated data which have to store
+      // sort info in the aggregation itself.
+      if (source.settings.sort && !source.settings.aggregation) {
+        data.sort = indiciaFns.expandSpecialFieldSortInfo(source.settings.sort, true);
+      }
     }
     if (source.settings.filterBoolClauses) {
       // Using filter paremeter controls.
@@ -719,7 +1173,8 @@
             query_type: this.query_type,
             field: this.field ? this.field : null,
             query: this.query ? this.query : null,
-            value: this.value ? this.value : null
+            value: this.value ? this.value : null,
+            nested: this.nested ? this.nested : null
           });
         });
       });
@@ -775,11 +1230,17 @@
         }
       });
       applyFilterRows(filterRows, data);
+      // If a standard params filter bar on the page, respect it's definition.
+      setFilterDef(data);
       // Apply select in user filters drop down.
       if ($('.user-filter').length > 0) {
         $.each($('.user-filter'), function eachUserFilter() {
           if ($(this).val()) {
             data.user_filters.push($(this).val());
+            if (indiciaData.esUserFiltersLoaded.indexOf($(this).val()) === -1) {
+              data.refresh_user_filters = true;
+              indiciaData.esUserFiltersLoaded.push($(this).val());
+            }
           }
         });
       }
@@ -791,8 +1252,11 @@
     if (source.settings.aggregation) {
       // Copy to avoid changing original.
       $.extend(true, agg, source.settings.aggregation);
-      // Find the map bounds if limited to the viewport of a map.
-      if (source.settings.filterBoundsUsingMap) {
+      if (doingCount && source.settings.mode === 'termAggregation' && agg._idfield) {
+        delete agg._idfield.terms.order;
+      }
+      // Find the map bounds if limited to the viewport of a map and not counting total.
+      if (!doingCount && source.settings.filterBoundsUsingMap) {
         mapToFilterTo = $('#' + source.settings.filterBoundsUsingMap);
         if (mapToFilterTo.length === 0 || !mapToFilterTo[0].map) {
           alert('Data source incorrectly configured. @filterBoundsUsingMap does not point to a valid map.');
@@ -811,12 +1275,16 @@
               }
             }
           });
-          indiciaFns.findAndSetValue(agg, 'geohash_grid', {
-            field: 'location.point',
-            precision: Math.min(Math.max(mapToFilterTo[0].map.getZoom() - 3, 4), 10)
-          });
-          indiciaFns.findAndSetValue(agg, 'field', $(mapToFilterTo).idcLeafletMap('getAutoSquareField'), 'autoGridSquareField');
         }
+      }
+      if (source.settings.mode === 'mapGridSquare') {
+        // Set grid square size if auto.
+        indiciaFns.findAndSetValue(agg, 'field', $(mapToFilterTo).idcLeafletMap('getAutoSquareField'), 'autoGridSquareField');
+        // Don't display unsuitably imprecise data.
+        data.numericFilters['location.coordinate_uncertainty_in_meters'] = '0-' + $(mapToFilterTo).idcLeafletMap('getAutoSquareSize');
+      } else if (source.settings.mode === 'mapGeoHash') {
+        // Set geohash_grid precision.
+        indiciaFns.findAndSetValue(agg, 'precision', Math.min(Math.max(mapToFilterTo[0].map.getZoom() - 3, 4), 10));
       }
       data.aggs = agg;
     }

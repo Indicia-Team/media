@@ -1,6 +1,9 @@
 /* Set the species checklist entry grid width to 100% */
 table.species-grid {
   width: 100%;
+  .hidden-by-dynamic-attr {
+    display: none;
+  }
 }
 .attrs-container {
   /* Indent contents */
