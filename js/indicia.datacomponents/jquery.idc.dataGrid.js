@@ -43,7 +43,9 @@
     aggregation: null,
     cookies: true,
     includeColumnHeadings: true,
+    includeColumnSettingsTool: true,
     includeFilterRow: true,
+    includeFullScreenTool: true,
     includePager: true,
     sortable: true,
     responsive: true,
@@ -972,7 +974,7 @@
       var footableSort;
       var tableClasses = ['table', 'es-data-grid'];
       var savedCols;
-      var tools;
+      var tools = [];
 
       indiciaFns.registerOutputPluginClass('idcDataGrid');
       el.settings = $.extend(true, {}, defaults);
@@ -1028,15 +1030,18 @@
           '</td></tr></tfoot>').appendTo(table);
       }
       setTableHeight(el);
-      // Add icons for table settings.
-      tools = '<span class="fas fa-wrench data-grid-show-settings" title="Click to show grid column settings"></span>';
-      if (document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled) {
-        tools += '<br/><span class="far fa-window-maximize data-grid-fullscreen" title="Click to view grid in full screen mode"></span>';
-      }
+      // Add tool icons for table settings, full screen and multiselect mode.
       if (el.settings.includeMultiSelectTool) {
-        tools = '<span title="Enable multiple selection mode" class="fas fa-list multiselect-switch"></span><br/>' + tools;
+        tools.push('<span title="Enable multiple selection mode" class="fas fa-list multiselect-switch"></span><br/>');
       }
-      $('<div class="data-grid-tools">' + tools + '</div>').appendTo(el);
+      if (el.settings.includeColumnSettingsTool) {
+        tools.push('<span class="fas fa-wrench data-grid-show-settings" title="Click to show grid column settings"></span>');
+      }
+      if (el.settings.includeFullScreenTool &&
+          (document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled)) {
+        tools.push('<span class="far fa-window-maximize data-grid-fullscreen" title="Click to view grid in full screen mode"></span>');
+      }
+      $('<div class="data-grid-tools">' + tools.join('<br/>') + '</div>').appendTo(el);
       // Add overlay for settings etc.
       $('<div class="data-grid-settings" style="display: none"></div>').appendTo(el);
       $('<div class="loading-spinner" style="display: none"><div>Loading...</div></div>').appendTo(el);
