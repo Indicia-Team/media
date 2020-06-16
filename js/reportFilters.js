@@ -1217,6 +1217,9 @@ jQuery(document).ready(function ($) {
         || confirm(indiciaData.lang.reportFilters.ConfirmFilterChangedLoad)) {
       def = false;
       switch (id) {
+        case 'all-records':
+          def = '{"quality": "all"}';
+          break;
         case 'my-records':
           def = '{"quality": "all", "my_records": 1}';
           break;
