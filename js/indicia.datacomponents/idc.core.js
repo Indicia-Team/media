@@ -1241,47 +1241,33 @@
           }
         });
       }
-      // Apply select in context filters drop down.
+      // // recordContext select drop down.
       if ($('.permissions-filter').length > 0) {
-        data.permissions_filter = $('.permissions-filter').val();
-      }
-      // recordContext select drop down.
-      if ($('.record-context').length > 0) {
-        if($('.record-context').val().substring(0,2) === 'p-') {
+        if($('.permissions-filter').val().substring(0,2) === 'p-') {
           // A permissions filter type option selected.
-          data.permissions_filter = $('.record-context').val().substring(2);
-        } else if ($('.record-context').val().substring(0,2) === 'f-') {
+          data.permissions_filter = $('.permissions-filter').val().substring(2);
+        } else if ($('.permissions-filter').val().substring(0,2) === 'f-') {
           // A filter type option selected
-          data.user_filters.push($('.record-context').val().substring(2));
-          if (indiciaData.esUserFiltersLoaded.indexOf($('.record-context').val().substring(2)) === -1) {
+          data.user_filters.push($('.permissions-filter').val().substring(2));
+          if (indiciaData.esUserFiltersLoaded.indexOf($('.permissions-filter').val().substring(2)) === -1) {
             data.refresh_user_filters = true;
-            indiciaData.esUserFiltersLoaded.push($('.record-context').val().substring(2));
+            indiciaData.esUserFiltersLoaded.push($('.permissions-filter').val().substring(2));
           }
-        } else if ($('.record-context').val().substring(0,2) === 'g-') {
+        } else if ($('.permissions-filter').val().substring(0,2) === 'g-') {
           // A group type option selected.
-          var group
-          if ($('.record-context').val().substring(0,4) === 'g-my') {
+          var group;
+          if ($('.permissions-filter').val().substring(0,4) === 'g-my') {
             data.permissions_filter = 'my'
-            group = $('.record-context').val().substring(5)
+            group = $('.permissions-filter').val().substring(5)
           } else {
             data.permissions_filter = 'all'
-            group = $('.record-context').val().substring(6)
+            group = $('.permissions-filter').val().substring(6)
           }
           data.bool_queries.push({
             bool_clause: 'must',
             query_type: 'query_string',
             value: 'metadata.group.id:' + group
           });
-        }
-        // If there is a lined userFilter control, then enable/disable and reset if necessary
-        var linkedUserFilterID = $('.record-context').attr('data-linked-user-filter')
-        if (linkedUserFilterID != '') {
-          if($('.record-context').val().substring(0,2) === 'p-') {
-            $('#' + linkedUserFilterID).attr('disabled', false)
-          } else {
-            $('#' + linkedUserFilterID).val(null)
-            $('#' + linkedUserFilterID).attr('disabled', true)
-          }
         }
       }
     }
@@ -1388,7 +1374,7 @@ jQuery(document).ready(function docReady() {
   /**
    * Change event handlers on filter inputs.
    */
-  $('.es-filter-param, .user-filter, .permissions-filter, .record-context').change(function eachFilter() {
+  $('.es-filter-param, .user-filter, .permissions-filter').change(function eachFilter() {
     // Force map to update viewport for new data.
     $.each($('.idc-output-idcLeafletMap'), function eachMap() {
       this.settings.initialBoundsSet = false;
