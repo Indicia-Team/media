@@ -564,10 +564,12 @@
     attr_value: function attrValue(doc, params) {
       var output = [];
       var entity = params && params.length > 1 ? params[0] : '';
+      // Map to ES document structure.
+      var key = entity === 'parent_event' ? 'parent_attributes' : 'attributes';
       // Tolerate sample or event for entity parameter.
-      entity = entity === 'sample' ? 'event' : entity;
-      if (doc[entity] && doc[entity].attributes) {
-        $.each(doc[entity].attributes, function eachAttr() {
+      entity = $.inArray(entity, ['sample', 'event', 'parent_event']) > -1 ? 'event' : 'occurrence';
+      if (doc[entity] && doc[entity][key]) {
+        $.each(doc[entity][key], function eachAttr() {
           if (this.id === params[1]) {
             output.push(this.value);
           }
