@@ -561,7 +561,7 @@
      * Multiple attribute values are returned as a single semi-colon separated
      * value.
      */
-    attr_value: function attr_value(doc, params) {
+    attr_value: function attrValue(doc, params) {
       var output = [];
       var entity = params && params.length > 1 ? params[0] : '';
       // Tolerate sample or event for entity parameter.
@@ -664,7 +664,7 @@
      */
     higher_geography: function higherGeography(doc, params) {
       var output = [];
-      var text = []
+      var text = [];
       if (doc.location.higher_geography) {
         if (params.length === 0 || !params[0]) {
           output = doc.location.higher_geography;
@@ -723,7 +723,8 @@
       var coords = point.split(',') || doc.p;
       var lat = parseFloat(coords[0]);
       var lon = parseFloat(coords[1]);
-      return Math.abs(lat).toFixed(3) + (lat >= 0 ? 'N' : 'S') + ' ' + Math.abs(lon).toFixed(3) + (lon >= 0 ? 'E' : 'W');
+      return Math.abs(lat).toFixed(3) + (lat >= 0 ? 'N' : 'S') + ' ' +
+             Math.abs(lon).toFixed(3) + (lon >= 0 ? 'E' : 'W');
     },
 
     /**
@@ -808,7 +809,7 @@
     /**
      * Builds a query for attribute values.
      */
-    attr_value: function attr_value(text, params) {
+    attr_value: function attrValue(text, params) {
       var filter1 = {};
       var filter2 = {};
       var query;
@@ -899,7 +900,7 @@
         // Invalid format.
         return false;
       }
-      coords[0] = coords[0].match(/S$/) ? 0 - coords[0].replace(/S$/, '') : parseFloat(coords[0].replace(/[^\d\.]$/, ''))
+      coords[0] = coords[0].match(/S$/) ? 0 - coords[0].replace(/S$/, '') : parseFloat(coords[0].replace(/[^\d\.]$/, ''));
       coords[1] = coords[1].match(/W$/) ? 0 - coords[1].replace(/[^\d\.]$/, '') : parseFloat(coords[1].replace(/[^\d\.]$/, ''));
       query = {
         geo_distance: {
@@ -972,6 +973,7 @@
             pathArray[i] = idx;
             return false;
           }
+          return true;
         });
       }
       if (typeof thisPath[pathArray[i]] === 'undefined') {
@@ -1151,6 +1153,7 @@
     var bounds;
     var agg = {};
     var filterRows = [];
+    var group;
     if (typeof source.settings.size !== 'undefined') {
       data.size = source.settings.size;
     }
@@ -1246,25 +1249,24 @@
       }
       // // recordContext select drop down.
       if ($('.permissions-filter').length > 0) {
-        if($('.permissions-filter').val().substring(0,2) === 'p-') {
+        if ($('.permissions-filter').val().substring(0, 2) === 'p-') {
           // A permissions filter type option selected.
           data.permissions_filter = $('.permissions-filter').val().substring(2);
-        } else if ($('.permissions-filter').val().substring(0,2) === 'f-') {
+        } else if ($('.permissions-filter').val().substring(0, 2) === 'f-') {
           // A filter type option selected
           data.user_filters.push($('.permissions-filter').val().substring(2));
           if (indiciaData.esUserFiltersLoaded.indexOf($('.permissions-filter').val().substring(2)) === -1) {
             data.refresh_user_filters = true;
             indiciaData.esUserFiltersLoaded.push($('.permissions-filter').val().substring(2));
           }
-        } else if ($('.permissions-filter').val().substring(0,2) === 'g-') {
+        } else if ($('.permissions-filter').val().substring(0, 2) === 'g-') {
           // A group type option selected.
-          var group;
-          if ($('.permissions-filter').val().substring(0,4) === 'g-my') {
-            data.permissions_filter = 'my'
-            group = $('.permissions-filter').val().substring(5)
+          if ($('.permissions-filter').val().substring(0, 4) === 'g-my') {
+            data.permissions_filter = 'my';
+            group = $('.permissions-filter').val().substring(5);
           } else {
-            data.permissions_filter = 'all'
-            group = $('.permissions-filter').val().substring(6)
+            data.permissions_filter = 'all';
+            group = $('.permissions-filter').val().substring(6);
           }
           data.bool_queries.push({
             bool_clause: 'must',
