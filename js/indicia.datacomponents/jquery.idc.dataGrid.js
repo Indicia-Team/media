@@ -363,11 +363,12 @@
     /**
      * Sort column headers click handler.
      */
-    indiciaFns.on('click', '#' + el.id + ' .sort', {}, function clickSort() {
-      var fieldName = $(this).closest('th').attr('data-field');
-      var sortDesc = $(this).hasClass('fa-sort-up');
+    indiciaFns.on('click', '#' + el.id + ' th', {}, function clickSort() {
+      var $sortSpan = $(this).find('span.sort');
+      var fieldName = $sortSpan.closest('th').attr('data-field');
+      var sortDesc = $sortSpan.hasClass('fa-sort-up');
       var sourceObj = el.settings.sourceObject;
-      showHeaderSortInfo(this, sortDesc);
+      showHeaderSortInfo($sortSpan, sortDesc);
       sourceObj.settings.sort = {};
       sourceObj.settings.sort[fieldName] = sortDesc ? 'desc' : 'asc';
       sourceObj.populate();
