@@ -95,6 +95,20 @@
           }
         });
       }
+
+      // Add an click event handler to table header cells which will
+      // invoked the click hander on a child span event of class sort.
+      // This means that sorting behaviour can be invoked by clicking
+      // anywhere in the header cell, not just on a footable span.sort.
+      
+      var $headerCells = $table.find('th');
+      $headerCells.each(function () {
+        $(this).click(function(e) { 
+          if (e.target === e.currentTarget) {
+            $(this).find('span.sort').trigger('click');
+          }
+        });
+      });
     });
 
     // Return the original object for chaining.
