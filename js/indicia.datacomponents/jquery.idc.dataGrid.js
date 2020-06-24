@@ -554,17 +554,20 @@
       // Field names can be separated by OR if we want to pick the first.
       var fieldOrList = field.split(' OR ');
       $.each(fieldOrList, function eachFieldName() {
+        var fieldName = this;
         var fieldDef = {};
         var srcSettings = el.settings.sourceObject.settings;
-        if ($.inArray(this, el.settings.sourceObject.settings.fields) > -1) {
+        if ($.inArray(fieldName, el.settings.sourceObject.settings.fields) > -1) {
           // Auto-locate aggregation fields in document.
           if (srcSettings.mode === 'termAggregation') {
             fieldDef.path = 'fieldlist.hits.hits.0._source';
           } else if (srcSettings.mode === 'compositeAggregation') {
             fieldDef.path = 'key';
+            // Aggregate keys use hyphens to represent path in doc.
+            fieldName = fieldName.replace(/\./g, '-');
           }
         }
-        dataVal = indiciaFns.getValueForField(doc, this, fieldDef);
+        dataVal = indiciaFns.getValueForField(doc, fieldName, fieldDef);
         // Drop out when we find a value.
         return dataVal === '';
       });
