@@ -1246,7 +1246,26 @@
           }
         });
       }
-      // // recordContext select drop down.
+      // Apply filters from statusFilters select drop down.
+      if ($('.status-filters').length > 0) {
+        if ($('.status-filters').val()) {
+          data.bool_queries.push({
+              bool_clause: 'must',
+              query_type: 'query_string',
+              value: $('.status-filters').val()
+            });
+        }
+        // If statusFilters value is set to something other than
+        // unfiltered, unset any standardParams quality filter.
+        if ($('.status-filters').val() !== '') {
+          $('.filter-controls #quality-filter').val('all')
+          indiciaData.filter.def['quality'] = 'all'
+          indiciaFns.updateFilterDescriptions();
+          setFilterDef(data);
+        }
+      }
+
+      // Apply filters from recordContext select drop down.
       if ($('.permissions-filter').length > 0) {
         if ($('.permissions-filter').val().substring(0, 2) === 'p-') {
           // A permissions filter type option selected.
@@ -1378,7 +1397,7 @@ jQuery(document).ready(function docReady() {
   /**
    * Change event handlers on filter inputs.
    */
-  $('.es-filter-param, .user-filter, .permissions-filter').change(function eachFilter() {
+  $('.es-filter-param, .user-filter, .permissions-filter, .status-filters').change(function eachFilter() {
     // Force map to update viewport for new data.
     $.each($('.idc-output-idcLeafletMap'), function eachMap() {
       this.settings.initialBoundsSet = false;

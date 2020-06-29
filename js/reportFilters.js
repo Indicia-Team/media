@@ -725,7 +725,8 @@ jQuery(document).ready(function ($) {
         return r.join('<br/>');
       },
       loadForm: function (context) {
-        if (context && context.quality && context.quality !== 'all') {
+        //if (context && context.quality && context.quality !== 'all') {
+        if ((context && context.quality && context.quality !== 'all') || ($('.status-filters').length && $('.status-filters').val())) {
           $('#quality-filter').prop('disabled', true);
         } else {
           $('#quality-filter').prop('disabled', false);
