@@ -124,6 +124,252 @@ jQuery(document).ready(function ($) {
     return $('input[name="location_list[]"]').length > 0 || ($('#imp-sref').val() !== '' && $('#imp-sref').val() !== null);
   }
 
+  // functions that are required both by the panObjList (below) and elsewhere.
+  indiciaData.filterParser = {
+    what: {
+      loadFilter: function (filterDef) {
+        // Cleanup if still refers to defunct higher_taxa_taxon_list_list.
+        if (typeof filterDef.higher_taxa_taxon_list_list !== 'undefined' && filterDef.higher_taxa_taxon_list_list !== '') {
+          filterDef.taxa_taxon_list_list = filterDef.higher_taxa_taxon_list_list;
+          if (typeof filterDef.higher_taxa_taxon_list_names !== 'undefined' && filterDef.higher_taxa_taxon_list_names !== '') {
+            filterDef.taxa_taxon_list_names = filterDef.higher_taxa_taxon_list_names;
+          }
+        }
+        delete filterDef.higher_taxa_taxon_list_list;
+        delete filterDef.higher_taxa_taxon_list_names;
+        // if list of ids defined but not group names, this is a taxon group list loaded from the user profile.
+        // Hijack the names from indiciaData.myGroups.
+        if (typeof filterDef.taxon_group_list !== 'undefined' && typeof filterDef.taxon_group_names === 'undefined') {
+          filterDef.taxon_group_names = [];
+          var foundIds = [], foundNames = [];
+          // Loop the group IDs we are expected to load
+          $.each(filterDef.taxon_group_list, function (idx, groupId) {
+            // Use the myGroups list to look them up
+            $.each(indiciaData.myGroups, function () {
+              if (this[0] === parseInt(groupId)) {
+                foundIds.push(this[0]);
+                foundNames.push(this[1]);
+              }
+            });
+          });
+          filterDef.taxon_group_names = foundNames;
+          filterDef.taxon_group_list = foundIds;
+        }
+      },
+      getDescription: function (filterDef, sep) {
+        var groups = [];
+        var taxa = [];
+        var designations = [];
+        var r = [];
+        if (filterDef.taxon_group_list && filterDef.taxon_group_names) {
+          $.each(filterDef.taxon_group_names, function (idx, group) {
+            groups.push(group);
+          });
+        }
+        if (filterDef.taxa_taxon_list_list && filterDef.taxa_taxon_list_names) {
+          $.each(filterDef.taxa_taxon_list_names, function (idx, taxon) {
+            taxa.push(taxon);
+          });
+        }
+        if (filterDef.taxon_designation_list && filterDef.taxon_designation_list_names) {
+          $.each(filterDef.taxon_designation_list_names, function (idx, designation) {
+            designations.push(designation);
+          });
+        }
+        if (groups.length > 0) {
+          r.push(groups.join(', '));
+        }
+        if (taxa.length > 0) {
+          r.push(taxa.join(', '));
+        }
+        if (designations.length > 0) {
+          r.push(designations.join(', '));
+        }
+        if (filterDef.taxon_rank_sort_order_combined) {
+          r.push($('#level-label').text() + ' ' + $('#taxon_rank_sort_order_op').find('option:selected').text() + ' ' +
+            $('#taxon_rank_sort_order_combined').find('option:selected').text());
+        }
+        if (filterDef.marine_flag && filterDef.marine_flag !== 'all') {
+          r.push($('#marine_flag').find('option[value=' + filterDef.marine_flag + ']').text());
+        }
+        if (typeof filterDef.confidential !== 'undefined') {
+          switch (filterDef.confidential) {
+            case 't':
+              r.push(indiciaData.lang.reportFilters.OnlyConfidentialRecords);
+              break;
+            case 'all':
+              r.push(indiciaData.lang.reportFilters.AllConfidentialRecords);
+              break;
+            default:
+              r.push(indiciaData.lang.reportFilters.NoConfidentialRecords);
+          }
+        }
+        if (typeof filterDef.release_status !== 'undefined') {
+          switch (filterDef.release_status) {
+            case 'A':
+              r.push(indiciaData.lang.reportFilters.includeUnreleasedRecords);
+              break;
+            default:
+              r.push(indiciaData.lang.reportFilters.excludeUnreleasedRecords);
+          }
+        }
+        if (typeof filterDef.taxa_taxon_list_attribute_term_descriptions !== 'undefined') {
+          $.each(filterDef.taxa_taxon_list_attribute_term_descriptions, function getAttrDescription(label, terms) {
+            r.push(label + ' ' + Object.values(terms).join(', '));
+          });
+        }
+        return r.join(sep);
+      }
+    },
+    when: {
+      getDescription: function (filterDef, sep) {
+        var r = [];
+        var dateType = 'recorded';
+        var dateFromField = 'date_from';
+        var dateToField = 'date_to';
+        var dateAgeField = 'date_age';
+        if (typeof filterDef.date_type !== 'undefined') {
+          dateType = filterDef.date_type;
+          if (dateType !== 'recorded') {
+            dateFromField = dateType + '_date_from';
+            dateToField = dateType + '_date_to';
+            dateAgeField = dateType + '_date_age';
+          }
+        }
+        if (filterDef[dateFromField] && filterDef[dateToField]) {
+          r.push('Records ' + dateType + ' between ' + filterDef[dateFromField] + ' and ' +
+            filterDef[dateToField]);
+        } else if (filterDef[dateFromField]) {
+          r.push('Records ' + dateType + ' on or after ' + filterDef[dateFromField]);
+        } else if (filterDef[dateToField]) {
+          r.push('Records ' + dateType + ' on or before ' + filterDef[dateToField]);
+        }
+        if (filterDef[dateAgeField]) {
+          r.push('Records ' + dateType + ' in last ' + filterDef[dateAgeField]);
+        }
+        return r.join(sep);
+      },
+    },
+    where: {
+      getDescription: function (filterDef) {
+        if (filterDef.remembered_location_name) {
+          return 'Records in ' + filterDef.remembered_location_name;
+        } else if (filterDef['imp-location:name']) { // legacy
+          return 'Records in ' + filterDef['imp-location:name'];
+        } else if (filterDef.indexed_location_id) {
+          // legacy location ID for the user's locality. In this case we need to hijack the site type drop down shortcuts to get the locality name
+          return $('#site-type option[value=loc\\:' + filterDef.indexed_location_id + ']').text();
+        } else if (filterDef.location_name) {
+          return 'Records in places containing "' + filterDef.location_name + '"';
+        } else if (filterDef.sref) {
+          return 'Records in square ' + filterDef.sref;
+        } else if (filterDef.searchArea) {
+          return 'Records within a freehand boundary';
+        } else {
+          return '';
+        }
+      },
+    },
+    who: {
+      getDescription: function (filterDef) {
+        if (filterDef.my_records) {
+          return indiciaData.lang.reportFilters.MyRecords;
+        } else {
+          return '';
+        }
+      },
+    },
+    occ_id: {
+      getDescription: function (filterDef) {
+        var op;
+        if (filterDef.occ_id) {
+          op = typeof filterDef.occ_id_op === 'undefined' ?
+            '=' : filterDef.occ_id_op.replace(/[<=>]/g, '\\$&');
+          return $('#occ_id_op').find("option[value='" + op + "']").html()
+            + ' ' + filterDef.occ_id;
+        }
+        else if (filterDef.occurrence_external_key) {
+          return $('#ctrl-wrap-occurrence_external_key label').html().replace(/:$/, '')
+            + ' ' + filterDef.occurrence_external_key;
+        }
+        return '';
+      },
+    },
+    smp_id: {
+      getDescription: function (filterDef) {
+        var op;
+        if (filterDef.smp_id) {
+          op = typeof filterDef.smp_id === 'undefined' ? '=' : filterDef.smp_id.replace(/[<=>]/g, "\\$&");
+          return $('#smp_id_op option[value=' + op + ']').html()
+            + ' ' + filterDef.smp_id;
+        }
+        return '';
+      },
+    },
+    quality: {
+      getDescription: function (filterDef, sep) {
+        var r = [];
+        var op;
+        var quality;
+        if (typeof filterDef.quality === 'undefined') {
+          quality = 'all';
+        } else {
+          quality = typeof filterDef.quality === 'string'
+            ? filterDef.quality : filterDef.quality.toString();
+        }
+        if (quality !== 'all') {
+          r.push($('#quality-filter option[value=' + quality.replace('!', '\\!') + ']').html());
+        }
+        if (filterDef.autochecks === 'F') {
+          r.push(indiciaData.lang.reportFilters.AutochecksFailed);
+        } else if (filterDef.autochecks === 'P') {
+          r.push(indiciaData.lang.reportFilters.AutochecksPassed);
+        }
+        if (filterDef.identification_difficulty) {
+          op = typeof filterDef.identification_difficulty_op === 'undefined' ?
+            '=' : filterDef.identification_difficulty_op.replace(/[<=>]/g, '\\$&');
+          r.push(indiciaData.lang.reportFilters.IdentificationDifficulty + ' ' +
+            $('#identification_difficulty_op').find("option[value='" + op + "']").html() +
+            ' ' + filterDef.identification_difficulty);
+        }
+        if (filterDef.has_photos && filterDef.has_photos === '1') {
+          r.push(indiciaData.lang.reportFilters.HasPhotos);
+        } else if (filterDef.has_photos && filterDef.has_photos === '0') {
+          r.push(indiciaData.lang.reportFilters.HasNoPhotos);
+        }
+        return r.join(sep);
+      },
+    },
+    source: {
+      getDescription: function (filterDef, sep) {
+        var r = [];
+        var list = [];
+        var paramValue;
+        if (filterDef.input_form_list) {
+          $.each(filterDef.input_form_list.split(','), function (idx, id) {
+            list.push($('#check-form-' + indiciaData.formsList[id.replace(/'/g, '')]).next('label').html());
+          });
+          r.push((filterDef.input_form_list_op === 'not in' ? 'Exclude ' : '') + list.join(', '));
+        } else if (filterDef.survey_list) {
+          paramValue = typeof filterDef.survey_list === 'string'
+            ? filterDef.survey_list.split(',') : [filterDef.survey_list ];
+          $.each(paramValue, function (idx, id) {
+            list.push($('#check-survey-' + id).next('label').html());
+          });
+          r.push((filterDef.survey_list_op === 'not in' ? 'Exclude ' : '') + list.join(', '));
+        } else if (filterDef.website_list) {
+          paramValue = typeof filterDef.website_list === 'string'
+            ? filterDef.website_list.split(',') : [filterDef.survey_list ];
+          $.each(filterDef.website_list.toString().split(','), function (idx, id) {
+            list.push($('#check-website-' + id).next('label').html());
+          });
+          r.push((filterDef.website_list_op === 'not in' ? 'Exclude ' : '') + list.join(', '));
+        }
+        return r.join(sep);
+      },
+    }
+  }
+
   // functions that drive each of the filter panes, e.g. to obtain the description from the controls.
   var paneObjList = {
     what: {
@@ -1136,6 +1382,8 @@ jQuery(document).ready(function ($) {
         this.populate();
       });
     }
+    // If there's an ES filter summary control on the page, update it.
+    $('#es-filter-summary').idcFilterSummary('populate');
   };
 
   function resetFilter() {
