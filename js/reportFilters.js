@@ -1170,7 +1170,7 @@ jQuery(document).ready(function ($) {
       name = pane.id.replace(/^pane-filter_/, '');
       description = paneObjList[name].getDescription();
       if (description === '') {
-        description = indiciaData.lang['NoDescription' + name];
+        description = indiciaData.lang.reportFiltersNoDescription[name];
       }
       $(pane).find('span.filter-desc').html(description);
     });
@@ -1449,7 +1449,7 @@ jQuery(document).ready(function ($) {
     $.each(paneObjList, function (name, obj) {
       desc = obj.getDescription();
       if (desc === '') {
-        desc = indiciaData.lang['NoDescription' + name];
+        desc = indiciaData.lang.reportFiltersNoDescription[name];
       }
       $('#pane-filter_' + name + ' span.filter-desc').html(desc);
     });
