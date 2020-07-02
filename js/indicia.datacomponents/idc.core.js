@@ -56,7 +56,7 @@
    */
   String.prototype.asReadableKeyName = function asReadableKeyName() {
     // Spaces instead of .-_
-    var name = this.replace(/[\.-_]/g, ' ');
+    var name = this.replace(/[\.\-_:#]/g, ' ').trim();
     // Leading caps.
     return name.charAt(0).toUpperCase() + name.slice(1);
   };
