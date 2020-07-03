@@ -1266,7 +1266,8 @@
           }
         });
       }
-      // // recordContext select drop down.
+
+      // Apply filters from recordContext select drop down.
       if ($('.permissions-filter').length > 0) {
         if ($('.permissions-filter').val().substring(0, 2) === 'p-') {
           // A permissions filter type option selected.

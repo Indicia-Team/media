@@ -1068,6 +1068,8 @@ jQuery(document).ready(function ($) {
         obj.refreshFilter();
       }
     });
+    //Ensure that any other quality-filter controls on the page are kept in line
+    $('.standalone-quality-filter select').val(indiciaData.filter.def.quality);
   };
 
   function codeToSharingTerm(code) {
@@ -1671,6 +1673,17 @@ jQuery(document).ready(function ($) {
     );
   };
 
+  // Standalone quality filter select change event
+  $('.standalone-quality-filter select').change(function() {
+    indiciaData.filter.def.quality= $(this).val();
+    // If there is a standard params control update the quality drop-down to reflect
+    // the value selected in this control.
+    indiciaFns.updateFilterDescriptions();
+    filterParamsChanged();
+    // Update reports
+    indiciaFns.applyFilterToReports();
+  });
+
   // Interactions betweem mutually exclusive filters.
   $('#occ_id').change(function() {
     if ($('#occ_id').val().trim() !== '') {
@@ -1691,5 +1704,8 @@ jQuery(document).ready(function ($) {
   $('#imp-sref').change(function () {
     window.setTimeout(function () { clearSites(); }, 500);
   });
-  $('form.filter-controls').validate();
+
+  if ($('form.filter-controls').validate) {
+    $('form.filter-controls').validate();
+  }
 });
