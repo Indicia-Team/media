@@ -166,7 +166,6 @@
 
           html = addHtml(html, '<div id="filterSummary-standard-params-header"></div>');
           html = addHtml(html, '<div id="filterSummary-standard-params"></div>');
-          //indiciaFns.setFilterSummary();
           functionCalls.push({
             function: function() {
               setTimeout(function() {
