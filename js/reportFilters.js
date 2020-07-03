@@ -124,26 +124,26 @@ jQuery(document).ready(function ($) {
     return $('input[name="location_list[]"]').length > 0 || ($('#imp-sref').val() !== '' && $('#imp-sref').val() !== null);
   }
 
-  // functions that drive each of the filter panes, e.g. to obtain the description from the controls.
-  var paneObjList = {
+  // filterParser functions that are required globally.
+  indiciaData.filterParser = {
     what: {
-      loadFilter: function () {
+      loadFilter: function (filterDef) {
         // Cleanup if still refers to defunct higher_taxa_taxon_list_list.
-        if (typeof indiciaData.filter.def.higher_taxa_taxon_list_list !== 'undefined' && indiciaData.filter.def.higher_taxa_taxon_list_list !== '') {
-          indiciaData.filter.def.taxa_taxon_list_list = indiciaData.filter.def.higher_taxa_taxon_list_list;
-          if (typeof indiciaData.filter.def.higher_taxa_taxon_list_names !== 'undefined' && indiciaData.filter.def.higher_taxa_taxon_list_names !== '') {
-            indiciaData.filter.def.taxa_taxon_list_names = indiciaData.filter.def.higher_taxa_taxon_list_names;
+        if (typeof filterDef.higher_taxa_taxon_list_list !== 'undefined' && filterDef.higher_taxa_taxon_list_list !== '') {
+          filterDef.taxa_taxon_list_list = filterDef.higher_taxa_taxon_list_list;
+          if (typeof filterDef.higher_taxa_taxon_list_names !== 'undefined' && filterDef.higher_taxa_taxon_list_names !== '') {
+            filterDef.taxa_taxon_list_names = filterDef.higher_taxa_taxon_list_names;
           }
         }
-        delete indiciaData.filter.def.higher_taxa_taxon_list_list;
-        delete indiciaData.filter.def.higher_taxa_taxon_list_names;
+        delete filterDef.higher_taxa_taxon_list_list;
+        delete filterDef.higher_taxa_taxon_list_names;
         // if list of ids defined but not group names, this is a taxon group list loaded from the user profile.
         // Hijack the names from indiciaData.myGroups.
-        if (typeof indiciaData.filter.def.taxon_group_list !== 'undefined' && typeof indiciaData.filter.def.taxon_group_names === 'undefined') {
-          indiciaData.filter.def.taxon_group_names = [];
+        if (typeof filterDef.taxon_group_list !== 'undefined' && typeof filterDef.taxon_group_names === 'undefined') {
+          filterDef.taxon_group_names = [];
           var foundIds = [], foundNames = [];
           // Loop the group IDs we are expected to load
-          $.each(indiciaData.filter.def.taxon_group_list, function (idx, groupId) {
+          $.each(filterDef.taxon_group_list, function (idx, groupId) {
             // Use the myGroups list to look them up
             $.each(indiciaData.myGroups, function () {
               if (this[0] === parseInt(groupId)) {
@@ -152,16 +152,15 @@ jQuery(document).ready(function ($) {
               }
             });
           });
-          indiciaData.filter.def.taxon_group_names = foundNames;
-          indiciaData.filter.def.taxon_group_list = foundIds;
+          filterDef.taxon_group_names = foundNames;
+          filterDef.taxon_group_list = foundIds;
         }
       },
-      getDescription: function () {
+      getDescription: function (filterDef, sep) {
         var groups = [];
         var taxa = [];
         var designations = [];
         var r = [];
-        var filterDef = indiciaData.filter.def;
         if (filterDef.taxon_group_list && filterDef.taxon_group_names) {
           $.each(filterDef.taxon_group_names, function (idx, group) {
             groups.push(group);
@@ -190,7 +189,7 @@ jQuery(document).ready(function ($) {
           r.push($('#level-label').text() + ' ' + $('#taxon_rank_sort_order_op').find('option:selected').text() + ' ' +
             $('#taxon_rank_sort_order_combined').find('option:selected').text());
         }
-        if (filterDef.marine_flag && indiciaData.filter.def.marine_flag !== 'all') {
+        if (filterDef.marine_flag && filterDef.marine_flag !== 'all') {
           r.push($('#marine_flag').find('option[value=' + filterDef.marine_flag + ']').text());
         }
         if (typeof filterDef.confidential !== 'undefined') {
@@ -219,8 +218,161 @@ jQuery(document).ready(function ($) {
             r.push(label + ' ' + Object.values(terms).join(', '));
           });
         }
-        return r.join('<br/>');
+        return r.join(sep);
+      }
+    },
+    when: {
+      getDescription: function (filterDef, sep) {
+        var r = [];
+        var dateType = 'recorded';
+        var dateFromField = 'date_from';
+        var dateToField = 'date_to';
+        var dateAgeField = 'date_age';
+        if (typeof filterDef.date_type !== 'undefined') {
+          dateType = filterDef.date_type;
+          if (dateType !== 'recorded') {
+            dateFromField = dateType + '_date_from';
+            dateToField = dateType + '_date_to';
+            dateAgeField = dateType + '_date_age';
+          }
+        }
+        if (filterDef[dateFromField] && filterDef[dateToField]) {
+          r.push('Records ' + dateType + ' between ' + filterDef[dateFromField] + ' and ' +
+            filterDef[dateToField]);
+        } else if (filterDef[dateFromField]) {
+          r.push('Records ' + dateType + ' on or after ' + filterDef[dateFromField]);
+        } else if (filterDef[dateToField]) {
+          r.push('Records ' + dateType + ' on or before ' + filterDef[dateToField]);
+        }
+        if (filterDef[dateAgeField]) {
+          r.push('Records ' + dateType + ' in last ' + filterDef[dateAgeField]);
+        }
+        return r.join(sep);
       },
+    },
+    where: {
+      getDescription: function (filterDef) {
+        if (filterDef.remembered_location_name) {
+          return 'Records in ' + filterDef.remembered_location_name;
+        } else if (filterDef['imp-location:name']) { // legacy
+          return 'Records in ' + filterDef['imp-location:name'];
+        } else if (filterDef.indexed_location_id) {
+          // legacy location ID for the user's locality. In this case we need to hijack the site type drop down shortcuts to get the locality name
+          return $('#site-type option[value=loc\\:' + filterDef.indexed_location_id + ']').text();
+        } else if (filterDef.location_name) {
+          return 'Records in places containing "' + filterDef.location_name + '"';
+        } else if (filterDef.sref) {
+          return 'Records in square ' + filterDef.sref;
+        } else if (filterDef.searchArea) {
+          return 'Records within a freehand boundary';
+        } else {
+          return '';
+        }
+      },
+    },
+    who: {
+      getDescription: function (filterDef) {
+        if (filterDef.my_records) {
+          return indiciaData.lang.reportFilters.MyRecords;
+        } else {
+          return '';
+        }
+      },
+    },
+    occ_id: {
+      getDescription: function (filterDef) {
+        var op;
+        if (filterDef.occ_id) {
+          op = typeof filterDef.occ_id_op === 'undefined' ?
+            '=' : filterDef.occ_id_op.replace(/[<=>]/g, '\\$&');
+          return $('#occ_id_op').find("option[value='" + op + "']").html()
+            + ' ' + filterDef.occ_id;
+        }
+        else if (filterDef.occurrence_external_key) {
+          return $('#ctrl-wrap-occurrence_external_key label').html().replace(/:$/, '')
+            + ' ' + filterDef.occurrence_external_key;
+        }
+        return '';
+      },
+    },
+    smp_id: {
+      getDescription: function (filterDef) {
+        var op;
+        if (filterDef.smp_id) {
+          op = typeof filterDef.smp_id === 'undefined' ? '=' : filterDef.smp_id.replace(/[<=>]/g, "\\$&");
+          return $('#smp_id_op option[value=' + op + ']').html()
+            + ' ' + filterDef.smp_id;
+        }
+        return '';
+      },
+    },
+    quality: {
+      getDescription: function (filterDef, sep) {
+        var r = [];
+        var op;
+        var quality;
+        if (typeof filterDef.quality === 'undefined') {
+          quality = 'all';
+        } else {
+          quality = typeof filterDef.quality === 'string'
+            ? filterDef.quality : filterDef.quality.toString();
+        }
+        if (quality !== 'all') {
+          r.push($('#quality-filter option[value=' + quality.replace('!', '\\!') + ']').html());
+        }
+        if (filterDef.autochecks === 'F') {
+          r.push(indiciaData.lang.reportFilters.AutochecksFailed);
+        } else if (filterDef.autochecks === 'P') {
+          r.push(indiciaData.lang.reportFilters.AutochecksPassed);
+        }
+        if (filterDef.identification_difficulty) {
+          op = typeof filterDef.identification_difficulty_op === 'undefined' ?
+            '=' : filterDef.identification_difficulty_op.replace(/[<=>]/g, '\\$&');
+          r.push(indiciaData.lang.reportFilters.IdentificationDifficulty + ' ' +
+            $('#identification_difficulty_op').find("option[value='" + op + "']").html() +
+            ' ' + filterDef.identification_difficulty);
+        }
+        if (filterDef.has_photos && filterDef.has_photos === '1') {
+          r.push(indiciaData.lang.reportFilters.HasPhotos);
+        } else if (filterDef.has_photos && filterDef.has_photos === '0') {
+          r.push(indiciaData.lang.reportFilters.HasNoPhotos);
+        }
+        return r.join(sep);
+      },
+    },
+    source: {
+      getDescription: function (filterDef, sep) {
+        var r = [];
+        var list = [];
+        var paramValue;
+        if (filterDef.input_form_list) {
+          $.each(filterDef.input_form_list.split(','), function (idx, id) {
+            list.push($('#check-form-' + indiciaData.formsList[id.replace(/'/g, '')]).next('label').html());
+          });
+          r.push((filterDef.input_form_list_op === 'not in' ? 'Exclude ' : '') + list.join(', '));
+        } else if (filterDef.survey_list) {
+          paramValue = typeof filterDef.survey_list === 'string'
+            ? filterDef.survey_list.split(',') : [filterDef.survey_list ];
+          $.each(paramValue, function (idx, id) {
+            list.push($('#check-survey-' + id).next('label').html());
+          });
+          r.push((filterDef.survey_list_op === 'not in' ? 'Exclude ' : '') + list.join(', '));
+        } else if (filterDef.website_list) {
+          paramValue = typeof filterDef.website_list === 'string'
+            ? filterDef.website_list.split(',') : [filterDef.survey_list ];
+          $.each(filterDef.website_list.toString().split(','), function (idx, id) {
+            list.push($('#check-website-' + id).next('label').html());
+          });
+          r.push((filterDef.website_list_op === 'not in' ? 'Exclude ' : '') + list.join(', '));
+        }
+        return r.join(sep);
+      },
+    }
+  }
+
+  // functions that drive each of the filter panes, e.g. to obtain the description from the controls.
+  var paneObjList = {
+    what: {
       applyFormToDefinition: function () {
         var ttlAttrTermIds = [];
         var ttlAttrTermDescriptions = {};
@@ -371,33 +523,6 @@ jQuery(document).ready(function ($) {
       }
     },
     when: {
-      getDescription: function () {
-        var r = [];
-        var dateType = 'recorded';
-        var dateFromField = 'date_from';
-        var dateToField = 'date_to';
-        var dateAgeField = 'date_age';
-        if (typeof indiciaData.filter.def.date_type !== 'undefined') {
-          dateType = indiciaData.filter.def.date_type;
-          if (dateType !== 'recorded') {
-            dateFromField = dateType + '_date_from';
-            dateToField = dateType + '_date_to';
-            dateAgeField = dateType + '_date_age';
-          }
-        }
-        if (indiciaData.filter.def[dateFromField] && indiciaData.filter.def[dateToField]) {
-          r.push('Records ' + dateType + ' between ' + indiciaData.filter.def[dateFromField] + ' and ' +
-            indiciaData.filter.def[dateToField]);
-        } else if (indiciaData.filter.def[dateFromField]) {
-          r.push('Records ' + dateType + ' on or after ' + indiciaData.filter.def[dateFromField]);
-        } else if (indiciaData.filter.def[dateToField]) {
-          r.push('Records ' + dateType + ' on or before ' + indiciaData.filter.def[dateToField]);
-        }
-        if (indiciaData.filter.def[dateAgeField]) {
-          r.push('Records ' + dateType + ' in last ' + indiciaData.filter.def[dateAgeField]);
-        }
-        return r.join('<br/>');
-      },
       loadForm: function (context) {
         var dateTypePrefix = '';
         if (typeof indiciaData.filter.def.date_type !== 'undefined' && indiciaData.filter.def.date_type !== 'recorded') {
@@ -452,24 +577,6 @@ jQuery(document).ready(function ($) {
       }
     },
     where: {
-      getDescription: function () {
-        if (indiciaData.filter.def.remembered_location_name) {
-          return 'Records in ' + indiciaData.filter.def.remembered_location_name;
-        } else if (indiciaData.filter.def['imp-location:name']) { // legacy
-          return 'Records in ' + indiciaData.filter.def['imp-location:name'];
-        } else if (indiciaData.filter.def.indexed_location_id) {
-          // legacy location ID for the user's locality. In this case we need to hijack the site type drop down shortcuts to get the locality name
-          return $('#site-type option[value=loc\\:' + indiciaData.filter.def.indexed_location_id + ']').text();
-        } else if (indiciaData.filter.def.location_name) {
-          return 'Records in places containing "' + indiciaData.filter.def.location_name + '"';
-        } else if (indiciaData.filter.def.sref) {
-          return 'Records in square ' + indiciaData.filter.def.sref;
-        } else if (indiciaData.filter.def.searchArea) {
-          return 'Records within a freehand boundary';
-        } else {
-          return '';
-        }
-      },
       applyFormToDefinition: function () {
         var geoms = [];
         var geom;
@@ -642,13 +749,6 @@ jQuery(document).ready(function ($) {
       }
     },
     who: {
-      getDescription: function () {
-        if (indiciaData.filter.def.my_records) {
-          return indiciaData.lang.reportFilters.MyRecords;
-        } else {
-          return '';
-        }
-      },
       loadForm: function (context) {
         if (context && context.my_records) {
           $('#my_records').prop('disabled', true);
@@ -661,69 +761,14 @@ jQuery(document).ready(function ($) {
       }
     },
     occ_id: {
-      getDescription: function () {
-        var op;
-        if (indiciaData.filter.def.occ_id) {
-          op = typeof indiciaData.filter.def.occ_id_op === 'undefined' ?
-            '=' : indiciaData.filter.def.occ_id_op.replace(/[<=>]/g, '\\$&');
-          return $('#occ_id_op').find("option[value='" + op + "']").html()
-            + ' ' + indiciaData.filter.def.occ_id;
-        }
-        else if (indiciaData.filter.def.occurrence_external_key) {
-          return $('#ctrl-wrap-occurrence_external_key label').html().replace(/:$/, '')
-            + ' ' + indiciaData.filter.def.occurrence_external_key;
-        }
-        return '';
-      },
       loadForm: function () {
       }
     },
     smp_id: {
-      getDescription: function () {
-        var op;
-        if (indiciaData.filter.def.smp_id) {
-          op = typeof indiciaData.filter.def.smp_id === 'undefined' ? '=' : indiciaData.filter.def.smp_id.replace(/[<=>]/g, "\\$&");
-          return $('#smp_id_op option[value=' + op + ']').html()
-            + ' ' + indiciaData.filter.def.smp_id;
-        }
-        return '';
-      },
       loadForm: function () {
       }
     },
     quality: {
-      getDescription: function () {
-        var r = [];
-        var op;
-        var quality;
-        if (typeof indiciaData.filter.def.quality === 'undefined') {
-          quality = 'all';
-        } else {
-          quality = typeof indiciaData.filter.def.quality === 'string'
-            ? indiciaData.filter.def.quality : indiciaData.filter.def.quality.toString();
-        }
-        if (quality !== 'all') {
-          r.push($('#quality-filter option[value=' + quality.replace('!', '\\!') + ']').html());
-        }
-        if (indiciaData.filter.def.autochecks === 'F') {
-          r.push(indiciaData.lang.reportFilters.AutochecksFailed);
-        } else if (indiciaData.filter.def.autochecks === 'P') {
-          r.push(indiciaData.lang.reportFilters.AutochecksPassed);
-        }
-        if (indiciaData.filter.def.identification_difficulty) {
-          op = typeof indiciaData.filter.def.identification_difficulty_op === 'undefined' ?
-            '=' : indiciaData.filter.def.identification_difficulty_op.replace(/[<=>]/g, '\\$&');
-          r.push(indiciaData.lang.reportFilters.IdentificationDifficulty + ' ' +
-            $('#identification_difficulty_op').find("option[value='" + op + "']").html() +
-            ' ' + indiciaData.filter.def.identification_difficulty);
-        }
-        if (indiciaData.filter.def.has_photos && indiciaData.filter.def.has_photos === '1') {
-          r.push(indiciaData.lang.reportFilters.HasPhotos);
-        } else if (indiciaData.filter.def.has_photos && indiciaData.filter.def.has_photos === '0') {
-          r.push(indiciaData.lang.reportFilters.HasNoPhotos);
-        }
-        return r.join('<br/>');
-      },
       loadForm: function (context) {
         if (context && context.quality && context.quality !== 'all') {
           $('#quality-filter').prop('disabled', true);
@@ -754,32 +799,6 @@ jQuery(document).ready(function ($) {
       }
     },
     source: {
-      getDescription: function () {
-        var r = [];
-        var list = [];
-        var paramValue;
-        if (indiciaData.filter.def.input_form_list) {
-          $.each(indiciaData.filter.def.input_form_list.split(','), function (idx, id) {
-            list.push($('#check-form-' + indiciaData.formsList[id.replace(/'/g, '')]).next('label').html());
-          });
-          r.push((indiciaData.filter.def.input_form_list_op === 'not in' ? 'Exclude ' : '') + list.join(', '));
-        } else if (indiciaData.filter.def.survey_list) {
-          paramValue = typeof indiciaData.filter.def.survey_list === 'string'
-            ? indiciaData.filter.def.survey_list.split(',') : [indiciaData.filter.def.survey_list ];
-          $.each(paramValue, function (idx, id) {
-            list.push($('#check-survey-' + id).next('label').html());
-          });
-          r.push((indiciaData.filter.def.survey_list_op === 'not in' ? 'Exclude ' : '') + list.join(', '));
-        } else if (indiciaData.filter.def.website_list) {
-          paramValue = typeof indiciaData.filter.def.website_list === 'string'
-            ? indiciaData.filter.def.website_list.split(',') : [indiciaData.filter.def.survey_list ];
-          $.each(indiciaData.filter.def.website_list.toString().split(','), function (idx, id) {
-            list.push($('#check-website-' + id).next('label').html());
-          });
-          r.push((indiciaData.filter.def.website_list_op === 'not in' ? 'Exclude ' : '') + list.join(', '));
-        }
-        return r.join('<br/>');
-      },
       loadForm: function (context) {
         if (context && ((context.website_list && context.website_list_op) ||
           (context.survey_list && context.survey_list_op) || (context.input_form_list && context.input_form_list_op))) {
@@ -1138,6 +1157,8 @@ jQuery(document).ready(function ($) {
         this.populate();
       });
     }
+    // If there's an ES filter summary control on the page, update it.
+    $('#es-filter-summary').idcFilterSummary('populate');
   };
 
   function resetFilter() {
@@ -1170,7 +1191,7 @@ jQuery(document).ready(function ($) {
     var name;
     $.each($('#filter-panes .pane'), function (idx, pane) {
       name = pane.id.replace(/^pane-filter_/, '');
-      description = paneObjList[name].getDescription();
+      description = indiciaData.filterParser[name].getDescription(indiciaData.filter.def, '<br/>');
       if (description === '') {
         description = indiciaData.lang.reportFiltersNoDescription[name];
       }
@@ -1197,8 +1218,8 @@ jQuery(document).ready(function ($) {
     $('#active-filter-label').html('Active filter: ' + data[0].title);
     $.each($('#filter-panes .pane'), function (idx, pane) {
       var name = pane.id.replace(/^pane-filter_/, '');
-      if (paneObjList[name].loadFilter) {
-        paneObjList[name].loadFilter();
+      if (indiciaData.filterParser[name].loadFilter) {
+        indiciaData.filterParser[name].loadFilter(indiciaData.filter.def);
       }
     });
     indiciaFns.updateFilterDescriptions();
@@ -1448,8 +1469,8 @@ jQuery(document).ready(function ($) {
 
   $('#filter-build').click(function () {
     var desc;
-    $.each(paneObjList, function (name, obj) {
-      desc = obj.getDescription();
+    $.each(indiciaData.filterParser, function (name, obj) {
+      desc = obj.getDescription(indiciaData.filter.def, '<br/>');
       if (desc === '') {
         desc = indiciaData.lang.reportFiltersNoDescription[name];
       }
