@@ -194,11 +194,14 @@ var IdcEsDataSource;
       // Convert list of fields to one suitable for top_hits _source.
       $.each(this.settings.fields, function eachField() {
         var matches = this.match(/^#([^:]+)(:([^:]+):([^:]+))?#$/);
-        var type;
+        var key;
+        var entity;
         var sources;
         if (matches && matches[1] === 'attr_value') {
-          type = matches[3] === 'sample' ? 'event' : matches[3];
-          sources = [type + '.attributes'];
+          key = matches[3] === 'parent_event' ? 'parent_attributes' : 'attributes';
+          // Tolerate sample or event for entity.
+          entity = $.inArray(matches[3], ['sample', 'event', 'parent_event']) > -1 ? 'event' : 'occurrence';
+          sources = [entity + '.' + key];
         } else {
           sources = [this];
         }
