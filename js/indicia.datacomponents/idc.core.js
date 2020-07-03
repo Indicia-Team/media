@@ -715,6 +715,16 @@
     },
 
     /**
+     * A formatted latitude.
+     */
+    lat: function lat(doc) {
+      var point = doc.location.point || doc.point;
+      var coords = point.split(',') || doc.p;
+      var lat = parseFloat(coords[0]);
+      return Math.abs(lat).toFixed(3) + (lat >= 0 ? 'N' : 'S');
+    },
+
+    /**
      * A formatted lat long.
      */
     lat_lon: function latLon(doc) {
@@ -724,6 +734,16 @@
       var lon = parseFloat(coords[1]);
       return Math.abs(lat).toFixed(3) + (lat >= 0 ? 'N' : 'S') + ' ' +
              Math.abs(lon).toFixed(3) + (lon >= 0 ? 'E' : 'W');
+    },
+
+    /**
+     * A formatted longitude.
+     */
+    lon: function lon(doc) {
+      var point = doc.location.point || doc.point;
+      var coords = point.split(',') || doc.p;
+      var lon = parseFloat(coords[1]);
+      return Math.abs(lon).toFixed(3) + (lon >= 0 ? 'E' : 'W');
     },
 
     /**
