@@ -93,7 +93,8 @@
     A: 'fas fa-reply',
     Sensitive: 'fas fa-exclamation-circle',
     Confidential: 'fas fa-exclamation-triangle',
-    ZeroAbundance: 'fas fa-ban'
+    ZeroAbundance: 'fas fa-ban',
+    Anonymous: 'fas fa-user-slash'
   };
 
   /**
@@ -113,7 +114,8 @@
     A: 'Answered',
     Sensitive: 'Sensitive',
     Confidential: 'Confidential',
-    ZeroAbundance: 'Absence record'
+    ZeroAbundance: 'Absence record',
+    Anonymous: 'Entered by a user who was not logged in'
   };
 
   /**
@@ -436,6 +438,9 @@
     if (flags.confidential && flags.confidential !== 'false') {
       addIcon('ZeroAbundance');
     }
+    if (flags.anonymous && flags.anonymous !== 'false') {
+      addIcon('Anonymous');
+    }
     return html;
   };
 
@@ -585,7 +590,8 @@
         query: doc.identification.query ? doc.identification.query : '',
         sensitive: doc.metadata.sensitive,
         confidential: doc.metadata.confidential,
-        zero_abundance: doc.occurrence.zero_abundance
+        zero_abundance: doc.occurrence.zero_abundance,
+        anonymous: doc.metadata.created_by_id === "1"
       });
     },
 
@@ -955,8 +961,17 @@
    */
   indiciaData.fieldConvertorSortFields = {
     // Unsupported possibilities are commented out.
-    status_icons: ['identification.verification_status', 'identification.verification_substatus', 'metadata.sensitive'],
-    // data_cleaner_icons: [],
+    status_icons: [
+      'identification.verification_status',
+      'identification.verification_substatus',
+      'metadata.sensitive',
+      'metadata.confidential',
+      'occurrence.zero_abundance',
+      'metadata.created_by_id'
+    ],
+    data_cleaner_icons: [
+      'identification.auto_checks.result'
+    ],
     event_date: ['event.date_start'],
     // higher_geography: [],
     // locality: [],
