@@ -133,6 +133,7 @@ table.es-data-grid {
     tbody {
       display:block;
       overflow-y: auto;
+      overflow-x: hidden;
     }
     thead, tbody tr {
       display:table;
