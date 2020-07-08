@@ -1158,7 +1158,9 @@ jQuery(document).ready(function ($) {
       });
     }
     // If there's an ES filter summary control on the page, update it.
-    $('#es-filter-summary').idcFilterSummary('populate');
+    if ($('#es-filter-summary').length > 0) {
+      $('#es-filter-summary').idcFilterSummary('populate');
+    }
   };
 
   function resetFilter() {
