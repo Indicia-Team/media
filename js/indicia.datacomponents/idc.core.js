@@ -1234,19 +1234,24 @@
       // Using filter paremeter controls.
       $.each($('.es-filter-param'), function eachParam() {
         var val = $(this).val();
-        // Make sure we have a value to apply. Skip special "novalue" items
-        // in linked selects (such as Loading... message).
-        if (val !== null && val.trim() !== '') {
-          val = val.trim().replace(/{{ indicia_user_id }}/g, indiciaData.user_id);
-          data.bool_queries.push({
-            bool_clause: indiciaFns.getDataValueFromInput(this, 'data-es-bool-clause'),
-            field: indiciaFns.getDataValueFromInput(this, 'data-es-field'),
-            query_type: indiciaFns.getDataValueFromInput(this, 'data-es-query-type'),
-            query: indiciaFns.getDataValueFromInput(this, 'data-es-query'),
-            nested: indiciaFns.getDataValueFromInput(this, 'data-es-nested'),
-            value: val
-          });
+        // Skip if no value.
+        if (val === null || val.trim() === '') {
+          return;
         }
+        // Skip if unchecked checkbox
+        if ($(this).is(':checkbox') && !$(this).is(':checked')) {
+          return;
+        }
+        // Replace tokens in value.
+        val = val.trim().replace(/{{ indicia_user_id }}/g, indiciaData.user_id);
+        data.bool_queries.push({
+          bool_clause: indiciaFns.getDataValueFromInput(this, 'data-es-bool-clause'),
+          field: indiciaFns.getDataValueFromInput(this, 'data-es-field'),
+          query_type: indiciaFns.getDataValueFromInput(this, 'data-es-query-type'),
+          query: indiciaFns.getDataValueFromInput(this, 'data-es-query'),
+          nested: indiciaFns.getDataValueFromInput(this, 'data-es-nested'),
+          value: val
+        });
       });
       // Any dataGrid this source outputs to may bave a filter row that affects
       // this source.
