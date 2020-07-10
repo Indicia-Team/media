@@ -752,6 +752,24 @@
       return Math.abs(lon).toFixed(3) + (lon >= 0 ? 'E' : 'W');
     },
 
+     /**
+     * Return a decimal longitude
+     */
+    dec_lat: function decLat(doc) {
+      var point = doc.location.point || doc.point;
+      var coords = point.split(',') || doc.p;
+      return coords[0];
+    },
+
+     /**
+     * Return a decimal longitude
+     */
+    dec_lon: function decLon(doc) {
+      var point = doc.location.point || doc.point;
+      var coords = point.split(',') || doc.p;
+      return coords[1];
+    },
+
     /**
      * Retrieve a field value, or null if value is '0'.
      *

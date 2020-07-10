@@ -230,7 +230,6 @@
         },
         error: function error(jqXHR, textStatus, errorThrown) {
           alert('An error occurred with the request to download data.');
-          console.log(errorThrown);
         }
       });
     } else {
@@ -314,6 +313,7 @@
         error: function error(jqXHR, textStatus, errorThrown) {
           alert('An error occurred with the request to download data.');
           $('.progress-circle-container').hide();
+          console.log(jqXHR.responseText)
           console.log(errorThrown);
         }
       });
