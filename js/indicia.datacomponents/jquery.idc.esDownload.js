@@ -230,6 +230,7 @@
         },
         error: function error(jqXHR, textStatus, errorThrown) {
           alert('An error occurred with the request to download data.');
+          console.log(errorThrown);
         }
       });
     } else {
@@ -295,6 +296,11 @@
       $.extend(currentRequestData, columnSettings);
       // Reset.
       rowsToDownload = null;
+      // If there is an associated download template select control,
+      // set the download template option from it's value.
+      if ($('#' + el.id + '-select').val()) {
+        currentRequestData['columnsTemplate'] = $('#' + el.id + '-select').val();
+      }
       // Post to the ES proxy.
       $.ajax({
         url: indiciaData.esProxyAjaxUrl + '/download/' + indiciaData.nid + query,
@@ -313,7 +319,6 @@
         error: function error(jqXHR, textStatus, errorThrown) {
           alert('An error occurred with the request to download data.');
           $('.progress-circle-container').hide();
-          console.log(jqXHR.responseText)
           console.log(errorThrown);
         }
       });
