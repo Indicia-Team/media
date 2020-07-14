@@ -727,7 +727,8 @@
       var point = doc.location.point || doc.point;
       var coords = point.split(',') || doc.p;
       var lat = parseFloat(coords[0]);
-      switch(params[0]) {
+      var format = params && params[0] ? params[0] : "";
+      switch(format)) {
         case "decimal":
           return lat;
         case "nssuffix":
@@ -756,7 +757,8 @@
       var point = doc.location.point || doc.point;
       var coords = point.split(',') || doc.p;
       var lon = parseFloat(coords[1]);
-      switch(params[0]) {
+      var format = params && params[0] ? params[0] : "";
+      switch(format) {
         case "decimal":
           return lon;
         case "nssuffix":
