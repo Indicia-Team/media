@@ -297,9 +297,9 @@
       // Reset.
       rowsToDownload = null;
       // If there is an associated download template select control,
-      // set the download template option from it's value.
-      if ($('#' + el.id + '-select').val()) {
-        currentRequestData['columnsTemplate'] = $('#' + el.id + '-select').val();
+      // set the download template option from its value.
+      if ($('#' + el.id + '-template').val()) {
+        currentRequestData['columnsTemplate'] = $('#' + el.id + '-template').val();
       }
       // Post to the ES proxy.
       $.ajax({

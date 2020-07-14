@@ -723,11 +723,18 @@
     /**
      * A formatted latitude.
      */
-    lat: function lat(doc) {
+    lat: function lat(doc, params) {
       var point = doc.location.point || doc.point;
       var coords = point.split(',') || doc.p;
       var lat = parseFloat(coords[0]);
-      return Math.abs(lat).toFixed(3) + (lat >= 0 ? 'N' : 'S');
+      switch(params[0]) {
+        case "decimal":
+          return lat;
+        case "nssuffix":
+          // Implemented as the default.
+        default:
+          return Math.abs(lat).toFixed(3) + (lat >= 0 ? 'N' : 'S');
+      }
     },
 
     /**
@@ -745,29 +752,18 @@
     /**
      * A formatted longitude.
      */
-    lon: function lon(doc) {
+    lon: function lon(doc, params) {
       var point = doc.location.point || doc.point;
       var coords = point.split(',') || doc.p;
       var lon = parseFloat(coords[1]);
-      return Math.abs(lon).toFixed(3) + (lon >= 0 ? 'E' : 'W');
-    },
-
-     /**
-     * Return a decimal longitude
-     */
-    dec_lat: function decLat(doc) {
-      var point = doc.location.point || doc.point;
-      var coords = point.split(',') || doc.p;
-      return coords[0];
-    },
-
-     /**
-     * Return a decimal longitude
-     */
-    dec_lon: function decLon(doc) {
-      var point = doc.location.point || doc.point;
-      var coords = point.split(',') || doc.p;
-      return coords[1];
+      switch(params[0]) {
+        case "decimal":
+          return lon;
+        case "nssuffix":
+          // Implemented as the default.
+        default:
+          return Math.abs(lon).toFixed(3) + (lon >= 0 ? 'E' : 'W');
+      }
     },
 
     /**
