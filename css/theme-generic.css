@@ -517,6 +517,10 @@ table.es-data-grid tfoot span {
 }
 
 /* idcEsDownload */
+.idc-download-ctl-part {
+  display: inline-block;
+}
+
 .idc-download-files {
   display: none;
   -webkit-box-shadow: 6px 7px 8px 1px silver;

@@ -723,11 +723,19 @@
     /**
      * A formatted latitude.
      */
-    lat: function lat(doc) {
+    lat: function lat(doc, params) {
       var point = doc.location.point || doc.point;
       var coords = point.split(',') || doc.p;
       var lat = parseFloat(coords[0]);
-      return Math.abs(lat).toFixed(3) + (lat >= 0 ? 'N' : 'S');
+      var format = params && params[0] ? params[0] : "";
+      switch(format) {
+        case "decimal":
+          return lat;
+        case "nssuffix":
+          // Implemented as the default.
+        default:
+          return Math.abs(lat).toFixed(3) + (lat >= 0 ? 'N' : 'S');
+      }
     },
 
     /**
@@ -745,11 +753,19 @@
     /**
      * A formatted longitude.
      */
-    lon: function lon(doc) {
+    lon: function lon(doc, params) {
       var point = doc.location.point || doc.point;
       var coords = point.split(',') || doc.p;
       var lon = parseFloat(coords[1]);
-      return Math.abs(lon).toFixed(3) + (lon >= 0 ? 'E' : 'W');
+      var format = params && params[0] ? params[0] : "";
+      switch(format) {
+        case "decimal":
+          return lon;
+        case "nssuffix":
+          // Implemented as the default.
+        default:
+          return Math.abs(lon).toFixed(3) + (lon >= 0 ? 'E' : 'W');
+      }
     },
 
     /**
