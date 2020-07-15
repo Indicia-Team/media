@@ -761,7 +761,7 @@
       switch(format) {
         case "decimal":
           return lon;
-        case "nssuffix":
+        case "ewsuffix":
           // Implemented as the default.
         default:
           return Math.abs(lon).toFixed(3) + (lon >= 0 ? 'E' : 'W');
