@@ -822,13 +822,11 @@
         // Allow 14px space for responsive show + button.
         $(el).find('.footable-toggle-col').css('width', '14px');
         pixelsAvailable -= $(el).find('.footable-toggle-col').outerWidth();
-        console.log('Set responsive col to 14px and removed ' + $(el).find('.footable-toggle-col').outerWidth());
       }
       if (el.settings.actions.length > 0) {
         // Allow 22px space for actions column.
         $(el).find('.col-actions').css('width', '22px');
         pixelsAvailable -= $(el).find('.col-actions').outerWidth();
-        console.log('Set actions col to 22px and removed ' + $(el).find('.col-actions').outerWidth());
       } else {
         $(el).find('.col-actions').css('width', 0);
       }
@@ -837,7 +835,6 @@
         scrollBarInnerWidth = scrollbarWidth - outerSpacing;
         $(el).find('.scroll-spacer').css('width', scrollBarInnerWidth + 'px');
         pixelsAvailable -= $(el).find('.scroll-spacer').outerWidth();
-        console.log('Set scrollbar col to ' + scrollBarInnerWidth + 'px and removed ' + $(el).find('.scroll-spacer').outerWidth());
       } else {
         $(el).find('.scroll-spacer').css('width', 0);
       }
