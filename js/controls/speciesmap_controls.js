@@ -540,7 +540,6 @@ var control_speciesmap_addcontrols;
       finishButtonId: 'speciesmap_finishbutton_control',
       messageId: 'speciesmap_controls_messages',
       messageClasses: '',
-      //featureLabel: 'Grid: ${sRef}\nSpecies: ${count}',
       animationDuration: 1000
     };
     var getSubSampleLabel = function(feature, separator) {
