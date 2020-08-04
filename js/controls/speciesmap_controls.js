@@ -23,6 +23,41 @@ var control_speciesmap_addcontrols;
 
 (function ($) {
   control_speciesmap_addcontrols = function (options, translatedStrings) {
+    // The ftrsSubSampleLayer array tracks the features in the sub-sample.
+    // This is required because feature clustering on OpenLayers 2 only
+    // works correctly when all features are added to a layer together.
+    // Therefore every time a feature is added or removed, all the features
+    // must be removed and then added again to the clustered layer.
+    var ftrsSubSampleLayer = [];
+    var addSubSampleFtr = function(ftr) {
+      ftrsSubSampleLayer.push(ftr);
+      indiciaData.SubSampleLayer.removeAllFeatures();
+      indiciaData.SubSampleLayer.addFeatures(ftrsSubSampleLayer);
+      setClusteringOn(true);
+    }
+    var removeSubSampleFtr = function(ftr) {
+      ftrsSubSampleLayer = ftrsSubSampleLayer.filter(function(f){
+        return f.id !== ftr.id;
+      })
+      indiciaData.SubSampleLayer.removeAllFeatures();
+      indiciaData.SubSampleLayer.addFeatures(ftrsSubSampleLayer);
+      setClusteringOn(true);
+    }
+    var setClusteringOn = function (on) {
+      if (on) {
+        // Set threshold on cluster strategy to 2. That means single
+        // features that are not within clustering distance of any others
+        // are shown as original features - not clusters of 1 feature.
+        indiciaData.SubSampleLayer.strategies[0].threshold = 2;
+      } else {
+        // Raise the threshold on cluster strategy which effectively removes it whilst
+        // editing a specific subsample.
+        indiciaData.SubSampleLayer.strategies[0].threshold = 10000;
+      }
+      // Recalculated clusters
+      indiciaData.SubSampleLayer.strategies[0].clusters = null;
+      indiciaData.SubSampleLayer.strategies[0].cluster();
+    };
     var showButtons = function(buttons) {
       var all = ['add', 'mod', 'move', 'del', 'cancel', 'finish'];
       $.each(all, function (idx, button) {
@@ -59,6 +94,8 @@ var control_speciesmap_addcontrols;
     };
     var switchToSubSampleForm = function switchToSubSampleForm() {
       $(indiciaData.control_speciesmap_opts.mapDiv).hide(indiciaData.control_speciesmap_opts.animationDuration);
+      $('#' + indiciaData.control_speciesmap_opts.id + '-cluster')
+        .hide(indiciaData.control_speciesmap_opts.animationDuration);
       $('#' + indiciaData.control_speciesmap_opts.id + '-container')
         .show(indiciaData.control_speciesmap_opts.animationDuration, function after() {
           // Trigger footable resize so visible columns are updated.
@@ -70,6 +107,8 @@ var control_speciesmap_addcontrols;
     var switchToOverviewMap = function switchToOverviewMap() {
       $('#' + indiciaData.control_speciesmap_opts.id + '-container')
         .hide(indiciaData.control_speciesmap_opts.animationDuration);
+      $('#' + indiciaData.control_speciesmap_opts.id + '-cluster')
+        .hide(indiciaData.control_speciesmap_opts.animationDuration);
       $(indiciaData.control_speciesmap_opts.mapDiv)
         .show(indiciaData.control_speciesmap_opts.animationDuration, function after() {
           // Trigger map resize to ensure redraws correctly.
@@ -79,6 +118,42 @@ var control_speciesmap_addcontrols;
         });
       // Show tab navigation buttons that we previously hid.
       $('.wizard-buttons').show();
+    };
+    var switchToClusterSelect = function switchToClusterSelect(a1) {
+      var currentMsg = $('#' + indiciaData.control_speciesmap_opts.messageId).text();
+      $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(indiciaData.control_speciesmap_translatedStrings.ClusterMessage);
+      indiciaData.control_speciesmap_selectFeatureControl.unselectAll();
+      $('#' + indiciaData.control_speciesmap_opts.id + '-cluster').empty();
+      // Cancel button for the cluster sub-sample selecte
+      var $cancel = $('<input type="button" value="' + translatedStrings.CancelLabel + '" /><br/>');
+      $cancel.click(function(){
+        setClusteringOn(true);
+        switchToOverviewMap();
+      });
+      $('#' + indiciaData.control_speciesmap_opts.id + '-cluster').append($cancel);
+      // Buttons for sub-sample select
+      a1.feature.cluster.forEach(function(f){
+        var $input = $('<input type="button" value="' + getSubSampleLabel(f, "; ") + '"/><br/>');
+        $input.click(function(){
+          $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(currentMsg);
+          if (indiciaData.control_speciesmap_mode === 'Modify') {
+            switchToSubSampleForm();
+          } else {
+            switchToOverviewMap();
+          }
+          clusterFeatureSelected(f.id);
+        });
+        $('#' + indiciaData.control_speciesmap_opts.id + '-cluster').append($input);
+      });
+      // Clustering must be turned of for feature move etc
+      setClusteringOn(false);
+      // Hide map, show cluster selection controls
+      $(indiciaData.control_speciesmap_opts.mapDiv)
+        .hide(indiciaData.control_speciesmap_opts.animationDuration);
+      $('#' + indiciaData.control_speciesmap_opts.id + '-cluster')
+        .show(indiciaData.control_speciesmap_opts.animationDuration);
+      // Hide tab navigation buttons as they are confusing in this state.
+      $('.wizard-buttons').hide();
     };
     var beginMove = function () {
       var div = $(indiciaData.control_speciesmap_opts.mapDiv)[0];
@@ -99,8 +174,8 @@ var control_speciesmap_addcontrols;
       indiciaData.control_speciesmap_new_feature.attributes.count = indiciaData.control_speciesmap_existing_feature.attributes.count;
       indiciaData.control_speciesmap_new_feature.attributes.sRef = $('#imp-sref').val();
       indiciaData.control_speciesmap_new_feature.style = null; // needed so picks up style from new layer, including label
-      indiciaData.SubSampleLayer.removeFeatures([indiciaData.control_speciesmap_existing_feature]);
-      indiciaData.SubSampleLayer.addFeatures([indiciaData.control_speciesmap_new_feature]);
+      removeSubSampleFtr(indiciaData.control_speciesmap_existing_feature);
+      addSubSampleFtr(indiciaData.control_speciesmap_new_feature);
       fillInMainSref();
       block.find('[name$="\:entered_sref"]').val($('#imp-sref').val());
       block.find('[name$="\:geom"]').val($('#imp-geom').val());
@@ -121,7 +196,7 @@ var control_speciesmap_addcontrols;
       indiciaData.control_speciesmap_new_feature.attributes.sRef = $('#imp-sref').val();
       indiciaData.control_speciesmap_new_feature.attributes.count = 0;
       indiciaData.control_speciesmap_new_feature.style = null;
-      indiciaData.SubSampleLayer.addFeatures([indiciaData.control_speciesmap_new_feature]);
+      addSubSampleFtr(indiciaData.control_speciesmap_new_feature);
       fillInMainSref();
       switchToSubSampleForm();
       $('#' + indiciaData.control_speciesmap_opts.id + '-container').find('.new').removeClass('new');
@@ -180,8 +255,24 @@ var control_speciesmap_addcontrols;
           break;
       }
     };
+
+    // feature from cluster selected
+    var clusterFeatureSelected = function (id) {
+      for(var i = 0; i < indiciaData.SubSampleLayer.features.length; i++) {
+        if (indiciaData.SubSampleLayer.features[i].id === id) {
+          var ftr = indiciaData.SubSampleLayer.features[i];
+          break;
+        }
+      }
+      indiciaData.control_speciesmap_selectFeatureControl.select(ftr);
+      featureSelected({feature: ftr});
+    }
     // feature selected on subSample layer
     var featureSelected = function (a1) {
+      if (!a1.feature.attributes.subSampleIndex) {
+        switchToClusterSelect(a1);
+        return;
+      }
       var block = $('#scm-' + a1.feature.attributes.subSampleIndex + '-block');
       var rowsToShow;
       indiciaData.control_speciesmap_existing_feature = a1.feature; /* not clone */
@@ -331,6 +422,9 @@ var control_speciesmap_addcontrols;
       // don't fire map events on the sref hidden control, otherwise the map zooms in
       $('#imp-sref').unbind('change');
       indiciaData.control_speciesmap_mode = mode;
+      // In case user has activated a control from a context where clustering disabled
+      // (e.g. selecting from a cluster)
+      setClusteringOn(true);
     };
     var controlSpeciesmapAddbutton = function () {
       activate(this, 'Add', indiciaData.control_speciesmap_translatedStrings.AddMessage);
@@ -359,7 +453,7 @@ var control_speciesmap_addcontrols;
             .closest('tr').not('.scClonableRow')
             .remove();
           setupSummaryRows(indiciaData.control_speciesmap_new_feature.attributes.subSampleIndex);
-          indiciaData.SubSampleLayer.removeFeatures([indiciaData.control_speciesmap_new_feature]);
+          removeSubSampleFtr(indiciaData.control_speciesmap_new_feature);
           fillInMainSref();
           break;
         case 'Move':
@@ -372,6 +466,7 @@ var control_speciesmap_addcontrols;
           div.map.editLayer.destroyFeatures();
           $('#imp-sref,#imp-geom').val('');
           indiciaData.control_speciesmap_existing_feature = null;
+          setClusteringOn(true);
           break;
       }
     };
@@ -400,6 +495,7 @@ var control_speciesmap_addcontrols;
           break;
       }
       showButtons(['add', 'mod', 'move', 'del']);
+      setClusteringOn(true);
     };
     var buildDeleteDialog = function () {
       var buttons = {}; // buttons are language specific
@@ -416,12 +512,13 @@ var control_speciesmap_addcontrols;
         indiciaData.control_speciesmap_selectFeatureControl.unselectAll();
         $("[name$='\:sampleIDX']").filter('[value=' + indiciaData.control_speciesmap_existing_feature.attributes.subSampleIndex + ']').closest('tr').not('.scClonableRow').remove();
         setupSummaryRows(indiciaData.control_speciesmap_existing_feature.attributes.subSampleIndex);
-        indiciaData.SubSampleLayer.removeFeatures([indiciaData.control_speciesmap_existing_feature]);
+        removeSubSampleFtr(indiciaData.control_speciesmap_existing_feature);
         fillInMainSref();
       };
       var No = function () {
         indiciaData.control_speciesmap_selectFeatureControl.unselectAll();
         indiciaData.control_speciesmap_delete_dialog.dialog('close');
+        setClusteringOn(true);
       };
       buttons[translatedStrings.Yes] = Yes;
       buttons[translatedStrings.No] = No;
@@ -443,9 +540,23 @@ var control_speciesmap_addcontrols;
       finishButtonId: 'speciesmap_finishbutton_control',
       messageId: 'speciesmap_controls_messages',
       messageClasses: '',
-      featureLabel: 'Grid: ${sRef}\nSpecies: ${count}',
       animationDuration: 1000
     };
+    var getSubSampleLabel = function(feature, separator) {
+      if (indiciaData.speciesInLabel) {
+        var $rowsToShow = $("[name$='\:sampleIDX']").filter('[value=' + feature.attributes.subSampleIndex + ']').closest('tr');
+        var $cell = $rowsToShow.find('.scTaxonCell');
+        var commonName = $($cell[0]).find('.taxon-name').text();
+        var scientificName = $($cell[0]).find('em').text();
+        labelSpecies = commonName ? commonName : scientificName;
+        if (feature.attributes.count > 1) {
+          var labelSpecies = labelSpecies + " +" + (feature.attributes.count-1);
+        }
+      } else {
+        var labelSpecies = 'Species: ' + feature.attributes.count;
+      }
+      return 'Grid: ' + feature.attributes.sRef + separator + labelSpecies;
+    }
     var opts;
     var container;
     // Extend our default options with those provided, basing this on an empty object
@@ -479,14 +590,26 @@ var control_speciesmap_addcontrols;
       var first;
       var rebuildFeatureLabel;
       if ('#' + div.id === opts.mapDiv) {
-        defaultStyle.label = indiciaData.control_speciesmap_opts.featureLabel;
+        defaultStyle.label = "${getLabel}";
         defaultStyle.labelOutlineColor = 'white';
         defaultStyle.labelOutlineWidth = 3;
         defaultStyle.labelYOffset = 18;
+        var defaultStyleContext = {
+          context: {
+            getLabel: function(feature) {
+              if (feature.attributes.sRef) {
+                return getSubSampleLabel(feature, "\n");
+              } else {
+                return 'Cluster of ' + feature.attributes.count;
+              }
+            }
+          }
+        }
         indiciaData.SubSampleLayer = new OpenLayers.Layer.Vector('Subsample Points', {
           displayInLayerSwitcher: false,
+          strategies: [new OpenLayers.Strategy.Cluster({distance: 20, threshold: 2})],
           styleMap: new OpenLayers.StyleMap({
-            default: new OpenLayers.Style(defaultStyle),
+            default: new OpenLayers.Style(defaultStyle, defaultStyleContext),
             select: new OpenLayers.Style(selectStyle)
           })
         });
@@ -528,7 +651,7 @@ var control_speciesmap_addcontrols;
           feature.attributes.sRef = $(block).find('[name$="sample\:entered_sref"]').val();
           feature.attributes.count = $('[name$="\:sampleIDX"]')
               .filter('[value=' + feature.attributes.subSampleIndex + ']').closest('tr').not('.scClonableRow').length;
-          indiciaData.SubSampleLayer.addFeatures([feature]);
+          addSubSampleFtr(feature);
           setupSummaryRows(feature.attributes.subSampleIndex);
         });
         if (indiciaData.SubSampleLayer.features.length > 0) {
@@ -540,11 +663,11 @@ var control_speciesmap_addcontrols;
           var feature = (indiciaData.control_speciesmap_mode === 'Add' ?
               indiciaData.control_speciesmap_new_feature : indiciaData.control_speciesmap_existing_feature);
           // need to remove then re-add feature to rebuild label
-          indiciaData.SubSampleLayer.removeFeatures([feature]);
+          removeSubSampleFtr(feature);
           feature.attributes.count = $('[name$="\:sampleIDX"]')
               .filter('[value=' + feature.attributes.subSampleIndex + ']').closest('tr').not('.scClonableRow').length;
           feature.style = null;
-          indiciaData.SubSampleLayer.addFeatures([feature]);
+          addSubSampleFtr(feature);
         };
         window.hook_species_checklist_delete_row.push(rebuildFeatureLabel);
         window.hook_species_checklist_new_row.push(rebuildFeatureLabel);
