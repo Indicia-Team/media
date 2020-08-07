@@ -620,7 +620,7 @@ jQuery(document).ready(function ($) {
           // ignore features with a special purpose, e.g. the selected record when verifying
           if (typeof feature.tag === 'undefined' &&
              (typeof feature.attributes.type === 'undefined' ||
-             (feature.attributes.type !== 'boundary' && feature.attributes.type !== 'ghost'))) {
+             (feature.attributes.type !== 'boundary' && feature.attributes.type !== 'ghost' && feature.attributes.type !== 'clickPoint'))) {
             // In some cases, custom code adds a buffer to the search area feature.
             thisGeom = typeof feature.buffer === 'undefined' ? feature.geometry : feature.buffer.geometry;
             if (thisGeom.CLASS_NAME.indexOf('Multi') !== -1) {
