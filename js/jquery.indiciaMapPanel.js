@@ -1609,6 +1609,7 @@ var destroyAllFeatures;
           },
           activate: function activate() {
             if (div.settings.selectFeatureBufferProjection && $(div).closest('#map-container').length) {
+              $('#click-buffer').css('right', $('.olControlEditingToolbar').outerWidth() + 10);
               $('#click-buffer').show();
             }
             var handlerOptions = {
@@ -1904,12 +1905,15 @@ var destroyAllFeatures;
           if (div.settings.helpDiv) {
             $('#' + div.settings.helpDiv).html(map.div.settings.hlpCustomPolygon);
           }
-          // as we are not separating the boundary geom, the geom's sref goes in the centroid
-          pointToSref(div, geom.getCentroid(), _getSystem(), function (data) {
-            if (typeof data.sref !== 'undefined') {
-              $('#' + div.settings.srefId).val(data.sref);
-            }
-          });
+          // As we are not separating the boundary geom, the geom's sref goes in the
+          // centroid, unless on filter popup.
+          if (!$(div).closest('#controls-filter_where').length) {
+            pointToSref(div, geom.getCentroid(), _getSystem(), function (data) {
+              if (typeof data.sref !== 'undefined') {
+                $('#' + div.settings.srefId).val(data.sref);
+              }
+            });
+          }
         }
       }
     }
@@ -2501,7 +2505,8 @@ var destroyAllFeatures;
     }
 
     function activateDrawControl(div, ctrl) {
-      if (div.settings.selectFeatureBufferProjection && $(div).closest('#filter-map-container').length) {
+      if (div.settings.selectFeatureBufferProjection && $(div).closest('#controls-filter_where').length) {
+        $('#click-buffer').css('right', $('.olControlEditingToolbar').outerWidth() + 10);
         $('#click-buffer').show();
       }
       // Continue with the activation.

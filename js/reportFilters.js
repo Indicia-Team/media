@@ -1405,18 +1405,17 @@ jQuery(document).ready(function ($) {
           $(indiciaData.mapdiv).css('width', '100%');
           $(indiciaData.mapdiv).css('height', '100%');
           $('#filter-map-container').append(element);
-          if ($('#click-buffer').length > 0) {
-            // Show tolerance control only if any draw control enabled.
-            $('#click-buffer').hide();
-            if ($('.olControlDrawFeaturePolygonItemActive,.olControlDrawFeaturePathItemActive,.olControlDrawFeaturePointItemActive').length) {
-              $('#click-buffer').show();
-            }
-          }
-          indiciaData.mapdiv.map.updateSize();
-          indiciaData.mapdiv.settings.drawObjectType = 'queryPolygon';
-        } else {
-          indiciaData.mapdiv.map.updateSize();
         }
+        indiciaData.mapdiv.settings.drawObjectType = 'queryPolygon';
+        if ($('#click-buffer').length > 0) {
+          // Show tolerance control only if any draw control enabled.
+          $('#click-buffer').hide();
+          if ($('.olControlDrawFeaturePolygonItemActive,.olControlDrawFeaturePathItemActive,.olControlDrawFeaturePointItemActive').length) {
+            $('#click-buffer').show();
+            $('#click-buffer').css('right', $('.olControlEditingToolbar').outerWidth() + 10);
+          }
+        }
+        indiciaData.mapdiv.map.updateSize();
         // Ensure that if FancyBox container scrolls, mouse position remains accurate.
         $(indiciaData.mapdiv).parents().scroll(function() {
           indiciaData.mapdiv.map.events.clearMouseCache();
@@ -1441,6 +1440,7 @@ jQuery(document).ready(function ($) {
           // Show tolerance control only if select feataure control enabled.
           $('#click-buffer').hide();
           if (!$('.olControlSelectFeatureItemActive').length) {
+            $('#click-buffer').css('right', $('.olControlEditingToolbar').outerWidth() + 10);
             $('#click-buffer').show();
           }
         }
