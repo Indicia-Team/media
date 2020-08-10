@@ -336,6 +336,7 @@ td.row-buttons {
 td.row-buttons img {
   cursor: pointer;
   width: 14px;
+  min-width: 14px;
   margin: 1px;
   padding: 0;
 }
