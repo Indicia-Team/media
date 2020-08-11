@@ -1377,85 +1377,87 @@ jQuery(document).ready(function ($) {
       }
     });
   }
-  $('.fb-filter-link').fancybox({
-    beforeLoad: function () {
-      var pane = $(this.href.replace(/^[^#]+/, ''));
-      var paneName = $(pane).attr('id').replace('controls-filter_', '');
-      if (typeof paneObjList[paneName].preloadForm !== 'undefined') {
-        paneObjList[paneName].preloadForm();
-      }
-      // reset
-      pane.find('.fb-apply').data('clicked', false);
-      updateControlValuesToReflectCurrentFilter(pane);
-      loadFilterOntoForm(paneName);
-    },
-    afterShow: function () {
-      var pane = $(this.href.replace(/^[^#]+/, ''));
-      var element;
-      $('.context-instruct').hide();
-      if (pane[0].id === 'controls-filter_where') {
-        if (typeof indiciaData.linkToMapDiv !== 'undefined') {
-          // move the map div to our container so it appears on the popup
+  if ($('.fb-filter-link').length){
+    $('.fb-filter-link').fancybox({
+      beforeLoad: function () {
+        var pane = $(this.href.replace(/^[^#]+/, ''));
+        var paneName = $(pane).attr('id').replace('controls-filter_', '');
+        if (typeof paneObjList[paneName].preloadForm !== 'undefined') {
+          paneObjList[paneName].preloadForm();
+        }
+        // reset
+        pane.find('.fb-apply').data('clicked', false);
+        updateControlValuesToReflectCurrentFilter(pane);
+        loadFilterOntoForm(paneName);
+      },
+      afterShow: function () {
+        var pane = $(this.href.replace(/^[^#]+/, ''));
+        var element;
+        $('.context-instruct').hide();
+        if (pane[0].id === 'controls-filter_where') {
+          if (typeof indiciaData.linkToMapDiv !== 'undefined') {
+            // move the map div to our container so it appears on the popup
+            element = $('#' + indiciaData.linkToMapDiv);
+            indiciaData.origMapParent = element.parent();
+            indiciaData.origMapSize = {
+              width: $(indiciaData.mapdiv).css('width'),
+              height: $(indiciaData.mapdiv).css('height')
+            };
+            $(indiciaData.mapdiv).css('width', '100%');
+            $(indiciaData.mapdiv).css('height', '100%');
+            $('#filter-map-container').append(element);
+          }
+          indiciaData.mapdiv.settings.drawObjectType = 'queryPolygon';
+          if ($('#click-buffer').length > 0) {
+            // Show tolerance control only if any draw control enabled.
+            $('#click-buffer').hide();
+            if ($('.olControlDrawFeaturePolygonItemActive,.olControlDrawFeaturePathItemActive,.olControlDrawFeaturePointItemActive').length) {
+              $('#click-buffer').show();
+              $('#click-buffer').css('right', $('.olControlEditingToolbar').outerWidth() + 10);
+            }
+          }
+          indiciaData.mapdiv.map.updateSize();
+          // Ensure that if FancyBox container scrolls, mouse position remains accurate.
+          $(indiciaData.mapdiv).parents().scroll(function() {
+            indiciaData.mapdiv.map.events.clearMouseCache();
+          });
+        }
+        // these auto-disable on form submission
+        $('#taxon_group_list\\:search\\:q').prop('disabled', false);
+        $('#taxa_taxon_list_list\\:search\\:searchterm').prop('disabled', false);
+        $('#taxon_designation_list\\:search').prop('disabled', false);
+        $('#location_list\\:search\\:name').prop('disabled', false);
+      },
+      afterClose: function () {
+        var pane = $(this.href.replace(/^[^#]+/, ''));
+        var element;
+        if (pane[0].id === 'controls-filter_where' && typeof indiciaData.linkToMapDiv !== 'undefined') {
           element = $('#' + indiciaData.linkToMapDiv);
-          indiciaData.origMapParent = element.parent();
-          indiciaData.origMapSize = {
-            width: $(indiciaData.mapdiv).css('width'),
-            height: $(indiciaData.mapdiv).css('height')
-          };
-          $(indiciaData.mapdiv).css('width', '100%');
-          $(indiciaData.mapdiv).css('height', '100%');
-          $('#filter-map-container').append(element);
-        }
-        indiciaData.mapdiv.settings.drawObjectType = 'queryPolygon';
-        if ($('#click-buffer').length > 0) {
-          // Show tolerance control only if any draw control enabled.
-          $('#click-buffer').hide();
-          if ($('.olControlDrawFeaturePolygonItemActive,.olControlDrawFeaturePathItemActive,.olControlDrawFeaturePointItemActive').length) {
-            $('#click-buffer').show();
-            $('#click-buffer').css('right', $('.olControlEditingToolbar').outerWidth() + 10);
+          $(indiciaData.mapdiv).css('width', indiciaData.origMapSize.width);
+          $(indiciaData.mapdiv).css('height', indiciaData.origMapSize.height);
+          $(indiciaData.origMapParent).append(element);
+          if ($('#click-buffer').length > 0) {
+            $(indiciaData.origMapParent).append($('#click-buffer'));
+            // Show tolerance control only if select feataure control enabled.
+            $('#click-buffer').hide();
+            if (!$('.olControlSelectFeatureItemActive').length) {
+              $('#click-buffer').css('right', $('.olControlEditingToolbar').outerWidth() + 10);
+              $('#click-buffer').show();
+            }
           }
+          indiciaData.mapdiv.map.setCenter(indiciaData.mapOrigCentre, indiciaData.mapOrigZoom);
+          indiciaData.mapdiv.map.updateSize();
+          indiciaData.mapdiv.settings.drawObjectType = 'boundary';
+          indiciaData.disableMapDataLoading = false;
+          $.each(indiciaData.mapdiv.map.controls, function () {
+            if (this.CLASS_NAME === 'OpenLayers.Control.DrawFeature') {
+              this.deactivate();
+            }
+          });
         }
-        indiciaData.mapdiv.map.updateSize();
-        // Ensure that if FancyBox container scrolls, mouse position remains accurate.
-        $(indiciaData.mapdiv).parents().scroll(function() {
-          indiciaData.mapdiv.map.events.clearMouseCache();
-        });
       }
-      // these auto-disable on form submission
-      $('#taxon_group_list\\:search\\:q').prop('disabled', false);
-      $('#taxa_taxon_list_list\\:search\\:searchterm').prop('disabled', false);
-      $('#taxon_designation_list\\:search').prop('disabled', false);
-      $('#location_list\\:search\\:name').prop('disabled', false);
-    },
-    afterClose: function () {
-      var pane = $(this.href.replace(/^[^#]+/, ''));
-      var element;
-      if (pane[0].id === 'controls-filter_where' && typeof indiciaData.linkToMapDiv !== 'undefined') {
-        element = $('#' + indiciaData.linkToMapDiv);
-        $(indiciaData.mapdiv).css('width', indiciaData.origMapSize.width);
-        $(indiciaData.mapdiv).css('height', indiciaData.origMapSize.height);
-        $(indiciaData.origMapParent).append(element);
-        if ($('#click-buffer').length > 0) {
-          $(indiciaData.origMapParent).append($('#click-buffer'));
-          // Show tolerance control only if select feataure control enabled.
-          $('#click-buffer').hide();
-          if (!$('.olControlSelectFeatureItemActive').length) {
-            $('#click-buffer').css('right', $('.olControlEditingToolbar').outerWidth() + 10);
-            $('#click-buffer').show();
-          }
-        }
-        indiciaData.mapdiv.map.setCenter(indiciaData.mapOrigCentre, indiciaData.mapOrigZoom);
-        indiciaData.mapdiv.map.updateSize();
-        indiciaData.mapdiv.settings.drawObjectType = 'boundary';
-        indiciaData.disableMapDataLoading = false;
-        $.each(indiciaData.mapdiv.map.controls, function () {
-          if (this.CLASS_NAME === 'OpenLayers.Control.DrawFeature') {
-            this.deactivate();
-          }
-        });
-      }
-    }
-  });
+    });
+  }
 
   $('form.filter-controls :input').change(function () {
     filterParamsChanged();

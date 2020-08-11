@@ -184,8 +184,8 @@
       }
 
       // Status filters drop down.
-      if ($('.status-filters').length > 0) {
-        $.each($('.status-filters'), function eachStatusFilter() {
+      if ($('.standalone-quality-filter select').length > 0) {
+        $.each($('.standalone-quality-filter select'), function eachStatusFilter() {
           if ($(this).val()) {
             // The value specifies a record status - display the text value of the selected option
             html = addHtml(html, '<div><b>Status:</b> ' + $(this).find('option:selected').text() + '</div>');
