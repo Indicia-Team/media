@@ -193,6 +193,45 @@
         });
       }
 
+      // es-filter-param controls
+      if ($('.es-filter-param').length) {
+        $.each($('.es-filter-param'), function eachParam() {
+          var val = $(this).val();
+          // Skip if no value.
+          if (val === null || val.trim() === '') {
+            return;
+          }
+          // Skip if unchecked checkbox
+          if ($(this).is(':checkbox') && !$(this).is(':checked')) {
+            return;
+          }
+   
+          var esBoolClause = indiciaFns.getDataValueFromInput(this, 'data-es-bool-clause');
+          var esField = indiciaFns.getDataValueFromInput(this, 'data-es-field');
+          var esQueryType = indiciaFns.getDataValueFromInput(this, 'data-es-query-type');
+          var esQuery = indiciaFns.getDataValueFromInput(this, 'data-es-query');
+          var esNested = indiciaFns.getDataValueFromInput(this, 'data-es-nested');
+
+          html = addHtml(html, '<div><b>ES query: </b>');
+          if (esField) {
+             html = addHtml(html, esField + ' ');
+          }
+          if (esBoolClause) {
+             html = addHtml(html, esBoolClause + ' ');
+          }
+          if (esQueryType) {
+             html = addHtml(html, esQueryType + ' ');
+          }
+          if (esQuery) {
+             html = addHtml(html, esQuery + ' ');
+          }
+          if (esNested) {
+             html = addHtml(html, esNested + ' ');
+          }
+          html = addHtml(html, '<strong>' + val + '</strong></div>');  
+        });
+      }
+
       $(el).html(html);
       if (functionCalls.length) {
          functionCalls.forEach(function(fc) {
