@@ -222,13 +222,15 @@
           if (esQueryType) {
              html = addHtml(html, esQueryType + ' ');
           }
-          if (esQuery) {
-             html = addHtml(html, esQuery + ' ');
-          }
           if (esNested) {
              html = addHtml(html, esNested + ' ');
           }
-          html = addHtml(html, '<strong>' + val + '</strong></div>');  
+          if (esQuery) {
+             html = addHtml(html, esQuery.replace('#value#', '<strong>' + val + '</strong>'));
+          } else {
+             html = addHtml(html, '<strong>' + val + '</strong>');  
+          }
+          html = addHtml(html, '</div>');
         });
       }
 
