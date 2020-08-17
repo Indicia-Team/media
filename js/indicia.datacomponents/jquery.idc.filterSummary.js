@@ -212,7 +212,6 @@
         var esNested = indiciaFns.getDataValueFromInput(this, 'data-es-nested');
         var esSummary = indiciaFns.getDataValueFromInput(this, 'data-es-summary');
         html = addHtml(html, '<div><b>Form filter: </b>');
-
         if (esSummary) {
           html = addHtml(html, esSummary.replace('#value#', '<strong>' + val + '</strong>'));
         } else {
@@ -233,8 +232,8 @@
           } else {
               html = addHtml(html, '<strong>' + val + '</strong>');  
           }
-          html = addHtml(html, '</div>');
         }
+        html = addHtml(html, '</div>');
       });
 
       $(el).html(html);
