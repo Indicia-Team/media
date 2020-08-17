@@ -193,6 +193,49 @@
         });
       }
 
+      // es-filter-param controls
+      $.each($('.es-filter-param'), function eachParam() {
+        var val = $(this).val();
+        // Skip if no value.
+        if (val === null || val.trim() === '') {
+          return;
+        }
+        // Skip if unchecked checkbox
+        if ($(this).is(':checkbox') && !$(this).is(':checked')) {
+          return;
+        }
+  
+        var esBoolClause = indiciaFns.getDataValueFromInput(this, 'data-es-bool-clause');
+        var esField = indiciaFns.getDataValueFromInput(this, 'data-es-field');
+        var esQueryType = indiciaFns.getDataValueFromInput(this, 'data-es-query-type');
+        var esQuery = indiciaFns.getDataValueFromInput(this, 'data-es-query');
+        var esNested = indiciaFns.getDataValueFromInput(this, 'data-es-nested');
+        var esSummary = indiciaFns.getDataValueFromInput(this, 'data-es-summary');
+        html = addHtml(html, '<div><b>Form filter: </b>');
+        if (esSummary) {
+          html = addHtml(html, esSummary.replace('#value#', '<strong>' + val + '</strong>'));
+        } else {
+          if (esField) {
+            html = addHtml(html, esField + ' ');
+          }
+          if (esBoolClause) {
+              html = addHtml(html, esBoolClause + ' ');
+          }
+          if (esQueryType) {
+              html = addHtml(html, esQueryType + ' ');
+          }
+          if (esNested) {
+              html = addHtml(html, esNested + ' ');
+          }
+          if (esQuery) {
+              html = addHtml(html, esQuery.replace('#value#', '<strong>' + val + '</strong>'));
+          } else {
+              html = addHtml(html, '<strong>' + val + '</strong>');  
+          }
+        }
+        html = addHtml(html, '</div>');
+      });
+
       $(el).html(html);
       if (functionCalls.length) {
          functionCalls.forEach(function(fc) {
