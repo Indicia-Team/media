@@ -135,19 +135,22 @@
       $('#geom_buffer').blur(function blurBuffer() {
         rebuildBuffer();
       });
-      $('#run-report').click(function runClick(evt) {
-        // rebuild the buffer if the user is changing it.
-        if (document.activeElement.id === 'geom_buffer') {
-          rebuildBuffer();
-        }
-        if (typeof indiciaData.buffering !== 'undefined' && indiciaData.buffering) {
-          // when the buffering response comes back, submit the form
-          indiciaData.submitting = true;
-          evt.preventDefault();
-        } else {
-          storeGeomsInForm();
-        }
-      });
+    });
+  };
+
+  indiciaFns.storeGeomsInFormOnSubmit = function storeGeomsInFormOnSubmit() {
+    $('#run-report').click(function runClick(evt) {
+      // rebuild the buffer if the user is changing it.
+      if (document.activeElement.id === 'geom_buffer') {
+        rebuildBuffer();
+      }
+      if (typeof indiciaData.buffering !== 'undefined' && indiciaData.buffering) {
+        // when the buffering response comes back, submit the form
+        indiciaData.submitting = true;
+        evt.preventDefault();
+      } else {
+        storeGeomsInForm();
+      }
     });
   };
 }(jQuery));

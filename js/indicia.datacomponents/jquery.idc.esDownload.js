@@ -109,15 +109,25 @@
     var data = {};
     var agg;
     var sourceSettings = el.settings.sourceObject.settings;
+    var isAggregation = el.settings.sourceObject.settings.mode.match(/Aggregation$/);
     // Note, columnsTemplate can be blank.
     if (typeof el.settings.columnsTemplate !== 'undefined') {
       data.columnsTemplate = el.settings.columnsTemplate;
-    } else if (el.settings.sourceObject.settings.mode.match(/Aggregation$/)) {
+    } else if (isAggregation) {
+      // Aggregations default to no columns template.
       data.columnsTemplate = '';
     }
     if (el.settings.addColumns && el.settings.addColumns.length !== 0) {
       data.addColumns = el.settings.addColumns;
-    } else if (el.settings.sourceObject.settings.mode.match(/Aggregation$/) && data.columnsTemplate === '') {
+      if (isAggregation) {
+        // Ensure composite aggregation source fields are named correctly.
+        $.each(data.addColumns, function() {
+          if ($.inArray(this.field, sourceSettings.fields) > -1) {
+            this.field = 'key.' + this.field.asCompositeKeyName();
+          }
+        });
+      }
+    } else if (isAggregation && data.columnsTemplate === '') {
       // Find the first aggregation defined for this source.
       agg = sourceSettings.aggregation[Object.keys(sourceSettings.aggregation)[0]];
       data.addColumns = [];
@@ -286,6 +296,11 @@
       $.extend(currentRequestData, columnSettings);
       // Reset.
       rowsToDownload = null;
+      // If there is an associated download template select control,
+      // set the download template option from its value.
+      if ($('#' + el.id + '-template').val()) {
+        currentRequestData['columnsTemplate'] = $('#' + el.id + '-template').val();
+      }
       // Post to the ES proxy.
       $.ajax({
         url: indiciaData.esProxyAjaxUrl + '/download/' + indiciaData.nid + query,
@@ -303,6 +318,7 @@
         },
         error: function error(jqXHR, textStatus, errorThrown) {
           alert('An error occurred with the request to download data.');
+          $('.progress-circle-container').hide();
           console.log(errorThrown);
         }
       });

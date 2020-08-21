@@ -88,15 +88,20 @@ var IdcEsDataSource;
       var matches = field.match(/^#([^:]+)(:([^:]+):([^:]+))?#$/);
       var fieldObj;
       var srcObj = {};
+      var entity;
+      var key;
+      var docPath;
       // Is this field a custom attribute definition?
       if (matches) {
         if (matches[1] === 'attr_value') {
-          // Tolerate event or sample.
-          matches[3] = matches[3] === 'sample' ? 'event' : matches[3];
+          key = matches[3] === 'parent_event' ? 'parent_attributes' : 'attributes';
+          // Tolerate sample or event for entity.
+          entity = $.inArray(matches[3], ['sample', 'event', 'parent_event']) > -1 ? 'event' : 'occurrence'
+          docPath = 'params._source.' + entity + '.' + key;
           fieldObj = {
             script: {
-              source: 'String r = \'\'; if (params._source.' + matches[3] + '.attributes != null) { ' +
-                'for ( item in params._source.event.attributes ) { ' +
+              source: 'String r = \'\'; if (' + docPath + ' != null) { ' +
+                'for ( item in ' + docPath + ' ) { ' +
                   'if (item.id == \'' + matches[4] + '\') { r = item.value; } ' +
                 '} ' +
               '} return r;',
@@ -189,11 +194,14 @@ var IdcEsDataSource;
       // Convert list of fields to one suitable for top_hits _source.
       $.each(this.settings.fields, function eachField() {
         var matches = this.match(/^#([^:]+)(:([^:]+):([^:]+))?#$/);
-        var type;
+        var key;
+        var entity;
         var sources;
         if (matches && matches[1] === 'attr_value') {
-          type = matches[3] === 'sample' ? 'event' : matches[3];
-          sources = [type + '.attributes'];
+          key = matches[3] === 'parent_event' ? 'parent_attributes' : 'attributes';
+          // Tolerate sample or event for entity.
+          entity = $.inArray(matches[3], ['sample', 'event', 'parent_event']) > -1 ? 'event' : 'occurrence';
+          sources = [entity + '.' + key];
         } else {
           sources = [this];
         }

@@ -133,6 +133,7 @@ table.es-data-grid {
     tbody {
       display:block;
       overflow-y: auto;
+      overflow-x: hidden;
     }
     thead, tbody tr {
       display:table;
@@ -210,6 +211,9 @@ table.es-data-grid {
 }
 
 /* idcEsDownload */
+.idc-download-ctl-part {
+  display: inline-block;
+}
 .idc-download-files {
   display: none;
   -webkit-box-shadow: 6px 7px 8px 1px $shadow-colour;

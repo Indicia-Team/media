@@ -56,7 +56,7 @@
    */
   String.prototype.asReadableKeyName = function asReadableKeyName() {
     // Spaces instead of .-_
-    var name = this.replace(/[\.-_]/g, ' ');
+    var name = this.replace(/[\.\-_:#]/g, ' ').trim();
     // Leading caps.
     return name.charAt(0).toUpperCase() + name.slice(1);
   };
@@ -93,7 +93,8 @@
     A: 'fas fa-reply',
     Sensitive: 'fas fa-exclamation-circle',
     Confidential: 'fas fa-exclamation-triangle',
-    ZeroAbundance: 'fas fa-ban'
+    ZeroAbundance: 'fas fa-ban',
+    Anonymous: 'fas fa-user-slash'
   };
 
   /**
@@ -113,7 +114,8 @@
     A: 'Answered',
     Sensitive: 'Sensitive',
     Confidential: 'Confidential',
-    ZeroAbundance: 'Absence record'
+    ZeroAbundance: 'Absence record',
+    Anonymous: 'Entered by a user who was not logged in'
   };
 
   /**
@@ -204,7 +206,6 @@
       'identification.identified_by',
       'identification.query',
       'identification.recorder_certainty',
-      'identification.verification_decision_source',
       'identification.verifier.name',
       'indexed_location_ids',
       'location.name',
@@ -214,9 +215,7 @@
       'location.verbatim_locality',
       'message',
       'metadata.group.title',
-      'metadata.input_form',
       'metadata.licence_code',
-      'metadata.sensitivity_blur',
       'metadata.survey.title',
       'metadata.website.title',
       'occurrence.associated_media',
@@ -439,6 +438,9 @@
     if (flags.confidential && flags.confidential !== 'false') {
       addIcon('ZeroAbundance');
     }
+    if (flags.anonymous && flags.anonymous !== 'false') {
+      addIcon('Anonymous');
+    }
     return html;
   };
 
@@ -561,13 +563,15 @@
      * Multiple attribute values are returned as a single semi-colon separated
      * value.
      */
-    attr_value: function attr_value(doc, params) {
+    attr_value: function attrValue(doc, params) {
       var output = [];
       var entity = params && params.length > 1 ? params[0] : '';
+      // Map to ES document structure.
+      var key = entity === 'parent_event' ? 'parent_attributes' : 'attributes';
       // Tolerate sample or event for entity parameter.
-      entity = entity === 'sample' ? 'event' : entity;
-      if (doc[entity] && doc[entity].attributes) {
-        $.each(doc[entity].attributes, function eachAttr() {
+      entity = $.inArray(entity, ['sample', 'event', 'parent_event']) > -1 ? 'event' : 'occurrence';
+      if (doc[entity] && doc[entity][key]) {
+        $.each(doc[entity][key], function eachAttr() {
           if (this.id === params[1]) {
             output.push(this.value);
           }
@@ -586,7 +590,8 @@
         query: doc.identification.query ? doc.identification.query : '',
         sensitive: doc.metadata.sensitive,
         confidential: doc.metadata.confidential,
-        zero_abundance: doc.occurrence.zero_abundance
+        zero_abundance: doc.occurrence.zero_abundance,
+        anonymous: doc.metadata.created_by_id === "1"
       });
     },
 
@@ -664,7 +669,7 @@
      */
     higher_geography: function higherGeography(doc, params) {
       var output = [];
-      var text = []
+      var text = [];
       if (doc.location.higher_geography) {
         if (params.length === 0 || !params[0]) {
           output = doc.location.higher_geography;
@@ -716,6 +721,24 @@
     },
 
     /**
+     * A formatted latitude.
+     */
+    lat: function lat(doc, params) {
+      var point = doc.location.point || doc.point;
+      var coords = point.split(',') || doc.p;
+      var lat = parseFloat(coords[0]);
+      var format = params && params[0] ? params[0] : "";
+      switch(format) {
+        case "decimal":
+          return lat;
+        case "nssuffix":
+          // Implemented as the default.
+        default:
+          return Math.abs(lat).toFixed(3) + (lat >= 0 ? 'N' : 'S');
+      }
+    },
+
+    /**
      * A formatted lat long.
      */
     lat_lon: function latLon(doc) {
@@ -723,7 +746,26 @@
       var coords = point.split(',') || doc.p;
       var lat = parseFloat(coords[0]);
       var lon = parseFloat(coords[1]);
-      return Math.abs(lat).toFixed(3) + (lat >= 0 ? 'N' : 'S') + ' ' + Math.abs(lon).toFixed(3) + (lon >= 0 ? 'E' : 'W');
+      return Math.abs(lat).toFixed(3) + (lat >= 0 ? 'N' : 'S') + ' ' +
+             Math.abs(lon).toFixed(3) + (lon >= 0 ? 'E' : 'W');
+    },
+
+    /**
+     * A formatted longitude.
+     */
+    lon: function lon(doc, params) {
+      var point = doc.location.point || doc.point;
+      var coords = point.split(',') || doc.p;
+      var lon = parseFloat(coords[1]);
+      var format = params && params[0] ? params[0] : "";
+      switch(format) {
+        case "decimal":
+          return lon;
+        case "ewsuffix":
+          // Implemented as the default.
+        default:
+          return Math.abs(lon).toFixed(3) + (lon >= 0 ? 'E' : 'W');
+      }
     },
 
     /**
@@ -808,7 +850,7 @@
     /**
      * Builds a query for attribute values.
      */
-    attr_value: function attr_value(text, params) {
+    attr_value: function attrValue(text, params) {
       var filter1 = {};
       var filter2 = {};
       var query;
@@ -899,7 +941,7 @@
         // Invalid format.
         return false;
       }
-      coords[0] = coords[0].match(/S$/) ? 0 - coords[0].replace(/S$/, '') : parseFloat(coords[0].replace(/[^\d\.]$/, ''))
+      coords[0] = coords[0].match(/S$/) ? 0 - coords[0].replace(/S$/, '') : parseFloat(coords[0].replace(/[^\d\.]$/, ''));
       coords[1] = coords[1].match(/W$/) ? 0 - coords[1].replace(/[^\d\.]$/, '') : parseFloat(coords[1].replace(/[^\d\.]$/, ''));
       query = {
         geo_distance: {
@@ -935,8 +977,17 @@
    */
   indiciaData.fieldConvertorSortFields = {
     // Unsupported possibilities are commented out.
-    status_icons: ['identification.verification_status', 'identification.verification_substatus', 'metadata.sensitive'],
-    // data_cleaner_icons: [],
+    status_icons: [
+      'identification.verification_status',
+      'identification.verification_substatus',
+      'metadata.sensitive',
+      'metadata.confidential',
+      'occurrence.zero_abundance',
+      'metadata.created_by_id'
+    ],
+    data_cleaner_icons: [
+      'identification.auto_checks.result'
+    ],
     event_date: ['event.date_start'],
     // higher_geography: [],
     // locality: [],
@@ -972,6 +1023,7 @@
             pathArray[i] = idx;
             return false;
           }
+          return true;
         });
       }
       if (typeof thisPath[pathArray[i]] === 'undefined') {
@@ -1151,6 +1203,7 @@
     var bounds;
     var agg = {};
     var filterRows = [];
+    var group;
     if (typeof source.settings.size !== 'undefined') {
       data.size = source.settings.size;
     }
@@ -1197,19 +1250,24 @@
       // Using filter paremeter controls.
       $.each($('.es-filter-param'), function eachParam() {
         var val = $(this).val();
-        // Make sure we have a value to apply. Skip special "novalue" items
-        // in linked selects (such as Loading... message).
-        if (val !== null && val.trim() !== '') {
-          val = val.trim().replace(/{{ indicia_user_id }}/g, indiciaData.user_id);
-          data.bool_queries.push({
-            bool_clause: indiciaFns.getDataValueFromInput(this, 'data-es-bool-clause'),
-            field: indiciaFns.getDataValueFromInput(this, 'data-es-field'),
-            query_type: indiciaFns.getDataValueFromInput(this, 'data-es-query-type'),
-            query: indiciaFns.getDataValueFromInput(this, 'data-es-query'),
-            nested: indiciaFns.getDataValueFromInput(this, 'data-es-nested'),
-            value: val
-          });
+        // Skip if no value.
+        if (val === null || val.trim() === '') {
+          return;
         }
+        // Skip if unchecked checkbox
+        if ($(this).is(':checkbox') && !$(this).is(':checked')) {
+          return;
+        }
+        // Replace tokens in value.
+        val = val.trim().replace(/{{ indicia_user_id }}/g, indiciaData.user_id);
+        data.bool_queries.push({
+          bool_clause: indiciaFns.getDataValueFromInput(this, 'data-es-bool-clause'),
+          field: indiciaFns.getDataValueFromInput(this, 'data-es-field'),
+          query_type: indiciaFns.getDataValueFromInput(this, 'data-es-query-type'),
+          query: indiciaFns.getDataValueFromInput(this, 'data-es-query'),
+          nested: indiciaFns.getDataValueFromInput(this, 'data-es-nested'),
+          value: val
+        });
       });
       // Any dataGrid this source outputs to may bave a filter row that affects
       // this source.
@@ -1244,9 +1302,34 @@
           }
         });
       }
-      // Apply select in context filters drop down.
+
+      // Apply filters from recordContext select drop down.
       if ($('.permissions-filter').length > 0) {
-        data.permissions_filter = $('.permissions-filter').val();
+        if ($('.permissions-filter').val().substring(0, 2) === 'p-') {
+          // A permissions filter type option selected.
+          data.permissions_filter = $('.permissions-filter').val().substring(2);
+        } else if ($('.permissions-filter').val().substring(0, 2) === 'f-') {
+          // A filter type option selected
+          data.user_filters.push($('.permissions-filter').val().substring(2));
+          if (indiciaData.esUserFiltersLoaded.indexOf($('.permissions-filter').val().substring(2)) === -1) {
+            data.refresh_user_filters = true;
+            indiciaData.esUserFiltersLoaded.push($('.permissions-filter').val().substring(2));
+          }
+        } else if ($('.permissions-filter').val().substring(0, 2) === 'g-') {
+          // A group type option selected.
+          if ($('.permissions-filter').val().substring(0, 4) === 'g-my') {
+            data.permissions_filter = 'my';
+            group = $('.permissions-filter').val().substring(5);
+          } else {
+            data.permissions_filter = 'all';
+            group = $('.permissions-filter').val().substring(6);
+          }
+          data.bool_queries.push({
+            bool_clause: 'must',
+            query_type: 'query_string',
+            value: 'metadata.group.id:' + group
+          });
+        }
       }
     }
     if (source.settings.aggregation) {
