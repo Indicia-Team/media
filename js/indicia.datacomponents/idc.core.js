@@ -1077,9 +1077,38 @@
   };
 
   /**
+   * Retrieve the grid filter rows which are relevent to an upcoming API request.
+   *
+   * @return array
+   *   List of <tr> DOM elements.
+   */
+  function getFilterRows(source) {
+    var filterRows = [];
+    // Any dataGrid this source outputs to may bave a filter row that affects
+    // this source.
+    if (typeof source.outputs.idcDataGrid !== 'undefined') {
+      $.each(source.outputs.idcDataGrid, function eachGrid() {
+        filterRows.push($(this).find('.es-filter-row').toArray());
+      });
+    }
+    // Find additional grids that choose to apply their filter to this source.
+    $.each($('.idc-output-dataGrid'), function eachGrid() {
+      var grid = this;
+      if (grid.settings.applyFilterRowToSources) {
+        $.each(this.settings.applyFilterRowToSources, function eachSource() {
+          if (this === source.settings.id) {
+            filterRows = filterRows.concat($(grid).find('.es-filter-row').toArray());
+          }
+        });
+      }
+    });
+    return filterRows;
+  }
+
+  /**
    * Applies the filter from inputs in a set of filter rows to the request.
    */
-  function applyFilterRows(filterRows, data) {
+  function applyFilterRowsToRequest(filterRows, data) {
     $.each(filterRows, function eachFilterRow() {
       var filterRow = this;
       // Remove search text format errors.
@@ -1144,7 +1173,7 @@
   /**
    * If a standard params filter active on the page, copy it into the ES filter.
    */
-  function setFilterDef(data) {
+  function applyFilterBuilderSettingsToRequest(data) {
     var geom;
     if (indiciaData.filter && indiciaData.filter.def) {
       data.filter_def = $.extend({}, indiciaData.filter.def);
@@ -1153,6 +1182,54 @@
       geom = OpenLayers.Geometry.fromWKT(data.filter_def.searchArea);
       data.filter_def.searchArea = geom.transform('EPSG:3857', 'EPSG:4326').toString();
     }
+  }
+
+  /**
+   * Applies any filterBoolClauses in the source's settings to an API request.
+   */
+  function applyFilterBoolClausesToRequest(source, data) {
+    if (source.settings.filterBoolClauses) {
+      // Using filter paremeter controls.
+      $.each(source.settings.filterBoolClauses, function eachBoolClause(type, filters) {
+        $.each(filters, function eachFilter() {
+          data.bool_queries.push({
+            bool_clause: type,
+            query_type: this.query_type,
+            field: this.field ? this.field : null,
+            query: this.query ? this.query : null,
+            value: this.value ? this.value : null,
+            nested: this.nested ? this.nested : null
+          });
+        });
+      });
+    }
+  }
+
+  /**
+   * Applies any filters defined by inputs with class es-filter-param to an API request.
+   */
+  function applyFilterParameterControlsToRequest(data) {
+    $.each($('.es-filter-param'), function eachParam() {
+      var val = $(this).val();
+      // Skip if no value.
+      if (val === null || val.trim() === '') {
+        return;
+      }
+      // Skip if unchecked checkbox
+      if ($(this).is(':checkbox') && !$(this).is(':checked')) {
+        return;
+      }
+      // Replace tokens in value.
+      val = val.trim().replace(/{{ indicia_user_id }}/g, indiciaData.user_id);
+      data.bool_queries.push({
+        bool_clause: indiciaFns.getDataValueFromInput(this, 'data-es-bool-clause'),
+        field: indiciaFns.getDataValueFromInput(this, 'data-es-field'),
+        query_type: indiciaFns.getDataValueFromInput(this, 'data-es-query-type'),
+        query: indiciaFns.getDataValueFromInput(this, 'data-es-query'),
+        nested: indiciaFns.getDataValueFromInput(this, 'data-es-nested'),
+        value: val
+      });
+    });
   }
 
   /**
@@ -1202,7 +1279,7 @@
     var mapToFilterTo;
     var bounds;
     var agg = {};
-    var filterRows = [];
+    var filterRows;
     var group;
     if (typeof source.settings.size !== 'undefined') {
       data.size = source.settings.size;
@@ -1217,21 +1294,7 @@
         data.sort = indiciaFns.expandSpecialFieldSortInfo(source.settings.sort, true);
       }
     }
-    if (source.settings.filterBoolClauses) {
-      // Using filter paremeter controls.
-      $.each(source.settings.filterBoolClauses, function eachBoolClause(type, filters) {
-        $.each(filters, function eachFilter() {
-          data.bool_queries.push({
-            bool_clause: type,
-            query_type: this.query_type,
-            field: this.field ? this.field : null,
-            query: this.query ? this.query : null,
-            value: this.value ? this.value : null,
-            nested: this.nested ? this.nested : null
-          });
-        });
-      });
-    }
+    applyFilterBoolClausesToRequest(source, data);
     if (source.settings.rowFilterField && source.settings.rowFilterValue) {
       // Using a value from selected grid row as a filter, e.g. to show data
       // for the species associated with a selected record.
@@ -1247,49 +1310,10 @@
         // don't populate.
         return false;
       }
-      // Using filter paremeter controls.
-      $.each($('.es-filter-param'), function eachParam() {
-        var val = $(this).val();
-        // Skip if no value.
-        if (val === null || val.trim() === '') {
-          return;
-        }
-        // Skip if unchecked checkbox
-        if ($(this).is(':checkbox') && !$(this).is(':checked')) {
-          return;
-        }
-        // Replace tokens in value.
-        val = val.trim().replace(/{{ indicia_user_id }}/g, indiciaData.user_id);
-        data.bool_queries.push({
-          bool_clause: indiciaFns.getDataValueFromInput(this, 'data-es-bool-clause'),
-          field: indiciaFns.getDataValueFromInput(this, 'data-es-field'),
-          query_type: indiciaFns.getDataValueFromInput(this, 'data-es-query-type'),
-          query: indiciaFns.getDataValueFromInput(this, 'data-es-query'),
-          nested: indiciaFns.getDataValueFromInput(this, 'data-es-nested'),
-          value: val
-        });
-      });
-      // Any dataGrid this source outputs to may bave a filter row that affects
-      // this source.
-      if (typeof source.outputs.idcDataGrid !== 'undefined') {
-        $.each(source.outputs.idcDataGrid, function eachGrid() {
-          filterRows.push($(this).find('.es-filter-row').toArray());
-        });
-      }
-      // Find additional grids that choose to apply their filter to this source.
-      $.each($('.idc-output-dataGrid'), function eachGrid() {
-        var grid = this;
-        if (grid.settings.applyFilterRowToSources) {
-          $.each(this.settings.applyFilterRowToSources, function eachSource() {
-            if (this === source.settings.id) {
-              filterRows = filterRows.concat($(grid).find('.es-filter-row').toArray());
-            }
-          });
-        }
-      });
-      applyFilterRows(filterRows, data);
-      // If a standard params filter bar on the page, respect it's definition.
-      setFilterDef(data);
+      applyFilterParameterControlsToRequest(data);
+      filterRows = getFilterRows(source);
+      applyFilterRowsToRequest(filterRows, data);
+      applyFilterBuilderSettingsToRequest(data);
       // Apply select in user filters drop down.
       if ($('.user-filter').length > 0) {
         $.each($('.user-filter'), function eachUserFilter() {
