@@ -1171,13 +1171,37 @@
   }
 
   /**
+   * If parameters named filter-* in the URL, copy to the ES filter.
+   */
+  function applyQueryStringFiltersToRequest(data) {
+    var urlParams = new URLSearchParams(location.search);
+    urlParams.forEach(function(value, key) {
+      if (key.match(/^filter-/)) {
+        if (typeof data.filter_def === 'undefined') {
+          data.filter_def = {};
+        }
+        data.filter_def[key.replace(/^filter-/, '')] = value;
+      }
+    });
+  }
+
+  /**
    * If a standard params filter active on the page, copy it into the ES filter.
    */
   function applyFilterBuilderSettingsToRequest(data) {
-    var geom;
     if (indiciaData.filter && indiciaData.filter.def) {
-      data.filter_def = $.extend({}, indiciaData.filter.def);
+      if (typeof data.filter_def === 'undefined') {
+        data.filter_def = {};
+      }
+      $.extend(data.filter_def, indiciaData.filter.def);
     }
+  }
+
+  /**
+   * Search area needs to be in GPS Lat Long for ES, not Web Mercator.
+   */
+  function ensureFilterDefSearchAreaWGS84(data) {
+    var geom;
     if (data.filter_def && data.filter_def.searchArea && OpenLayers) {
       geom = OpenLayers.Geometry.fromWKT(data.filter_def.searchArea);
       data.filter_def.searchArea = geom.transform('EPSG:3857', 'EPSG:4326').toString();
@@ -1313,7 +1337,9 @@
       applyFilterParameterControlsToRequest(data);
       filterRows = getFilterRows(source);
       applyFilterRowsToRequest(filterRows, data);
+      applyQueryStringFiltersToRequest(data);
       applyFilterBuilderSettingsToRequest(data);
+      ensureFilterDefSearchAreaWGS84(data);
       // Apply select in user filters drop down.
       if ($('.user-filter').length > 0) {
         $.each($('.user-filter'), function eachUserFilter() {
