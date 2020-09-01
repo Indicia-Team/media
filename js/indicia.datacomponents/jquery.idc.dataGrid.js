@@ -368,10 +368,12 @@
       var fieldName = $sortSpan.closest('th').attr('data-field');
       var sortDesc = $sortSpan.hasClass('fa-sort-up');
       var sourceObj = el.settings.sourceObject;
-      showHeaderSortInfo($sortSpan, sortDesc);
-      sourceObj.settings.sort = {};
-      sourceObj.settings.sort[fieldName] = sortDesc ? 'desc' : 'asc';
-      sourceObj.populate();
+      if (fieldName) {
+        showHeaderSortInfo($sortSpan, sortDesc);
+        sourceObj.settings.sort = {};
+        sourceObj.settings.sort[fieldName] = sortDesc ? 'desc' : 'asc';
+        sourceObj.populate();
+      }
     });
 
     /**
