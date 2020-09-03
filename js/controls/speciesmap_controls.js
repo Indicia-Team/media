@@ -92,6 +92,27 @@ var control_speciesmap_addcontrols;
       }
       // TODO if map projection != indicia internal projection transform to internal projection
     };
+    var showHideClonableRow = function  () {
+      // If singleRecordSubsamples option is set on control, ensure that only a single
+      // record can be created in a subsample by setting the visibility of the .scClonableRow
+      // appropriately in the species grid.
+      var clonableRow = $('#' + indiciaData.control_speciesmap_opts.id + ' .scClonableRow')
+      if (opts.singleRecordSubsamples) {
+        // Setting a timeout seems to be necessary because of asynchronous
+        // update of species grid.
+        setTimeout(function() {
+          var subSampleRecords = $('#' + indiciaData.control_speciesmap_opts.id + ' > tbody > tr:visible').not('.scClonableRow');
+          var preExistingDeleted = subSampleRecords.find('input.scPresence[type=checkbox]:not([checked])')
+          if(subSampleRecords.length - preExistingDeleted.length > 0) {
+            clonableRow.hide();
+          } else {
+            clonableRow.show();
+          }
+        }, 300);
+      } else {
+        clonableRow.show();
+      }
+    };
     var switchToSubSampleForm = function switchToSubSampleForm() {
       $(indiciaData.control_speciesmap_opts.mapDiv).hide(indiciaData.control_speciesmap_opts.animationDuration);
       $('#' + indiciaData.control_speciesmap_opts.id + '-cluster')
@@ -103,6 +124,7 @@ var control_speciesmap_addcontrols;
         });
       // Hide tab navigation buttons as they are confusing in this state.
       $('.wizard-buttons').hide();
+      showHideClonableRow();
     };
     var switchToOverviewMap = function switchToOverviewMap() {
       $('#' + indiciaData.control_speciesmap_opts.id + '-container')
@@ -670,6 +692,8 @@ var control_speciesmap_addcontrols;
           addSubSampleFtr(feature);
         };
         window.hook_species_checklist_delete_row.push(rebuildFeatureLabel);
+        window.hook_species_checklist_delete_row.push(showHideClonableRow);
+        window.hook_species_checklist_new_row.push(showHideClonableRow);
         window.hook_species_checklist_new_row.push(rebuildFeatureLabel);
         window.hook_species_checklist_new_row.push(function () {
           var feature = (indiciaData.control_speciesmap_mode === 'Add' ?
