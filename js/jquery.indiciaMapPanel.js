@@ -2553,9 +2553,6 @@ var destroyAllFeatures;
       this.removeAllFeatures = removeAllFeatures;
       this.locationSelectedInInput = locationSelectedInInput;
       this.processLonLatPositionOnMap = processLonLatPositionOnMap;
-      // wrap the map in a div container
-      $(this).wrap('<div id="map-container" style="width:' + opts.width + '" >');
-      $(this).before('<div id="map-loading" class="loading-spinner" style="display: none"><div>Loading...</div></div>');
 
       // if the validator exists, stop map clicks bubbling up to its event handler as IE can't
       // get the attributes of some map items and errors arise.
