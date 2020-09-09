@@ -404,6 +404,30 @@
     return emailTab;
   }
 
+  function tabbedQueryPopup(doc, commentFirst, commentInstruct, emailInstruct, emailTo) {
+    var commentTab = getQueryCommentTab(doc, commentInstruct, !commentFirst);
+    var emailTab = getQueryEmailTab(doc, emailTo, emailInstruct, commentFirst);
+    var title1 = commentFirst ? 'Add comment' : 'Send email';
+    var title2 = commentFirst ? 'Send email' : 'Add comment';
+    var content = $('<div id="popup-tabs" class="verification-popup" />').append($('<ul>' +
+      '<li><a href="#tab-query-1">' + title1 + '</li>' +
+      '<li><a href="#tab-query-2">' + title2 + '</li>'
+    ));
+    if (commentFirst) {
+      $(commentTab).attr('id', 'tab-query-1');
+      $(emailTab).attr('id', 'tab-query-2');
+      commentTab.appendTo(content);
+      emailTab.appendTo(content);
+    } else {
+      $(emailTab).attr('id', 'tab-query-1');
+      $(commentTab).attr('id', 'tab-query-2');
+      emailTab.appendTo(content);
+      commentTab.appendTo(content);
+    }
+    $.fancybox(content);
+    $('#popup-tabs').tabs();
+  }
+
   /**
    * Display the popup dialog for querying a record.
    */
@@ -416,53 +440,24 @@
     } else {
       doc = JSON.parse($(dataGrid).find('tr.selected').attr('data-doc-source'));
       getCurrentRecordEmail(doc, function callback(emailTo) {
-        if (emailTo === '' || !emailTo.match(/@/)) {
-          commentPopup({ query: 'Q' }, indiciaData.lang.verificationButtons.queryUnavailableEmail);
+        var t = indiciaData.lang.verificationButtons;
+        if (doc.metadata.created_by_id === 1 && emailTo === '' || !emailTo.match(/@/)) {
+          // Anonymous record with no valid email.
+          tabbedQueryPopup(doc, true, t.queryCommentTabAnonWithoutEmail, t.queryEmailTabAnonWithoutEmail, emailTo);
+        } else if (doc.metadata.created_by_id === 1) {
+          // Anonymous record with valid email.
+          tabbedQueryPopup(doc, false,t.queryCommentTabAnonWithEmail, t.queryEmailTabAnonWithEmail, emailTo);
         } else {
-          // Got an email address.
+          // Got a logged in user with email address. Need to know if they check notifications.
           $.ajax({
             url: indiciaData.esProxyAjaxUrl + '/doesUserSeeNotifications/' + indiciaData.nid,
             data: { user_id: doc.metadata.created_by_id },
             success: function success(data) {
-              var commentTab;
-              var emailTab;
-              var order = 'commentFirst';
-              var emailInstruct;
-              var commentInstruct;
-              var title1;
-              var title2;
-              var content;
               if (data.msg === 'yes' || data.msg === 'maybe') {
-                emailInstruct = indiciaData.lang.verificationButtons.emailAvoidAsUserNotified;
-                commentInstruct = indiciaData.lang.verificationButtons.commentOkAsUserNotified;
-              } else if (data.msg === 'no' || data.msg === 'unknown') {
-                emailInstruct = indiciaData.lang.verificationButtons.emailOkAsUserNotNotified;
-                commentInstruct = indiciaData.lang.verificationButtons.commentAvoidAsUserNotNotified;
-                order = 'emailFirst';
-              }
-
-              commentTab = getQueryCommentTab(doc, commentInstruct, order === 'emailFirst');
-              emailTab = getQueryEmailTab(doc, emailTo, emailInstruct, order === 'commentFirst');
-
-              title1 = order === 'emailFirst' ? 'Send email' : 'Add comment';
-              title2 = order === 'emailFirst' ? 'Add comment' : 'Send email';
-              content = $('<div id="popup-tabs" class="verification-popup" />').append($('<ul>' +
-                '<li><a href="#tab-query-1">' + title1 + '</li>' +
-                '<li><a href="#tab-query-2">' + title2 + '</li>'
-              ));
-              if (order === 'commentFirst') {
-                $(commentTab).attr('id', 'tab-query-1');
-                $(emailTab).attr('id', 'tab-query-2');
-                commentTab.appendTo(content);
-                emailTab.appendTo(content);
+                tabbedQueryPopup(doc, true, t.queryCommentTabUserIsNotified, t.queryEmailTabUserIsNotified, emailTo);
               } else {
-                $(emailTab).attr('id', 'tab-query-1');
-                $(commentTab).attr('id', 'tab-query-2');
-                emailTab.appendTo(content);
-                commentTab.appendTo(content);
+                tabbedQueryPopup(doc, false, t.queryCommentTabUserIsNotNotified, t.queryEmailTabUserIsNotNotified, emailTo);
               }
-              $.fancybox(content);
-              $('#popup-tabs').tabs();
             }
           });
         }
