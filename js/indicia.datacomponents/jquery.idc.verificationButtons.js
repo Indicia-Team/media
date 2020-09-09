@@ -444,7 +444,7 @@
         if (doc.metadata.created_by_id == 1 && emailTo === '' || !emailTo.match(/@/)) {
           // Anonymous record with no valid email.
           tabbedQueryPopup(doc, true, t.queryCommentTabAnonWithoutEmail, t.queryEmailTabAnonWithoutEmail, emailTo);
-        } else if (doc.metadata.created_by_id === 1) {
+        } else if (doc.metadata.created_by_id == 1) {
           // Anonymous record with valid email.
           tabbedQueryPopup(doc, false,t.queryCommentTabAnonWithEmail, t.queryEmailTabAnonWithEmail, emailTo);
         } else {
