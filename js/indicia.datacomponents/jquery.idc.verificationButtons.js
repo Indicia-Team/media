@@ -441,7 +441,7 @@
       doc = JSON.parse($(dataGrid).find('tr.selected').attr('data-doc-source'));
       getCurrentRecordEmail(doc, function callback(emailTo) {
         var t = indiciaData.lang.verificationButtons;
-        if (doc.metadata.created_by_id === 1 && emailTo === '' || !emailTo.match(/@/)) {
+        if (doc.metadata.created_by_id == 1 && emailTo === '' || !emailTo.match(/@/)) {
           // Anonymous record with no valid email.
           tabbedQueryPopup(doc, true, t.queryCommentTabAnonWithoutEmail, t.queryEmailTabAnonWithoutEmail, emailTo);
         } else if (doc.metadata.created_by_id === 1) {
