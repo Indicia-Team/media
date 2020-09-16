@@ -46,9 +46,9 @@
    * Declare default settings.
    */
   var defaults = {
-  };
-
-  var callbacks = {
+    callbacks: {
+      tabShow: []
+    }
   };
 
   var dataGrid;
@@ -359,29 +359,29 @@
     var selectedTr = $(dataGrid).find('tr.selected');
     var doc;
     var activeTab = indiciaFns.activeTab($(el).find('.tabs'));
+    var functions = [
+      loadAttributes,
+      loadComments,
+      loadExperience
+    ];
+    var tabNames = [
+      'Details',
+      'Comments',
+      'Experience'
+    ]
     if (selectedTr.length > 0) {
       doc = JSON.parse(selectedTr.attr('data-doc-source'));
-      switch (activeTab) {
-        case 0:
-          loadAttributes(el);
-          break;
-
-        case 1:
-          loadComments(el);
-          break;
-
-        case 2:
-          loadExperience(el, doc);
-          break;
-
-        default:
-          throw new Error('Invalid tab index');
-      }
+      // Populate the tab.
+      functions[activeTab](el, doc);
+      // Fire callbacks.
+      $.each(el.settings.callbacks.tabShow, function eachCallback() {
+        this(tabNames[activeTab], doc, $(el).find('.tabs .ui-tabs-panel:visible'));
+      });
     }
   }
 
   function tabActivate(event, ui) {
-    loadCurrentTabAjax($(ui.newPanel).closest('.details-container'));
+    loadCurrentTabAjax($(ui.newPanel).closest('.record-details-container')[0]);
   }
 
   /**
@@ -526,7 +526,7 @@
           $(el).find('.empty-message').hide();
           $(el).find('.tabs').show();
           // Load Ajax content depending on the tab.
-          loadCurrentTabAjax($(el));
+          loadCurrentTabAjax(el);
         } else {
           // If no row selected, hide the details tabs.
           $(el).find('.empty-message').show();
@@ -540,10 +540,10 @@
     },
 
     on: function on(event, handler) {
-      if (typeof callbacks[event] === 'undefined') {
+      if (typeof this.settings.callbacks[event] === 'undefined') {
         indiciaFns.controlFail(this, 'Invalid event handler requested for ' + event);
       }
-      callbacks[event].push(handler);
+      this.settings.callbacks[event].push(handler);
     },
 
     /**
