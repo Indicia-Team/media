@@ -1164,6 +1164,7 @@
       drawTableFooter(el, response, data, afterKey);
       fireAfterPopulationCallbacks(el);
       setColWidths(el, maxCharsPerCol);
+      $(el).find('tbody .fancybox').fancybox({ afterLoad: indiciaFns.afterFancyboxLoad });
     },
 
     /**
