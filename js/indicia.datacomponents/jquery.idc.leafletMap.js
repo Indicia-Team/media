@@ -133,20 +133,23 @@
     var config;
     var wkt;
     var obj;
+    var sourceSettings = indiciaData.esSourceObjects[sourceId].settings;
     $.each(layerIds, function eachLayer() {
       var layerConfig = el.settings.layerConfig[this];
       config = {
         type: typeof layerConfig.type === 'undefined' ? 'marker' : layerConfig.type,
         options: {}
       };
-
+      if (sourceSettings.showGeomsAsTooClose) {
+        config.type = 'geom';
+      }
       if (typeof layerConfig.style !== 'undefined') {
         $.extend(config.options, layerConfig.style);
       }
       if (config.type === 'circle' || config.type === 'square' || config.type === 'geom') {
         config.options = $.extend({ radius: 'metric', fillOpacity: 0.5 }, config.options);
-        if (!config.options.size && indiciaData.esSourceObjects[sourceId].settings.mapGridSquareSize) {
-          config.options.size = indiciaData.esSourceObjects[sourceId].settings.mapGridSquareSize;
+        if (!config.options.size && sourceSettings.mapGridSquareSize) {
+          config.options.size = sourceSettings.mapGridSquareSize;
           if (config.options.size === 'autoGridSquareSize') {
             // Calculate according to map zoom.
             config.options.size = $(el).idcLeafletMap('getAutoSquareSize');
