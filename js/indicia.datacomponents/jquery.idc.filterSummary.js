@@ -27,7 +27,7 @@
   indiciaFns.setFilterSummary = function(data) {
 
     var filterDef, selector;
-    if (data) {
+    if (data && data[0]) {
       filterDef = JSON.parse(data[0].definition);
       selector = '#filterSummary-' + data[0].id;
     } else {
