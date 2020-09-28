@@ -694,8 +694,8 @@
         return JSON.stringify(output);
       }
       // Convert response to a string.
-      $.each(output, function eachRow() {
-        text.push(typeof this === 'string' ? this : Object.values(this).join('; '));
+      $.each(output, function eachRow(i, item) {
+        text.push(typeof item === 'string' ? item : Object.values(item).join('; '));
       });
       return text.join(' | ');
     },
