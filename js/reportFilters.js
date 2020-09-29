@@ -588,6 +588,8 @@ jQuery(document).ready(function ($) {
         delete indiciaData.filter.def.indexed_location_list;
         delete indiciaData.filter.def.remembered_location_name;
         delete indiciaData.filter.def.searchArea;
+        delete indiciaData.filter.def.sref;
+        delete indiciaData.filter.def.sref_system;
         delete indiciaData.filter.def['imp-location:name'];
         // if we've got a location name to search for, no need to do anything else as the where filters are exclusive.
         if (indiciaData.filter.def.location_name) {
@@ -620,7 +622,8 @@ jQuery(document).ready(function ($) {
           // ignore features with a special purpose, e.g. the selected record when verifying
           if (typeof feature.tag === 'undefined' &&
              (typeof feature.attributes.type === 'undefined' ||
-             (feature.attributes.type !== 'boundary' && feature.attributes.type !== 'ghost' && feature.attributes.type !== 'clickPoint'))) {
+             (feature.attributes.type !== 'boundary' && feature.attributes.type !== 'ghost') ||
+             (feature.attributes.type === 'clickPoint' && $('#imp-sref').val().trim() !== ''))) {
             // In some cases, custom code adds a buffer to the search area feature.
             thisGeom = typeof feature.buffer === 'undefined' ? feature.geometry : feature.buffer.geometry;
             if (thisGeom.CLASS_NAME.indexOf('Multi') !== -1) {
@@ -631,12 +634,16 @@ jQuery(document).ready(function ($) {
           }
         });
         if (geoms.length > 0) {
-          if (geoms[0].CLASS_NAME === 'OpenLayers.Geometry.Polygon') {
-            geom = new OpenLayers.Geometry.MultiPolygon(geoms);
-          } else if (geoms[0].CLASS_NAME === 'OpenLayers.Geometry.LineString') {
-            geom = new OpenLayers.Geometry.MultiLineString(geoms);
-          } else if (geoms[0].CLASS_NAME === 'OpenLayers.Geometry.Point') {
-            geom = new OpenLayers.Geometry.MultiPoint(geoms);
+          if (geoms.length === 1) {
+            geom = geoms[0];
+          } else {
+            if (geoms[0].CLASS_NAME === 'OpenLayers.Geometry.Polygon') {
+              geom = new OpenLayers.Geometry.MultiPolygon(geoms);
+            } else if (geoms[0].CLASS_NAME === 'OpenLayers.Geometry.LineString') {
+              geom = new OpenLayers.Geometry.MultiLineString(geoms);
+            } else if (geoms[0].CLASS_NAME === 'OpenLayers.Geometry.Point') {
+              geom = new OpenLayers.Geometry.MultiPoint(geoms);
+            }
           }
           if (indiciaData.mapdiv.map.projection.getCode() !== 'EPSG:3857') {
             geom.transform(indiciaData.mapdiv.map.projection, new OpenLayers.Projection('EPSG:3857'));
@@ -645,6 +652,10 @@ jQuery(document).ready(function ($) {
             indiciaData.filter.def.searchArea = geom.toString();
             filterParamsChanged();
           }
+        }
+        if ($('#imp-sref').val().trim() !== '') {
+          indiciaData.filter.def.sref = $('#imp-sref').val().trim();
+          indiciaData.filter.def.sref_system = $('#imp-sref-system').val().trim();
         }
         // cleanup
         delete indiciaData.filter.def['sref:geom'];
