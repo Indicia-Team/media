@@ -1382,6 +1382,14 @@
           });
         }
       }
+      // A group filter may also be provided in the URL (copied into indiciaData).
+      if (indiciaData.group_id) {
+        data.bool_queries.push({
+          bool_clause: 'must',
+          query_type: 'query_string',
+          value: 'metadata.group.id:' + indiciaData.group_id
+        });
+      }
     }
     // Find the map bounds if limited to the viewport of a map and not counting total.
     if (!doingCount && source.settings.filterBoundsUsingMap) {
