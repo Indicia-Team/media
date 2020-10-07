@@ -111,7 +111,11 @@
     var sourceSettings = el.settings.sourceObject.settings;
     var isAggregation = el.settings.sourceObject.settings.mode.match(/Aggregation$/);
     // Note, columnsTemplate can be blank.
-    if (typeof el.settings.columnsTemplate !== 'undefined') {
+    if ($('#' + el.id + '-template').val()) {
+      // If there is an associated download template select control,
+      // set the columns template from its value.
+      data.columnsTemplate = $('#' + el.id + '-template').val();
+    } else if (typeof el.settings.columnsTemplate !== 'undefined') {
       data.columnsTemplate = el.settings.columnsTemplate;
     } else if (isAggregation) {
       // Aggregations default to no columns template.
