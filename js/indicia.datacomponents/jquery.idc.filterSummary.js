@@ -137,6 +137,15 @@
         });
       }
 
+      // surveyFilter control
+      if ($('.survey-filter').length > 0) {
+        $.each($('.survey-filter'), function eachSurveyFilter() {
+          if ($(this).val() && $(this).val() !== 'all') {
+            html = addHtml(html, '<div><b>Limit records to survey:</b> ' + $(this).find('option:selected').text() + '</div>');
+          }
+        });
+      }
+
       // User filters drop down.
       if ($('.user-filter').length > 0) {
         $.each($('.user-filter'), function eachUserFilter() {

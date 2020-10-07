@@ -301,6 +301,20 @@
       if ($('#' + el.id + '-template').val()) {
         currentRequestData['columnsTemplate'] = $('#' + el.id + '-template').val();
       }
+      // Set columnsSurveyId to survey ID if appropriate.
+      if (typeof(el.settings.columnsSurveyId) != "undefined") {
+        if (el.settings.columnsSurveyId) {
+          var surveyID = el.settings.columnsSurveyId;
+        } else {
+          // @columnsSurveyId attribute specified but without a value.
+          // This indicates that survey ID should be taken from the
+          // [surveyFilter] control value if one is on the page.
+          var surveyID = $('.survey-filter').val();
+        }
+        if (surveyID && surveyID !== 'all'){
+          currentRequestData['columnsSurveyId'] = surveyID;
+        }
+      }
       // Post to the ES proxy.
       $.ajax({
         url: indiciaData.esProxyAjaxUrl + '/download/' + indiciaData.nid + query,

@@ -1382,6 +1382,17 @@
           });
         }
       }
+
+      // Apply filters from survey drop-down.
+      if ($('.survey-filter').length > 0) {
+        if ($('.survey-filter').val() !== 'all') {
+          data.bool_queries.push({
+            bool_clause: 'must',
+            query_type: 'query_string',
+            value: 'metadata.survey.id:' + $('.survey-filter').val()
+          });
+        }
+      }
     }
     // Find the map bounds if limited to the viewport of a map and not counting total.
     if (!doingCount && source.settings.filterBoundsUsingMap) {
@@ -1495,7 +1506,7 @@ jQuery(document).ready(function docReady() {
   /**
    * Change event handlers on filter inputs.
    */
-  $('.es-filter-param, .user-filter, .permissions-filter').change(function eachFilter() {
+  $('.es-filter-param, .user-filter, .permissions-filter, .survey-filter').change(function eachFilter() {
     // Force map to update viewport for new data.
     $.each($('.idc-output-idcLeafletMap'), function eachMap() {
       this.settings.initialBoundsSet = false;

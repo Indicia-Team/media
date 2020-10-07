@@ -95,7 +95,7 @@
         return methods.init.apply(this, passedArgs);
       }
       // If we get here, the wrong method was called.
-      $.error('Method ' + methodOrOptions + ' does not exist on jQuery.idcFilterSummary');
+      $.error('Method ' + methodOrOptions + ' does not exist on jQuery.idcPermissionFilters');
       return true;
     });
     // If the method has no explicit response, return this to allow chaining.
