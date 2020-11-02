@@ -25,6 +25,7 @@
 /* eslint no-param-reassign: ["error", { "props": false }]*/
 
 (function enclose() {
+  indiciaData.i = 0;
   'use strict';
   var $ = jQuery;
 
@@ -693,8 +694,8 @@
         return JSON.stringify(output);
       }
       // Convert response to a string.
-      $.each(output, function eachRow() {
-        text.push(typeof this === 'string' ? this : Object.values(this).join('; '));
+      $.each(output, function eachRow(i, item) {
+        text.push(typeof item === 'string' ? item : Object.values(item).join('; '));
       });
       return text.join(' | ');
     },
@@ -1381,21 +1382,26 @@
           });
         }
       }
-    }
-    if (source.settings.aggregation) {
-      // Copy to avoid changing original.
-      $.extend(true, agg, source.settings.aggregation);
-      if (doingCount && source.settings.mode === 'termAggregation' && agg._idfield) {
-        delete agg._idfield.terms.order;
+      // A group filter may also be provided in the URL (copied into indiciaData).
+      if (indiciaData.group_id) {
+        data.bool_queries.push({
+          bool_clause: 'must',
+          query_type: 'query_string',
+          value: 'metadata.group.id:' + indiciaData.group_id
+        });
       }
-      // Find the map bounds if limited to the viewport of a map and not counting total.
-      if (!doingCount && source.settings.filterBoundsUsingMap) {
-        mapToFilterTo = $('#' + source.settings.filterBoundsUsingMap);
-        if (mapToFilterTo.length === 0 || !mapToFilterTo[0].map) {
-          alert('Data source incorrectly configured. @filterBoundsUsingMap does not point to a valid map.');
-        } else {
-          bounds = mapToFilterTo[0].map.getBounds();
-          indiciaFns.findAndSetValue(agg, 'geo_bounding_box', {
+    }
+    // Find the map bounds if limited to the viewport of a map and not counting total.
+    if (!doingCount && source.settings.filterBoundsUsingMap) {
+      mapToFilterTo = $('#' + source.settings.filterBoundsUsingMap);
+      if (mapToFilterTo.length === 0 || !mapToFilterTo[0].map) {
+        alert('Data source incorrectly configured. @filterBoundsUsingMap does not point to a valid map.');
+      } else {
+        bounds = mapToFilterTo[0].map.getBounds();
+        data.bool_queries.push({
+          bool_clause: 'must',
+          query_type: 'geo_bounding_box',
+          value: {
             ignore_unmapped: true,
             'location.point': {
               top_left: {
@@ -1407,8 +1413,20 @@
                 lon: Math.max(-180, Math.min(180, bounds.getEast()))
               }
             }
-          });
-        }
+          }
+        });
+      }
+    }
+    source.settings.showGeomsAsTooClose = source.settings.mode === 'mapGridSquare' && source.settings.switchToGeomsAt
+      && mapToFilterTo[0].map.getZoom() >= source.settings.switchToGeomsAt;
+    if (source.settings.showGeomsAsTooClose) {
+      // Maximum
+      data.size = 10000;
+    } else if (source.settings.aggregation) {
+      // Copy to avoid changing original.
+      $.extend(true, agg, source.settings.aggregation);
+      if (doingCount && source.settings.mode === 'termAggregation' && agg._idfield) {
+        delete agg._idfield.terms.order;
       }
       if (source.settings.mode === 'mapGridSquare') {
         // Set grid square size if auto.

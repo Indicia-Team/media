@@ -133,20 +133,24 @@
     var config;
     var wkt;
     var obj;
+    var sourceSettings = indiciaData.esSourceObjects[sourceId].settings;
+    var size = {};
     $.each(layerIds, function eachLayer() {
       var layerConfig = el.settings.layerConfig[this];
       config = {
         type: typeof layerConfig.type === 'undefined' ? 'marker' : layerConfig.type,
         options: {}
       };
-
+      if (sourceSettings.showGeomsAsTooClose) {
+        config.type = 'geom';
+      }
       if (typeof layerConfig.style !== 'undefined') {
         $.extend(config.options, layerConfig.style);
       }
       if (config.type === 'circle' || config.type === 'square' || config.type === 'geom') {
         config.options = $.extend({ radius: 'metric', fillOpacity: 0.5 }, config.options);
-        if (!config.options.size && indiciaData.esSourceObjects[sourceId].settings.mapGridSquareSize) {
-          config.options.size = indiciaData.esSourceObjects[sourceId].settings.mapGridSquareSize;
+        if (!config.options.size && sourceSettings.mapGridSquareSize) {
+          config.options.size = sourceSettings.mapGridSquareSize;
           if (config.options.size === 'autoGridSquareSize') {
             // Calculate according to map zoom.
             config.options.size = $(el).idcLeafletMap('getAutoSquareSize');
@@ -172,15 +176,21 @@
       }
       // Store type so available in feature details.
       config.options.type = config.type;
+      config.options.className = 'data-' + config.type;
       // Store filter data to apply if feature clicked on.
       if (filterField && filterValue) {
         config.options.filterField = filterField;
         config.options.filterValue = filterValue;
       }
-      if (config.type === 'geom' && geom.indexOf('POINT') === 0) {
-        config.type = 'circle';
-        config.options.radius = 5;
+      if (config.type === 'geom') {
+        if (geom.indexOf('POINT') === 0) {
+          config.type = 'circle';
+          config.options.radius = 5;
+          size.relativeVisual = config.options.radius * Math.pow(10, el.map.getZoom());
+          config.options.weight = Math.max(2, 19 - Math.floor(Math.log10(size.relativeVisual)));
+        }
       }
+
       switch (config.type) {
         // Circle markers on layer.
         case 'circle':
@@ -201,6 +211,10 @@
           wkt = new Wkt.Wkt();
           wkt.read(geom);
           obj = wkt.toObject(config.options);
+          size.x = obj.getBounds().getEast() - obj.getBounds().getWest();
+          size.y = obj.getBounds().getNorth() - obj.getBounds().getSouth();
+          size.relativeVisual = Math.min(size.x, size.y) * Math.pow(10, el.map.getZoom());
+          obj.options.weight = Math.max(2, 14 - Math.floor(Math.log10(size.relativeVisual)));
           obj.addTo(el.outputLayers[this]);
           break;
         // Default layer type is markers.
