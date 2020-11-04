@@ -21,6 +21,10 @@ table.species-grid .hidden-by-dynamic-attr {
   font-size: 120%;
 }
 
+.ui-datepicker-trigger {
+  padding: 0;
+}
+
 #map-container, #filter-map-container {
   position: relative;
 }
@@ -752,6 +756,11 @@ input.findme {
 .control-width-6 {
   width: 500px !important;
   box-sizing: border-box;
+}
+
+/* Datepicker z-index used to set overlay z-index, must appear above map etc. */
+.hasDatepicker {
+  z-index: 2000 !important;
 }
 
 .loading-spinner {

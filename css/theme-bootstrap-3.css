@@ -21,6 +21,10 @@ table.species-grid .hidden-by-dynamic-attr {
   font-size: 120%;
 }
 
+.ui-datepicker-trigger {
+  padding: 0;
+}
+
 #map-container, #filter-map-container {
   position: relative;
 }
@@ -687,6 +691,11 @@ do need to do something.
 */
 #form-params input[type=text], #form-params textarea {
   width: 100%;
+}
+
+/* Datepicker z-index used to set overlay z-index, must appear above map etc. */
+#ui-datepicker-div {
+  z-index: 2000 !important;
 }
 
 .loading-spinner {
