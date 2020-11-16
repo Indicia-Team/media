@@ -1382,18 +1382,6 @@
           });
         }
       }
-
-      // Apply filters from survey drop-down.
-      if ($('.survey-filter').length > 0) {
-        if ($('.survey-filter').val() !== 'all') {
-          data.bool_queries.push({
-            bool_clause: 'must',
-            query_type: 'query_string',
-            value: 'metadata.survey.id:' + $('.survey-filter').val()
-          });
-        }
-      }
-      
       // A group filter may also be provided in the URL (copied into indiciaData).
       if (indiciaData.group_id) {
         data.bool_queries.push({
@@ -1515,7 +1503,7 @@ jQuery(document).ready(function docReady() {
   /**
    * Change event handlers on filter inputs.
    */
-  $('.es-filter-param, .user-filter, .permissions-filter, .survey-filter').change(function eachFilter() {
+  $('.es-filter-param, .user-filter, .permissions-filter').change(function eachFilter() {
     // Force map to update viewport for new data.
     $.each($('.idc-output-idcLeafletMap'), function eachMap() {
       this.settings.initialBoundsSet = false;

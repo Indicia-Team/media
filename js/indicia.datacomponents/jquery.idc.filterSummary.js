@@ -172,23 +172,24 @@
       // Standard params.
       if ($('#standard-params').length > 0) {
         $.each($('#standard-params'), function eachStatusFilter() {
-
-          html = addHtml(html, '<div id="filterSummary-standard-params-header"></div>');
-          html = addHtml(html, '<div id="filterSummary-standard-params"></div>');
-          functionCalls.push({
-            function: function() {
-              setTimeout(function() {
-                var title=$('#active-filter-label').text()
-                if (title) {
-                  $('#filterSummary-standard-params-header').html('<b>Standard filter (' + title + '):</b>') 
-                } else {
-                  $('#filterSummary-standard-params-header').html('<b>Standard filter:</b>') 
-                }
-              }, 100);
-              indiciaFns.setFilterSummary();
-            },
-            arg: null
-          })
+          if (!$(this).hasClass('survey-filter')) {
+            html = addHtml(html, '<div id="filterSummary-standard-params-header"></div>');
+            html = addHtml(html, '<div id="filterSummary-standard-params"></div>');
+            functionCalls.push({
+              function: function() {
+                setTimeout(function() {
+                  var title=$('#active-filter-label').text()
+                  if (title) {
+                    $('#filterSummary-standard-params-header').html('<b>Standard filter (' + title + '):</b>') 
+                  } else {
+                    $('#filterSummary-standard-params-header').html('<b>Standard filter:</b>') 
+                  }
+                }, 100);
+                indiciaFns.setFilterSummary();
+              },
+              arg: null
+            })
+          }
         });
       }
 
