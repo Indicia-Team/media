@@ -169,28 +169,24 @@
         });
       }
 
-      // Standard params.
+      // Standard params
       if ($('#standard-params').length > 0) {
-        $.each($('#standard-params'), function eachStatusFilter() {
-          if (!$(this).hasClass('survey-filter')) {
-            html = addHtml(html, '<div id="filterSummary-standard-params-header"></div>');
-            html = addHtml(html, '<div id="filterSummary-standard-params"></div>');
-            functionCalls.push({
-              function: function() {
-                setTimeout(function() {
-                  var title=$('#active-filter-label').text()
-                  if (title) {
-                    $('#filterSummary-standard-params-header').html('<b>Standard filter (' + title + '):</b>') 
-                  } else {
-                    $('#filterSummary-standard-params-header').html('<b>Standard filter:</b>') 
-                  }
-                }, 100);
-                indiciaFns.setFilterSummary();
-              },
-              arg: null
-            })
-          }
-        });
+        html = addHtml(html, '<div id="filterSummary-standard-params-header"></div>');
+        html = addHtml(html, '<div id="filterSummary-standard-params"></div>');
+        functionCalls.push({
+          function: function() {
+            setTimeout(function() {
+              var title=$('#active-filter-label').text()
+              if (title) {
+                $('#filterSummary-standard-params-header').html('<b>Standard filter (' + title + '):</b>') 
+              } else {
+                $('#filterSummary-standard-params-header').html('<b>Standard filter:</b>') 
+              }
+            }, 100);
+            indiciaFns.setFilterSummary();
+          },
+          arg: null
+        })
       }
 
       // Status filters drop down.
@@ -205,45 +201,47 @@
 
       // es-filter-param controls
       $.each($('.es-filter-param'), function eachParam() {
-        var val = $(this).val();
-        // Skip if no value.
-        if (val === null || val.trim() === '') {
-          return;
-        }
-        // Skip if unchecked checkbox
-        if ($(this).is(':checkbox') && !$(this).is(':checked')) {
-          return;
-        }
-  
-        var esBoolClause = indiciaFns.getDataValueFromInput(this, 'data-es-bool-clause');
-        var esField = indiciaFns.getDataValueFromInput(this, 'data-es-field');
-        var esQueryType = indiciaFns.getDataValueFromInput(this, 'data-es-query-type');
-        var esQuery = indiciaFns.getDataValueFromInput(this, 'data-es-query');
-        var esNested = indiciaFns.getDataValueFromInput(this, 'data-es-nested');
-        var esSummary = indiciaFns.getDataValueFromInput(this, 'data-es-summary');
-        html = addHtml(html, '<div><b>Form filter: </b>');
-        if (esSummary) {
-          html = addHtml(html, esSummary.replace('#value#', '<strong>' + val + '</strong>'));
-        } else {
-          if (esField) {
-            html = addHtml(html, esField + ' ');
+        if (!$(this).hasClass('survey-filter')) {
+          var val = $(this).val();
+          // Skip if no value.
+          if (val === null || val.trim() === '') {
+            return;
           }
-          if (esBoolClause) {
-              html = addHtml(html, esBoolClause + ' ');
+          // Skip if unchecked checkbox
+          if ($(this).is(':checkbox') && !$(this).is(':checked')) {
+            return;
           }
-          if (esQueryType) {
-              html = addHtml(html, esQueryType + ' ');
-          }
-          if (esNested) {
-              html = addHtml(html, esNested + ' ');
-          }
-          if (esQuery) {
-              html = addHtml(html, esQuery.replace('#value#', '<strong>' + val + '</strong>'));
+    
+          var esBoolClause = indiciaFns.getDataValueFromInput(this, 'data-es-bool-clause');
+          var esField = indiciaFns.getDataValueFromInput(this, 'data-es-field');
+          var esQueryType = indiciaFns.getDataValueFromInput(this, 'data-es-query-type');
+          var esQuery = indiciaFns.getDataValueFromInput(this, 'data-es-query');
+          var esNested = indiciaFns.getDataValueFromInput(this, 'data-es-nested');
+          var esSummary = indiciaFns.getDataValueFromInput(this, 'data-es-summary');
+          html = addHtml(html, '<div><b>Form filter: </b>');
+          if (esSummary) {
+            html = addHtml(html, esSummary.replace('#value#', '<strong>' + val + '</strong>'));
           } else {
-              html = addHtml(html, '<strong>' + val + '</strong>');  
+            if (esField) {
+              html = addHtml(html, esField + ' ');
+            }
+            if (esBoolClause) {
+                html = addHtml(html, esBoolClause + ' ');
+            }
+            if (esQueryType) {
+                html = addHtml(html, esQueryType + ' ');
+            }
+            if (esNested) {
+                html = addHtml(html, esNested + ' ');
+            }
+            if (esQuery) {
+                html = addHtml(html, esQuery.replace('#value#', '<strong>' + val + '</strong>'));
+            } else {
+                html = addHtml(html, '<strong>' + val + '</strong>');  
+            }
           }
+          html = addHtml(html, '</div>');
         }
-        html = addHtml(html, '</div>');
       });
 
       $(el).html(html);

@@ -306,7 +306,7 @@
         currentRequestData['columnsTemplate'] = $('#' + el.id + '-template').val();
       }
       // Set columnsSurveyId to survey ID if appropriate.
-      if (typeof(el.settings.columnsSurveyId) != "undefined") {
+      if (typeof(el.settings.columnsSurveyId) !== "undefined") {
         if (el.settings.columnsSurveyId) {
           var surveyID = el.settings.columnsSurveyId;
         } else {
