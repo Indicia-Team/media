@@ -425,13 +425,13 @@ $.Autocompleter = function(input, options) {
       autoFill(q, data[0].value);
       select.show();
       $input.removeClass('error');
-      if (!hasFocus && options.continueOnBlur && data.length===1) {
+      if (!hasFocus && options.continueOnBlur && data.length === 1) {
         selectCurrent();
       }
     } else {
       if (!hasFocus && options.warnIfNoMatch) {
         $input.addClass('error');
-        $input.effect("shake", { times:2, distance:3 }, 150);
+        $input.effect("shake", { times: 2, distance: 3 }, 300);
       }
       hideResultsNow(false);
     }

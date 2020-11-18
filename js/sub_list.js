@@ -85,6 +85,8 @@
     var searchInput = $('#' + escapedId + '\\:search\\:' + escapedCaptionField);
     searchInput.keypress(
       function (e) {
+        searchInput.closest('.ctrl-wrap').removeClass(indiciaData.controlWrapErrorClass);
+        searchInput.removeClass('ui-state-error');
         if (e.which === 13) {
           indiciaFns.addSublistItem(escapedId, escapedCaptionField, fieldname, itemTemplate);
         }
@@ -101,7 +103,9 @@
         if ($('[name="' + escapedId + '\\:allowTermCreationLang"]').length > 0) {
           indiciaFns.addSublistItem(escapedId, escapedCaptionField, fieldname, itemTemplate);
         } else {
-          alert('not saved');
+          searchInput.closest('.ctrl-wrap').addClass(indiciaData.controlWrapErrorClass);
+          searchInput.addClass('ui-state-error');
+          console.log('error');
         }
       }
     });
