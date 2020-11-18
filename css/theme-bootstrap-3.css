@@ -745,6 +745,12 @@ do need to do something.
   z-index: 2000 !important;
 }
 
+.input-group-addon.ctrl-addons button {
+  background: none;
+  border: none;
+  padding: 0;
+}
+
 .loading-spinner {
   position: absolute;
   z-index: 9999;
