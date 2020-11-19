@@ -398,11 +398,11 @@
     }
     // Revert to default in layer config.
     if (layerConfig.forceEnabled) {
-      return true
+      return true;
     } else if (layerConfig.enabled === 'undefined') {
-      return true
+      return true;
     } else {
-      return layerConfig.enabled
+      return layerConfig.enabled;
     }
   }
 
