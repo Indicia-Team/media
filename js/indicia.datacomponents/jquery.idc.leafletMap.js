@@ -390,14 +390,20 @@
    */
   function layerEnabled(el, id, layerConfig) {
     var layerState;
-    if (el.settings.layerState) {
+    if (el.settings.layerState && !layerConfig.forceEnabled) {
       layerState = JSON.parse(el.settings.layerState);
       if (layerState[id]) {
         return layerState[id].enabled;
       }
     }
     // Revert to default in layer config.
-    return typeof layerConfig.enabled === 'undefined' ? true : layerConfig.enabled;
+    if (layerConfig.enabled === 'undefined') {
+      return true
+    } else if (layerConfig.forceEnabled) {
+      return true
+    } else {
+      return layerConfig.enabled
+    }
   }
 
   /**
