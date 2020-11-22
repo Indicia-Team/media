@@ -29,7 +29,6 @@ Javascript functions using jQuery now need to be defined inside a "(function ($)
 This means they cannot normally be seen by the outside world, so in order to make a call to one of these
 functions, we need to assign it to a global variable. */
 
-var addRowToGrid;
 var keyHandler;
 var ConvertControlsToPopup;
 var hook_species_checklist_new_row = [];
@@ -518,7 +517,7 @@ var resetSpeciesTextOnEscape;
     return ctrl;
   };
 
-  addRowToGrid = function (url, gridId, lookupListId, readAuth, formatter) {
+  indiciaFns.addRowToGrid = function (url, gridId, lookupListId, readAuth, formatter) {
     makeSpareRow(gridId, readAuth, lookupListId, url, null, false);
     // Deal with user clicking on edit taxon icon
     indiciaFns.on('click', '.edit-taxon-name', {}, function (e) {
