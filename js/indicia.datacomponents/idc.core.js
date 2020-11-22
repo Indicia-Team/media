@@ -1422,6 +1422,7 @@
     if (source.settings.showGeomsAsTooClose) {
       // Maximum
       data.size = 10000;
+      data._source = ['location.geom', 'location.point', 'location.coordinate_uncertainty_in_meters'];
     } else if (source.settings.aggregation) {
       // Copy to avoid changing original.
       $.extend(true, agg, source.settings.aggregation);
