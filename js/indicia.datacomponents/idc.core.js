@@ -1396,7 +1396,7 @@
       mapToFilterTo = $('#' + source.settings.filterBoundsUsingMap);
       if (mapToFilterTo.length === 0 || !mapToFilterTo[0].map) {
         alert('Data source incorrectly configured. @filterBoundsUsingMap does not point to a valid map.');
-      } else {
+      } else if (!source.settings.initialMapBounds || mapToFilterTo[0].settings.initialBoundsSet) {
         bounds = mapToFilterTo[0].map.getBounds();
         data.bool_queries.push({
           bool_clause: 'must',
