@@ -1,11 +1,32 @@
 /* Theme extension to the default_site.css file which provides Bootstrap 3 optimised style output */
 /* Accessible colour ranges from colorbrewer */
+.add-new-taxon {
+  position: absolute;
+  border-radius: 4px;
+  background: silver;
+  text-align: center;
+  opacity: 0.5;
+  z-index: 999;
+  cursor: pointer;
+}
+.add-new-taxon:hover {
+  opacity: 0.8;
+}
+
 /* Set the species checklist entry grid width to 100% */
 table.species-grid {
   width: 100%;
+  /* Add taxon button alignment. */
 }
 table.species-grid .hidden-by-dynamic-attr {
   display: none;
+}
+table.species-grid .scTaxonCell {
+  position: relative;
+}
+
+#new-taxon-form {
+  max-width: 600px;
 }
 
 .attrs-container {

@@ -1,10 +1,32 @@
+.add-new-taxon {
+  position: absolute;
+  border-radius: 4px;
+  background: silver;
+  text-align: center;
+  opacity: 0.5;
+  z-index: 999;
+  cursor: pointer;
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
 /* Set the species checklist entry grid width to 100% */
 table.species-grid {
   width: 100%;
   .hidden-by-dynamic-attr {
     display: none;
   }
+  /* Add taxon button alignment. */
+  .scTaxonCell {
+    position: relative;
+  }
 }
+
+#new-taxon-form {
+  max-width: 600px;
+}
+
 .attrs-container {
   /* Indent contents */
   padding-left: 30px;
