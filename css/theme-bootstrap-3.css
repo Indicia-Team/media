@@ -737,16 +737,16 @@ table.es-data-grid tfoot span {
   padding-bottom: 15px;
 }
 
-div.form-group {
+#entry_form div.form-group, .indicia-entry-form div.form-group {
   /* Removes last-child reset to zero in default theme overrides. */
 }
-div.form-group p.inline-error {
+#entry_form div.form-group p.inline-error, .indicia-entry-form div.form-group p.inline-error {
   margin-left: 0;
 }
-div.form-group:last-child {
+#entry_form div.form-group:last-child, .indicia-entry-form div.form-group:last-child {
   margin-bottom: 15px;
 }
-div.form-group input[type=checkbox] {
+#entry_form div.form-group input[type=checkbox], .indicia-entry-form div.form-group input[type=checkbox] {
   margin-left: 8px;
   margin-right: 8px;
   font-size: 150%;
