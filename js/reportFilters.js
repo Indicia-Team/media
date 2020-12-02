@@ -862,14 +862,15 @@ jQuery(document).ready(function ($) {
   }
   // Event handler for a draw tool boundary being added which clears the other controls on the map pane.
   function addedFeature() {
+    // Cleanup other spatial filters.
     $('#controls-filter_where').find('#site-type,#location_list\\:search\\:name,#location_name,#imp-sref').val('');
     $('#controls-filter_where').find(':checkbox').attr('checked', false);
+    indiciaData.mapdiv.removeAllFeatures(indiciaData.mapdiv.map.editLayer, 'queryPolygon', true);
     // If a selected site but switching to freehand, we need to clear the site boundary.
     if (siteOrGridRefSelected()) {
       clearSites();
       $('#location_list\\:box').hide();
       indiciaData.mapdiv.map.updateSize();
-      $('#imp-sref').val('');
     }
   }
 
