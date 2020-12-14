@@ -541,11 +541,15 @@
    *   The ES document for the row.
    * @param string text
    *   Text to perform replacements on.
+   * @param obj tokenDefaults
+   *   Each property can be a field name token (e..g [id]) with values being
+   *   the replacement that will be used if no value found for this field in 
+   *   the doc.
    *
    * @return string
    *   Updated text.
    */
-  function applyFieldReplacements(el, doc, text) {
+  function applyFieldReplacements(el, doc, text, tokenDefaults) {
     // Find any field name replacements.
     var fieldMatches = text.match(/\[(.*?)\]/g);
     var updatedText = text;
@@ -570,6 +574,9 @@
           }
         }
         dataVal = indiciaFns.getValueForField(doc, fieldName, fieldDef);
+        if (dataVal === '' && typeof tokenDefaults !== 'undefined' && typeof tokenDefaults['[' + fieldName + ']'] !== 'undefined') {
+          dataVal = tokenDefaults['[' + fieldName + ']'];
+        }
         // Drop out when we find a value.
         return dataVal === '';
       });
@@ -597,6 +604,9 @@
       var item;
       var link;
       var params = [];
+      if (!this.tokenDefaults) {
+        this.tokenDefaults = {};
+      }
       if (typeof this.title === 'undefined') {
         html += '<span class="fas fa-times-circle error" title="Invalid action definition - missing title"></span>';
       } else {
@@ -615,8 +625,8 @@
               params.push(name + '=' + value);
             });
             link += params.join('&');
-          }
-          item = applyFieldReplacements(el, doc, '<a href="' + link + '" title="' + this.title + '">' + item + '</a>');
+          }          
+          item = applyFieldReplacements(el, doc, '<a href="' + link + '" title="' + this.title + '">' + item + '</a>', this.tokenDefaults);
         }
         html += item;
       }
