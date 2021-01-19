@@ -698,7 +698,7 @@ table.es-data-grid tfoot span {
   min-width: 400px;
 }
 
-.field-taxon--accepted-name {
+.field-taxon--accepted-name, .field-taxon--species {
   font-style: italic;
 }
 
