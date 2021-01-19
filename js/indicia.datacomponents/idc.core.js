@@ -1258,6 +1258,23 @@
   }
 
   /**
+   * Apply group reporting filter, e.g. group_id=n?implicit=f in URL.
+   */
+  function applyGroupFilter(data) {
+    if (indiciaData.filter_group_id) {
+      if (typeof indiciaData.filter_group_implicit === 'undefined') {
+        // Apply default, strictest mode.
+        indiciaData.filter_group_implicit = false;
+      }
+      // Proxy will be responsible for filter setup.
+      data.group_filter = {
+        id: indiciaData.filter_group_id,
+        implicit: indiciaData.filter_group_implicit
+      };
+    }
+  }
+
+  /**
    * Retrieve the value of a named data attribute from an input.
    *
    * If the input is a select, then the selected option can override the
@@ -1382,14 +1399,7 @@
           });
         }
       }
-      // A group filter may also be provided in the URL (copied into indiciaData).
-      if (indiciaData.group_id) {
-        data.bool_queries.push({
-          bool_clause: 'must',
-          query_type: 'query_string',
-          value: 'metadata.group.id:' + indiciaData.group_id
-        });
-      }
+      applyGroupFilter(data);
     }
     // Find the map bounds if limited to the viewport of a map and not counting total.
     if (!doingCount && source.settings.filterBoundsUsingMap) {
