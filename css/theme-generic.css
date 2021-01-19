@@ -1,11 +1,32 @@
 /* Theme extension to the default_site.css file which provides the default Indicia style output */
 /* Accessible colour ranges from colorbrewer */
+.add-new-taxon {
+  position: absolute;
+  border-radius: 4px;
+  background: silver;
+  text-align: center;
+  opacity: 0.5;
+  z-index: 999;
+  cursor: pointer;
+}
+.add-new-taxon:hover {
+  opacity: 0.8;
+}
+
 /* Set the species checklist entry grid width to 100% */
 table.species-grid {
   width: 100%;
+  /* Add taxon button alignment. */
 }
 table.species-grid .hidden-by-dynamic-attr {
   display: none;
+}
+table.species-grid .scTaxonCell {
+  position: relative;
+}
+
+#new-taxon-form {
+  max-width: 600px;
 }
 
 .attrs-container {
@@ -21,12 +42,63 @@ table.species-grid .hidden-by-dynamic-attr {
   font-size: 120%;
 }
 
+.ui-datepicker-trigger {
+  padding: 0;
+}
+
 #map-container, #filter-map-container {
   position: relative;
 }
 
 .layer_list ul li label.layer-title {
   display: initial;
+}
+
+#map-footer {
+  background-color: #cccccc;
+  padding: 0;
+  box-sizing: border-box;
+}
+#map-footer .grid-ref-hint {
+  opacity: 0;
+}
+#map-footer > span, #map-footer > div {
+  font-size: 1em;
+  font-family: arial, sans-serif;
+  margin: 0;
+  float: left;
+  box-sizing: border-box;
+}
+#map-footer > span {
+  width: 25%;
+  background-color: #bbbbbb;
+}
+#map-footer > div {
+  width: 27%;
+}
+#map-footer > div span {
+  white-space: nowrap;
+  padding: 0 2px;
+}
+#map-footer > div span.data {
+  background-color: #e7e7e7;
+  border: solid 1px #aaaaaa;
+}
+#map-footer > div.active span.data {
+  background-color: #ffffcc;
+  color: #0000ff;
+}
+#map-footer > div.hint-normal {
+  width: 21%;
+}
+
+/* Simplify to remove label if no space on 2 column layout */
+.columns #map-footer > span {
+  display: none;
+}
+.columns #map-footer > div {
+  width: 33%;
+  font-size: 9px;
 }
 
 table.report-grid {
@@ -626,7 +698,7 @@ table.es-data-grid tfoot span {
   min-width: 400px;
 }
 
-.field-taxon--accepted-name {
+.field-taxon--accepted-name, .field-taxon--species {
   font-style: italic;
 }
 
@@ -752,6 +824,11 @@ input.findme {
 .control-width-6 {
   width: 500px !important;
   box-sizing: border-box;
+}
+
+/* Datepicker z-index used to set overlay z-index, must appear above map etc. */
+.hasDatepicker {
+  z-index: 2000 !important;
 }
 
 .loading-spinner {

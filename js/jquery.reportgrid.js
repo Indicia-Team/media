@@ -941,7 +941,7 @@
             });
             indiciaData.reportlayer.addFeatures(features);
             indiciaData.mapdiv.reapplyQuery();
-            if (indiciaData.mapdiv.settings.zoomMapToOutput) {
+            if (indiciaData.mapdiv.settings.zoomMapToOutput && features.length > 0) {
               indiciaData.disableMapDataLoading = true;
               indiciaData.mapdiv.map.zoomToExtent(indiciaData.reportlayer.getDataExtent());
               // zoomMapToOutput is one off.

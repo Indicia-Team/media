@@ -695,9 +695,12 @@ jQuery(document).ready(function ($) {
             siteType = 'my';
           }
           if ($('#site-type').val() !== siteType) {
-            $('#site-type').val(siteType);
-            changeSiteType();
+            $('#site-type').val(siteType);            
           }
+          changeSiteType();
+          loadSites(locationsToLoad);
+        } else if (indiciaData.filter.def.searchArea && indiciaData.mapdiv) {
+          loadPolygon(indiciaData.filter.def.searchArea);
         }
         if (siteOrGridRefSelected()) {
           // don't want to be able to edit a loaded site boundary or grid reference
@@ -731,20 +734,12 @@ jQuery(document).ready(function ($) {
       loadFilter: function () {
         var filter;
         var map;
-        var parser;
-        var feature;
         var locationsToLoad;
         if (typeof indiciaData.mapdiv !== 'undefined') {
           filter = indiciaData.filter.def;
           map = indiciaData.mapdiv.map;
           if (filter.searchArea) {
-            parser = new OpenLayers.Format.WKT();
-            feature = parser.read(filter.searchArea);
-            if (map.projection.getCode() !== indiciaData.mapdiv.indiciaProjection.getCode()) {
-              feature.geometry.transform(indiciaData.mapdiv.indiciaProjection, map.projection);
-            }
-            map.editLayer.addFeatures([feature]);
-            map.zoomToExtent(map.editLayer.getDataExtent());
+            loadPolygon(filter.searchArea);
           } else if (filter.location_id || filter.location_list || filter.indexed_location_id || filter.indexed_location_list) {
             // need to load filter location boundaries onto map. Location_id variants are for legacy
             if (filter.location_id && !filter.location_list) {
@@ -862,14 +857,15 @@ jQuery(document).ready(function ($) {
   }
   // Event handler for a draw tool boundary being added which clears the other controls on the map pane.
   function addedFeature() {
+    // Cleanup other spatial filters.
     $('#controls-filter_where').find('#site-type,#location_list\\:search\\:name,#location_name,#imp-sref').val('');
     $('#controls-filter_where').find(':checkbox').attr('checked', false);
+    indiciaData.mapdiv.removeAllFeatures(indiciaData.mapdiv.map.editLayer, 'queryPolygon', true);
     // If a selected site but switching to freehand, we need to clear the site boundary.
     if (siteOrGridRefSelected()) {
       clearSites();
       $('#location_list\\:box').hide();
       indiciaData.mapdiv.map.updateSize();
-      $('#imp-sref').val('');
     }
   }
 
@@ -918,6 +914,17 @@ jQuery(document).ready(function ($) {
     } else {
       map.editLayer.removeAllFeatures();
     }
+  }
+
+  function loadPolygon(wkt) {
+    var parser = new OpenLayers.Format.WKT();
+    var feature = parser.read(wkt);
+    var map = indiciaData.mapdiv.map;
+    if (map.projection.getCode() !== indiciaData.mapdiv.indiciaProjection.getCode()) {
+      feature.geometry.transform(indiciaData.mapdiv.indiciaProjection, map.projection);
+    }
+    map.editLayer.addFeatures([feature]);
+    map.zoomToExtent(map.editLayer.getDataExtent());
   }
 
   function loadSites(idsToSelect, doClear) {

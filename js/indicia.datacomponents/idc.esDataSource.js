@@ -51,10 +51,32 @@ var IdcEsDataSource;
     var modeSpecificSetupFns = {};
 
     /**
-     * List of tabs that this source is due to populate on activation of.
+     * List of tabs which were initially hidden but contain controls with sources that need to be
+     * populated when the tab shows.
      */
-    var boundToTabs = [];
+    var hiddenTabSources = {};
 
+    /**
+     * Tab select event handler. 
+     * 
+     * Populates sources for controls where the population was delayed because the tab was initially hidden.
+     */
+    function tabSelectFn(e, tabInfo) {
+      // Does the selected tab have unpopulated sources?
+      if (hiddenTabSources[tabInfo.newPanel[0].id]) {
+        $.each(hiddenTabSources[tabInfo.newPanel[0].id], function() {
+          var src = this[0];
+          // If only populating 1 control, apply that limit, otherwise all controls for source are 
+          // populated.
+          var onlyForControl = this[1];
+          src.prepare();
+          doPopulation.call(src, false, onlyForControl);
+        });
+        // Clear the sources to populate for this tab.
+        hiddenTabSources[tabInfo.newPanel[0].id] = [];
+      }
+    }
+    
     /**
      * Some generic preparation for modes that aggregate data.
      */
@@ -336,6 +358,13 @@ var IdcEsDataSource;
       if (source.settings.after_key) {
         indiciaFns.findValue(request, 'composite').after = source.settings.after_key;
       }
+      // Proxy layer caching support.
+      if (this.settings.proxyCacheTimeout) {
+        request.proxyCacheTimeout = this.settings.proxyCacheTimeout;
+        // This happens only on initial page load as no point caching custom
+        // filters on AJAX updates.
+        delete this.settings.proxyCacheTimeout;
+      }
       // Don't repopulate if exactly the same request as already loaded.
       if (request && (JSON.stringify(request) !== lastRequestStr || force)) {
         lastRequestStr = JSON.stringify(request);
@@ -463,27 +492,24 @@ var IdcEsDataSource;
         $.each(src.outputs[pluginClass], function eachOutput() {
           var output = this;
           var populateThis = $(output)[pluginClass]('getNeedsPopulation', src);
-          if ($(output).parents('.ui-tabs-panel:hidden').length > 0) {
-            // Don't bother if on a hidden tab.
+          var tabSet;
+          var tab;
+          // If on a hidden tab, we'll save the population for when the tab is shown.
+          if ($(output).closest('.ui-tabs-panel:hidden').length > 0) {
+            tab = $(output).closest('.ui-tabs-panel:hidden')[0];
+            var tabSet = $(tab).closest('.ui-tabs');
+            // This output does not want to be populated yet.
             populateThis = false;
-            $.each($(output).parents('.ui-tabs-panel:hidden'), function eachHiddenTab() {
-              var tab = this;
-              var tabSelectFn;
-              var index;
-              if ($.inArray(tab.id, boundToTabs) === -1) {
-                tabSelectFn = function eachTabSet(e, tabInfo) {
-                  if (tabInfo.newPanel[0] === tab) {
-                    $(output).find('.loading-spinner').show();
-                    src.prepare();
-                    doPopulation.call(src, force, onlyForControl);
-                    indiciaFns.unbindTabsActivate($(tab).closest('.ui-tabs'), tabSelectFn);
-                    boundToTabs = boundToTabs.splice(index, $.inArray(tab.id, boundToTabs));
-                  }
-                };
-                indiciaFns.bindTabsActivate($(tab).closest('.ui-tabs'), tabSelectFn);
-                boundToTabs.push(tab.id);
-              }
-            });
+            // Track the tab and source that needs population.
+            if (!hiddenTabSources[tab.id]) {
+              hiddenTabSources[tab.id] = [];
+            }
+            hiddenTabSources[tab.id].push([src, onlyForControl ? onlyForControl : false]);
+            // Hook up a tab activation event handler.
+            if ($(tabSet).prop('data-src-fn-bound') !== 'true') {
+              indiciaFns.bindTabsActivate(tabSet, tabSelectFn);
+              $(tabSet).prop('data-src-fn-bound', 'true');
+            }
           }
           needsPopulation = needsPopulation || populateThis;
           if (populateThis) {

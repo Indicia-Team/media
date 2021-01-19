@@ -2,21 +2,22 @@
 #controls > div {
   padding-bottom: $form-group-margin-bottom;
 }
-div.form-group {
-  p.inline-error {
-    margin-left: 0;
-  }
-  /* Removes last-child reset to zero in default theme overrides. */
-  &:last-child {
-    margin-bottom: $form-group-margin-bottom;
-  }
-  input[type="checkbox"] {
-    margin-left: 8px;
-    margin-right: 8px;
-    font-size: 150%;
+#entry_form, #indicia-entry-form {
+  div.form-group {
+    p.inline-error {
+      margin-left: 0;
+    }
+    /* Removes last-child reset to zero in default theme overrides. */
+    &:last-child {
+      margin-bottom: $form-group-margin-bottom;
+    }
+    input[type="checkbox"] {
+      margin-left: 8px;
+      margin-right: 8px;
+      font-size: 150%;
+    }
   }
 }
-
 /*
 Although we don't want to allow control-width classes to override Bootstrap
 behaviour, the Edit tab of Indicia pages doesn't load using Bootstrap so we
@@ -25,5 +26,27 @@ do need to do something.
 #form-params {
   input[type="text"], textarea {
     width: 100%;
+  }
+}
+/* Datepicker z-index used to set overlay z-index, must appear above map etc. */
+#ui-datepicker-div {
+  z-index: 99999 !important;
+}
+
+.input-group-addon.ctrl-addons {
+  // Buttons inside input group addon don't need own border.
+  button {
+    background: none;
+    border: none;
+    padding: 0;
+    outline: none;
+    &:hover,
+    &:focus,
+    &:active {
+      background: none;
+      border: none;
+      padding: 0;
+      outline: none;
+    }
   }
 }

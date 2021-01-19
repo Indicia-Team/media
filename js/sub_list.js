@@ -50,9 +50,13 @@
       caption = $.trim(search$.val());
       value = $('#' + escapedId + '\\:search').val();
     }
-    if ($('#' + escapedId + '\\:addToTable').length > 0) {
-      // addToTable mode, so pass text captions
-      value = caption;
+    if (caption === '') {
+      return;
+    }
+    if ($('[name="' + escapedId + '\\:allowTermCreationLang"]').length > 0) {
+      // allowTermCreation mode, so pass text captions.
+      value = 'createTerm:' + caption;
+      caption = caption + '<span title="new term">*</a>';
     }
     if (value !== '' && caption !== '') {
       sublist$ = $('#' + escapedId + '\\:sublist');
@@ -67,7 +71,6 @@
         search$.val('');
         $('#' + escapedId + '\\:search').val('');
       }
-      search$.focus();
     }
   };
 
@@ -79,8 +82,11 @@
    * @param itemTemplate
    */
   indiciaFns.initSubList = function (escapedId, escapedCaptionField, fieldname, itemTemplate) {
-    $('#' + escapedId + '\\:search\\:' + escapedCaptionField).keypress(
+    var searchInput = $('#' + escapedId + '\\:search\\:' + escapedCaptionField);
+    searchInput.keypress(
       function (e) {
+        searchInput.closest('.ctrl-wrap').removeClass(indiciaData.controlWrapErrorClass);
+        searchInput.removeClass('ui-state-error');
         if (e.which === 13) {
           indiciaFns.addSublistItem(escapedId, escapedCaptionField, fieldname, itemTemplate);
         }
@@ -89,6 +95,19 @@
 
     $('#' + escapedId + '\\:add').click(function () {
       indiciaFns.addSublistItem(escapedId, escapedCaptionField, fieldname, itemTemplate);
+      searchInput.focus();
+    });
+
+    searchInput.blur(function () {
+      if ($(this).val().trim() !== '') {
+        if ($('[name="' + escapedId + '\\:allowTermCreationLang"]').length > 0) {
+          indiciaFns.addSublistItem(escapedId, escapedCaptionField, fieldname, itemTemplate);
+        } else {
+          searchInput.closest('.ctrl-wrap').addClass(indiciaData.controlWrapErrorClass);
+          searchInput.addClass('ui-state-error');
+          console.log('error');
+        }
+      }
     });
 
     indiciaFns.on('click', '#' + escapedId + '\\:sublist span.ind-delete-icon', null,

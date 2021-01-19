@@ -410,7 +410,6 @@ $.Autocompleter = function(input, options) {
     var regexpSimple;
     var valueOrig;
     var regexpOrig;
-    var idx;
     if (data && data.length) {
       // escape special characters in matching regexp. 2 versions - one simplified, one not.
       valueSimple = simplify($input.val()).toLowerCase().replace(/[\[\]\\\^\$\.\|\?\+\(\)]/g, '\\$&');
@@ -425,15 +424,23 @@ $.Autocompleter = function(input, options) {
       autoFill(q, data[0].value);
       select.show();
       $input.removeClass('error');
-      if (!hasFocus && options.continueOnBlur && data.length===1) {
+      if (!hasFocus && options.continueOnBlur && data.length === 1) {
         selectCurrent();
       }
+      // @todo Replace following with hookTaxonLookupSucceeded.
+      $($input).parent().find('.add-new-taxon').remove();
     } else {
       if (!hasFocus && options.warnIfNoMatch) {
         $input.addClass('error');
-        $input.effect("shake", { times:2, distance:3 }, 150);
+        $input.effect("shake", { times: 2, distance: 3 }, 300);
       }
       hideResultsNow(false);
+      if (indiciaFns.hookTaxonLookupFailed && options.url.match(/\/taxa_search$/)) {
+        // Taxon lookup failures can trigger hook functions.
+        $.each(indiciaFns.hookTaxonLookupFailed, function() {
+          this(input);
+        });
+      }
     }
   };
 

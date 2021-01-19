@@ -29,7 +29,6 @@ Javascript functions using jQuery now need to be defined inside a "(function ($)
 This means they cannot normally be seen by the outside world, so in order to make a call to one of these
 functions, we need to assign it to a global variable. */
 
-var addRowToGrid;
 var keyHandler;
 var ConvertControlsToPopup;
 var hook_species_checklist_new_row = [];
@@ -289,7 +288,7 @@ var resetSpeciesTextOnEscape;
   }
 
   // Create an inner function for adding blank rows to the bottom of the grid
-  var makeSpareRow = function(gridId, readAuth, lookupListId, url, evt, scroll, keycode, force) {
+  var makeSpareRow = function(gridId, lookupListId, scroll, force) {
 
     /**
      * Function fired when return pressed in the species selector - adds a new row and focuses it. Must be enclosed so that
@@ -299,7 +298,7 @@ var resetSpeciesTextOnEscape;
       var rows = $(e.currentTarget).parents('tbody').children();
       var rowIndex = rows.index($(e.currentTarget).parents('tr')[0]);
       if (rowIndex === rows.length - 1) {
-        var ctrl = makeSpareRow(gridId, readAuth, lookupListId, url, null, true, 13, true);
+        var ctrl = makeSpareRow(gridId, lookupListId, true, true);
         // is return key pressed, if so focus next row
         setTimeout(function () { $(ctrl).focus(); });
       } else {
@@ -390,7 +389,7 @@ var resetSpeciesTextOnEscape;
         // last row in the grid (as the user might be typing ahead), use the presence checkbox to extract the row unique ID.
         rowId = checkbox[0].id.match(/sc:([a-z0-9\-]+)/)[1];
         subSpeciesCellIdBeginsWith = 'sc:' + rowId + ':';
-        createSubSpeciesList(url, data.preferred_taxa_taxon_list_id, data.preferred_taxon, lookupListId, subSpeciesCellIdBeginsWith, readAuth, 0);
+        createSubSpeciesList(data.preferred_taxa_taxon_list_id, data.preferred_taxon, lookupListId, subSpeciesCellIdBeginsWith, 0);
       }
       if (indiciaData['enableDynamicAttrs-' + gridId]) {
         if (!indiciaData['limitDynamicAttrsTaxonGroupIds-' + gridId] ||
@@ -404,7 +403,7 @@ var resetSpeciesTextOnEscape;
         }
       }
       // Finally, a blank row is added for the next record
-      makeSpareRow(gridId, readAuth, lookupListId, url, null, true);
+      makeSpareRow(gridId, lookupListId, true);
       // When user selects a taxon then the new row is created, we want to copy data into that new row from previous row
       // automatically. when the option to do so is set.
       if (indiciaData['copyDataFromPreviousRow-' + gridId]) {
@@ -518,8 +517,8 @@ var resetSpeciesTextOnEscape;
     return ctrl;
   };
 
-  addRowToGrid = function (url, gridId, lookupListId, readAuth, formatter) {
-    makeSpareRow(gridId, readAuth, lookupListId, url, null, false);
+  indiciaFns.addRowToGrid = function (gridId, lookupListId) {
+    makeSpareRow(gridId, lookupListId, false);
     // Deal with user clicking on edit taxon icon
     indiciaFns.on('click', '.edit-taxon-name', {}, function (e) {
       var row = $($(e.target).parents('tr:first'));
@@ -958,13 +957,13 @@ var resetSpeciesTextOnEscape;
 
 })(jQuery);
 
-function createSubSpeciesList(url, selectedItemPrefId, selectedItemPrefName, lookupListId,
-  subSpeciesCtrlIdBeginsWith, readAuth, selectedChild) {
+function createSubSpeciesList(selectedItemPrefId, selectedItemPrefName, lookupListId,
+  subSpeciesCtrlIdBeginsWith, selectedChild) {
   'use strict';
   var subSpeciesData = {
     mode: 'json',
-    nonce: readAuth.nonce,
-    auth_token: readAuth.auth_token,
+    nonce: indiciaData.read.nonce,
+    auth_token: indiciaData.read.auth_token,
     parent_id: selectedItemPrefId,
     taxon_list_id: lookupListId,
     name_type: 'L',
@@ -972,7 +971,7 @@ function createSubSpeciesList(url, selectedItemPrefId, selectedItemPrefName, loo
   };
   var ctrl = jQuery('[id^=' + subSpeciesCtrlIdBeginsWith.replace(/:/g, '\\:') + '][id$=\\:occurrence\\:subspecies]');
   if (ctrl.length > 0) {
-    jQuery.getJSON(url + '/cache_taxon_searchterm?callback=?', subSpeciesData,
+    jQuery.getJSON(indiciaData.read.url + 'index.php/services/data/cache_taxon_searchterm?callback=?', subSpeciesData,
       function (data) {
         var sspRegexString;
         var epithet;
