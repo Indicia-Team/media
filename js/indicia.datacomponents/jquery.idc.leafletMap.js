@@ -244,7 +244,7 @@
   /**
    * Adds a Wkt geometry to the map.
    */
-  function showFeatureWkt(el, geom, zoom, style) {
+  function showFeatureWkt(el, geom, zoom, maxZoom, style) {
     var centre;
     var wkt = new Wkt.Wkt();
     var obj;
@@ -265,7 +265,7 @@
     if (!zoom) {
       el.map.panTo(centre);
     } else if (wkt.type === 'polygon' || wkt.type === 'multipolygon') {
-      el.map.fitBounds(obj.getBounds(), { maxZoom: 11 });
+      el.map.fitBounds(obj.getBounds(), { maxZoom: maxZoom });
     } else {
       el.map.setView(centre, 11);
     }
@@ -285,7 +285,7 @@
     if (tr) {
       doc = JSON.parse($(tr).attr('data-doc-source'));
       if (doc.location) {
-        obj = showFeatureWkt(el, doc.location.geom, zoom);
+        obj = showFeatureWkt(el, doc.location.geom, zoom, 11);
         ensureFeatureClear(el, obj);
         selectedRowMarker = obj;
       }
@@ -744,13 +744,13 @@
 
     /**
      * Shows a selected feature boundary (e.g. a selected location).
-     * */
+     */
     showFeature: function showFeature(geom, zoom) {
       if (selectedFeature) {
         selectedFeature.removeFrom(this.map);
         selectedFeature = null;
       }
-      selectedFeature = showFeatureWkt(this, geom, zoom, {
+      selectedFeature = showFeatureWkt(this, geom, zoom, 14, {
         color: '#3333DD',
         fillColor: '#4444CC',
         fillOpacity: 0.05
