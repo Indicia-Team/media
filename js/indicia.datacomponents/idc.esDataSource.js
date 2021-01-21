@@ -57,8 +57,8 @@ var IdcEsDataSource;
     var hiddenTabSources = {};
 
     /**
-     * Tab select event handler. 
-     * 
+     * Tab select event handler.
+     *
      * Populates sources for controls where the population was delayed because the tab was initially hidden.
      */
     function tabSelectFn(e, tabInfo) {
@@ -66,7 +66,7 @@ var IdcEsDataSource;
       if (hiddenTabSources[tabInfo.newPanel[0].id]) {
         $.each(hiddenTabSources[tabInfo.newPanel[0].id], function() {
           var src = this[0];
-          // If only populating 1 control, apply that limit, otherwise all controls for source are 
+          // If only populating 1 control, apply that limit, otherwise all controls for source are
           // populated.
           var onlyForControl = this[1];
           src.prepare();
@@ -76,7 +76,7 @@ var IdcEsDataSource;
         hiddenTabSources[tabInfo.newPanel[0].id] = [];
       }
     }
-    
+
     /**
      * Some generic preparation for modes that aggregate data.
      */
@@ -372,7 +372,7 @@ var IdcEsDataSource;
         // Pass through additional parameters to the request.
         if (source.settings.filterPath) {
           // Filter path allows limiting of content in the response.
-          url += url.indexOf('?') === false ? '?' : '&';
+          url += url.indexOf('?') === -1 ? '?' : '&';
           url += 'filter_path=' + source.settings.filterPath;
         }
         $.ajax({
@@ -482,7 +482,7 @@ var IdcEsDataSource;
     IdcEsDataSource.prototype.populate = function datasourcePopulate(force, onlyForControl) {
       var src = this;
       var needsPopulation = false;
-      if (!src.outputs) {
+      if (!src.outputs || src.settings.disabled) {
         // Not initialised yet, so don't populate.
         return;
       }
