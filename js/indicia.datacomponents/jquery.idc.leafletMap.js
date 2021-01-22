@@ -832,4 +832,24 @@
     // If the method has no explicit response, return this to allow chaining.
     return typeof result === 'undefined' ? this : result;
   };
+
+  /**
+   * Loads the boundary defined by a report filter.
+   *
+   * Can be either from a location ID, or a search area polygon. Must be run
+   * after the map has initialised.
+   */
+  indiciaFns.loadReportBoundaries = function() {
+    if (indiciaData.reportBoundaries) {
+      $.each($('.idc-output-leafletMap'), function eachMap() {
+        var map = this;
+        if (!map.settings.initialBoundsSet) {
+          $.each(indiciaData.reportBoundaries, function eachBoundary() {
+            $(map).idcLeafletMap('showFeature', this, true);
+          });
+          map.settings.initialBoundsSet = true;
+        }
+      });
+    }
+  }
 }());
