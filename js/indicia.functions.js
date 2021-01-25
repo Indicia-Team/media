@@ -531,6 +531,102 @@ if (typeof window.indiciaData === 'undefined') {
       childSelect.change();
     }
   };
+
+  /**
+   * When a taxon has been auto-blurred, appends an icon and hidden input to set blur.
+   *
+   * @param DOM el
+   *   Element to append icon and hidden input to.
+   * @param string inputName
+   *   Name of the hidden input to set sensitivity blur.
+   */
+  function appendSensitiveInfoTo(el, inputName) {
+    $(el).append('<i class="fas fa-exclamation-triangle" title="' + indiciaData.lang.sensitivityScratchpad.sensitiveMessage + '"></i>');
+    $(el).append('<input name="' + inputName + '" type="hidden" value="10000" />');
+  }
+
+  function checkIfSingleTaxonSensitive(e) {
+    var val = $(e.currentTarget).val();
+    if ($.inArray(val, indiciaData.scratchpadBlurList) !== -1) {
+      // If we have a sensitivity control, use that to show sensitive information.
+      if ($('#sensitive-checkbox').length > 0) {
+        $('#sensitive-checkbox').prop('checked', 'checked');
+        $('#sensitive-checkbox').trigger('change');
+        $('#sensitive-blur').val(indiciaData.scratchpadBlursTo);
+        $('#sensitivity-controls').after('<div class="alert alert-warning">' +
+          indiciaData.lang.sensitivityScratchpad.sensitiveMessage + '</div>');
+      } else {
+        // No sensitivity input on the form. So, add warning direct to species input.
+        appendSensitiveInfoTo($('#occurrence\\:taxa_taxon_list_id').parent(), 'occurrence:sensitivity_precision');
+      }
+    }
+  }
+
+  /**
+   * Hook for added taxa in species checklist - sets sensitivity.
+   */
+  function checkAddedSpeciesSensitive(data, row) {
+    var sensitivityControl;
+    var taxonControl;
+    var rect;
+    var tooltip;
+    var tooltipRect;
+    var name;
+    var topPos;
+    if ($.inArray(data.taxa_taxon_list_id, indiciaData.scratchpadBlurList) !== -1) {
+      sensitivityControl = $(row).find('.scSensitivity');
+      taxonControl = $(row).find('.scTaxonCell');
+      if (sensitivityControl.length) {
+        rect = sensitivityControl[0].getBoundingClientRect();
+      } else {
+        rect = taxonControl[0].getBoundingClientRect();
+      }
+      tooltip = $('<div class="ui-tip below-left tip-sensitive">' +
+      indiciaData.lang.sensitivityScratchpad.sensitiveMessage + '</div>')
+        .appendTo('body');
+      tooltipRect = tooltip[0].getBoundingClientRect();
+      // Position the tip.
+      if (tooltip.width() > 300) {
+        tooltip.css({ width: '300px' });
+      }
+      topPos = rect.bottom + 8;
+      if (topPos + tooltipRect.height > $(window).height()) {
+        topPos = rect.top - (tooltipRect.height + 4);
+      }
+      topPos += $(window).scrollTop();
+      // Fade the tip in and out.
+      tooltip.css({
+        display: 'none',
+        left: rect.right - tooltipRect.width,
+        top: topPos
+      }).fadeIn(400, function () {
+        $(this).delay(2000).fadeOut('slow', function() {
+          tooltip.remove();
+        });
+      });
+      if (sensitivityControl.length) {
+        $(sensitivityControl).val(indiciaData.scratchpadBlursTo);
+      } else {
+        name = $(row).find('.scPresence').attr('name').replace(/:present$/, ':occurrence:sensitivity_precision');
+        appendSensitiveInfoTo(taxonControl, name);
+      }
+    }
+  }
+
+  /**
+   * Enables use of a loaded scratchpad list to identify sensitive species as they are input.
+   *
+   * See [sensitivity_scratchpad] control on dynamic_sample_occurrence.php.
+   */
+  indiciaFns.enableScratchpadBlurList = function enableScratchpadBlurList() {
+    if (indiciaData.scratchpadBlurList && $('#occurrence\\:taxa_taxon_list_id').length > 0) {
+      $('#occurrence\\:taxa_taxon_list_id').change(checkIfSingleTaxonSensitive);
+    }
+    if (indiciaData.scratchpadBlurList && typeof hook_species_checklist_new_row !== 'undefined') {
+      hook_species_checklist_new_row.push(checkAddedSpeciesSensitive);
+    }
+  };
+
 }(jQuery));
 
 jQuery(document).ready(function ($) {
