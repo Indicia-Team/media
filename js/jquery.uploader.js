@@ -22,7 +22,7 @@ var mediaUploadAddedHooks = [];
  * Form submit handler that prevents the user clicking save during an upload
  */
 var checkSubmitInProgress = function () {
-  if ($('.file-box .progress').length!==0) {
+  if ($('.file-box .progress').val() !== 0) {
     alert('Please wait till your images have finished uploading before submitting the form.');
     indiciaData.formSubmitted = false;
     return false;
@@ -299,7 +299,7 @@ var checkSubmitInProgress = function () {
               .replace(/\{filename\}/g, file.media_type.match(/^(Audio|Pdf):/) ? div.settings.msgFile : div.settings.msgPhoto)
               .replace(/\{imagewidth\}/g, div.settings.imageWidth);
           $('#' + div.id.replace(/:/g,'\\:') + ' .filelist').append(existing);
-          $('#' + uniqueId + ' .progress').remove();
+          $('#' + uniqueId + ' .progress-wrapper').remove();
           if (file.id === '') {
             thumbnailfilepath = div.settings.destinationFolder + file.path;
           }
@@ -373,7 +373,8 @@ var checkSubmitInProgress = function () {
           );
           // change the file name to be unique & lowercase, since the warehouse lowercases files
           file.name=(plupload.guid()+'.'+ext).toLowerCase();
-          $('#' + file.id + ' .progress-bar').progressbar ({value: 0});
+          $('#' + file.id + ' .progress').val(0);
+          $('#' + file.id + ' .progress').text('0 %');
           var msg='Resizing...';
           if (div.settings.resizeWidth===0 || div.settings.resizeHeight===0 || typeof div.uploader.features.jpgresize === "undefined") {
             msg='Uploading...';
@@ -387,7 +388,8 @@ var checkSubmitInProgress = function () {
 
       // As a file uploads, update the progress bar and percentage indicator
       this.uploader.bind('UploadProgress', function(up, file) {
-        $('#' + file.id + ' .progress-bar').progressbar ('option', 'value', file.percent);
+        $('#' + file.id + ' .progress').val(file.percent);
+        $('#' + file.id + ' .progress').text(file.percent + ' %');
         $('#' + file.id + ' .progress-percent').html('<span>' + file.percent + '% Uploaded...</span>');
       });
 
@@ -402,7 +404,7 @@ var checkSubmitInProgress = function () {
 
       // On upload completion, check for errors, and show the uploaded file if OK.
       this.uploader.bind('FileUploaded', function(uploader, file, response) {
-        $('#' + file.id + ' .progress').remove();
+        $('#' + file.id + ' .progress-wrapper').remove();
         // check the JSON for errors
         var resp = eval('['+response.response+']'), filepath, uniqueId,
            tmpl, fileType, mediaTypeId;
@@ -558,7 +560,7 @@ jQuery.fn.uploader.defaults = {
           '<span class="delete-file ind-delete-icon" id="del-{id}"></span></div>'+
           '<div id="link-embed-{linkRequestId}"></div></div>',
   file_box_initial_file_infoTemplate : '<div id="{id}" class="ui-widget-content ui-corner-all mediafile"><div class="ui-widget-header ui-corner-all ui-helper-clearfix"><span>{filename}</span> ' +
-          '<span class="delete-file ind-delete-icon" id="del-{id}"></span></div><div class="progress"><div class="progress-bar" style="width: {imagewidth}px"></div>'+
+          '<span class="delete-file ind-delete-icon" id="del-{id}"></span></div><div class="progress-wrapper"><progress class="progress" value="0" max="100">0 %</progress>'+
           '<div class="progress-percent"></div><div class="progress-gif"></div></div><div class="media-wrapper"></div></div>',
   file_box_uploaded_extra_fieldsTemplate : '<input type="hidden" name="{idField}" id="{idField}" value="{idValue}" />' +
       '<input type="hidden" name="{pathField}" id="{pathField}" value="{pathValue}" />' +
