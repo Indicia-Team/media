@@ -121,7 +121,7 @@
       userFilter = JSON.parse(userFilter);
     }
     popupFormHtml = buildPopupFormHtml(userFilter);
-    $.fancybox(popupFormHtml);
+    $.fancybox.open(popupFormHtml);
     // Fill in the list of available taxon groups to choose from.
     $.getJSON(indiciaData.warehouseUrl +
         'index.php/services/report/requestReport?report=library/taxon_groups/taxon_groups_used_in_checklist.xml&reportSource=local&mode=json' +
@@ -156,7 +156,9 @@
     });
     // Button handlers
     $('#filter-popup-apply').click(function() { applyButtonClicked(gridId); });
-    $('#filter-popup-cancel').click(jQuery.fancybox.close);
+    $('#filter-popup-cancel').click(function() {
+      $.fancybox.close();
+    });
   }
 
   /* Public functions */

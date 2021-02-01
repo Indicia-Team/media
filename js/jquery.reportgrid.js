@@ -554,33 +554,41 @@
                   if ((col.img === true || col.img === 'true') && row[col.fieldname] !== null && row[col.fieldname] !== '' && typeof col.template === 'undefined') {
                     var imgs = row[col.fieldname].split(','), match, value='',
                       imgclass=imgs.length>1 ? 'multi' : 'single',
-                      group=imgs.length>1 && div.settings.rowId !== '' ? ' rel="group-' + row[div.settings.rowId] + '"' : '';
+                      group=imgs.length>1 && div.settings.rowId !== '' ? 'group-' + row[div.settings.rowId] + '"' : '';
                     $.each(imgs, function(idx, img) {
-                      var media='';
-                      if (div.settings.rowId === 'occurrence_id') {
-                        media = {
-                          table: 'occurrence_medium',
-                          filter: {
-                            occurrence_id: row[div.settings.rowId],
-                            path: img
-                          }
+                      var mediaInfo;
+                      var mediaInfoAttr = '';
+                      var entity;
+                      var matches;
+                      if (div.settings.rowId) {
+                        if (matches = div.settings.rowId.match(/([a-z_]+)_id$/)) {
+                          entity = matches[1];
+                        } else {
+                          entity = div.settings.entity ? div.settings.entity : 'occurrence';
+                        }
+                        mediaInfo = {
+                          path: img
                         };
+                        mediaInfo[entity + '_id'] = row[div.settings.rowId];
+                        mediaInfoAttr = 'data-media-info="' + indiciaFns.escapeHtml(JSON.stringify(mediaInfo)) + '" ';
                       }
-                      match = img.match(/^http(s)?:\/\/(www\.)?([a-z(\.kr)]+)/);
+                      match = img.match(/^http(s)?:\/\/(www\.)?([a-z]+(\.kr)?)/);
                       if (match !== null) {
                         if (img.match(/^https:\/\/static\.inaturalist\.org/)) {
-                          value += '<a data-media="' + JSON.stringify(media).replace(/"/g, '&quot;') + '" ' +
+                          value += '<a ' + mediaInfoAttr +
                             'href="' + img.replace('/square.', '/large.') + '" ' +
-                            'class="inaturalist fancybox ' + imgclass + '"' + group + '><img src="' + img + '" /></a>';
+                            'data-fancybox="' + group + '" class="inaturalist ' + imgclass + '"><img src="' + img + '" /></a>';
                         } else {
-                          value += '<a data-media="' + JSON.stringify(media).replace(/"/g, '&quot;') + '" ' +
+                          value += '<a ' + mediaInfoAttr +
                             'href="' + img + '" class="social-icon ' + match[3].replace('.', '') + '"></a>';
                         }
                       } else if ($.inArray(img.split('.').pop(), ['mp3', 'wav']) > -1) {
-                        value += '<audio controls src="' + div.settings.imageFolder + img + '" type="audio/mpeg"/>';
+                        value += '<audio controls src="' + div.settings.imageFolder + img + '" ' + mediaInfoAttr + 'type="audio/mpeg"/>';
                       } else {
-                        value += '<a data-media="' + JSON.stringify(media).replace(/"/g, '&quot;') + '" href="' + div.settings.imageFolder + img + '" class="fancybox ' + imgclass + '"' + group + '><img src="' +
-                            div.settings.imageFolder + div.settings.imageThumbPreset + '-' + img + '" /></a>';
+                        value += '<a ' + mediaInfoAttr +
+                            'href="' + div.settings.imageFolder + img + '" ' + 'class="' + imgclass + '" data-fancybox="' + group + '">' +
+                            '<img src="' + div.settings.imageFolder + div.settings.imageThumbPreset + '-' + img + '" />' +
+                            '</a>';
                       }
                     });
                     row[col.fieldname] = value;
@@ -621,51 +629,6 @@
             rowOutput += '</tr>';
             tbody.append(rowOutput);
           }
-          tbody.find('a.fancybox').fancybox({
-            afterLoad: function(upcoming, previous) {
-              var media;
-              var requestData;
-              if (typeof $(upcoming.element).attr('data-media') !== 'undefined') {
-                media = JSON.parse($(upcoming.element).attr('data-media'));
-                requestData = $.extend({
-                  mode: 'json',
-                  nonce: div.settings.nonce,
-                  auth_token: div.settings.auth_token,
-                }, media.filter);
-                if (typeof div.settings.extraParams.sharing !== 'undefined') {
-                  requestData.sharing = div.settings.extraParams.sharing;
-                }
-                $.ajax({
-                  dataType: 'jsonp',
-                  url: div.settings.url + 'index.php/services/data/' + media.table,
-                  data: requestData,
-                  success: function addMediaMetadata(response) {
-                    var fancybox;
-                    var metadata = '';
-                    if (response.length > 0) {
-                      if (response[0].caption !== null) {
-                        metadata += '<div class="image-caption">' + response[0].caption + '</div>';
-                      }
-                      if (response[0].licence_title !== null) {
-                        metadata += '<div class="licence">' +
-                          '<span class="icon licence-' + response[0].licence_code.toLowerCase().replace(/ /g, '-') + '"></span>' +
-                          response[0].licence_title +
-                          '</div>';
-                      }
-                      fancybox = $('.fancybox-outer');
-                      if (fancybox) {
-                        $(fancybox).after('<div class="media-info image-info">' + metadata +
-                          '<span class="media-info-close" title="' + div.settings.langHideInfo + '">x</span>' +
-                          '</div>');
-                        $.fancybox.update();
-                        $.fancybox.reposition();
-                      }
-                    }
-                  }
-                });
-              }
-            }
-          });
           if (features.length > 0) {
             indiciaData.reportlayer.addFeatures(features);
             map.zoomToExtent(indiciaData.reportlayer.getDataExtent());
@@ -1459,9 +1422,10 @@
           if (data.error) {
             alert(data.error);
           } else {
-            $.fancybox({
-              title: data.title,
-              content: data.html
+            $.fancybox.open({
+              caption: data.title,
+              type: 'html',
+              src: data.html
             });
           }
         }
@@ -1503,7 +1467,6 @@ jQuery.fn.reportgrid.defaults = {
   langNext: 'next',
   langLast: 'last',
   langShowing: 'Showing records {1} to {2} of {3}',
-  langHideInfo: 'Hide info',
   noRecords: 'No records',
   sendOutputToMap: false, // does the current page of report data get shown on a map?
   linkFilterToMap: false, // requires a rowId - filtering the grid also filters the map

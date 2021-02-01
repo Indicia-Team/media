@@ -116,6 +116,9 @@ $color-danger: #ff7777;
   margin: 8px;
   text-align: center;
   display: inline-block;
+  a {
+    border-bottom: none;
+  }
   .caption {
     margin: 0;
     * {

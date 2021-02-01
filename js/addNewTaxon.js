@@ -38,7 +38,7 @@
     currentInput = $(this).parent().find('input:visible');
     $('#new-taxon-name').val(ucfirst(currentInput.val()));
     $('#new-taxon-group').val('');
-    $.fancybox($('#new-taxon-form'));
+    $.fancybox.open($('#new-taxon-form'));
   });
 
   /**

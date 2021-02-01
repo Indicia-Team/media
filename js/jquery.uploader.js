@@ -112,10 +112,10 @@ var checkSubmitInProgress = function () {
       regex: /^http:\/\/twitpic.com\//
     },
     "Social:Facebook" : {
-      regex: /^http:\/\/(www.)?facebook.com\//
+      regex: /^http(s)?:\/\/(www.)?facebook.com\//
     },
     "Social:Twitter" : {
-      regex: /^http:\/\/twitter.com\//
+      regex: /^http(s)?:\/\/twitter.com\//
     },
     "Video:Youtube" : {
       regex: /^http:\/\/(www.youtube.com|youtu.be)\//
@@ -142,41 +142,7 @@ var checkSubmitInProgress = function () {
       }
     });
     $("#add-link-form input").change(function(e) {
-      $("#add-link-form .error").hide();
-    });
-
-    $("#add-link-form").dialog({
-      autoOpen: false,
-      width: 750,
-      modal: true,
-      buttons: {
-        "Add the link": function() {
-          var linkRequestId = indiciaData.linkRequestCount++;
-          uniqueId = 'link-' + linkRequestId;
-          $('#' + currentDiv.id.replace(/:/g,'\\:') + ' .filelist').append(currentDiv.settings.file_box_initial_link_infoTemplate
-              .replace(/\{id\}/g, uniqueId)
-              .replace(/\{linkRequestId\}/g, linkRequestId)
-          );
-          var url=$('#link_url').val(), dlg=this, found=false;
-          // validate the link matches one of our file type regexes
-          $.each(indiciaData.mediaTypes, function(name, cfg) {
-            if ($.inArray(name, currentDiv.settings.mediaTypes) >= 0 && url.match(cfg.regex)) {
-              noembed(currentDiv, '', url, linkRequestId, name, true, '');
-              $(dlg).dialog( "close" );
-              found=true;
-              return false;
-            }
-          });
-          if (!found) {
-            $("#add-link-form .error")
-                  .html("Unrecognised URL format. Please check you've copied and pasted it properly from one of the supported websites.")
-                  .show();
-          }
-        },
-        Cancel: function() {
-          $( this ).dialog( "close" );
-        }
-      }
+      $("#add-link-form ." + indiciaData.inlineErrorClass).remove();
     });
   });
 
@@ -249,11 +215,45 @@ var checkSubmitInProgress = function () {
           .replace('{helpTextClass}', this.settings.helpTextClass)
       );
       if (hasLinks) {
-        $('#link-select-btn-' + id).click(function() {
+        $('#link-select-btn-' + id).click(function(el) {
           // store things that will be needed on OK click
           currentDiv = div;
           $('#link_url').val('');
-          $( "#add-link-form" ).dialog( "open" );
+          $.fancyDialog({
+            title: 'Add a link',
+            contentElement: '#add-link-form',
+            callbackValidate: function() {
+              var url=$('#link_url').val(), found=false;
+              $("#add-link-form ." + indiciaData.inlineErrorClass).remove();
+              // validate the link matches one of our file type regexes
+              $.each(indiciaData.mediaTypes, function(name, cfg) {
+                if ($.inArray(name, currentDiv.settings.mediaTypes) >= 0 && url.match(cfg.regex)) {
+                  found = true;
+                  return false;
+                }
+              });
+              if (!found) {
+                $('#link_url')
+                  .after("<span class=\"" + indiciaData.inlineErrorClass + "\">Unrecognised URL format. Please check you've copied and pasted it properly from one of the supported websites.</span>");
+              }
+              return found;
+            },
+            callbackOk: function() {
+              var linkRequestId = indiciaData.linkRequestCount++;
+              uniqueId = 'link-' + linkRequestId;
+              $('#' + currentDiv.id.replace(/:/g,'\\:') + ' .filelist').append(currentDiv.settings.file_box_initial_link_infoTemplate
+                .replace(/\{id\}/g, uniqueId)
+                .replace(/\{linkRequestId\}/g, linkRequestId)
+              );
+              var url=$('#link_url').val();
+              // validate the link matches one of our file type regexes
+              $.each(indiciaData.mediaTypes, function(name, cfg) {
+                if ($.inArray(name, currentDiv.settings.mediaTypes) >= 0 && url.match(cfg.regex)) {
+                  noembed(currentDiv, '', url, linkRequestId, name, true, '');
+                }
+              });
+            }
+          });
         });
       }
       // Set up a resize object if required

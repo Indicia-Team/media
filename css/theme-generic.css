@@ -180,7 +180,7 @@ table.report-grid .multi img {
   position: relative;
   width: auto;
   background: white;
-  padding: 8px 16px 8px 8px;
+  padding: 8px;
   border: solid silver 1px;
   border-radius: 4px;
   /* Media info can overlay image (not other file types) */
@@ -192,27 +192,24 @@ table.report-grid .multi img {
   bottom: 18px;
   opacity: 0.7;
 }
+.media-info * {
+  display: inline-block;
+  vertical-align: middle;
+}
 .media-info .media-info-close {
-  width: 16px;
-  height: 16px;
-  position: absolute;
-  right: 0;
-  top: 0;
-  font-size: 12px;
+  margin-left: 8px;
   color: #777777;
   cursor: pointer;
-  text-align: center;
+}
+.media-info .media-info-close svg {
+  width: 16px;
+  height: 16px;
 }
 
 .image-caption.small {
   width: 100px;
   font-family: Arial, Helvetica, sans-serif;
   font-size: 10px;
-}
-
-/* Need to account for Fancybox navigation button z-index */
-.fancybox-outer .media-info {
-  z-index: 9999;
 }
 
 /* Define the purpose of the 3 columns in the sprite. */
@@ -1130,6 +1127,9 @@ label#click-buffer {
   margin: 8px;
   text-align: center;
   display: inline-block;
+}
+.thumbnail a {
+  border-bottom: none;
 }
 .thumbnail .caption {
   margin: 0;

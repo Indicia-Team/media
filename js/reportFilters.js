@@ -695,7 +695,7 @@ jQuery(document).ready(function ($) {
             siteType = 'my';
           }
           if ($('#site-type').val() !== siteType) {
-            $('#site-type').val(siteType);            
+            $('#site-type').val(siteType);
           }
           changeSiteType();
           loadSites(locationsToLoad);
@@ -1398,7 +1398,7 @@ jQuery(document).ready(function ($) {
   if ($('.fb-filter-link').length){
     $('.fb-filter-link').fancybox({
       beforeLoad: function () {
-        var pane = $(this.href.replace(/^[^#]+/, ''));
+        var pane = $(this.src.replace(/^[^#]+/, ''));
         var paneName = $(pane).attr('id').replace('controls-filter_', '');
         if (typeof paneObjList[paneName].preloadForm !== 'undefined') {
           paneObjList[paneName].preloadForm();
@@ -1409,7 +1409,7 @@ jQuery(document).ready(function ($) {
         loadFilterOntoForm(paneName);
       },
       afterShow: function () {
-        var pane = $(this.href.replace(/^[^#]+/, ''));
+        var pane = $(this.src.replace(/^[^#]+/, ''));
         var element;
         $('.context-instruct').hide();
         if (pane[0].id === 'controls-filter_where') {
