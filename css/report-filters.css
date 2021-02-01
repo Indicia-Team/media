@@ -293,8 +293,16 @@ input[disabled] {
   width: auto;
 }
 
+#controls-filter_occ_id .helpText, #controls-filter_smp_id .helpText {
+  margin-left: 0;
+}
+
 #controls-filter_quality {
   width: 600px;
+}
+
+#controls-filter_occ_id {
+  width: 400px;
 }
 
 #controls-filter_source {
