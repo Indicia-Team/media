@@ -41,27 +41,48 @@
   padding: 0.1em 0.3em;
 }
 #standard-params #filter-panes {
-  padding-right: 22px;
+  padding-right: 24px;
   box-sizing:border-box;
   -moz-box-sizing:border-box;
   -webkit-box-sizing:border-box
-}
-#standard-params .pane {
-  display:-moz-inline-stack;
-  display:inline-block;
-  zoom:1;
-  *display:inline;
-  margin: 2px 0.5% 2px 0;
-  vertical-align: top;
-  width: 24.625%;
-  background-color: #DFDFDE;
-}
-#standard-params .pane:nth-child(3), #standard-params .pane:last-child {
-  margin-right: 0;
+  height: auto;
 }
 
-#standard-params .pane:nth-child(1), #standard-params .pane:nth-child(2), #standard-params .pane:nth-child(3) {
-  width: 33%;
+.pane-row {
+  display: flex;
+  border-top: 2px solid white;
+}
+
+.pane-row .pane {
+  flex-grow: 2;
+}
+
+.pane-row .pane:not(:last-child) {
+  border-right: 2px solid white;
+}
+
+.pane-row:nth-child(even) > .pane:first-child,
+.pane-row:nth-child(even) > .pane:last-child {
+  flex-grow: 1;
+}
+
+.pane {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #DFDFDE;
+  height: 80px;
+}
+
+.pane a {
+  text-decoration: none;
+  border-bottom: none;
+}
+
+@media screen and (max-width: 1024px) {
+  .pane {
+    height: 110px;
+  }
 }
 
 #pane-filter_what a {
