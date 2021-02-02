@@ -1492,13 +1492,10 @@ var destroyAllFeatures;
         div.settings.customClickFn(features, geom);
       } else {
         if (typeof OpenLayers.Popup === 'undefined') {
-          var dialog = $('<div>' + div.settings.clickableLayersOutputFn(features, div) + '</div>').dialog({
-            title: 'Feature information',
-            buttons: {
-              OK: function okClick() {
-                dialog.dialog('close');
-              }
-            }
+          $.fancyDialog({
+            title:'Feature information',
+            message: div.settings.clickableLayersOutputFn(features, div),
+            cancelButton: null
           });
         } else {
           for (var i = 0; i<div.map.popups.length; i++) {
