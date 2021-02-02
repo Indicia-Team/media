@@ -721,6 +721,7 @@ jQuery(document).ready(function ($) {
           message: null,
           okButton: "OK",
           cancelButton: "Cancel",
+          callbackInitForm: $.noop,
           callbackValidate: $.noop,
           callbackOk: $.noop,
           callbackCancel: $.noop
@@ -764,17 +765,22 @@ jQuery(document).ready(function ($) {
             '<div class="fancybox-stage"></div>' +
             "</div>" +
             "</div>",
+          beforeOpen: function(instance, current, e) {
+            if (opts.callbackInitForm !== $.noop) {
+              opts.callbackInitForm();
+            }
+          },
           beforeClose: function(instance, current, e) {
             var button = e ? e.target || e.currentTarget : null;
             var value = button ? $(button).data("value") : 0;
             var closing = true;
             // Validate if OK clicked.
-            if (value) {
+            if (value && opts.callbackValidate !== $.noop) {
               closing = opts.callbackValidate();
             }
             if (closing && opts.contentElement) {
               // Closing, so move the content element back where it came from.
-              $(opts.contentElement).clone().appendTo(origContentParent);
+              $(opts.contentElement).appendTo(origContentParent);
             }
             return closing;
           },
