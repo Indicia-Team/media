@@ -449,7 +449,7 @@
       maxHeight = $(el).find('table.es-data-grid').height() - ($(ol).offset().top - $panel.offset().top);
       $(ol).css('max-height', Math.max(400, maxHeight) + 'px');
       appendColumnsToConfigList(el, el.settings.columns);
-      $panel.find('ol').sortable();
+      Sortable.create($panel.find('ol')[0]);
     });
 
     $(el).find('.data-grid-fullscreen').click(function settingsIconClick() {
