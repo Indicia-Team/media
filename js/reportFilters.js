@@ -1354,7 +1354,7 @@ jQuery(document).ready(function ($) {
     var attrName;
     var option;
     // regexp extracts the pane ID from the href. Loop through the controls in the pane
-    $.each(pane.find(':input').not('#imp-sref-system,:checkbox,[type=button],[name="location_list[]"]'),
+    $.each(pane.find(':input').not('#imp-sref-system,:checkbox,[type=button],[name="location_list[]"],.precise-date-picker'),
       function (idx, ctrl) {
         var value;
         // set control value to the stored filter setting
@@ -1447,7 +1447,7 @@ jQuery(document).ready(function ($) {
         $('#location_list\\:search\\:name').prop('disabled', false);
       },
       afterClose: function () {
-        var pane = $(this.href.replace(/^[^#]+/, ''));
+        var pane = $(this.src.replace(/^[^#]+/, ''));
         var element;
         if (pane[0].id === 'controls-filter_where' && typeof indiciaData.linkToMapDiv !== 'undefined') {
           element = $('#' + indiciaData.linkToMapDiv);

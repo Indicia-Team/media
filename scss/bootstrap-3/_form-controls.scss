@@ -28,10 +28,6 @@ do need to do something.
     width: 100%;
   }
 }
-/* Datepicker z-index used to set overlay z-index, must appear above map etc. */
-#ui-datepicker-div {
-  z-index: 99999 !important;
-}
 
 .input-group-addon.ctrl-addons {
   // Buttons inside input group addon don't need own border.
