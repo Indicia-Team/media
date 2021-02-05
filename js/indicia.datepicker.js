@@ -60,10 +60,17 @@
    * Copy changes to the date picker associated with a vague date text into the text input.
    */
   indiciaFns.on('change', '.precise-date-picker', {}, function(e) {
+    var dateToSave = $(e.currentTarget).val();
+    console.log('Found picker date: ' + dateToSave);
     var wrap = $(e.currentTarget).closest('.ctrl-wrap');
-    var date = new Date($(e.currentTarget).val() + 'T00:00:00');
+    if (dateToSave.trim().match(/^\d{4}/)) {
+      // Date given year first, so ISO format. That's how HTML5 date input
+      // values are formatted.
+      dateToSave = indiciaFns.formatDate(dateToSave);
+    }
     // Use prop to not trigger overridden val() method.
-    wrap.find('input[type="text"]').prop('value', date.toLocaleDateString());
+    wrap.find('input[type="text"]').prop('value', dateToSave);
+    console.log('Copied into text date: ' + dateToSave);
   });
 
   /**
@@ -72,10 +79,12 @@
   indiciaFns.on('change', '.date-text', {}, function(e) {
     var wrap = $(e.currentTarget).closest('.ctrl-wrap');
     var dateVal = $(e.currentTarget).val();
+    console.log('Found text date: ' + dateVal);
     var parts;
     var order;
     // Convert to ISO date if necessary for date input value.
     if (dateVal.trim() !== '' && !dateVal.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      console.log('NOT ISO format');
       parts = dateVal.split(/\D+/);
       if (parts.length === 3) {
         order = indiciaData.dateFormat.split(/[^A-Za-z]+/);
@@ -84,10 +93,13 @@
         dateVal = '';
       }
     }
+    console.log('Applied date to picker: ' + dateVal);
     wrap.find('input[type="date"]').val(dateVal);
   });
 
+}(jQuery));
+
+jQuery(document).ready(function($) {
   // Ensure existing data copied from text date input to HTML5 date.
   $('.date-text').trigger('change');
-
-}(jQuery));
+});

@@ -565,6 +565,35 @@ if (typeof window.indiciaData === 'undefined') {
   };
 
   /**
+   * Convert an ISO date to website display format.
+   *
+   * @param string dateString
+   *   Date as returned from ES date field, or 64 bit integer for an
+   *   aggregation's date key.
+   *
+   * @return string
+   *   Date formatted.
+   */
+  indiciaFns.formatDate = function formatDate(dateString) {
+    var date;
+    var month;
+    var day;
+    if (typeof dateString === 'undefined' ||
+        (typeof dateString === 'string' && dateString.trim() === '')) {
+      return '';
+    }
+    date = new Date(dateString);
+    month = (1 + date.getMonth()).toString();
+    month = month.length > 1 ? month : '0' + month;
+    day = date.getDate().toString();
+    day = day.length > 1 ? day : '0' + day;
+    return indiciaData.dateFormat
+      .replace('d', day)
+      .replace('m', month)
+      .replace('Y', date.getFullYear());
+  };
+
+  /**
    * Linked selects parent change handler.
    *
    * When 2 select boxes are linked (so selecting an item in one filters the

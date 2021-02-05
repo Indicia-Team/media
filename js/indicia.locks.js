@@ -310,14 +310,19 @@
     }
     if ($('#' + escId).hasClass('locked-icon')) {
       control$.attr('readonly', 'readonly').attr('disabled', 'disabled').addClass('locked-control');
-      if (typeof $.fn.datepicker!=="undefined") {
+      // Deprecated - support jQuery.ui.datepicker.
+      if (typeof $.fn.datepicker !== "undefined") {
         control$.filter('.hasDatepicker').datepicker('disable');
       }
-      if (typeof $.fn.autocomplete!=="undefined") {
+      // HTML5 dates have associated hidden input.
+      if (control$.hasClass('date-text')) {
+        control$.parent().find('input').attr('readonly', 'readonly').attr('disabled', 'disabled').addClass('locked-control');
+      }
+      if (typeof $.fn.autocomplete !== "undefined") {
         $('input[id*=' + escControlId + '\\:]').filter(
             '.ac_input, .ui-autocomplete').attr('readonly', 'readonly').attr('disabled', 'disabled').addClass('locked-control');
       }
-      if (srefId!==null && mapDiv!==null && escControlId===srefId) {
+      if (srefId !== null && mapDiv !== null && escControlId===srefId) {
         $(mapDiv).before('<div id="mapLockMask" style="position: absolute;"/>');
         $('#mapLockMask').css({"opacity": "0.25", "background-color": "white",
             "left":$(mapDiv).position().left + "px",
@@ -328,8 +333,13 @@
       }
     } else {
       control$.removeAttr('readonly').removeAttr('disabled').removeClass('locked-control');
+      // Deprecated - support jQuery.ui.datepicker.
       if (typeof $.fn.datepicker!=="undefined") {
         control$.filter('.hasDatepicker').datepicker('enable');
+      }
+      // HTML5 dates have associated hidden input.
+      if (control$.hasClass('date-text')) {
+        control$.parent().find('input').removeAttr('readonly').removeAttr('disabled').removeClass('locked-control');
       }
       if (typeof $.fn.autocomplete!=="undefined") {
         $('input[id*=' + escControlId + '\\:]').filter(
