@@ -449,7 +449,7 @@
       maxHeight = $(el).find('table.es-data-grid').height() - ($(ol).offset().top - $panel.offset().top);
       $(ol).css('max-height', Math.max(400, maxHeight) + 'px');
       appendColumnsToConfigList(el, el.settings.columns);
-      $panel.find('ol').sortable();
+      Sortable.create($panel.find('ol')[0]);
     });
 
     $(el).find('.data-grid-fullscreen').click(function settingsIconClick() {
@@ -543,7 +543,7 @@
    *   Text to perform replacements on.
    * @param obj tokenDefaults
    *   Each property can be a field name token (e..g [id]) with values being
-   *   the replacement that will be used if no value found for this field in 
+   *   the replacement that will be used if no value found for this field in
    *   the doc.
    *
    * @return string
@@ -625,7 +625,7 @@
               params.push(name + '=' + value);
             });
             link += params.join('&');
-          }          
+          }
           item = applyFieldReplacements(el, doc, '<a href="' + link + '" title="' + this.title + '">' + item + '</a>', this.tokenDefaults);
         }
         html += item;
@@ -1174,7 +1174,6 @@
       drawTableFooter(el, response, data, afterKey);
       fireAfterPopulationCallbacks(el);
       setColWidths(el, maxCharsPerCol);
-      $(el).find('tbody .fancybox').fancybox({ afterLoad: indiciaFns.afterFancyboxLoad });
     },
 
     /**

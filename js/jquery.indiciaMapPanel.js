@@ -1492,13 +1492,10 @@ var destroyAllFeatures;
         div.settings.customClickFn(features, geom);
       } else {
         if (typeof OpenLayers.Popup === 'undefined') {
-          var dialog = $('<div>' + div.settings.clickableLayersOutputFn(features, div) + '</div>').dialog({
-            title: 'Feature information',
-            buttons: {
-              OK: function okClick() {
-                dialog.dialog('close');
-              }
-            }
+          $.fancyDialog({
+            title:'Feature information',
+            message: div.settings.clickableLayersOutputFn(features, div),
+            cancelButton: null
           });
         } else {
           for (var i = 0; i<div.map.popups.length; i++) {
@@ -3339,11 +3336,6 @@ var destroyAllFeatures;
       _bindControls(this);
       // keep a handy reference
       indiciaData.mapdiv=div;
-      // temporary fix for fancybox 1 + OL map + google layers + Chrome 38 display corruption
-      setInterval(function(){
-        $(".olForeignContainer").css("-webkit-transform","");
-        $(".olForeignContainer").css("transform","");
-      },1000);
       // call any post initialisation hooks
       $.each(mapInitialisationHooks, function() {
         this(div);

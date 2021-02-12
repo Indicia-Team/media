@@ -265,7 +265,7 @@
         '<textarea id="comment-textarea" class="form-control" rows="6"></textarea>' +
       '</div>').appendTo(fs);
     $('<button class="btn btn-primary">Save</button>').appendTo(fs);
-    $.fancybox(fs);
+    $.fancybox.open(fs);
   }
 
   /**
@@ -424,7 +424,7 @@
       emailTab.appendTo(content);
       commentTab.appendTo(content);
     }
-    $.fancybox(content);
+    $.fancybox.open(content);
     $('#popup-tabs').tabs();
   }
 
@@ -504,7 +504,7 @@
           $.fancybox.close();
           alert(indiciaData.lang.verificationButtons.emailSent);
         } else {
-          $.fancybox('<div class="manual-email">' + indiciaData.lang.verificationButtons.requestManualEmail +
+          $.fancybox.open('<div class="manual-email">' + indiciaData.lang.verificationButtons.requestManualEmail +
             '<div class="ui-helper-clearfix"><span class="left">To:</span><div class="right">' + email.to + '</div></div>' +
             '<div class="ui-helper-clearfix"><span class="left">Subject:</span><div class="right">' + email.subject + '</div></div>' +
             '<div class="ui-helper-clearfix"><span class="left">Content:</span><div class="right">' + email.body.replace(/\n/g, '<br/>') + '</div></div>' +
@@ -701,7 +701,7 @@
         queryPopup();
       });
       $(el).find('button.redet').click(function expandRedet() {
-        $.fancybox($('#redet-form'));
+        $.fancybox.open($('#redet-form'));
       });
       indiciaFns.on('click', '#cancel-redet', {}, function expandRedet() {
         $.fancybox.close();

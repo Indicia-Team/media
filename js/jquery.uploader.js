@@ -22,7 +22,7 @@ var mediaUploadAddedHooks = [];
  * Form submit handler that prevents the user clicking save during an upload
  */
 var checkSubmitInProgress = function () {
-  if ($('.file-box .progress').length!==0) {
+  if ($('.file-box .progress').val() !== 0) {
     alert('Please wait till your images have finished uploading before submitting the form.');
     indiciaData.formSubmitted = false;
     return false;
@@ -112,10 +112,10 @@ var checkSubmitInProgress = function () {
       regex: /^http:\/\/twitpic.com\//
     },
     "Social:Facebook" : {
-      regex: /^http:\/\/(www.)?facebook.com\//
+      regex: /^http(s)?:\/\/(www.)?facebook.com\//
     },
     "Social:Twitter" : {
-      regex: /^http:\/\/twitter.com\//
+      regex: /^http(s)?:\/\/twitter.com\//
     },
     "Video:Youtube" : {
       regex: /^http:\/\/(www.youtube.com|youtu.be)\//
@@ -142,41 +142,7 @@ var checkSubmitInProgress = function () {
       }
     });
     $("#add-link-form input").change(function(e) {
-      $("#add-link-form .error").hide();
-    });
-
-    $("#add-link-form").dialog({
-      autoOpen: false,
-      width: 750,
-      modal: true,
-      buttons: {
-        "Add the link": function() {
-          var linkRequestId = indiciaData.linkRequestCount++;
-          uniqueId = 'link-' + linkRequestId;
-          $('#' + currentDiv.id.replace(/:/g,'\\:') + ' .filelist').append(currentDiv.settings.file_box_initial_link_infoTemplate
-              .replace(/\{id\}/g, uniqueId)
-              .replace(/\{linkRequestId\}/g, linkRequestId)
-          );
-          var url=$('#link_url').val(), dlg=this, found=false;
-          // validate the link matches one of our file type regexes
-          $.each(indiciaData.mediaTypes, function(name, cfg) {
-            if ($.inArray(name, currentDiv.settings.mediaTypes) >= 0 && url.match(cfg.regex)) {
-              noembed(currentDiv, '', url, linkRequestId, name, true, '');
-              $(dlg).dialog( "close" );
-              found=true;
-              return false;
-            }
-          });
-          if (!found) {
-            $("#add-link-form .error")
-                  .html("Unrecognised URL format. Please check you've copied and pasted it properly from one of the supported websites.")
-                  .show();
-          }
-        },
-        Cancel: function() {
-          $( this ).dialog( "close" );
-        }
-      }
+      $("#add-link-form ." + indiciaData.inlineErrorClass).remove();
     });
   });
 
@@ -249,11 +215,45 @@ var checkSubmitInProgress = function () {
           .replace('{helpTextClass}', this.settings.helpTextClass)
       );
       if (hasLinks) {
-        $('#link-select-btn-' + id).click(function() {
+        $('#link-select-btn-' + id).click(function(el) {
           // store things that will be needed on OK click
           currentDiv = div;
           $('#link_url').val('');
-          $( "#add-link-form" ).dialog( "open" );
+          $.fancyDialog({
+            title: 'Add a link',
+            contentElement: '#add-link-form',
+            callbackValidate: function() {
+              var url=$('#link_url').val(), found=false;
+              $("#add-link-form ." + indiciaData.inlineErrorClass).remove();
+              // validate the link matches one of our file type regexes
+              $.each(indiciaData.mediaTypes, function(name, cfg) {
+                if ($.inArray(name, currentDiv.settings.mediaTypes) >= 0 && url.match(cfg.regex)) {
+                  found = true;
+                  return false;
+                }
+              });
+              if (!found) {
+                $('#link_url')
+                  .after("<span class=\"" + indiciaData.inlineErrorClass + "\">Unrecognised URL format. Please check you've copied and pasted it properly from one of the supported websites.</span>");
+              }
+              return found;
+            },
+            callbackOk: function() {
+              var linkRequestId = indiciaData.linkRequestCount++;
+              uniqueId = 'link-' + linkRequestId;
+              $('#' + currentDiv.id.replace(/:/g,'\\:') + ' .filelist').append(currentDiv.settings.file_box_initial_link_infoTemplate
+                .replace(/\{id\}/g, uniqueId)
+                .replace(/\{linkRequestId\}/g, linkRequestId)
+              );
+              var url=$('#link_url').val();
+              // validate the link matches one of our file type regexes
+              $.each(indiciaData.mediaTypes, function(name, cfg) {
+                if ($.inArray(name, currentDiv.settings.mediaTypes) >= 0 && url.match(cfg.regex)) {
+                  noembed(currentDiv, '', url, linkRequestId, name, true, '');
+                }
+              });
+            }
+          });
         });
       }
       // Set up a resize object if required
@@ -299,7 +299,7 @@ var checkSubmitInProgress = function () {
               .replace(/\{filename\}/g, file.media_type.match(/^(Audio|Pdf):/) ? div.settings.msgFile : div.settings.msgPhoto)
               .replace(/\{imagewidth\}/g, div.settings.imageWidth);
           $('#' + div.id.replace(/:/g,'\\:') + ' .filelist').append(existing);
-          $('#' + uniqueId + ' .progress').remove();
+          $('#' + uniqueId + ' .progress-wrapper').remove();
           if (file.id === '') {
             thumbnailfilepath = div.settings.destinationFolder + file.path;
           }
@@ -373,7 +373,8 @@ var checkSubmitInProgress = function () {
           );
           // change the file name to be unique & lowercase, since the warehouse lowercases files
           file.name=(plupload.guid()+'.'+ext).toLowerCase();
-          $('#' + file.id + ' .progress-bar').progressbar ({value: 0});
+          $('#' + file.id + ' .progress').val(0);
+          $('#' + file.id + ' .progress').text('0 %');
           var msg='Resizing...';
           if (div.settings.resizeWidth===0 || div.settings.resizeHeight===0 || typeof div.uploader.features.jpgresize === "undefined") {
             msg='Uploading...';
@@ -387,7 +388,8 @@ var checkSubmitInProgress = function () {
 
       // As a file uploads, update the progress bar and percentage indicator
       this.uploader.bind('UploadProgress', function(up, file) {
-        $('#' + file.id + ' .progress-bar').progressbar ('option', 'value', file.percent);
+        $('#' + file.id + ' .progress').val(file.percent);
+        $('#' + file.id + ' .progress').text(file.percent + ' %');
         $('#' + file.id + ' .progress-percent').html('<span>' + file.percent + '% Uploaded...</span>');
       });
 
@@ -402,7 +404,7 @@ var checkSubmitInProgress = function () {
 
       // On upload completion, check for errors, and show the uploaded file if OK.
       this.uploader.bind('FileUploaded', function(uploader, file, response) {
-        $('#' + file.id + ' .progress').remove();
+        $('#' + file.id + ' .progress-wrapper').remove();
         // check the JSON for errors
         var resp = eval('['+response.response+']'), filepath, uniqueId,
            tmpl, fileType, mediaTypeId;
@@ -558,7 +560,7 @@ jQuery.fn.uploader.defaults = {
           '<span class="delete-file ind-delete-icon" id="del-{id}"></span></div>'+
           '<div id="link-embed-{linkRequestId}"></div></div>',
   file_box_initial_file_infoTemplate : '<div id="{id}" class="ui-widget-content ui-corner-all mediafile"><div class="ui-widget-header ui-corner-all ui-helper-clearfix"><span>{filename}</span> ' +
-          '<span class="delete-file ind-delete-icon" id="del-{id}"></span></div><div class="progress"><div class="progress-bar" style="width: {imagewidth}px"></div>'+
+          '<span class="delete-file ind-delete-icon" id="del-{id}"></span></div><div class="progress-wrapper"><progress class="progress" value="0" max="100">0 %</progress>'+
           '<div class="progress-percent"></div><div class="progress-gif"></div></div><div class="media-wrapper"></div></div>',
   file_box_uploaded_extra_fieldsTemplate : '<input type="hidden" name="{idField}" id="{idField}" value="{idValue}" />' +
       '<input type="hidden" name="{pathField}" id="{pathField}" value="{pathValue}" />' +

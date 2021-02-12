@@ -322,8 +322,31 @@ var control_speciesmap_addcontrols;
           beginMove();
           break;
         case 'Delete':
-          $('.delete-dialog').empty().append(indiciaData.lang.speciesMap.ConfirmDeleteText.replace('{OLD}', a1.feature.attributes.sRef));
-          indiciaData.control_speciesmap_delete_dialog.dialog('open');
+          $.fancyDialog({
+            title: null,
+            message: indiciaData.lang.speciesMap.ConfirmDeleteText.replace('{OLD}', a1.feature.attributes.sRef),
+            okButton: indiciaData.lang.speciesMap.Yes,
+            cancelButton: indiciaData.lang.speciesMap.No,
+            callbackOk: function () {
+              var block = $('#scm-' + indiciaData.control_speciesmap_existing_feature.attributes.subSampleIndex + '-block');
+              // If the indicia sample id for the grid already exists, then have to flag as deleted, otherwise just wipe it.
+              if (block.hasClass('added')) {
+                block.remove();
+              } else {
+                block.find("[name$='\:sample\:deleted']").val('t').removeAttr('disabled');
+                block.hide();
+              }
+              indiciaData.control_speciesmap_selectFeatureControl.unselectAll();
+              $("[name$='\:sampleIDX']").filter('[value=' + indiciaData.control_speciesmap_existing_feature.attributes.subSampleIndex + ']').closest('tr').not('.scClonableRow').remove();
+              setupSummaryRows(indiciaData.control_speciesmap_existing_feature.attributes.subSampleIndex);
+              removeSubSampleFtr(indiciaData.control_speciesmap_existing_feature);
+              fillInMainSref();
+            },
+            callbackCancel: function () {
+              indiciaData.control_speciesmap_selectFeatureControl.unselectAll();
+              setClusteringOn(true);
+            }
+          });
           break;
       }
       return true;
@@ -424,7 +447,7 @@ var control_speciesmap_addcontrols;
       indiciaData.control_speciesmap_selectFeatureControl.deactivate();
       // Switch off Delete button functionality
       // select feature is switched off above by Move code
-      indiciaData.control_speciesmap_delete_dialog.dialog('close');
+      $.fancybox.close();
       // highlight button and display message.
       $(me).addClass('ui-state-highlight');
       $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(message);
@@ -519,37 +542,7 @@ var control_speciesmap_addcontrols;
       showButtons(['add', 'mod', 'move', 'del']);
       setClusteringOn(true);
     };
-    var buildDeleteDialog = function () {
-      var buttons = {}; // buttons are language specific
-      var Yes = function () {
-        var block = $('#scm-' + indiciaData.control_speciesmap_existing_feature.attributes.subSampleIndex + '-block');
-        indiciaData.control_speciesmap_delete_dialog.dialog('close');
-        // If the indicia sample id for the grid already exists, then have to flag as deleted, otherwise just wipe it.
-        if (block.hasClass('added')) {
-          block.remove();
-        } else {
-          block.find("[name$='\:sample\:deleted']").val('t').removeAttr('disabled');
-          block.hide();
-        }
-        indiciaData.control_speciesmap_selectFeatureControl.unselectAll();
-        $("[name$='\:sampleIDX']").filter('[value=' + indiciaData.control_speciesmap_existing_feature.attributes.subSampleIndex + ']').closest('tr').not('.scClonableRow').remove();
-        setupSummaryRows(indiciaData.control_speciesmap_existing_feature.attributes.subSampleIndex);
-        removeSubSampleFtr(indiciaData.control_speciesmap_existing_feature);
-        fillInMainSref();
-      };
-      var No = function () {
-        indiciaData.control_speciesmap_selectFeatureControl.unselectAll();
-        indiciaData.control_speciesmap_delete_dialog.dialog('close');
-        setClusteringOn(true);
-      };
-      buttons[indiciaData.lang.speciesMap.Yes] = Yes;
-      buttons[indiciaData.lang.speciesMap.No] = No;
-      // when we come out of the dialog we need to do stuff, whether yes or no, so can't let user just close the dialog.
-      // Disable closeOnEscape and remove close icon
-      indiciaData.control_speciesmap_delete_dialog = $('<p class="delete-dialog"></p>')
-          .dialog({ title: indiciaData.lang.speciesMap.ConfirmDeleteTitle, autoOpen: false, buttons: buttons, closeOnEscape: false});
-      $('.delete-dialog').closest('.ui-dialog').find('.ui-dialog-titlebar-close').remove();
-    };
+
     var defaults = {
       mapDiv: '#map',
       panelClasses: 'ui-widget-header ui-corner-tl ui-corner-tr',
@@ -599,7 +592,6 @@ var control_speciesmap_addcontrols;
     $('<button id="' + opts.finishButtonId + '" class="' + indiciaData.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.FinishLabel +
         '</button>').click(controlSpeciesmapFinishbutton).appendTo(container).hide();
     $('<div id="' + opts.messageId + '" class="' + opts.messageClasses + '"></div>').appendTo(container);
-    buildDeleteDialog();
     indiciaData.control_speciesmap_mode = 'Off';
 
     // We are assuming that this the species map control is invoked after the

@@ -25,7 +25,6 @@
 /* eslint no-param-reassign: ["error", { "props": false }]*/
 
 (function enclose() {
-  indiciaData.i = 0;
   'use strict';
   var $ = jQuery;
 
@@ -256,35 +255,6 @@
   };
 
   /**
-   * Convert an ES (ISO) date to local display format.
-   *
-   * @param string dateString
-   *   Date as returned from ES date field, or 64 bit integer for an
-   *   aggregation's date key.
-   *
-   * @return string
-   *   Date formatted.
-   */
-  indiciaFns.formatDate = function formatDate(dateString) {
-    var date;
-    var month;
-    var day;
-    if (typeof dateString === 'undefined' ||
-        (typeof dateString === 'string' && dateString.trim() === '')) {
-      return '';
-    }
-    date = new Date(dateString);
-    month = (1 + date.getMonth()).toString();
-    month = month.length > 1 ? month : '0' + month;
-    day = date.getDate().toString();
-    day = day.length > 1 ? day : '0' + day;
-    return indiciaData.dateFormat
-      .replace('d', day)
-      .replace('m', month)
-      .replace('Y', date.getFullYear());
-  };
-
-  /**
    * Convert an ES media file to thumbnail HTML.
    *
    * @param integer id
@@ -296,11 +266,18 @@
    *   thumbnails.
    */
   indiciaFns.drawMediaFile = function drawMediaFile(id, file, sizeClass) {
-    // Check if an extenral URL.
-    var match = file.path.match(/^http(s)?:\/\/(www\.)?([a-z(\.kr)]+)/);
+    var domainClass;
     var captionItems = [];
     var captionAttr;
-    var html = '';
+    var mediaInfo = {
+      id: file['id'],
+      loaded: {
+        caption: file['caption'],
+        licence_code: file['licence'],
+        type: file['type']
+      }
+    };
+    var mediaAttr = 'data-media-info="' + indiciaFns.escapeHtml(JSON.stringify(mediaInfo)) + '"';
     if (file.caption) {
       captionItems.push(file.caption);
     }
@@ -308,33 +285,30 @@
       captionItems.push('Licence is ' + file.licence);
     }
     captionAttr = captionItems.length ? ' title="' + captionItems.join(' | ').replace('"', '&quot;') + '"' : '';
-    if (match !== null) {
-      // If so, is it iNat? We can work out the image file names if so.
-      if (file.path.match(/^https:\/\/static\.inaturalist\.org/)) {
-        html += '<a ' + captionAttr +
-          'href="' + file.path.replace('/square.', '/large.') + '" ' +
-          'class="inaturalist fancybox" rel="group-' + id + '">' +
-          '<img class="' + sizeClass + '" src="' + file.path + '" /></a>';
-      } else {
-        html += '<a ' +
-          'href="' + file.path + '" class="social-icon ' + match[3].replace('.', '') + '"></a>';
-        if (captionItems.length) {
-          html += '<p>' + captionItems.join(' | ').replace('"', '&quot;') + '</p>';
-        }
-      }
-    } else if ($.inArray(file.path.split('.').pop(), ['mp3', 'wav']) > -1) {
-      // Audio files can have a player control.
-      html += '<audio controls ' +
-        'src="' + indiciaData.warehouseUrl + 'upload/' + file.path + '" type="audio/mpeg"/>';
-    } else {
+    if (file.type === 'Image:Local') {
       // Standard link to Indicia image.
-      html += '<a ' + captionAttr +
+      return '<a ' + mediaAttr + captionAttr +
         'href="' + indiciaData.warehouseUrl + 'upload/' + file.path + '" ' +
-        'class="fancybox" rel="group-' + id + '">' +
+        'data-fancybox="group-' + id + '">' +
         '<img class="' + sizeClass + '" src="' + indiciaData.warehouseUrl + 'upload/thumb-' + file.path + '" />' +
         '</a>';
     }
-    return html;
+    if (file.type === 'Audio:Local') {
+      // Audio files can have a player control.
+      return '<audio controls ' + mediaAttr + ' ' + captionAttr +
+        ' src="' + indiciaData.warehouseUrl + 'upload/' + file.path + '" type="audio/mpeg"/>';
+    }
+    if (file.type === 'Image:iNaturalist') {
+      return '<a ' + mediaAttr + ' ' + captionAttr +
+        ' href="' + file.path.replace('/square.', '/large.') + '" ' +
+        'class="inaturalist" data-fancybox="group-' + id + '">' +
+        '<img class="' + sizeClass + '" src="' + file.path + '" /></a>';
+    }
+    // Everything else will be treated using noembed on the popup.
+    // Build icon class using web domain.
+    domainClass = file.path.match(/^http(s)?:\/\/(www\.)?([a-z]+(\.kr)?)/)[3].replace('.', '');
+    return '<a ' + mediaAttr + ' ' + captionAttr +
+        ' href="' + file.path + '" class="social-icon ' + domainClass + '"></a>';
   };
 
   /**
@@ -1408,23 +1382,25 @@
         alert('Data source incorrectly configured. @filterBoundsUsingMap does not point to a valid map.');
       } else if (!source.settings.initialMapBounds || mapToFilterTo[0].settings.initialBoundsSet) {
         bounds = mapToFilterTo[0].map.getBounds();
-        data.bool_queries.push({
-          bool_clause: 'must',
-          query_type: 'geo_bounding_box',
-          value: {
-            ignore_unmapped: true,
-            'location.point': {
-              top_left: {
-                lat: Math.max(-90, Math.min(90, bounds.getNorth())),
-                lon: Math.max(-180, Math.min(180, bounds.getWest()))
-              },
-              bottom_right: {
-                lat: Math.max(-90, Math.min(90, bounds.getSouth())),
-                lon: Math.max(-180, Math.min(180, bounds.getEast()))
+        if (bounds.getNorth() !== bounds.getSouth() && bounds.getEast() !== bounds.getWest()) {
+          data.bool_queries.push({
+            bool_clause: 'must',
+            query_type: 'geo_bounding_box',
+            value: {
+              ignore_unmapped: true,
+              'location.point': {
+                top_left: {
+                  lat: Math.max(-90, Math.min(90, bounds.getNorth())),
+                  lon: Math.max(-180, Math.min(180, bounds.getWest()))
+                },
+                bottom_right: {
+                  lat: Math.max(-90, Math.min(90, bounds.getSouth())),
+                  lon: Math.max(-180, Math.min(180, bounds.getEast()))
+                }
               }
             }
-          }
-        });
+          });
+        }
       }
     }
     source.settings.showGeomsAsTooClose = source.settings.mode === 'mapGridSquare' && source.settings.switchToGeomsAt

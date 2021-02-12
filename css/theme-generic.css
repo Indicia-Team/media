@@ -42,8 +42,75 @@ table.species-grid .scTaxonCell {
   font-size: 120%;
 }
 
-.ui-datepicker-trigger {
-  padding: 0;
+/* Toggle/slider switches */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 23px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(17px);
+  -ms-transform: translateX(17px);
+  transform: translateX(17px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 23px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+.sort-handle {
+  background: url(../images/drag-handle.png) no-repeat;
+  width: 26px;
+  height: 26px;
+  display: inline-block;
+  vertical-align: middle;
+  cursor: move;
+  cursor: -webkit-grabbing;
 }
 
 #map-container, #filter-map-container {
@@ -180,7 +247,7 @@ table.report-grid .multi img {
   position: relative;
   width: auto;
   background: white;
-  padding: 8px 16px 8px 8px;
+  padding: 8px;
   border: solid silver 1px;
   border-radius: 4px;
   /* Media info can overlay image (not other file types) */
@@ -192,27 +259,24 @@ table.report-grid .multi img {
   bottom: 18px;
   opacity: 0.7;
 }
+.media-info * {
+  display: inline-block;
+  vertical-align: middle;
+}
 .media-info .media-info-close {
-  width: 16px;
-  height: 16px;
-  position: absolute;
-  right: 0;
-  top: 0;
-  font-size: 12px;
+  margin-left: 8px;
   color: #777777;
   cursor: pointer;
-  text-align: center;
+}
+.media-info .media-info-close svg {
+  width: 16px;
+  height: 16px;
 }
 
 .image-caption.small {
   width: 100px;
   font-family: Arial, Helvetica, sans-serif;
   font-size: 10px;
-}
-
-/* Need to account for Fancybox navigation button z-index */
-.fancybox-outer .media-info {
-  z-index: 9999;
 }
 
 /* Define the purpose of the 3 columns in the sprite. */
@@ -826,11 +890,6 @@ input.findme {
   box-sizing: border-box;
 }
 
-/* Datepicker z-index used to set overlay z-index, must appear above map etc. */
-.hasDatepicker {
-  z-index: 2000 !important;
-}
-
 .loading-spinner {
   position: absolute;
   z-index: 9999;
@@ -1131,6 +1190,9 @@ label#click-buffer {
   text-align: center;
   display: inline-block;
 }
+.thumbnail a {
+  border-bottom: none;
+}
 .thumbnail .caption {
   margin: 0;
 }
@@ -1140,6 +1202,29 @@ label#click-buffer {
   background: none;
   padding: 0;
   margin: 0;
+}
+
+progress.progress {
+  height: 20px;
+  border: 0px none;
+  background-color: silver;
+  color: #337ab7;
+  border-radius: 4px;
+}
+
+progress.progress::-webkit-progress-bar {
+  background-color: silver;
+  border-radius: 4px;
+}
+
+progress.progress::-webkit-progress-value {
+  background-color: #337ab7;
+  border-radius: 4px;
+}
+
+progress.progress::-moz-progress-bar {
+  background-color: #337ab7;
+  border-radius: 4px;
 }
 
 /*# sourceMappingURL=theme-generic.css.map */
