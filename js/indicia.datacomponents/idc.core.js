@@ -1344,34 +1344,10 @@
           }
         });
       }
-
-      // Apply filters from recordContext select drop down.
-      if ($('.permissions-filter').length > 0) {
-        if ($('.permissions-filter').val().substring(0, 2) === 'p-') {
-          // A permissions filter type option selected.
-          data.permissions_filter = $('.permissions-filter').val().substring(2);
-        } else if ($('.permissions-filter').val().substring(0, 2) === 'f-') {
-          // A filter type option selected
-          data.user_filters.push($('.permissions-filter').val().substring(2));
-          if (indiciaData.esUserFiltersLoaded.indexOf($('.permissions-filter').val().substring(2)) === -1) {
-            data.refresh_user_filters = true;
-            indiciaData.esUserFiltersLoaded.push($('.permissions-filter').val().substring(2));
-          }
-        } else if ($('.permissions-filter').val().substring(0, 2) === 'g-') {
-          // A group type option selected.
-          if ($('.permissions-filter').val().substring(0, 4) === 'g-my') {
-            data.permissions_filter = 'my';
-            group = $('.permissions-filter').val().substring(5);
-          } else {
-            data.permissions_filter = 'all';
-            group = $('.permissions-filter').val().substring(6);
-          }
-          data.bool_queries.push({
-            bool_clause: 'must',
-            query_type: 'query_string',
-            value: 'metadata.group.id:' + group
-          });
-        }
+      // Apply filters from permissionFilters select drop down.
+      if ($('.permissions-filter').length > 0 && $('.permissions-filter').val()) {
+        // Just pass through permission filter so proxy can apply settings securely.
+        data.permissions_filter = $('.permissions-filter').val();
       }
       applyGroupFilter(data);
     }
