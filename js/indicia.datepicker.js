@@ -79,12 +79,10 @@
   indiciaFns.on('change', '.date-text', {}, function(e) {
     var wrap = $(e.currentTarget).closest('.ctrl-wrap');
     var dateVal = $(e.currentTarget).val();
-    console.log('Found text date: ' + dateVal);
     var parts;
     var order;
     // Convert to ISO date if necessary for date input value.
     if (dateVal.trim() !== '' && !dateVal.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      console.log('NOT ISO format');
       parts = dateVal.split(/\D+/);
       if (parts.length === 3) {
         order = indiciaData.dateFormat.split(/[^A-Za-z]+/);
@@ -93,7 +91,6 @@
         dateVal = '';
       }
     }
-    console.log('Applied date to picker: ' + dateVal);
     wrap.find('input[type="date"]').val(dateVal);
   });
 
