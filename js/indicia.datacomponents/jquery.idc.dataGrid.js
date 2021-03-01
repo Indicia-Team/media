@@ -47,6 +47,7 @@
     includeFilterRow: true,
     includeFullScreenTool: true,
     includePager: true,
+    keyboardNavigation: false,
     sortable: true,
     responsive: true,
     responsiveOptions: {
@@ -308,13 +309,40 @@
    * Register the various user interface event handlers.
    */
   function initHandlers(el) {
+
+    /**
+     * Track loaded row ID to avoid duplicate effort.
+     */
+    var lastLoadedRowId = null;
+
+    /**
+     * SetTimeout handle so the row load timeout can be cleared when navigating quickly.
+     */
+    var loadRowTimeout;
+
+    /**
+     * Fire callbacks when a row has been selected
+     * */
+    function loadSelectedRow() {
+      var tr = ('#' + el.id + ' .es-data-grid tbody tr.selected');
+      if (tr && $(tr).data('row-id') !== lastLoadedRowId) {
+        lastLoadedRowId = $(tr).data('row-id');
+        $.each(el.settings.callbacks.rowSelect, function eachCallback() {
+          this(tr);
+        });
+      }
+    }
+
+    /**
+     * Row click handler.
+     *
+     * Adds selected class and fires callbacks.
+     */
     indiciaFns.on('click', '#' + el.id + ' .es-data-grid tbody tr', {}, function onDataGridRowClick() {
       var tr = this;
       $(tr).closest('tbody').find('tr.selected').removeClass('selected');
       $(tr).addClass('selected');
-      $.each(el.settings.callbacks.rowSelect, function eachCallback() {
-        this(tr);
-      });
+      loadSelectedRow();
     });
 
     /**
@@ -332,6 +360,35 @@
         this(tr);
       });
     });
+
+    /**
+     * Implement arrow key and other navigation tools.
+     */
+    if (el.settings.keyboardNavigation) {
+      indiciaFns.on('keydown', '#' + el.id + ' .es-data-grid tbody tr', {}, function onDataGridKeydown(e) {
+        var tr = this;
+        var oldSelected;
+        var newSelected;
+        if (e.which === 38 || e.which === 40) {
+          oldSelected = $(tr).closest('tbody').find('tr.selected');
+          newSelected = e.which === 38 ? $(oldSelected).prev('tr') : $(oldSelected).next('tr');
+          if (newSelected.length) {
+            $(newSelected).addClass('selected');
+            $(newSelected).focus();
+            $(oldSelected).removeClass('selected');
+          }
+          // Load row on timeout to avoid rapidly hitting services if repeat-hitting key.
+          if (loadRowTimeout) {
+            clearTimeout(loadRowTimeout);
+          }
+          loadRowTimeout = setTimeout(function() {
+            loadSelectedRow();
+          }, 500);
+          e.preventDefault();
+          return false;
+        }
+      });
+    }
 
     /**
      * Next page click.
@@ -1133,13 +1190,15 @@
         // heading as it contains tool icons.
         maxCharsPerCol['col-' + (el.settings.columns.length - 1)] += 2;
       }
-      $.each(dataList, function eachHit() {
+      $.each(dataList, function eachHit(i) {
         var hit = this;
         var cells = [];
         var row;
         var classes = ['data-row'];
         var doc = hit._source ? hit._source : hit;
         var dataRowIdAttr;
+        // For keyboard navigation, need to enable row focus.
+        var tabindexAttr = el.settings.keyboardNavigation ? 'tabindex="' + i + '" ' : '';
         cells = getRowBehaviourCells(el);
         cells = cells.concat(getDataCells(el, doc, maxCharsPerCol));
         if (el.settings.actions.length) {
@@ -1159,7 +1218,7 @@
           });
         }
         dataRowIdAttr = hit._id ? ' data-row-id="' + hit._id + '"' : '';
-        row = $('<tr class="' + classes.join(' ') + '"' + dataRowIdAttr + '>'
+        row = $('<tr class="' + classes.join(' ') + '"' + tabindexAttr + dataRowIdAttr + '>'
            + cells.join('') +
            '</tr>').appendTo($(el).find('tbody'));
         $(row).attr('data-doc-source', JSON.stringify(doc));
