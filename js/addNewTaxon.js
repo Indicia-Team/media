@@ -38,6 +38,7 @@
     currentInput = $(this).parent().find('input:visible');
     $('#new-taxon-name').val(ucfirst(currentInput.val()));
     $('#new-taxon-group').val('');
+    $('#new-taxon-form').prop('disabled', false)
     $.fancybox.open($('#new-taxon-form'));
   });
 
@@ -95,6 +96,7 @@
       'json'
     );
     $.fancybox.close();
+    $('#new-taxon-form').prop('disabled', true);
     return false;
   }
 
