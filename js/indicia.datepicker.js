@@ -61,7 +61,6 @@
    */
   indiciaFns.on('change', '.precise-date-picker', {}, function(e) {
     var dateToSave = $(e.currentTarget).val();
-    console.log('Found picker date: ' + dateToSave);
     var wrap = $(e.currentTarget).closest('.ctrl-wrap');
     if (dateToSave.trim().match(/^\d{4}/)) {
       // Date given year first, so ISO format. That's how HTML5 date input
@@ -70,7 +69,6 @@
     }
     // Use prop to not trigger overridden val() method.
     wrap.find('input[type="text"]').prop('value', dateToSave);
-    console.log('Copied into text date: ' + dateToSave);
   });
 
   /**
