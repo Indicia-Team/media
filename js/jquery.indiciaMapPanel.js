@@ -1166,37 +1166,68 @@ var destroyAllFeatures;
           return new OpenLayers.Layer.WMTS(osLeisureOptions);
         }
       };
-      // To protect ourselves against exceptions because the Google script would not link up, we
-      // only enable these layers if the Google constants are available.
-      if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') {
+      // Only enable Google layers if the API key are available.
+      if (typeof indiciaData.googleApiKey !== 'undefined') {
         r.google_physical = function googlePhysical() {
-          return new OpenLayers.Layer.Google('Google Physical', {
-            type: google.maps.MapTypeId.TERRAIN,
-            sphericalMercator: true,
-            layerId: 'google_physical.0'
+          // A dummy layer with a lazy-load function to load the layer (and API)
+          // on demand.
+          return new OpenLayers.Layer('Google Physical', {
+            isBaseLayer: true,
+            layerId: 'google_physical.0',
+            lazyLoadGoogleApiLayerFn: function() {
+              return new OpenLayers.Layer.Google('Google Physical', {
+                type: google.maps.MapTypeId.TERRAIN,
+                sphericalMercator: true,
+                layerId: 'google_physical.0'
+              });
+            }
           });
         };
         r.google_streets = function googleStreets() {
-          return new OpenLayers.Layer.Google('Google Streets', {
-            numZoomLevels: 20,
-            sphericalMercator: true,
-            layerId: 'google_streets.0'
+          // A dummy layer with a lazy-load function to load the layer (and API)
+          // on demand.
+          return new OpenLayers.Layer('Google Streets', {
+            isBaseLayer: true,
+            layerId: 'google_streets.0',
+            lazyLoadGoogleApiLayerFn: function() {
+              return new OpenLayers.Layer.Google('Google Streets', {
+                numZoomLevels: 20,
+                sphericalMercator: true,
+                layerId: 'google_streets.0'
+              });
+            }
           });
         };
         r.google_hybrid = function googleHybrid() {
-          return new OpenLayers.Layer.Google('Google Hybrid', {
-            type: google.maps.MapTypeId.HYBRID,
-            numZoomLevels: 20,
-            sphericalMercator: true,
-            layerId: 'google_hybrid.0'
+          // A dummy layer with a lazy-load function to load the layer (and API)
+          // on demand.
+          return new OpenLayers.Layer('Google Hybrid', {
+            isBaseLayer: true,
+            layerId: 'google_hybrid.0',
+            lazyLoadGoogleApiLayerFn: function() {
+              return new OpenLayers.Layer.Google('Google Hybrid', {
+                type: google.maps.MapTypeId.HYBRID,
+                numZoomLevels: 20,
+                sphericalMercator: true,
+                layerId: 'google_hybrid.0'
+              });
+            }
           });
         };
         r.google_satellite = function googleSatellite() {
-          return new OpenLayers.Layer.Google('Google Satellite', {
-            type: google.maps.MapTypeId.SATELLITE,
-            numZoomLevels: 20,
-            sphericalMercator: true,
-            layerId: 'google_satellite.0'
+          // A dummy layer with a lazy-load function to load the layer (and API)
+          // on demand.
+          return new OpenLayers.Layer('Google Satellite', {
+            isBaseLayer: true,
+            layerId: 'google_satellite.0',
+            lazyLoadGoogleApiLayerFn: function() {
+              return new OpenLayers.Layer.Google('Google Satellite', {
+                type: google.maps.MapTypeId.SATELLITE,
+                numZoomLevels: 20,
+                sphericalMercator: true,
+                layerId: 'google_satellite.0'
+              });
+            }
           });
         };
         r.dynamicOSGoogleSat = [
@@ -1237,15 +1268,23 @@ var destroyAllFeatures;
             }));
           },
           function dynamicOSGoogleSat2() {
-            return new OpenLayers.Layer.Google('Dynamic (OpenStreetMap > Ordnance Survey Leisure > *Google Satellite*)', {
-              type: google.maps.MapTypeId.SATELLITE,
-              numZoomLevels: 20,
-              sphericalMercator: true,
-              maxWidth: 500,
-              minZoom: 18,
+            // A dummy layer with a lazy-load function to load the layer (and API)
+            // on demand.
+            return new OpenLayers.Layer('Dynamic (OpenStreetMap > Ordnance Survey Leisure > *Google Satellite*)', {
               layerId: 'dynamicOSGoogleSat.2',
-              dynamicLayerIndex: 2,
-              avoidOnInitialLoad: true
+              isBaseLayer: true,
+              maxWidth: 500,
+              lazyLoadGoogleApiLayerFn: function() {
+                return new OpenLayers.Layer.Google('Dynamic (OpenStreetMap > Ordnance Survey Leisure > *Google Satellite*)', {
+                  type: google.maps.MapTypeId.SATELLITE,
+                  numZoomLevels: 20,
+                  sphericalMercator: true,
+                  maxWidth: 500,
+                  minZoom: 18,
+                  layerId: 'dynamicOSGoogleSat.2',
+                  dynamicLayerIndex: 2
+                });
+              }
             });
           }
         ];
@@ -1265,14 +1304,23 @@ var destroyAllFeatures;
             );
           },
           function dynamicOSMGoogleSat1() {
-            return new OpenLayers.Layer.Google('Dynamic (OpenStreetMap > *Google Satellite*)', {
-              type: google.maps.MapTypeId.SATELLITE,
-              numZoomLevels: 20,
-              sphericalMercator: true,
-              minZoom: 18,
+            // A dummy layer with a lazy-load function to load the layer (and API)
+            // on demand.
+            return new OpenLayers.Layer('Dynamic (OpenStreetMap > *Google Satellite*)', {
               layerId: 'dynamicOSMGoogleSat.1',
-              dynamicLayerIndex: 1,
-              avoidOnInitialLoad: true
+              isBaseLayer: true,
+              maxWidth: 500,
+              lazyLoadGoogleApiLayerFn: function() {
+                return new OpenLayers.Layer.Google('Dynamic (OpenStreetMap > *Google Satellite*)', {
+                  type: google.maps.MapTypeId.SATELLITE,
+                  numZoomLevels: 20,
+                  sphericalMercator: true,
+                  maxWidth: 500,
+                  minZoom: 18,
+                  layerId: 'dynamicOSMGoogleSat.1',
+                  dynamicLayerIndex: 1
+                });
+              }
             });
           }
         ];
@@ -2289,6 +2337,54 @@ var destroyAllFeatures;
     }
 
     /**
+     * Swaps a dummy layer with a Google layer.
+     *
+     * Allows Google layers and API to be lazy-loaded, so charges aren't
+     * incurred if not used.
+     *
+     * @param OpenLayers.Layer layerToReplace
+     *   Layer that's being swapped out.
+     */
+    function replaceGoogleBaseLayer(layerToReplace) {
+      var map = layerToReplace.map;
+      var layerIndex = map.getLayerIndex(layerToReplace);
+      // Calls the fn to build the new layer.
+      var newLayer = layerToReplace.lazyLoadGoogleApiLayerFn();
+      indiciaData.settingBaseLayer = true;
+      try {
+        map.addLayer(newLayer);
+        map.setLayerIndex(newLayer, layerIndex);
+        map.setBaseLayer(newLayer);
+        map.removeLayer(layerToReplace);
+      } finally {
+        indiciaData.settingBaseLayer = false;
+      }
+    }
+
+    /**
+     * When switching base layer, check if we need to lazy load a Google layer.
+     *
+     * @param OpenLayers.Layer baseLayer
+     *   Layer that we are switching to.
+     */
+    function lazyLoadBaseLayer(baseLayer) {
+      var key = indiciaData.googleApiKey ? '&key=' + indiciaData.googleApiKey : '';
+      var layerToReplace = baseLayer.map.needToLazyLoadGoogleApiLayer ? baseLayer.map.needToLazyLoadGoogleApiLayer : baseLayer;
+      delete baseLayer.map.needToLazyLoadGoogleApiLayer;
+      if (layerToReplace.lazyLoadGoogleApiLayerFn) {
+        if (typeof google === 'undefined') {
+          // If Google API not loaded, load then replace layer.
+          $.getScript('http://maps.google.com/maps/api/js?v=3' + key, function() {
+            replaceGoogleBaseLayer(layerToReplace);
+          });
+        } else {
+          // Google API already loaded so just replace the layer.
+          replaceGoogleBaseLayer( layerToReplace);
+        }
+      }
+    }
+
+    /**
      * Manage projections after a base layer switch.
      *
      * OpenLayers 2 is not designed to handle switching between base layers
@@ -2436,7 +2532,14 @@ var destroyAllFeatures;
       }
       if (lSwitch) {
         if (!lSwitch.getVisibility()) {
-          div.map.setBaseLayer(lSwitch);
+          if (!lSwitch.lazyLoadGoogleApiLayerFn) {
+            div.map.setBaseLayer(lSwitch);
+          } else {
+            // Don't actually switch, because the selected layer is just a
+            // dummy empty layer with a function to build a Google layer.
+            // The actual layer will get loaded later.
+            div.map.needToLazyLoadGoogleApiLayer = lSwitch;
+          }
         }
       }
       return lSwitch;
@@ -2790,11 +2893,12 @@ var destroyAllFeatures;
       // OpenLayers takes the first added base layer as map.baseLayer if not
       // overriden by cookie. Now find the projection for that layer.
       matchMapProjectionToLayer(div.map);
-      // This hack fixes an IE8 bug where it won't display Google layers when switching using the Layer Switcher.
-      div.map.events.register('changebaselayer', null, function () {
+      div.map.events.register('changebaselayer', null, function (e) {
+        if (!indiciaData.settingBaseLayer) {
+          lazyLoadBaseLayer(e.layer);
+        }
         // New layer may have different projection.
         matchMapProjectionToLayer(div.map);
-
       });
 
       // Set zoom and centre from cookie, if present, else from initial settings.
