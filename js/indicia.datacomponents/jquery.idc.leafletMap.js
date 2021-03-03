@@ -688,11 +688,13 @@
         }
       });
       // Are there document hits to map?
-      $.each(response.hits.hits, function eachHit(i) {
-        var latlon = this._source.location.point.split(',');
-        addFeature(el, sourceSettings.id, latlon, this._source.location.geom,
-          this._source.location.coordinate_uncertainty_in_meters, '_id', this._id);
-      });
+      if (typeof response.hits !== 'undefined') {
+        $.each(response.hits.hits, function eachHit(i) {
+          var latlon = this._source.location.point.split(',');
+          addFeature(el, sourceSettings.id, latlon, this._source.location.geom,
+            this._source.location.coordinate_uncertainty_in_meters, '_id', this._id);
+        });
+      }
       // Are there aggregations to map?
       if (typeof response.aggregations !== 'undefined') {
         if (sourceSettings.mode === 'mapGeoHash') {
