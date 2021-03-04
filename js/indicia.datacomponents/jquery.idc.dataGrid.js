@@ -252,32 +252,6 @@
     }
   }
 
-  function movePage(el, forward) {
-    var sourceSettings = el.settings.sourceObject.settings;
-    if (el.settings.sourceObject.settings.mode === 'compositeAggregation') {
-      el.settings.compositeInfo.page += (forward ? 1 : -1);
-      // Composite aggregations use after_key to find next page.
-      if (el.settings.compositeInfo.pageAfterKeys[el.settings.compositeInfo.page]) {
-        sourceSettings.after_key = el.settings.compositeInfo.pageAfterKeys[el.settings.compositeInfo.page];
-      } else {
-        delete sourceSettings.after_key;
-      }
-    } else {
-      if (typeof sourceSettings.from === 'undefined') {
-        sourceSettings.from = 0;
-      }
-      if (forward) {
-        // Move to next page based on currently visible row count, in case some
-        // have been removed.
-        sourceSettings.from += $(el).find('tbody tr.data-row').length;
-      } else {
-        sourceSettings.from -= sourceSettings.size;
-      }
-      sourceSettings.from = Math.max(0, sourceSettings.from);
-    }
-    el.settings.sourceObject.populate();
-  }
-
   /**
    * Calculate the correct tbody height on resize, if a fixed or anchored height.
    */
@@ -305,7 +279,7 @@
     $(sortButton).addClass('fa-sort-' + (sortDesc ? 'down' : 'up'));
   }
 
-   /**
+  /**
    * Register the various user interface event handlers.
    */
   function initHandlers(el) {
@@ -324,9 +298,9 @@
      * Fire callbacks when a row has been selected
      * */
     function loadSelectedRow() {
-      var tr = ('#' + el.id + ' .es-data-grid tbody tr.selected');
-      if (tr && $(tr).data('row-id') !== lastLoadedRowId) {
-        lastLoadedRowId = $(tr).data('row-id');
+      var tr = $('#' + el.id + ' .es-data-grid tbody tr.selected');
+      if (tr.length && tr.data('row-id') !== lastLoadedRowId) {
+        lastLoadedRowId = tr.data('row-id');
         $.each(el.settings.callbacks.rowSelect, function eachCallback() {
           this(tr);
         });
@@ -393,28 +367,22 @@
     /**
      * Next page click.
      */
-    $(el).find('.pager-row .next').click(function clickNext() {
-      movePage(el, true);
+    $(el).find('.pager .next').click(function clickNext() {
+      indiciaFns.movePage(el, true, 'tbody tr.data-row');
     });
 
     /**
      * Previous page click.
      */
-    $(el).find('.pager-row .prev').click(function clickPrev() {
-      movePage(el, false);
+    $(el).find('.pager .prev').click(function clickPrev() {
+      indiciaFns.movePage(el, false, 'tbody tr.data-row');
     });
 
     /**
      * Rows per page change.
      */
-    $(el).find('.rows-per-page select').change(function rowsPerPageChange() {
-      var newRowsPerPage = $(el).find('.rows-per-page select option:selected').val();
-      if (el.settings.sourceObject.settings.mode.match(/Aggregation$/)) {
-        el.settings.sourceObject.settings.aggregationSize = newRowsPerPage;
-      } else {
-        el.settings.sourceObject.settings.size = newRowsPerPage;
-      }
-      el.settings.sourceObject.populate();
+    $(el).find('.rows-per-page select').change(function changeRowsPerPage() {
+      indiciaFns.rowsPerPageChange(el);
     });
 
     /**
@@ -509,29 +477,8 @@
       Sortable.create($panel.find('ol')[0]);
     });
 
-    $(el).find('.data-grid-fullscreen').click(function settingsIconClick() {
-      if (document.fullscreenElement ||
-          document.webkitFullscreenElement ||
-          document.mozFullScreenElement ||
-          document.msFullscreenElement) {
-        if (document.exitFullscreen) {
-          document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-          document.webkitExitFullscreen();
-        } else if (document.mozCancelFullScreen) {
-          document.mozCancelFullScreen();
-        } else if (document.msExitFullscreen) {
-          document.msExitFullscreen();
-        }
-      } else if (el.requestFullscreen) {
-        el.requestFullscreen();
-      } else if (el.webkitRequestFullscreen) {
-        el.webkitRequestFullscreen();
-      } else if (el.mozRequestFullScreen) {
-        el.mozRequestFullScreen();
-      } else if (el.msRequestFullscreen) {
-        el.msRequestFullscreen();
-      }
+    $(el).find('.fullscreen-tool').click(function fullscreenIconClick() {
+      indiciaFns.goFullscreen(el);
     });
 
     /**
@@ -590,108 +537,6 @@
   }
 
   /**
-   * Takes a string and applies token replacement for field values.
-   *
-   * @param object el
-   *   The dataGrid element.
-   * @param object doc
-   *   The ES document for the row.
-   * @param string text
-   *   Text to perform replacements on.
-   * @param obj tokenDefaults
-   *   Each property can be a field name token (e..g [id]) with values being
-   *   the replacement that will be used if no value found for this field in
-   *   the doc.
-   *
-   * @return string
-   *   Updated text.
-   */
-  function applyFieldReplacements(el, doc, text, tokenDefaults) {
-    // Find any field name replacements.
-    var fieldMatches = text.match(/\[(.*?)\]/g);
-    var updatedText = text;
-    $.each(fieldMatches, function eachMatch(i, fieldToken) {
-      var dataVal;
-      // Cleanup the square brackets which are not part of the field name.
-      var field = fieldToken.replace(/\[/, '').replace(/\]/, '');
-      // Field names can be separated by OR if we want to pick the first.
-      var fieldOrList = field.split(' OR ');
-      $.each(fieldOrList, function eachFieldName() {
-        var fieldName = this;
-        var fieldDef = {};
-        var srcSettings = el.settings.sourceObject.settings;
-        if ($.inArray(fieldName, el.settings.sourceObject.settings.fields) > -1) {
-          // Auto-locate aggregation fields in document.
-          if (srcSettings.mode === 'termAggregation') {
-            fieldDef.path = 'fieldlist.hits.hits.0._source';
-          } else if (srcSettings.mode === 'compositeAggregation') {
-            fieldDef.path = 'key';
-            // Aggregate keys use hyphens to represent path in doc.
-            fieldName = fieldName.replace(/\./g, '-');
-          }
-        }
-        dataVal = indiciaFns.getValueForField(doc, fieldName, fieldDef);
-        if (dataVal === '' && typeof tokenDefaults !== 'undefined' && typeof tokenDefaults['[' + fieldName + ']'] !== 'undefined') {
-          dataVal = tokenDefaults['[' + fieldName + ']'];
-        }
-        // Drop out when we find a value.
-        return dataVal === '';
-      });
-      updatedText = updatedText.replace(fieldToken, dataVal);
-    });
-    return updatedText;
-  }
-
-  /**
-   * Retrieve any action links to attach to an idcDataGrid row.
-   *
-   * @param object el
-   *   The dataGrid element.
-   * @param array actions
-   *   List of actions from configuration.
-   * @param object doc
-   *   The ES document for the row.
-   *
-   * @return string
-   *   Action link HTML.
-   */
-  function getActionsForRow(el, actions, doc) {
-    var html = '';
-    $.each(actions, function eachActions() {
-      var item;
-      var link;
-      var params = [];
-      if (!this.tokenDefaults) {
-        this.tokenDefaults = {};
-      }
-      if (typeof this.title === 'undefined') {
-        html += '<span class="fas fa-times-circle error" title="Invalid action definition - missing title"></span>';
-      } else {
-        if (this.iconClass) {
-          item = '<span class="' + this.iconClass + '" title="' + this.title + '"></span>';
-        } else {
-          item = this.title;
-        }
-        if (this.path) {
-          link = this.path
-            .replace(/{rootFolder}/g, indiciaData.rootFolder)
-            .replace(/\{language\}/g, indiciaData.currentLanguage);
-          if (this.urlParams) {
-            link += link.indexOf('?') === -1 ? '?' : '&';
-            $.each(this.urlParams, function eachParam(name, value) {
-              params.push(name + '=' + value);
-            });
-            link += params.join('&');
-          }
-          item = applyFieldReplacements(el, doc, '<a href="' + link + '" title="' + this.title + '">' + item + '</a>', this.tokenDefaults);
-        }
-        html += item;
-      }
-    });
-    return html;
-  }
-
-  /**
    * Find the data used to populate the table in the response.
    *
    * Data can be found in the response hits (i.e. standard occurrence
@@ -719,64 +564,6 @@
       if (el.settings.includeFilterRow !== false) {
         addFilterRow(el, header);
       }
-    }
-  }
-  /**
-   * Outputs the HTML for the table footer.
-   *
-   * @param obj response
-   *   Elasticsearch response data.
-   * @param obj data
-   *   Data sent in request.
-   */
-  function drawTableFooter(el, response, data, afterKey) {
-    var fromRowIndex;
-    var ofLabel = '';
-    var toLabel;
-    var pageSize = $(el).find('tbody tr').length;
-    var sourceSettings = el.settings.sourceObject.settings;
-    var total;
-    if (sourceSettings.mode === 'docs') {
-      total = response.hits.total.value;
-      if (response.hits.total.relation && response.hits.total.relation === 'gte') {
-        ofLabel = 'at least ';
-      }
-    } else if (response.aggregations._count) {
-      // Aggregation modes use a separate agg to count only when the filter changes.
-      total = response.aggregations._count.value;
-      lastCount = total;
-    } else if (lastCount) {
-      total = lastCount;
-    }
-    // Set up the count info in the footer.
-    if (sourceSettings.mode === 'compositeAggregation') {
-      // Composite aggs use after_key for simple paging.
-      if (afterKey) {
-        el.settings.compositeInfo.pageAfterKeys[el.settings.compositeInfo.page + 1] = afterKey;
-      }
-      $(el).find('.pager-row .next').prop('disabled', !afterKey);
-      $(el).find('.pager-row .prev').prop('disabled', el.settings.compositeInfo.page === 0);
-      fromRowIndex = (el.settings.compositeInfo.page * sourceSettings.aggregationSize) + 1;
-    } else if (sourceSettings.mode === 'termAggregation') {
-      // Can't page through a standard terms aggregation.
-      $(el).find('.pager-row .buttons').hide();
-      fromRowIndex = 1;
-    } else {
-      fromRowIndex = typeof data.from === 'undefined' ? 1 : (data.from + 1);
-      // Enable or disable the paging buttons.
-      $(el).find('.pager-row .prev').prop('disabled', fromRowIndex <= 1);
-      $(el).find('.pager-row .next').prop('disabled', fromRowIndex + response.hits.hits.length >= response.hits.total.value);
-    }
-    // Output text describing loaded hits.
-    if (pageSize > 0) {
-      if (fromRowIndex === 1 && pageSize === total) {
-        $(el).find('tfoot .showing').html('Showing all ' + total + ' hits');
-      } else {
-        toLabel = fromRowIndex === 1 ? 'first ' : fromRowIndex + ' to ';
-        $(el).find('tfoot .showing').html('Showing ' + toLabel + (fromRowIndex + (pageSize - 1)) + ' of ' + ofLabel + total);
-      }
-    } else {
-      $(el).find('tfoot .showing').html('No hits');
     }
   }
 
@@ -1011,39 +798,6 @@
   }
 
   /**
-   * A select box for changing the rows per grid page.
-   */
-  function getRowsPerPageControl(el) {
-    var opts = [];
-    var sourceSize = el.settings.sourceObject.settings.aggregationSize || el.settings.sourceObject.settings.size;
-    var buildPageSizeOptionsFrom = sourceSize || 30;
-    // Set default rowsPerPageOptions unless explicitly empty.
-    if (!el.settings.rowsPerPageOptions) {
-      el.settings.rowsPerPageOptions = [];
-      if (buildPageSizeOptionsFrom >= 40) {
-        el.settings.rowsPerPageOptions.push(Math.round(buildPageSizeOptionsFrom / 2));
-      }
-      el.settings.rowsPerPageOptions.push(buildPageSizeOptionsFrom);
-      el.settings.rowsPerPageOptions.push(buildPageSizeOptionsFrom * 2);
-      if (buildPageSizeOptionsFrom < 40) {
-        el.settings.rowsPerPageOptions.push(buildPageSizeOptionsFrom * 4);
-      }
-    }
-    // If no size specified, we are showing some arbitrary ES limit on row count.
-    if ($.inArray(sourceSize, el.settings.rowsPerPageOptions) === -1) {
-      // Add a non-visible default option to represent initial state.
-      opts.push('<option selected disabled hidden style="display: none"></option>');
-    }
-    if (el.settings.rowsPerPageOptions.length > 0) {
-      $.each(el.settings.rowsPerPageOptions, function eachOpt() {
-        var selected = this === sourceSize ? ' selected="selected"' : '';
-        opts.push('<option value="' + this + '"' + selected + '>' + this + '</option>');
-      });
-      return '<span class="rows-per-page">Rows per page: <select>' + opts.join('') + '</select>';
-    }
-    return '';
-  }
-  /**
    * Declare public methods.
    */
   methods = {
@@ -1109,10 +863,7 @@
         totalCols = el.settings.columns.length
           + (el.settings.responsive ? 1 : 0)
           + (el.settings.actions.length > 0 ? 1 : 0);
-        $('<tfoot><tr class="pager-row"><td colspan="' + totalCols + '"><span class="showing"></span> ' +
-          '<span class="buttons"><button class="prev">Previous</button><button class="next">Next</button></span> ' +
-          getRowsPerPageControl(el) +
-          '</td></tr></tfoot>').appendTo(table);
+        $('<tfoot><tr class="pager"><td colspan="' + totalCols + '">' + indiciaFns.getPagerControls(el) + '</td></tr></tfoot>').appendTo(table);
       }
       setTableHeight(el);
       // Add tool icons for table settings, full screen and multiselect mode.
@@ -1124,9 +875,9 @@
       }
       if (el.settings.includeFullScreenTool &&
           (document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled)) {
-        tools.push('<span class="far fa-window-maximize data-grid-fullscreen" title="Click to view grid in full screen mode"></span>');
+        tools.push('<span class="far fa-window-maximize fullscreen-tool" title="Click to view grid in full screen mode"></span>');
       }
-      $('<div class="data-grid-tools">' + tools.join('<br/>') + '</div>').appendTo(el);
+      $('<div class="idc-output-tools">' + tools.join('<br/>') + '</div>').appendTo(el);
       // Add overlay for settings etc.
       $('<div class="data-grid-settings" style="display: none"></div>').appendTo(el);
       $('<div class="loading-spinner" style="display: none"><div>Loading...</div></div>').appendTo(el);
@@ -1202,7 +953,7 @@
         cells = getRowBehaviourCells(el);
         cells = cells.concat(getDataCells(el, doc, maxCharsPerCol));
         if (el.settings.actions.length) {
-          cells.push('<td class="col-actions">' + getActionsForRow(el, el.settings.actions, doc) + '</td>');
+          cells.push('<td class="col-actions">' + indiciaFns.getActions(el, el.settings.actions, doc) + '</td>');
         }
         if (el.settings.selectIdsOnNextLoad && $.inArray(hit._id, el.settings.selectIdsOnNextLoad) !== -1) {
           classes.push('selected');
@@ -1214,7 +965,7 @@
         }
         if (el.settings.rowClasses) {
           $.each(el.settings.rowClasses, function eachClass() {
-            classes.push(applyFieldReplacements(el, doc, this));
+            classes.push(indiciaFns.applyFieldReplacements(el, doc, this));
           });
         }
         dataRowIdAttr = hit._id ? ' data-row-id="' + hit._id + '"' : '';
@@ -1230,13 +981,14 @@
       if (el.settings.sourceObject.settings.mode === 'docs') {
         el.settings.totalRowCount = response.hits.total.value;
       }
-      drawTableFooter(el, response, data, afterKey);
+      indiciaFns.drawPagingFooter(el, response, data, 'tbody tr', afterKey);
       fireAfterPopulationCallbacks(el);
       setColWidths(el, maxCharsPerCol);
     },
 
     /**
      * Register an event handler.
+     *
      * @param string event
      *   Event name.
      * @param function handler

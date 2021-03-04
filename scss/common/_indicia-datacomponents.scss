@@ -21,12 +21,9 @@ body {
     position: fixed;
   }
 }
-/* idcDataGrid plugin */
-.idc-output-dataGrid {
-  position: relative;
-  /* Ensure height enough for spinner. */
-  min-height: 140px;
-  .data-grid-tools {
+
+.idc-output {
+  .idc-output-tools {
     position: absolute;
     top: 0;
     right: 0;
@@ -43,6 +40,84 @@ body {
       color: #333;
     }
   }
+}
+
+/* idcCardGallery plugin */
+.idc-output-cardGallery {
+  position: relative;
+  /* Ensure height enough for spinner. */
+  min-height: 140px;
+  .es-card-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 auto;
+    padding: 0.5em 0;
+    .card {
+      flex-basis: 98%;
+      flex-grow: 1;
+      margin: 1%;
+      width: 90%;
+      box-sizing: border-box;
+      &:last-of-type {
+        flex-grow: 0;
+      }
+      &.selected {
+        background: #f0f0f0;
+        border: 1px solid grey;
+      }
+      .image-container {
+        display: flex;
+        > * {
+          max-width: 98%;
+          flex-basis: 33%;
+          flex-grow: 1;
+          flex-shrink: 0;
+          margin: 1%;
+        }
+      }
+      ul.data-container {
+        li {
+          list-style-type: none;
+        }
+      }
+    }
+    @media (min-width: 801px) {
+      .card {
+        flex-basis: 48%;
+      }
+      .card.big {
+        flex-basis: 98%;
+      }
+    }
+    @media (min-width: 1201px) {
+      .card {
+        flex-basis: 31%;
+      }
+      .card.big {
+        flex-basis: 48%;
+      }
+    }
+    @media (min-width: 1601px) {
+      .card {
+        flex-basis: 23%;
+      }
+      .card.big {
+        flex-basis: 48%;
+      }
+    }
+  }
+  .pager {
+    background-color: #eee;
+    padding: 8px;
+  }
+}
+
+
+/* idcDataGrid plugin */
+.idc-output-dataGrid {
+  position: relative;
+  /* Ensure height enough for spinner. */
+  min-height: 140px;
   .data-grid-settings {
     position: absolute;
     top: 0;

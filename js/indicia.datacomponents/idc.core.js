@@ -133,6 +133,136 @@
   };
 
   /**
+   * Make an output control fullscreen.
+   */
+  indiciaFns.goFullscreen = function goFullscreen(el) {
+    if (document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
+    } else if (el.requestFullscreen) {
+      el.requestFullscreen();
+    } else if (el.webkitRequestFullscreen) {
+      el.webkitRequestFullscreen();
+    } else if (el.mozRequestFullScreen) {
+      el.mozRequestFullScreen();
+    } else if (el.msRequestFullscreen) {
+      el.msRequestFullscreen();
+    }
+  }
+
+  /**
+   * Takes a string and applies token replacement for field values.
+   *
+   * @param object el
+   *   The dataGrid element.
+   * @param object doc
+   *   The ES document for the row.
+   * @param string text
+   *   Text to perform replacements on.
+   * @param obj tokenDefaults
+   *   Each property can be a field name token (e..g [id]) with values being
+   *   the replacement that will be used if no value found for this field in
+   *   the doc.
+   *
+   * @return string
+   *   Updated text.
+   */
+  indiciaFns.applyFieldReplacements = function applyFieldReplacements(el, doc, text, tokenDefaults) {
+    // Find any field name replacements.
+    var fieldMatches = text.match(/\[(.*?)\]/g);
+    var updatedText = text;
+    $.each(fieldMatches, function eachMatch(i, fieldToken) {
+      var dataVal;
+      // Cleanup the square brackets which are not part of the field name.
+      var field = fieldToken.replace(/\[/, '').replace(/\]/, '');
+      // Field names can be separated by OR if we want to pick the first.
+      var fieldOrList = field.split(' OR ');
+      $.each(fieldOrList, function eachFieldName() {
+        var fieldName = this;
+        var fieldDef = {};
+        var srcSettings = el.settings.sourceObject.settings;
+        if ($.inArray(fieldName, el.settings.sourceObject.settings.fields) > -1) {
+          // Auto-locate aggregation fields in document.
+          if (srcSettings.mode === 'termAggregation') {
+            fieldDef.path = 'fieldlist.hits.hits.0._source';
+          } else if (srcSettings.mode === 'compositeAggregation') {
+            fieldDef.path = 'key';
+            // Aggregate keys use hyphens to represent path in doc.
+            fieldName = fieldName.replace(/\./g, '-');
+          }
+        }
+        dataVal = indiciaFns.getValueForField(doc, fieldName, fieldDef);
+        if (dataVal === '' && typeof tokenDefaults !== 'undefined' && typeof tokenDefaults['[' + fieldName + ']'] !== 'undefined') {
+          dataVal = tokenDefaults['[' + fieldName + ']'];
+        }
+        // Drop out when we find a value.
+        return dataVal === '';
+      });
+      updatedText = updatedText.replace(fieldToken, dataVal);
+    });
+    return updatedText;
+  }
+
+ /**
+  * Retrieve any action links to attach to an idcDataGrid or idcCardCalendar row.
+  *
+  * @param object el
+  *   The output control element.
+  * @param array actions
+  *   List of actions from configuration.
+  * @param object doc
+  *   The ES document for the row.
+  *
+  * @return string
+  *   Action link HTML.
+  */
+ indiciaFns.getActions = function getActions(el, actions, doc) {
+   var html = '';
+   $.each(actions, function eachActions() {
+     var item;
+     var link;
+     var params = [];
+     if (!this.tokenDefaults) {
+       this.tokenDefaults = {};
+     }
+     if (typeof this.title === 'undefined') {
+       html += '<span class="fas fa-times-circle error" title="Invalid action definition - missing title"></span>';
+     } else {
+       if (this.iconClass) {
+         item = '<span class="' + this.iconClass + '" title="' + this.title + '"></span>';
+       } else {
+         item = this.title;
+       }
+       if (this.path) {
+         link = this.path
+           .replace(/{rootFolder}/g, indiciaData.rootFolder)
+           .replace(/\{language\}/g, indiciaData.currentLanguage);
+         if (this.urlParams) {
+           link += link.indexOf('?') === -1 ? '?' : '&';
+           $.each(this.urlParams, function eachParam(name, value) {
+             params.push(name + '=' + value);
+           });
+           link += params.join('&');
+         }
+         item = indiciaFns.applyFieldReplacements(el, doc, '<a href="' + link + '" title="' + this.title + '">' + item + '</a>', this.tokenDefaults);
+       }
+       html += item;
+     }
+   });
+   return html;
+ }
+
+  /**
    * Instantiate the data sources.
    */
   indiciaFns.initDataSources = function initDataSources() {
@@ -290,7 +420,7 @@
       return '<a ' + mediaAttr + captionAttr +
         'href="' + indiciaData.warehouseUrl + 'upload/' + file.path + '" ' +
         'data-fancybox="group-' + id + '">' +
-        '<img class="' + sizeClass + '" src="' + indiciaData.warehouseUrl + 'upload/thumb-' + file.path + '" />' +
+        '<img class="' + sizeClass + '" src="' + indiciaData.warehouseUrl + 'upload/' + sizeClass + '-' + file.path + '" />' +
         '</a>';
     }
     if (file.type === 'Audio:Local') {
@@ -556,21 +686,6 @@
     },
 
     /**
-     * Record status and other flag icons.
-     */
-    status_icons: function statusIcons(doc) {
-      return indiciaFns.getEsStatusIcons({
-        status: doc.identification.verification_status,
-        substatus: doc.identification.verification_substatus,
-        query: doc.identification.query ? doc.identification.query : '',
-        sensitive: doc.metadata.sensitive,
-        confidential: doc.metadata.confidential,
-        zero_abundance: doc.occurrence.zero_abundance,
-        anonymous: doc.metadata.created_by_id === "1"
-      });
-    },
-
-    /**
      * Data cleaner automatic rule check result icons.
      */
     data_cleaner_icons: function dataCleanerIcons(doc) {
@@ -775,6 +890,35 @@
         });
       }
       return media.join('');
+    },
+
+    /**
+     * Record status and other flag icons.
+     */
+    status_icons: function statusIcons(doc) {
+      return indiciaFns.getEsStatusIcons({
+        status: doc.identification.verification_status,
+        substatus: doc.identification.verification_substatus,
+        query: doc.identification.query ? doc.identification.query : '',
+        sensitive: doc.metadata.sensitive,
+        confidential: doc.metadata.confidential,
+        zero_abundance: doc.occurrence.zero_abundance,
+        anonymous: doc.metadata.created_by_id === "1"
+      });
+    },
+
+    taxon_label: function taxonLabel(doc) {
+      var acceptedName;
+      if (doc.taxon.taxon_rank_sort_order >= 290) {
+        acceptedName = '<em>' + doc.taxon.accepted_name + '</em>';
+      } else {
+        acceptedName = doc.taxon.taxon_rank + ' ' + doc.taxon.accepted_name;
+      }
+      if (doc.taxon.vernacular_name) {
+        return '<h3>' + doc.taxon.vernacular_name + '</h3>' + acceptedName;
+      } else {
+        return '<h3>' + acceptedName + '</h3>';
+      }
     }
   };
 
@@ -952,17 +1096,8 @@
    */
   indiciaData.fieldConvertorSortFields = {
     // Unsupported possibilities are commented out.
-    status_icons: [
-      'identification.verification_status',
-      'identification.verification_substatus',
-      'metadata.sensitive',
-      'metadata.confidential',
-      'occurrence.zero_abundance',
-      'metadata.created_by_id'
-    ],
-    data_cleaner_icons: [
-      'identification.auto_checks.result'
-    ],
+    data_cleaner_icons: ['identification.auto_checks.result'],
+    datasource_code: ['metadata.website.id', 'metadata.survey.id'],
     event_date: ['event.date_start'],
     // higher_geography: [],
     // locality: [],
@@ -977,7 +1112,15 @@
         unit: 'km'
       }
     },
-    datasource_code: ['metadata.website.id', 'metadata.survey.id']
+    status_icons: [
+      'identification.verification_status',
+      'identification.verification_substatus',
+      'metadata.sensitive',
+      'metadata.confidential',
+      'occurrence.zero_abundance',
+      'metadata.created_by_id'
+    ],
+    'taxon_label': ['taxon.accepted_name']
   };
 
   /**
