@@ -149,14 +149,22 @@
       } else if (document.msExitFullscreen) {
         document.msExitFullscreen();
       }
-    } else if (el.requestFullscreen) {
-      el.requestFullscreen();
-    } else if (el.webkitRequestFullscreen) {
-      el.webkitRequestFullscreen();
-    } else if (el.mozRequestFullScreen) {
-      el.mozRequestFullScreen();
-    } else if (el.msRequestFullscreen) {
-      el.msRequestFullscreen();
+      if ($.fancybox) {
+        // Reset Fancybox container.
+        $.fancybox.defaults.parentEl = 'body';
+      }
+    } else {
+      if (el.requestFullscreen) {
+        el.requestFullscreen();
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+      } else if (el.mozRequestFullScreen) {
+        el.mozRequestFullScreen();
+      } else if (el.msRequestFullscreen) {
+        el.msRequestFullscreen();
+      }
+      // Fancybox popups must use the fullscreen element as container.
+      $.fancybox.defaults.parentEl = el;
     }
   }
 
