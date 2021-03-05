@@ -38,6 +38,7 @@
    * Declare default settings.
    */
   var defaults = {
+    keyboardNavigation: false
   };
 
   /**
@@ -629,6 +630,54 @@
   }
 
   /**
+   * Enables shortcut keys for verification actions.
+   *
+   * @param DOM el
+   *   Control element.
+   */
+  function enableKeyboardNavigation(el) {
+    var statuses = {
+      V: [1, 49],
+      V1: [1, 49],
+      V2: [2, 50],
+      C3: [3, 51],
+      R4: [4, 52],
+      R: [5, 53],
+      R5: [5, 53]
+    };
+    if (el.settings.keyboardNavigation) {
+      // Add hints to indicate shortcut keys.
+      $.each(statuses, function(code, key) {
+        $('[data-status="' + code +'"]').attr('title', $('[data-status="' + code +'"]').attr('title') + ' (' + key[0] + ')');
+        $('[data-status="' + code +'"]').attr('data-keycode', key[1]);
+      });
+      $('[data-query="Q"]').attr('title', $('[data-query="Q"]').attr('title') + ' (Q)');
+      $('button.redet').attr('title', $('button.redet').attr('title') + ' (R)');
+
+      indiciaFns.on('keydown', ':not(:input)', {}, function onDataGridKeydown(e) {
+        console.log(e.which);
+        // Abort if focus on an input control (as the event bubbles to the
+        // container despite the above selector).
+        if ($(':input:focus').length) {
+          return true;
+        }
+        // Only interested in keys 1-5, q and d.
+        if ($('[data-keycode="' + e.which +'"]:visible').length || e.which === 81 || e.which === 82) {
+          if ($('[data-keycode="' + e.which +'"]:visible').length) {
+            commentPopup({ status: $('[data-keycode="' + e.which +'"]:visible').attr('data-status') });
+          } else if (e.which === 81) {
+            queryPopup();
+          } else if (e.which === 82) {
+            $.fancybox.open($('#redet-form'));
+          }
+          e.preventDefault;
+          return false;
+        }
+      });
+    }
+  }
+
+  /**
    * Declare public methods.
    */
   var methods = {
@@ -706,6 +755,7 @@
       indiciaFns.on('click', '#cancel-redet', {}, function expandRedet() {
         $.fancybox.close();
       });
+      enableKeyboardNavigation(el);
       $('#redet-form').submit(redetFormSubmit);
       indiciaFns.on('click', '.comment-popup button', {}, function onClickSave(e) {
         var popup = $(e.currentTarget).closest('.comment-popup');
