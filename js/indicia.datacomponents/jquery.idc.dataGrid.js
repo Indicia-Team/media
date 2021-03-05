@@ -543,7 +543,7 @@
    *   Text to perform replacements on.
    * @param obj tokenDefaults
    *   Each property can be a field name token (e..g [id]) with values being
-   *   the replacement that will be used if no value found for this field in 
+   *   the replacement that will be used if no value found for this field in
    *   the doc.
    *
    * @return string
@@ -625,7 +625,7 @@
               params.push(name + '=' + value);
             });
             link += params.join('&');
-          }          
+          }
           item = applyFieldReplacements(el, doc, '<a href="' + link + '" title="' + this.title + '">' + item + '</a>', this.tokenDefaults);
         }
         html += item;
@@ -779,7 +779,7 @@
         maxCharsPerCol['col-' + idx] = Math.max(maxCharsPerCol['col-' + idx], extraSpace + charWidth);
       } else {
         maxCharsPerCol['col-' + idx] =
-          Math.max(maxCharsPerCol['col-' + idx], $('<p>' + value + '</p>').text().length + extraSpace);
+          Math.max(maxCharsPerCol['col-' + idx], longestWordLength($('<p>' + value + '</p>').text()) + extraSpace);
       }
       classes.push('field-' + this.field.replace(/\./g, '--').replace(/_/g, '-'));
       // Copy across responsive hidden cols.
