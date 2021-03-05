@@ -360,6 +360,12 @@
           }, 500);
           e.preventDefault();
           return false;
+        } else if (e.which === 73) {
+          // i key for image popup.
+          var fbLink = $(el).find('tr.selected [data-fancybox]');
+          if (fbLink.length) {
+            $(fbLink[0]).click();
+          }
         }
       });
     }
