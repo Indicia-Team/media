@@ -192,6 +192,15 @@ jQuery(document).ready(function ($) {
         if (filterDef.marine_flag && filterDef.marine_flag !== 'all') {
           r.push($('#marine_flag').find('option[value=' + filterDef.marine_flag + ']').text());
         }
+        if (filterDef.freshwater_flag && filterDef.freshwater_flag !== 'all') {
+          r.push($('#freshwater_flag').find('option[value=' + filterDef.freshwater_flag + ']').text());
+        }
+        if (filterDef.terrestrial_flag && filterDef.terrestrial_flag !== 'all') {
+          r.push($('#terrestrial_flag').find('option[value=' + filterDef.terrestrial_flag + ']').text());
+        }
+        if (filterDef.non_native_flag && filterDef.non_native_flag !== 'all') {
+          r.push($('#non_native_flag').find('option[value=' + filterDef.non_native_flag + ']').text());
+        }
         if (typeof filterDef.confidential !== 'undefined') {
           switch (filterDef.confidential) {
             case 't':
