@@ -827,7 +827,6 @@
     var scrollbarWidth = tbody[0].offsetWidth - tbody[0].clientWidth;
     var scrollBarInnerWidth;
     var outerSpacing = $(el).find('.col-0').outerWidth() - $(el).find('.col-0').width();
-    var totalPix = 0;
     // Column resizing needs to be done manually when tbody has scroll bar.
     if (el.settings.scrollY) {
       if (el.settings.responsive) {
@@ -857,7 +856,6 @@
       });
       $.each(el.settings.columns, function eachColumn(idx) {
         $(el).find('.col-' + idx).css('width', (pixelsAvailable * (maxCharsPerCol['col-' + idx] / maxCharsPerRow) - outerSpacing) + 'px');
-        totalPix += (pixelsAvailable * (maxCharsPerCol['col-' + idx] / maxCharsPerRow));
       });
     }
   }
