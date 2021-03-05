@@ -654,7 +654,7 @@
       $('[data-query="Q"]').attr('title', $('[data-query="Q"]').attr('title') + ' (Q)');
       $('button.redet').attr('title', $('button.redet').attr('title') + ' (R)');
 
-      indiciaFns.on('keydown', ':not(:input)', {}, function onDataGridKeydown(e) {
+      $(document).keydown(function onKeydown(e) {
         console.log(e.which);
         // Abort if focus on an input control (as the event bubbles to the
         // container despite the above selector).
