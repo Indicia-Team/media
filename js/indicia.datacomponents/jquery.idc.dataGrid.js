@@ -63,8 +63,8 @@
      * Registered callbacks for different events.
      */
     callbacks: {
-      rowSelect: [],
-      rowDblClick: [],
+      itemSelect: [],
+      itemDblClick: [],
       populate: []
     },
     // Page tracking for composite aggregations
@@ -257,9 +257,12 @@
    */
   function setTableHeight(el) {
     var tbody = $(el).find('tbody');
+    var fullscreenOffset;
     if (el.settings.scrollY) {
       if (el.settings.scrollY.match(/^-/)) {
-        tbody.css('max-height', (($(window).height() + parseInt(el.settings.scrollY.replace('px', ''), 10))
+        // If fullscreen, treat full screen element as page top, so need to offset.
+        fullscreenOffset = indiciaFns.fullscreenElement() ? $(indiciaFns.fullscreenElement()).offset().top : 0;
+        tbody.css('max-height', fullscreenOffset + (($(window).height() + parseInt(el.settings.scrollY.replace('px', ''), 10))
           - ($(el).find('tbody').offset().top + $(el).find('tfoot').height())));
       } else {
         tbody.css('max-height', el.settings.scrollY);
@@ -301,7 +304,7 @@
       var tr = $('#' + el.id + ' .es-data-grid tbody tr.selected');
       if (tr.length && tr.data('row-id') !== lastLoadedRowId) {
         lastLoadedRowId = tr.data('row-id');
-        $.each(el.settings.callbacks.rowSelect, function eachCallback() {
+        $.each(el.settings.callbacks.itemSelect, function eachCallback() {
           this(tr);
         });
       }
@@ -324,13 +327,13 @@
      *
      * Adds selected class and fires callbacks.
      */
-    indiciaFns.on('dblclick', '#' + el.id + ' .es-data-grid tbody tr', {}, function onDataGridRowDblClick() {
+    indiciaFns.on('dblclick', '#' + el.id + ' .es-data-grid tbody tr', {}, function onDataGriditemDblClick() {
       var tr = this;
       if (!$(tr).hasClass('selected')) {
         $(tr).closest('tbody').find('tr.selected').removeClass('selected');
         $(tr).addClass('selected');
       }
-      $.each(el.settings.callbacks.rowDblClick, function eachCallback() {
+      $.each(el.settings.callbacks.itemDblClick, function eachCallback() {
         this(tr);
       });
     });
@@ -649,7 +652,7 @@
   /**
    * After population of the table, fire callbacks.
    *
-   * Callbacks may be linked to the populate event or the rowSelect event if
+   * Callbacks may be linked to the populate event or the itemSelect event if
    * the selected row changes.
    */
   function fireAfterPopulationCallbacks(el) {
@@ -658,7 +661,7 @@
       this(el);
     });
     // Fire callbacks for selected row if any.
-    $.each(el.settings.callbacks.rowSelect, function eachCallback() {
+    $.each(el.settings.callbacks.itemSelect, function eachCallback() {
       this($(el).find('tr.selected').length === 0 ? null : $(el).find('tr.selected')[0]);
     });
   }
@@ -1003,72 +1006,6 @@
         indiciaFns.controlFail(this, 'Invalid event handler requested for ' + event);
       }
       this.settings.callbacks[event].push(handler);
-    },
-
-    /**
-     * Hides a row and moves to next row.
-     *
-     * When an action is taken on a row so it is no longer required in the grid
-     * this method hides the row and moves to the next row, for example after
-     * a verification accept.
-     */
-    hideRowAndMoveNext: function hideRowAndMoveNext() {
-      var el = this;
-      var oldSelected = $(el).find('tr.selected');
-      var newSelectedId;
-      var showingLabel = $(el).find('.showing');
-      var selectedIds = [];
-      var sourceSettings = el.settings.sourceObject.settings;
-      if ($(el).find('table.multiselect-mode').length > 0) {
-        $.each($(el).find('input.multiselect:checked'), function eachRow() {
-          var tr = $(this).closest('tr');
-          selectedIds.push($(tr).attr('data-row-id'));
-          tr.remove();
-        });
-      } else {
-        if ($(oldSelected).next('tr').length > 0) {
-          newSelectedId = $(oldSelected).next('tr').attr('data-row-id');
-        } else if ($(oldSelected).prev('tr').length > 0) {
-          newSelectedId = $(oldSelected).prev('tr').attr('data-row-id');
-        }
-        selectedIds.push($(oldSelected).attr('data-row-id'));
-        $(oldSelected).remove();
-      }
-      // If the number of rows below 75% of page size, refresh the grid.
-      if ($(el).find('table tbody tr.data-row').length < sourceSettings.size * 0.75) {
-        // As ES updates are not instant, we need a temporary must_not match
-        // filter to prevent the verified records reappearing.
-        if (!sourceSettings.filterBoolClauses) {
-          sourceSettings.filterBoolClauses = {};
-        }
-        if (!sourceSettings.filterBoolClauses.must_not) {
-          sourceSettings.filterBoolClauses.must_not = [];
-        }
-        sourceSettings.filterBoolClauses.must_not.push({
-          query_type: 'terms',
-          field: '_id',
-          value: JSON.stringify(selectedIds)
-        });
-        $(el)[0].settings.selectIdsOnNextLoad = [newSelectedId];
-        // Reload the grid page.
-        el.settings.sourceObject.populate(true);
-        // Clean up the temporary exclusion filter.
-        sourceSettings.filterBoolClauses.must_not.pop();
-        if (!sourceSettings.filterBoolClauses.must_not.length) {
-          delete sourceSettings.filterBoolClauses.must_not;
-        }
-      } else {
-        // Update the paging info if some rows left.
-        showingLabel.html(showingLabel.html().replace(/\d+ of /, $(el).find('tbody tr.data-row').length + ' of '));
-        // Immediately select the next row.
-        if (typeof newSelectedId !== 'undefined') {
-          $(el).find('table tbody tr.data-row[data-row-id="' + newSelectedId + '"]').addClass('selected');
-        }
-        // Fire callbacks for selected row.
-        $.each(el.settings.callbacks.rowSelect, function eachCallback() {
-          this($(el).find('tr.selected').length === 0 ? null : $(el).find('tr.selected')[0]);
-        });
-      }
     },
 
     /**

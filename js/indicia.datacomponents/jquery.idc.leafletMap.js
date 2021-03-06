@@ -721,25 +721,22 @@
     bindRecordListControls: function bindRecordListControls() {
       var el = this;
       var settings = $(el)[0].settings;
+      var controlFn;
       if (typeof settings.showSelectedRow !== 'undefined') {
         if ($('#' + settings.showSelectedRow).length === 0) {
           indiciaFns.controlFail(el, 'Invalid grid ID in @showSelectedRow parameter');
         }
         if ($('#' + settings.showSelectedRow).hasClass('idc-output-dataGrid')) {
-          $('#' + settings.showSelectedRow).idcDataGrid('on', 'rowSelect', function onRowSelect(tr) {
-            rowSelected(el, tr, false);
-          });
-          $('#' + settings.showSelectedRow).idcDataGrid('on', 'rowDblClick', function onRowDblClick(tr) {
-            rowSelected(el, tr, true);
-          });
+          controlFn = 'idcDataGrid';
         } else if ($('#' + settings.showSelectedRow).hasClass('idc-output-cardGallery')) {
-          $('#' + settings.showSelectedRow).idcCardGallery('on', 'cardSelect', function onCardSelect(tr) {
-            rowSelected(el, tr, false);
-          });
-          $('#' + settings.showSelectedRow).idcCardGallery('on', 'cardDblClick', function onCardDblClick(tr) {
-            rowSelected(el, tr, true);
-          });
+          controlFn = 'idcCardGallery';
         }
+        $('#' + settings.showSelectedRow)[controlFn]('on', 'itemSelect', function onItemSelect(tr) {
+          rowSelected(el, tr, false);
+        });
+        $('#' + settings.showSelectedRow)[controlFn]('on', 'itemDblClick', function onItemDblClick(tr) {
+          rowSelected(el, tr, true);
+        });
       }
     },
 

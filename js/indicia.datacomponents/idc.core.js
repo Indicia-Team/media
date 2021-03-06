@@ -133,13 +133,20 @@
   };
 
   /**
+   * Browser-tolerant fullscreenElement.
+   */
+  indiciaFns.fullscreenElement = function fullscreenElement() {
+    return document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement;
+  }
+
+  /**
    * Make an output control fullscreen.
    */
   indiciaFns.goFullscreen = function goFullscreen(el) {
-    if (document.fullscreenElement ||
-        document.webkitFullscreenElement ||
-        document.mozFullScreenElement ||
-        document.msFullscreenElement) {
+    if (indiciaFns.fullscreenElement()) {
       if (document.exitFullscreen) {
         document.exitFullscreen();
       } else if (document.webkitExitFullscreen) {
@@ -167,6 +174,73 @@
       $.fancybox.defaults.parentEl = el;
     }
   }
+
+  /**
+     * Hides a row and moves to next row.
+     *
+     * When an action is taken on a row so it is no longer required in the grid
+     * this method hides the row and moves to the next row, for example after
+     * a verification accept.
+     *
+     * @todo Move this into a base class for dataGrid and cardGallery
+     */
+  indiciaFns.hideItemAndMoveNext = function hideItemAndMoveNext(el) {
+    var oldSelected = $(el).find('.selected');
+    var newSelectedId;
+    var showingLabel = $(el).find('.showing');
+    var selectedIds = [];
+    var sourceSettings = el.settings.sourceObject.settings;
+    if ($(el).find('.multiselect-mode').length > 0) {
+      $.each($(el).find('input.multiselect:checked'), function eachRow() {
+        var item = $(this).closest('[data-row-id]');
+        selectedIds.push($(item).attr('[data-row-id]'));
+        item.remove();
+      });
+    } else {
+      if ($(oldSelected).next('[data-row-id]').length > 0) {
+        newSelectedId = $(oldSelected).next('[data-row-id]').attr('data-row-id');
+      } else if ($(oldSelected).prev('[data-row-id]').length > 0) {
+        newSelectedId = $(oldSelected).prev('[data-row-id]').attr('data-row-id');
+      }
+      selectedIds.push($(oldSelected).attr('data-row-id'));
+      $(oldSelected).remove();
+    }
+    // If the number of rows below 75% of page size, refresh the grid.
+    if ($(el).find('[data-row-id]').length < sourceSettings.size * 0.75) {
+      // As ES updates are not instant, we need a temporary must_not match
+      // filter to prevent the verified records reappearing.
+      if (!sourceSettings.filterBoolClauses) {
+        sourceSettings.filterBoolClauses = {};
+      }
+      if (!sourceSettings.filterBoolClauses.must_not) {
+        sourceSettings.filterBoolClauses.must_not = [];
+      }
+      sourceSettings.filterBoolClauses.must_not.push({
+        query_type: 'terms',
+        field: '_id',
+        value: JSON.stringify(selectedIds)
+      });
+      $(el)[0].settings.selectIdsOnNextLoad = [newSelectedId];
+      // Reload the page.
+      el.settings.sourceObject.populate(true);
+      // Clean up the temporary exclusion filter.
+      sourceSettings.filterBoolClauses.must_not.pop();
+      if (!sourceSettings.filterBoolClauses.must_not.length) {
+        delete sourceSettings.filterBoolClauses.must_not;
+      }
+    } else {
+      // Update the paging info if some rows left.
+      showingLabel.html(showingLabel.html().replace(/\d+ of /, $(el).find('[data-row-id]').length + ' of '));
+      // Immediately select the next row.
+      if (typeof newSelectedId !== 'undefined') {
+        $(el).find('[data-row-id="' + newSelectedId + '"]').addClass('selected').focus();
+      }
+      // Fire callbacks for selected row.
+      $.each(el.settings.callbacks.itemSelect, function eachCallback() {
+        this($(el).find('.selected').length === 0 ? null : $(el).find('.selected')[0]);
+      });
+    }
+  },
 
   /**
    * Takes a string and applies token replacement for field values.

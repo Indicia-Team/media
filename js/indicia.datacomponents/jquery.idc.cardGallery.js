@@ -48,8 +48,8 @@
      * Registered callbacks for different events.
      */
     callbacks: {
-      cardSelect: [],
-      cardDblClick: [],
+      itemSelect: [],
+      itemDblClick: [],
       populate: []
     }
   };
@@ -76,7 +76,7 @@
       var card = $(el).find('.card.selected');
       if (card.length && card.data('row-id') !== lastLoadedCardId) {
         lastLoadedCardId = card.data('row-id');
-        $.each(el.settings.callbacks.cardSelect, function eachCallback() {
+        $.each(el.settings.callbacks.itemSelect, function eachCallback() {
           this(card);
         });
       }
@@ -99,13 +99,13 @@
      *
      * Adds selected class and fires callbacks.
      */
-    indiciaFns.on('dblclick', '#' + el.id + ' .es-card-gallery .card', {}, function onCardGalleryCardDblClick() {
+    indiciaFns.on('dblclick', '#' + el.id + ' .es-card-gallery .card', {}, function onCardGalleryitemDblClick() {
       var card = this;
       if (!$(card).hasClass('selected')) {
         $(card).closest('.es-card-gallery').find('.card.selected').removeClass('selected');
         $(card).addClass('selected');
       }
-      $.each(el.settings.callbacks.cardDblClick, function eachCallback() {
+      $.each(el.settings.callbacks.itemDblClick, function eachCallback() {
         this(card);
       });
     });
@@ -211,7 +211,7 @@
   /**
    * After population of the gallery, fire callbacks.
    *
-   * Callbacks may be linked to the populate event or the cardSelect event if
+   * Callbacks may be linked to the populate event or the itemSelect event if
    * the selected card changes.
    */
   function fireAfterPopulationCallbacks(el) {
@@ -220,7 +220,7 @@
       this(el);
     });
     // Fire callbacks for selected card if any.
-    $.each(el.settings.callbacks.cardSelect, function eachCallback() {
+    $.each(el.settings.callbacks.itemSelect, function eachCallback() {
       this($(el).find('.card.selected').length === 0 ? null : $(el).find('.card.selected')[0]);
     });
   }

@@ -432,7 +432,7 @@ var IdcEsDataSource;
       if (ds.settings.filterSourceGrid && ds.settings.filterSourceField && ds.settings.filterField) {
         // Hook up row select event handlers to filter the ds.
         $.each(ds.settings.filterSourceGrid, function eachGrid(idx) {
-          $('#' + this).idcDataGrid('on', 'rowSelect', function onRowSelect(tr) {
+          $('#' + this).idcDataGrid('on', 'itemSelect', function onItemSelect(tr) {
             var thisDoc;
             if (tr) {
               thisDoc = JSON.parse($(tr).attr('data-doc-source'));

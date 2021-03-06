@@ -450,7 +450,7 @@
       // Clean tabs
       $('.ui-tabs-nav').removeClass('ui-widget-header');
       $('.ui-tabs-nav').removeClass('ui-corner-all');
-      $(dataGrid).idcDataGrid('on', 'rowSelect', function rowSelect(tr) {
+      $(dataGrid).idcDataGrid('on', 'itemSelect', function itemSelect(tr) {
         var doc;
         var rows = [];
         var anAnnotation;
@@ -533,7 +533,7 @@
           $(el).find('.tabs').hide();
         }
       });
-      $(dataGrid).idcDataGrid('on', 'populate', function rowSelect() {
+      $(dataGrid).idcDataGrid('on', 'populate', function itemSelect() {
         $(el).find('.empty-message').show();
         $(el).find('.tabs').hide();
       });
