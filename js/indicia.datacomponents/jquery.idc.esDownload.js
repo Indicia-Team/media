@@ -163,6 +163,7 @@
     var settings = el.settings;
     var gridSettings;
     var sourceSettings;
+    var gridColumns = [];
     if (settings.linkToDataGrid) {
       if ($('#' + settings.linkToDataGrid).length !== 1) {
         indiciaFns.controlFail(el, 'Failed to find dataGrid ' + settings.linkToDataGrid + ' linked to download');
@@ -172,7 +173,6 @@
       settings.source = gridSettings.source;
       sourceSettings = indiciaData.esSourceObjects[Object.keys(settings.source)[0]].settings;
       settings.columnsTemplate = '';
-      settings.addColumns = [];
       $.each(gridSettings.columns, function eachCol() {
         var field;
         if (sourceSettings.mode.match(/Aggregation$/) && $.inArray(this.field, sourceSettings.fields) > -1) {
@@ -180,11 +180,12 @@
         } else {
           field = this.field;
         }
-        settings.addColumns.push({
+        gridColumns.push({
           caption: gridSettings.availableColumnInfo[this.field].caption,
           field: field
         });
       });
+      settings.addColumns = typeof settings.addColumns === [] ? gridColumns : gridColumns.concat(settings.addColumns);
     }
     // Only allow a single source for download, so simplify the sources.
     settings.sourceObject = indiciaData.esSourceObjects[Object.keys(settings.source)[0]];
