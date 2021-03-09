@@ -376,14 +376,14 @@
     /**
      * Next page click.
      */
-    $(el).find('.pager .next').click(function clickNext() {
+    $(el).find('.footer .next').click(function clickNext() {
       indiciaFns.movePage(el, true, 'tbody tr.data-row');
     });
 
     /**
      * Previous page click.
      */
-    $(el).find('.pager .prev').click(function clickPrev() {
+    $(el).find('.footer .prev').click(function clickPrev() {
       indiciaFns.movePage(el, false, 'tbody tr.data-row');
     });
 
@@ -870,7 +870,7 @@
         totalCols = el.settings.columns.length
           + (el.settings.responsive ? 1 : 0)
           + (el.settings.actions.length > 0 ? 1 : 0);
-        $('<tfoot><tr class="pager"><td colspan="' + totalCols + '">' + indiciaFns.getPagerControls(el) + '</td></tr></tfoot>').appendTo(table);
+        $('<tfoot><tr class="footer"><td colspan="' + totalCols + '">' + indiciaFns.getFooterControls(el) + '</td></tr></tfoot>').appendTo(table);
       }
       setTableHeight(el);
       // Add tool icons for table settings, full screen and multiselect mode.

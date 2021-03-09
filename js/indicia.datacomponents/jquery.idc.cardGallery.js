@@ -185,14 +185,14 @@
     /**
      * Next page click.
      */
-    $(el).find('.pager .next').click(function clickNext() {
+    $(el).find('.footer .next').click(function clickNext() {
       indiciaFns.movePage(el, true, '.card');
     });
 
     /**
      * Previous page click.
      */
-    $(el).find('.pager .prev').click(function clickPrev() {
+    $(el).find('.footer .prev').click(function clickPrev() {
       indiciaFns.movePage(el, false, '.card');
     });
 
@@ -274,7 +274,7 @@
 
       $('<div class="es-card-gallery">').appendTo(el);
       if (el.settings.includePager) {
-        $('<div class="pager">' + indiciaFns.getPagerControls(el) + '</div>').appendTo(el);
+        $('<div class="footer">' + indiciaFns.getFooterControls(el) + '</div>').appendTo(el);
       }
 
       if (el.settings.includeFullScreenTool &&

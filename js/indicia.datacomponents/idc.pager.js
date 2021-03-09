@@ -92,12 +92,12 @@
   }
 
   /**
-   * HTML for pager controls.
+   * HTML for footer controls such as pager and rows per page.
    *
    * @param DOM el
    *   Control element.
    */
-  indiciaFns.getPagerControls = function getPagerControls(el) {
+  indiciaFns.getFooterControls = function getFooterControls(el) {
     return '<span class="showing"></span> ' +
       '<span class="buttons"><button class="prev">Previous</button><button class="next">Next</button></span> ' +
       getRowsPerPageControl(el);
@@ -120,7 +120,7 @@
     var ofLabel = '';
     var toLabel;
     var pageSize = $(el).find(itemSelector).length;
-    var pager = $(el).find('.pager');
+    var footer = $(el).find('.footer');
     var sourceSettings = el.settings.sourceObject.settings;
     var total;
     if (sourceSettings.mode === 'docs') {
@@ -141,29 +141,29 @@
       if (afterKey) {
         el.settings.compositeInfo.pageAfterKeys[el.settings.compositeInfo.page + 1] = afterKey;
       }
-      $(pager).find('.next').prop('disabled', !afterKey);
-      $(pager).find('.prev').prop('disabled', el.settings.compositeInfo.page === 0);
+      $(footer).find('.next').prop('disabled', !afterKey);
+      $(footer).find('.prev').prop('disabled', el.settings.compositeInfo.page === 0);
       fromRowIndex = (el.settings.compositeInfo.page * sourceSettings.aggregationSize) + 1;
     } else if (sourceSettings.mode === 'termAggregation') {
       // Can't page through a standard terms aggregation.
-      $(pager).find('.buttons').hide();
+      $(footer).find('.buttons').hide();
       fromRowIndex = 1;
     } else {
       fromRowIndex = typeof data.from === 'undefined' ? 1 : (data.from + 1);
       // Enable or disable the paging buttons.
-      $(pager).find('.prev').prop('disabled', fromRowIndex <= 1);
-      $(pager).find('.next').prop('disabled', fromRowIndex + response.hits.hits.length >= response.hits.total.value);
+      $(footer).find('.prev').prop('disabled', fromRowIndex <= 1);
+      $(footer).find('.next').prop('disabled', fromRowIndex + response.hits.hits.length >= response.hits.total.value);
     }
     // Output text describing loaded hits.
     if (pageSize > 0) {
       if (fromRowIndex === 1 && pageSize === total) {
-        $(pager).find('.showing').html('Showing all ' + total + ' hits');
+        $(footer).find('.showing').html('Showing all ' + total + ' hits');
       } else {
         toLabel = fromRowIndex === 1 ? 'first ' : fromRowIndex + ' to ';
-        $(pager).find('.showing').html('Showing ' + toLabel + (fromRowIndex + (pageSize - 1)) + ' of ' + ofLabel + total);
+        $(footer).find('.showing').html('Showing ' + toLabel + (fromRowIndex + (pageSize - 1)) + ' of ' + ofLabel + total);
       }
     } else {
-      $(pager).find('.showing').html('No hits');
+      $(footer).find('.showing').html('No hits');
     }
   }
 
