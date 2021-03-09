@@ -768,6 +768,20 @@
     },
 
     /**
+     * Output a constant.
+     *
+     * Pass the constant value to output which can be an empty string.
+     */
+     constant: function constant(doc, params) {
+      if (params.length === 1) {
+        return params[0];
+      }
+      else {
+        return '';
+      }
+    },
+
+    /**
      * Data cleaner automatic rule check result icons.
      */
     data_cleaner_icons: function dataCleanerIcons(doc) {
@@ -872,27 +886,6 @@
     },
 
     /**
-     * A summary of location information.
-     *
-     * Includes the given location name (verbatim locality) as well as list of
-     * higher geography.
-     */
-    locality: function locality(doc) {
-      var info = '';
-      if (doc.location.verbatim_locality) {
-        info += '<div>' + doc.location.verbatim_locality + '</div>';
-        if (doc.location.higher_geography) {
-          info += '<ul>';
-          $.each(doc.location.higher_geography, function eachPlace() {
-            info += '<li>' + this.type + ': ' + this.name + '</li>';
-          });
-          info += '</ul>';
-        }
-      }
-      return info;
-    },
-
-    /**
      * A formatted latitude.
      */
     lat: function lat(doc, params) {
@@ -920,6 +913,27 @@
       var lon = parseFloat(coords[1]);
       return Math.abs(lat).toFixed(3) + (lat >= 0 ? 'N' : 'S') + ' ' +
              Math.abs(lon).toFixed(3) + (lon >= 0 ? 'E' : 'W');
+    },
+
+    /**
+     * A summary of location information.
+     *
+     * Includes the given location name (verbatim locality) as well as list of
+     * higher geography.
+     */
+     locality: function locality(doc) {
+      var info = '';
+      if (doc.location.verbatim_locality) {
+        info += '<div>' + doc.location.verbatim_locality + '</div>';
+        if (doc.location.higher_geography) {
+          info += '<ul>';
+          $.each(doc.location.higher_geography, function eachPlace() {
+            info += '<li>' + this.type + ': ' + this.name + '</li>';
+          });
+          info += '</ul>';
+        }
+      }
+      return info;
     },
 
     /**
