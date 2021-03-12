@@ -432,7 +432,6 @@ $.Autocompleter = function(input, options) {
     } else {
       if (!hasFocus && options.warnIfNoMatch) {
         $input.addClass('error');
-        $input.effect("shake", { times: 2, distance: 3 }, 300);
       }
       hideResultsNow(false);
       if (indiciaFns.hookTaxonLookupFailed && options.url.match(/\/taxa_search$/)) {

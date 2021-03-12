@@ -60,7 +60,7 @@ jQuery(document).ready(function($) {
             paramRows += '<tr><th scope="row">' + parameter + '</th><td>' + display +
               '</td><td>' + description + '</td><td>' + datatype + '</td></tr>';
           });
-          $.fancybox('<div class="report-metadata-popup">' +
+          $.fancybox.open('<div class="report-metadata-popup">' +
               '<table class="ui-widget"><caption class="ui-widget-header">Report summary</caption>' +
               '<thead class="ui-widget-header"><tr><th>Attribute</th><th>Value</th></tr></thead>' +
               '<tbody><tr><th scope="row">Report path</th><td>' + rpt + '</td>' +

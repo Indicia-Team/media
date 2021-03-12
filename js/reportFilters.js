@@ -192,6 +192,15 @@ jQuery(document).ready(function ($) {
         if (filterDef.marine_flag && filterDef.marine_flag !== 'all') {
           r.push($('#marine_flag').find('option[value=' + filterDef.marine_flag + ']').text());
         }
+        if (filterDef.freshwater_flag && filterDef.freshwater_flag !== 'all') {
+          r.push($('#freshwater_flag').find('option[value=' + filterDef.freshwater_flag + ']').text());
+        }
+        if (filterDef.terrestrial_flag && filterDef.terrestrial_flag !== 'all') {
+          r.push($('#terrestrial_flag').find('option[value=' + filterDef.terrestrial_flag + ']').text());
+        }
+        if (filterDef.non_native_flag && filterDef.non_native_flag !== 'all') {
+          r.push($('#non_native_flag').find('option[value=' + filterDef.non_native_flag + ']').text());
+        }
         if (typeof filterDef.confidential !== 'undefined') {
           switch (filterDef.confidential) {
             case 't':
@@ -696,8 +705,11 @@ jQuery(document).ready(function ($) {
           }
           if ($('#site-type').val() !== siteType) {
             $('#site-type').val(siteType);
-            changeSiteType();
           }
+          changeSiteType();
+          loadSites(locationsToLoad);
+        } else if (indiciaData.filter.def.searchArea && indiciaData.mapdiv) {
+          loadPolygon(indiciaData.filter.def.searchArea);
         }
         if (siteOrGridRefSelected()) {
           // don't want to be able to edit a loaded site boundary or grid reference
@@ -731,20 +743,12 @@ jQuery(document).ready(function ($) {
       loadFilter: function () {
         var filter;
         var map;
-        var parser;
-        var feature;
         var locationsToLoad;
         if (typeof indiciaData.mapdiv !== 'undefined') {
           filter = indiciaData.filter.def;
           map = indiciaData.mapdiv.map;
           if (filter.searchArea) {
-            parser = new OpenLayers.Format.WKT();
-            feature = parser.read(filter.searchArea);
-            if (map.projection.getCode() !== indiciaData.mapdiv.indiciaProjection.getCode()) {
-              feature.geometry.transform(indiciaData.mapdiv.indiciaProjection, map.projection);
-            }
-            map.editLayer.addFeatures([feature]);
-            map.zoomToExtent(map.editLayer.getDataExtent());
+            loadPolygon(filter.searchArea);
           } else if (filter.location_id || filter.location_list || filter.indexed_location_id || filter.indexed_location_list) {
             // need to load filter location boundaries onto map. Location_id variants are for legacy
             if (filter.location_id && !filter.location_list) {
@@ -919,6 +923,17 @@ jQuery(document).ready(function ($) {
     } else {
       map.editLayer.removeAllFeatures();
     }
+  }
+
+  function loadPolygon(wkt) {
+    var parser = new OpenLayers.Format.WKT();
+    var feature = parser.read(wkt);
+    var map = indiciaData.mapdiv.map;
+    if (map.projection.getCode() !== indiciaData.mapdiv.indiciaProjection.getCode()) {
+      feature.geometry.transform(indiciaData.mapdiv.indiciaProjection, map.projection);
+    }
+    map.editLayer.addFeatures([feature]);
+    map.zoomToExtent(map.editLayer.getDataExtent());
   }
 
   function loadSites(idsToSelect, doClear) {
@@ -1348,7 +1363,7 @@ jQuery(document).ready(function ($) {
     var attrName;
     var option;
     // regexp extracts the pane ID from the href. Loop through the controls in the pane
-    $.each(pane.find(':input').not('#imp-sref-system,:checkbox,[type=button],[name="location_list[]"]'),
+    $.each(pane.find(':input').not('#imp-sref-system,:checkbox,[type=button],[name="location_list[]"],.precise-date-picker'),
       function (idx, ctrl) {
         var value;
         // set control value to the stored filter setting
@@ -1392,7 +1407,7 @@ jQuery(document).ready(function ($) {
   if ($('.fb-filter-link').length){
     $('.fb-filter-link').fancybox({
       beforeLoad: function () {
-        var pane = $(this.href.replace(/^[^#]+/, ''));
+        var pane = $(this.src.replace(/^[^#]+/, ''));
         var paneName = $(pane).attr('id').replace('controls-filter_', '');
         if (typeof paneObjList[paneName].preloadForm !== 'undefined') {
           paneObjList[paneName].preloadForm();
@@ -1403,7 +1418,7 @@ jQuery(document).ready(function ($) {
         loadFilterOntoForm(paneName);
       },
       afterShow: function () {
-        var pane = $(this.href.replace(/^[^#]+/, ''));
+        var pane = $(this.src.replace(/^[^#]+/, ''));
         var element;
         $('.context-instruct').hide();
         if (pane[0].id === 'controls-filter_where') {
@@ -1441,7 +1456,7 @@ jQuery(document).ready(function ($) {
         $('#location_list\\:search\\:name').prop('disabled', false);
       },
       afterClose: function () {
-        var pane = $(this.href.replace(/^[^#]+/, ''));
+        var pane = $(this.src.replace(/^[^#]+/, ''));
         var element;
         if (pane[0].id === 'controls-filter_where' && typeof indiciaData.linkToMapDiv !== 'undefined') {
           element = $('#' + indiciaData.linkToMapDiv);

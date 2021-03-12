@@ -244,7 +244,7 @@
   /**
    * Adds a Wkt geometry to the map.
    */
-  function showFeatureWkt(el, geom, zoom, style) {
+  function showFeatureWkt(el, geom, zoom, maxZoom, style) {
     var centre;
     var wkt = new Wkt.Wkt();
     var obj;
@@ -265,7 +265,7 @@
     if (!zoom) {
       el.map.panTo(centre);
     } else if (wkt.type === 'polygon' || wkt.type === 'multipolygon') {
-      el.map.fitBounds(obj.getBounds(), { maxZoom: 11 });
+      el.map.fitBounds(obj.getBounds(), { maxZoom: maxZoom });
     } else {
       el.map.setView(centre, 11);
     }
@@ -285,7 +285,7 @@
     if (tr) {
       doc = JSON.parse($(tr).attr('data-doc-source'));
       if (doc.location) {
-        obj = showFeatureWkt(el, doc.location.geom, zoom);
+        obj = showFeatureWkt(el, doc.location.geom, zoom, 11);
         ensureFeatureClear(el, obj);
         selectedRowMarker = obj;
       }
@@ -585,8 +585,8 @@
             group = L.heatLayer([], $.extend({ radius: 10 }, layer.style ? layer.style : {}));
           } else {
             group = L.featureGroup();
-            // If linked to rows in a dataGrid, then clicking on a feature can
-            // temporarily filter the grid.
+            // If linked to rows in a dataGrid or cardGallery, then clicking on
+            // a feature can temporarily filter the grid.
             if (typeof el.settings.showSelectedRow !== 'undefined') {
               // Use preclick event as this must come before the map click for
               // the filter reset to work at correct time.
@@ -688,11 +688,13 @@
         }
       });
       // Are there document hits to map?
-      $.each(response.hits.hits, function eachHit(i) {
-        var latlon = this._source.location.point.split(',');
-        addFeature(el, sourceSettings.id, latlon, this._source.location.geom,
-          this._source.location.coordinate_uncertainty_in_meters, '_id', this._id);
-      });
+      if (typeof response.hits !== 'undefined') {
+        $.each(response.hits.hits, function eachHit(i) {
+          var latlon = this._source.location.point.split(',');
+          addFeature(el, sourceSettings.id, latlon, this._source.location.geom,
+            this._source.location.coordinate_uncertainty_in_meters, '_id', this._id);
+        });
+      }
       // Are there aggregations to map?
       if (typeof response.aggregations !== 'undefined') {
         if (sourceSettings.mode === 'mapGeoHash') {
@@ -711,22 +713,28 @@
     },
 
     /**
-     * Binds to dataGrid callbacks.
+     * Binds to dataGrid and cardGallery callbacks.
      *
      * Binds to event handlers for row click (to select feature) and row double
      * click (to also zoom in).
      */
-    bindGrids: function bindGrids() {
+    bindRecordListControls: function bindRecordListControls() {
       var el = this;
       var settings = $(el)[0].settings;
+      var controlFn;
       if (typeof settings.showSelectedRow !== 'undefined') {
         if ($('#' + settings.showSelectedRow).length === 0) {
           indiciaFns.controlFail(el, 'Invalid grid ID in @showSelectedRow parameter');
         }
-        $('#' + settings.showSelectedRow).idcDataGrid('on', 'rowSelect', function onRowSelect(tr) {
+        if ($('#' + settings.showSelectedRow).hasClass('idc-output-dataGrid')) {
+          controlFn = 'idcDataGrid';
+        } else if ($('#' + settings.showSelectedRow).hasClass('idc-output-cardGallery')) {
+          controlFn = 'idcCardGallery';
+        }
+        $('#' + settings.showSelectedRow)[controlFn]('on', 'itemSelect', function onItemSelect(tr) {
           rowSelected(el, tr, false);
         });
-        $('#' + settings.showSelectedRow).idcDataGrid('on', 'rowDblClick', function onRowDblClick(tr) {
+        $('#' + settings.showSelectedRow)[controlFn]('on', 'itemDblClick', function onItemDblClick(tr) {
           rowSelected(el, tr, true);
         });
       }
@@ -744,13 +752,13 @@
 
     /**
      * Shows a selected feature boundary (e.g. a selected location).
-     * */
+     */
     showFeature: function showFeature(geom, zoom) {
       if (selectedFeature) {
         selectedFeature.removeFrom(this.map);
         selectedFeature = null;
       }
-      selectedFeature = showFeatureWkt(this, geom, zoom, {
+      selectedFeature = showFeatureWkt(this, geom, zoom, 14, {
         color: '#3333DD',
         fillColor: '#4444CC',
         fillOpacity: 0.05
@@ -832,4 +840,24 @@
     // If the method has no explicit response, return this to allow chaining.
     return typeof result === 'undefined' ? this : result;
   };
+
+  /**
+   * Loads the boundary defined by a report filter.
+   *
+   * Can be either from a location ID, or a search area polygon. Must be run
+   * after the map has initialised.
+   */
+  indiciaFns.loadReportBoundaries = function() {
+    if (indiciaData.reportBoundaries) {
+      $.each($('.idc-output-leafletMap'), function eachMap() {
+        var map = this;
+        if (!map.settings.initialBoundsSet) {
+          $.each(indiciaData.reportBoundaries, function eachBoundary() {
+            $(map).idcLeafletMap('showFeature', this, true);
+          });
+          map.settings.initialBoundsSet = true;
+        }
+      });
+    }
+  }
 }());

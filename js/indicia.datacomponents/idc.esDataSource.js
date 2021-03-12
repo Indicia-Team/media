@@ -51,9 +51,31 @@ var IdcEsDataSource;
     var modeSpecificSetupFns = {};
 
     /**
-     * List of tabs that this source is due to populate on activation of.
+     * List of tabs which were initially hidden but contain controls with sources that need to be
+     * populated when the tab shows.
      */
-    var boundToTabs = [];
+    var hiddenTabSources = {};
+
+    /**
+     * Tab select event handler.
+     *
+     * Populates sources for controls where the population was delayed because the tab was initially hidden.
+     */
+    function tabSelectFn(e, tabInfo) {
+      // Does the selected tab have unpopulated sources?
+      if (hiddenTabSources[tabInfo.newPanel[0].id]) {
+        $.each(hiddenTabSources[tabInfo.newPanel[0].id], function() {
+          var src = this[0];
+          // If only populating 1 control, apply that limit, otherwise all controls for source are
+          // populated.
+          var onlyForControl = this[1];
+          src.prepare();
+          doPopulation.call(src, false, onlyForControl);
+        });
+        // Clear the sources to populate for this tab.
+        hiddenTabSources[tabInfo.newPanel[0].id] = [];
+      }
+    }
 
     /**
      * Some generic preparation for modes that aggregate data.
@@ -304,7 +326,7 @@ var IdcEsDataSource;
         alert('Elasticsearch query failed');
       } else {
         // Convert hits.total to Elasticsearch 7 style.
-        if (response.hits.total && indiciaData.esVersion === 6) {
+        if (response.hits && response.hits.total && indiciaData.esVersion === 6) {
           response.hits.total = { value: response.hits.total, relation: 'eq' };
         }
         $.each(indiciaData.outputPluginClasses, function eachPluginClass(i, pluginClass) {
@@ -336,6 +358,13 @@ var IdcEsDataSource;
       if (source.settings.after_key) {
         indiciaFns.findValue(request, 'composite').after = source.settings.after_key;
       }
+      // Proxy layer caching support.
+      if (this.settings.proxyCacheTimeout) {
+        request.proxyCacheTimeout = this.settings.proxyCacheTimeout;
+        // This happens only on initial page load as no point caching custom
+        // filters on AJAX updates.
+        delete this.settings.proxyCacheTimeout;
+      }
       // Don't repopulate if exactly the same request as already loaded.
       if (request && (JSON.stringify(request) !== lastRequestStr || force)) {
         lastRequestStr = JSON.stringify(request);
@@ -343,7 +372,7 @@ var IdcEsDataSource;
         // Pass through additional parameters to the request.
         if (source.settings.filterPath) {
           // Filter path allows limiting of content in the response.
-          url += url.indexOf('?') === false ? '?' : '&';
+          url += url.indexOf('?') === -1 ? '?' : '&';
           url += 'filter_path=' + source.settings.filterPath;
         }
         $.ajax({
@@ -403,7 +432,7 @@ var IdcEsDataSource;
       if (ds.settings.filterSourceGrid && ds.settings.filterSourceField && ds.settings.filterField) {
         // Hook up row select event handlers to filter the ds.
         $.each(ds.settings.filterSourceGrid, function eachGrid(idx) {
-          $('#' + this).idcDataGrid('on', 'rowSelect', function onRowSelect(tr) {
+          $('#' + this).idcDataGrid('on', 'itemSelect', function onItemSelect(tr) {
             var thisDoc;
             if (tr) {
               thisDoc = JSON.parse($(tr).attr('data-doc-source'));
@@ -453,7 +482,7 @@ var IdcEsDataSource;
     IdcEsDataSource.prototype.populate = function datasourcePopulate(force, onlyForControl) {
       var src = this;
       var needsPopulation = false;
-      if (!src.outputs) {
+      if (!src.outputs || src.settings.disabled) {
         // Not initialised yet, so don't populate.
         return;
       }
@@ -463,27 +492,24 @@ var IdcEsDataSource;
         $.each(src.outputs[pluginClass], function eachOutput() {
           var output = this;
           var populateThis = $(output)[pluginClass]('getNeedsPopulation', src);
-          if ($(output).parents('.ui-tabs-panel:hidden').length > 0) {
-            // Don't bother if on a hidden tab.
+          var tabSet;
+          var tab;
+          // If on a hidden tab, we'll save the population for when the tab is shown.
+          if ($(output).closest('.ui-tabs-panel:hidden').length > 0) {
+            tab = $(output).closest('.ui-tabs-panel:hidden')[0];
+            var tabSet = $(tab).closest('.ui-tabs');
+            // This output does not want to be populated yet.
             populateThis = false;
-            $.each($(output).parents('.ui-tabs-panel:hidden'), function eachHiddenTab() {
-              var tab = this;
-              var tabSelectFn;
-              var index;
-              if ($.inArray(tab.id, boundToTabs) === -1) {
-                tabSelectFn = function eachTabSet(e, tabInfo) {
-                  if (tabInfo.newPanel[0] === tab) {
-                    $(output).find('.loading-spinner').show();
-                    src.prepare();
-                    doPopulation.call(src, force, onlyForControl);
-                    indiciaFns.unbindTabsActivate($(tab).closest('.ui-tabs'), tabSelectFn);
-                    boundToTabs = boundToTabs.splice(index, $.inArray(tab.id, boundToTabs));
-                  }
-                };
-                indiciaFns.bindTabsActivate($(tab).closest('.ui-tabs'), tabSelectFn);
-                boundToTabs.push(tab.id);
-              }
-            });
+            // Track the tab and source that needs population.
+            if (!hiddenTabSources[tab.id]) {
+              hiddenTabSources[tab.id] = [];
+            }
+            hiddenTabSources[tab.id].push([src, onlyForControl ? onlyForControl : false]);
+            // Hook up a tab activation event handler.
+            if ($(tabSet).prop('data-src-fn-bound') !== 'true') {
+              indiciaFns.bindTabsActivate(tabSet, tabSelectFn);
+              $(tabSet).prop('data-src-fn-bound', 'true');
+            }
           }
           needsPopulation = needsPopulation || populateThis;
           if (populateThis) {

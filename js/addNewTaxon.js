@@ -38,12 +38,45 @@
     currentInput = $(this).parent().find('input:visible');
     $('#new-taxon-name').val(ucfirst(currentInput.val()));
     $('#new-taxon-group').val('');
-    $.fancybox($('#new-taxon-form'));
+    $('#new-taxon-form').prop('disabled', false)
+    $.fancybox.open($('#new-taxon-form'));
   });
 
   /**
    * Popup form Save button click handler.
    *
+   * Checks if a new taxon request already exists in the temporary taxa list or
+   * needs to be saved.
+   */
+  function handleAddedTaxon() {
+    if ($('#new-taxon-name').val().trim() === '' || !$('#new-taxon-group').val()) {
+      alert('Please fill in all the values before proceeding.')
+      return false;
+    }
+    $.ajax({
+      dataType: 'jsonp',
+      url: indiciaData.read.url + 'index.php/services/data/taxa_taxon_list',
+      data: {
+        taxon_list_id: indiciaData.allowTaxonAdditionToList,
+        taxon: $('#new-taxon-name').val().trim(),
+        taxon_group_id: $('#new-taxon-group').val().trim(),
+        auth_token: indiciaData.read.auth_token,
+        nonce: indiciaData.read.nonce
+      },
+      success: function (data) {
+        if (data.length) {
+          // Existing match already saved, so use that.
+          saveAddedTaxonIdInForm(data[0]['id']);
+        } else {
+          saveAddedTaxon();
+        }
+        $.fancybox.close();
+        $('#new-taxon-form').prop('disabled', true);
+      }
+    });
+  }
+
+  /**
    * Adds a new taxon to the database.
    */
   function saveAddedTaxon() {
@@ -56,49 +89,47 @@
       'taxon:taxon_group_id': $('#new-taxon-group').val().trim(),
       'taxon:language_id': indiciaData.latinLanguageId,
     };
-    if ($('#new-taxon-name').val().trim() === '' || !$('#new-taxon-group').val()) {
-      alert('Please fill in all the values before proceeding.')
-      return false;
-    }
     // Post new taxa to the warehouse.
     $.post(indiciaData.taxonAdditionPostUrl, taxon,
       function (data) {
         if (data.success) {
-          if ($(currentInput).closest('.species-grid').length > 0) {
-            // Get the grid to handle the new taxon.
-            handleSelectedTaxon(
-              {target: currentInput[0]},
-              {
-                taxa_taxon_list_id: data.outer_id,
-                searchterm:$('#new-taxon-name').val().trim(),
-                highlighted: $('#new-taxon-name').val().trim(),
-                taxon: $('#new-taxon-name').val().trim(),
-                authority: '',
-                language_iso: 'lat',
-                preferred_taxon: $('#new-taxon-name').val().trim(),
-                preferred_authority: '',
-                default_common_name :null,
-                taxon_group: $('#new-taxon-group option:selected').text(),
-                preferred: 't',
-                preferred_taxa_taxon_list_id: data.outer_id
-              },
-              data.outer_id
-            );
-          } else {
-            // Normal single species input control.
-            $('#occurrence\\:taxa_taxon_list_id').val(data.outer_id);
-          }
-          alert('Your record will be saved against the proposed taxon which will be reviewed by an expert.');
-          $(currentInput).parent().find('.add-new-taxon').remove();
+          saveAddedTaxonIdInForm(data.outer_id);
         }
       },
       'json'
     );
-    $.fancybox.close();
-    return false;
   }
 
-  indiciaFns.on('click', '#do-add-new-taxon', {}, saveAddedTaxon);
+  function saveAddedTaxonIdInForm(ttlId) {
+    if ($(currentInput).closest('.species-grid').length > 0) {
+      // Get the grid to handle the new taxon.
+      handleSelectedTaxon(
+        {target: currentInput[0]},
+        {
+          taxa_taxon_list_id: ttlId,
+          searchterm:$('#new-taxon-name').val().trim(),
+          highlighted: $('#new-taxon-name').val().trim(),
+          taxon: $('#new-taxon-name').val().trim(),
+          authority: '',
+          language_iso: 'lat',
+          preferred_taxon: $('#new-taxon-name').val().trim(),
+          preferred_authority: '',
+          default_common_name :null,
+          taxon_group: $('#new-taxon-group option:selected').text(),
+          preferred: 't',
+          preferred_taxa_taxon_list_id: ttlId
+        },
+        ttlId
+      );
+    } else {
+      // Normal single species input control.
+      $('#occurrence\\:taxa_taxon_list_id').val(ttlId);
+    }
+    alert('Your record will be saved against the proposed taxon which will be reviewed by an expert.');
+    $(currentInput).parent().find('.add-new-taxon').remove();
+  }
+
+  indiciaFns.on('click', '#do-add-new-taxon', {}, handleAddedTaxon);
 
   /**
    * Hook into autocomplete lookup failures.

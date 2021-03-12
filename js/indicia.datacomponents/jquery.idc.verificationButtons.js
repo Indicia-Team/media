@@ -38,6 +38,7 @@
    * Declare default settings.
    */
   var defaults = {
+    keyboardNavigation: false
   };
 
   /**
@@ -56,14 +57,22 @@
    */
   var redetFormValidator;
 
-  var dataGrid;
+  /**
+   * Control outputting the list of docs we are verifying - dataGrid or cardGallery.
+   */
+  var listOutputControl;
+
+  /**
+   * Class name for the list output control.
+   */
+  var listOutputControlClass;
 
   /**
    * Saves the comment associated with a verification or query event.
    */
   function saveVerifyComment(occurrenceIds, status, comment, email) {
     var commentToSave;
-    var allTableMode = $(dataGrid).find('.multi-mode-table.active').length > 0;
+    var allTableMode = $(listOutputControl).find('.multi-mode-table.active').length > 0;
     var data = {
       website_id: indiciaData.website_id,
       user_id: indiciaData.user_id
@@ -78,7 +87,7 @@
       // This will only be the case when querying a single record. If the
       // species requires fully logged comms, add the email body to the
       // comment.
-      currentDoc = JSON.parse($(dataGrid).find('tr.selected').attr('data-doc-source'));
+      currentDoc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
       if (indiciaData.workflowTaxonMeaningIDsLogAllComms.indexOf(currentDoc.taxon.taxon_meaning_id) !== -1) {
         data['occurrence_comment:correspondence_data'] = JSON.stringify({
           email: [{
@@ -104,7 +113,7 @@
       if (allTableMode) {
         indiciaPostUrl = indiciaData.esProxyAjaxUrl + '/updateall/' + indiciaData.nid;
         // Loop sources, only 1 will apply.
-        $.each($(dataGrid)[0].settings.source, function eachSource(sourceId) {
+        $.each($(listOutputControl)[0].settings.source, function eachSource(sourceId) {
           $.extend(data, {
             'occurrence:idsFromElasticFilter': indiciaFns.getFormQueryData(indiciaData.esSourceObjects[sourceId])
           });
@@ -128,8 +137,8 @@
           if (allTableMode) {
             $('body > .loading-spinner').remove();
             // Unset all table mode as this is a "dangerous" state that should be explicitly chosen each time.
-            $(dataGrid).find('.multi-mode-table.active').removeClass('active');
-            $(dataGrid).find('.multi-mode-selected').addClass('active');
+            $(listOutputControl).find('.multi-mode-table.active').removeClass('active');
+            $(listOutputControl).find('.multi-mode-selected').addClass('active');
             indiciaFns.populateDataSources();
           } else if (response !== 'OK') {
             alert('Indicia records update failed');
@@ -193,9 +202,9 @@
           if (occurrenceIds.length > 1) {
             indiciaFns.populateDataSources();
           } else if (occurrenceIds.length === 1) {
-            $(dataGrid).idcDataGrid('hideRowAndMoveNext');
+            indiciaFns.hideItemAndMoveNext(listOutputControl[0]);
           }
-          $(dataGrid).find('.multiselect-all').prop('checked', false);
+          $(listOutputControl).find('.multiselect-all').prop('checked', false);
         }
       },
       error: function error() {
@@ -221,18 +230,18 @@
     var overallStatus = status.status ? status.status : status.query;
     var ids = [];
     var todoCount;
-    var selectedTrs;
-    if ($(dataGrid).find('.multi-mode-table.active').length > 0) {
-      todoCount = $(dataGrid)[0].settings.totalRowCount;
+    var selectedItems;
+    if ($(listOutputControl).find('.multi-mode-table.active').length > 0) {
+      todoCount = $(listOutputControl)[0].settings.totalRowCount;
     } else {
-      selectedTrs = $(dataGrid).hasClass('multiselect-mode')
-        ? $(dataGrid).find('.multiselect:checked').closest('tr')
-        : $(dataGrid).find('tr.selected');
-      if (selectedTrs.length === 0) {
+      selectedItems = $(listOutputControl).hasClass('multiselect-mode')
+        ? $(listOutputControl).find('.multiselect:checked').closest('tr,.card')
+        : $(listOutputControl).find('.selected');
+      if (selectedItems.length === 0) {
         alert(indiciaData.lang.verificationButtons.nothingSelected);
         return;
       }
-      $.each(selectedTrs, function eachRow() {
+      $.each(selectedItems, function eachRow() {
         doc = JSON.parse($(this).attr('data-doc-source'));
         ids.push(parseInt(doc.id, 10));
       });
@@ -265,7 +274,7 @@
         '<textarea id="comment-textarea" class="form-control" rows="6"></textarea>' +
       '</div>').appendTo(fs);
     $('<button class="btn btn-primary">Save</button>').appendTo(fs);
-    $.fancybox(fs);
+    $.fancybox.open(fs);
   }
 
   /**
@@ -424,7 +433,7 @@
       emailTab.appendTo(content);
       commentTab.appendTo(content);
     }
-    $.fancybox(content);
+    $.fancybox.open(content);
     $('#popup-tabs').tabs();
   }
 
@@ -433,12 +442,12 @@
    */
   function queryPopup() {
     var doc;
-    if ($(dataGrid).hasClass('multiselect-mode')) {
+    if ($(listOutputControl).hasClass('multiselect-mode')) {
       // As there are multiple records possibly selected, sending an email
       // option not available.
       commentPopup({ query: 'Q' }, indiciaData.lang.verificationButtons.queryInMultiselectMode);
     } else {
-      doc = JSON.parse($(dataGrid).find('tr.selected').attr('data-doc-source'));
+      doc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
       getCurrentRecordEmail(doc, function callback(emailTo) {
         var t = indiciaData.lang.verificationButtons;
         if (doc.metadata.created_by_id == 1 && emailTo === '' || !emailTo.match(/@/)) {
@@ -504,7 +513,7 @@
           $.fancybox.close();
           alert(indiciaData.lang.verificationButtons.emailSent);
         } else {
-          $.fancybox('<div class="manual-email">' + indiciaData.lang.verificationButtons.requestManualEmail +
+          $.fancybox.open('<div class="manual-email">' + indiciaData.lang.verificationButtons.requestManualEmail +
             '<div class="ui-helper-clearfix"><span class="left">To:</span><div class="right">' + email.to + '</div></div>' +
             '<div class="ui-helper-clearfix"><span class="left">Subject:</span><div class="right">' + email.subject + '</div></div>' +
             '<div class="ui-helper-clearfix"><span class="left">Content:</span><div class="right">' + email.body.replace(/\n/g, '<br/>') + '</div></div>' +
@@ -622,7 +631,61 @@
         type: 'post',
         data: data,
         success: function success() {
-          $(dataGrid).idcDataGrid('hideRowAndMoveNext');
+          indiciaFns.hideItemAndMoveNext(listOutputControl[0]);
+        }
+      });
+    }
+  }
+
+  /**
+   * Enables shortcut keys for verification actions.
+   *
+   * @param DOM el
+   *   Control element.
+   */
+  function enableKeyboardNavigation(el) {
+    var statuses = {
+      V: [1, 49],
+      V1: [1, 49],
+      V2: [2, 50],
+      C3: [3, 51],
+      R4: [4, 52],
+      R: [5, 53],
+      R5: [5, 53]
+    };
+    if (el.settings.keyboardNavigation) {
+      // Add hints to indicate shortcut keys.
+      $.each(statuses, function(code, key) {
+        $('[data-status="' + code +'"]').attr('title', $('[data-status="' + code +'"]').attr('title') + ' (' + key[0] + ')');
+        $('[data-status="' + code +'"]').attr('data-keycode', key[1]);
+      });
+      $('[data-query="Q"]').attr('title', $('[data-query="Q"]').attr('title') + ' (Q)');
+      $('button.redet').attr('title', $('button.redet').attr('title') + ' (R)');
+
+      $(document).keydown(function onKeydown(e) {
+        // Always close Fancybox on escape.
+        if (e.which === 27 && $.fancybox.getInstance()) {
+          $.fancybox.close();
+          if ($('.selected:visible').length) {
+            $('.selected:visible').focus();
+          }
+        }
+        // Abort if focus on an input control (as the event bubbles to the
+        // container despite the above selector).
+        if ($(':input:focus').length) {
+          return true;
+        }
+        // Only interested in keys 1-5, q and d.
+        if ($('[data-keycode="' + e.which +'"]:visible').length || e.which === 81 || e.which === 82) {
+          if ($('[data-keycode="' + e.which +'"]:visible').length) {
+            commentPopup({ status: $('[data-keycode="' + e.which +'"]:visible').attr('data-status') });
+          } else if (e.which === 81) {
+            queryPopup();
+          } else if (e.which === 82) {
+            $.fancybox.open($('#redet-form'));
+          }
+          e.preventDefault;
+          return false;
         }
       });
     }
@@ -653,10 +716,11 @@
       if (typeof el.settings.showSelectedRow === 'undefined') {
         indiciaFns.controlFail(el, 'Missing showSelectedRow config for table.');
       }
-      dataGrid = $('#' + el.settings.showSelectedRow);
+      listOutputControl = $('#' + el.settings.showSelectedRow);
+      listOutputControlClass = $(listOutputControl).hasClass('idc-output-cardGallery') ? 'idcCardGallery' : 'idcDataGrid';
       // Form validation for redetermination
       redetFormValidator = $('#redet-form').validate();
-      $(dataGrid).idcDataGrid('on', 'rowSelect', function rowSelect(tr) {
+      $(listOutputControl)[listOutputControlClass]('on', 'itemSelect', function itemSelect(tr) {
         var sep;
         var doc;
         var key;
@@ -690,7 +754,7 @@
           $('.idc-verification-buttons').hide();
         }
       });
-      $(dataGrid).idcDataGrid('on', 'populate', function populate() {
+      $(listOutputControl)[listOutputControlClass]('on', 'populate', function populate() {
         $('.idc-verification-buttons').hide();
       });
       $(el).find('button.verify').click(function buttonClick(e) {
@@ -701,11 +765,12 @@
         queryPopup();
       });
       $(el).find('button.redet').click(function expandRedet() {
-        $.fancybox($('#redet-form'));
+        $.fancybox.open($('#redet-form'));
       });
       indiciaFns.on('click', '#cancel-redet', {}, function expandRedet() {
         $.fancybox.close();
       });
+      enableKeyboardNavigation(el);
       $('#redet-form').submit(redetFormSubmit);
       indiciaFns.on('click', '.comment-popup button', {}, function onClickSave(e) {
         var popup = $(e.currentTarget).closest('.comment-popup');

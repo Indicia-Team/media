@@ -25,7 +25,6 @@
 /* eslint no-param-reassign: ["error", { "props": false }]*/
 
 (function enclose() {
-  indiciaData.i = 0;
   'use strict';
   var $ = jQuery;
 
@@ -132,6 +131,218 @@
     pending: 'fas fa-cog',
     checksDisabled: 'fas fa-eye-slash'
   };
+
+  /**
+   * Browser-tolerant fullscreenElement.
+   */
+  indiciaFns.fullscreenElement = function fullscreenElement() {
+    return document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement;
+  }
+
+  /**
+   * Make an output control fullscreen.
+   */
+  indiciaFns.goFullscreen = function goFullscreen(el) {
+    if (indiciaFns.fullscreenElement()) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
+      if ($.fancybox) {
+        // Reset Fancybox container.
+        $.fancybox.defaults.parentEl = 'body';
+      }
+    } else {
+      if (el.requestFullscreen) {
+        el.requestFullscreen();
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+      } else if (el.mozRequestFullScreen) {
+        el.mozRequestFullScreen();
+      } else if (el.msRequestFullscreen) {
+        el.msRequestFullscreen();
+      }
+      // Fancybox popups must use the fullscreen element as container.
+      $.fancybox.defaults.parentEl = el;
+    }
+  }
+
+  /**
+     * Hides a row and moves to next row.
+     *
+     * When an action is taken on a row so it is no longer required in the grid
+     * this method hides the row and moves to the next row, for example after
+     * a verification accept.
+     *
+     * @todo Move this into a base class for dataGrid and cardGallery
+     */
+  indiciaFns.hideItemAndMoveNext = function hideItemAndMoveNext(el) {
+    var oldSelected = $(el).find('.selected');
+    var newSelectedId;
+    var showingLabel = $(el).find('.showing');
+    var selectedIds = [];
+    var sourceSettings = el.settings.sourceObject.settings;
+    if ($(el).find('.multiselect-mode').length > 0) {
+      $.each($(el).find('input.multiselect:checked'), function eachRow() {
+        var item = $(this).closest('[data-row-id]');
+        selectedIds.push($(item).attr('[data-row-id]'));
+        item.remove();
+      });
+    } else {
+      if ($(oldSelected).next('[data-row-id]').length > 0) {
+        newSelectedId = $(oldSelected).next('[data-row-id]').attr('data-row-id');
+      } else if ($(oldSelected).prev('[data-row-id]').length > 0) {
+        newSelectedId = $(oldSelected).prev('[data-row-id]').attr('data-row-id');
+      }
+      selectedIds.push($(oldSelected).attr('data-row-id'));
+      $(oldSelected).remove();
+    }
+    // If the number of rows below 75% of page size, refresh the grid.
+    if ($(el).find('[data-row-id]').length < sourceSettings.size * 0.75) {
+      // As ES updates are not instant, we need a temporary must_not match
+      // filter to prevent the verified records reappearing.
+      if (!sourceSettings.filterBoolClauses) {
+        sourceSettings.filterBoolClauses = {};
+      }
+      if (!sourceSettings.filterBoolClauses.must_not) {
+        sourceSettings.filterBoolClauses.must_not = [];
+      }
+      sourceSettings.filterBoolClauses.must_not.push({
+        query_type: 'terms',
+        field: '_id',
+        value: JSON.stringify(selectedIds)
+      });
+      $(el)[0].settings.selectIdsOnNextLoad = [newSelectedId];
+      // Reload the page.
+      el.settings.sourceObject.populate(true);
+      // Clean up the temporary exclusion filter.
+      sourceSettings.filterBoolClauses.must_not.pop();
+      if (!sourceSettings.filterBoolClauses.must_not.length) {
+        delete sourceSettings.filterBoolClauses.must_not;
+      }
+    } else {
+      // Update the paging info if some rows left.
+      showingLabel.html(showingLabel.html().replace(/\d+ of /, $(el).find('[data-row-id]').length + ' of '));
+      // Immediately select the next row.
+      if (typeof newSelectedId !== 'undefined') {
+        $(el).find('[data-row-id="' + newSelectedId + '"]').addClass('selected').focus();
+      }
+      // Fire callbacks for selected row.
+      $.each(el.settings.callbacks.itemSelect, function eachCallback() {
+        this($(el).find('.selected').length === 0 ? null : $(el).find('.selected')[0]);
+      });
+    }
+  },
+
+  /**
+   * Takes a string and applies token replacement for field values.
+   *
+   * @param object el
+   *   The dataGrid element.
+   * @param object doc
+   *   The ES document for the row.
+   * @param string text
+   *   Text to perform replacements on.
+   * @param obj tokenDefaults
+   *   Each property can be a field name token (e..g [id]) with values being
+   *   the replacement that will be used if no value found for this field in
+   *   the doc.
+   *
+   * @return string
+   *   Updated text.
+   */
+  indiciaFns.applyFieldReplacements = function applyFieldReplacements(el, doc, text, tokenDefaults) {
+    // Find any field name replacements.
+    var fieldMatches = text.match(/\[(.*?)\]/g);
+    var updatedText = text;
+    $.each(fieldMatches, function eachMatch(i, fieldToken) {
+      var dataVal;
+      // Cleanup the square brackets which are not part of the field name.
+      var field = fieldToken.replace(/\[/, '').replace(/\]/, '');
+      // Field names can be separated by OR if we want to pick the first.
+      var fieldOrList = field.split(' OR ');
+      $.each(fieldOrList, function eachFieldName() {
+        var fieldName = this;
+        var fieldDef = {};
+        var srcSettings = el.settings.sourceObject.settings;
+        if ($.inArray(fieldName, el.settings.sourceObject.settings.fields) > -1) {
+          // Auto-locate aggregation fields in document.
+          if (srcSettings.mode === 'termAggregation') {
+            fieldDef.path = 'fieldlist.hits.hits.0._source';
+          } else if (srcSettings.mode === 'compositeAggregation') {
+            fieldDef.path = 'key';
+            // Aggregate keys use hyphens to represent path in doc.
+            fieldName = fieldName.replace(/\./g, '-');
+          }
+        }
+        dataVal = indiciaFns.getValueForField(doc, fieldName, fieldDef);
+        if (dataVal === '' && typeof tokenDefaults !== 'undefined' && typeof tokenDefaults['[' + fieldName + ']'] !== 'undefined') {
+          dataVal = tokenDefaults['[' + fieldName + ']'];
+        }
+        // Drop out when we find a value.
+        return dataVal === '';
+      });
+      updatedText = updatedText.replace(fieldToken, dataVal);
+    });
+    return updatedText;
+  }
+
+ /**
+  * Retrieve any action links to attach to an idcDataGrid or idcCardCalendar row.
+  *
+  * @param object el
+  *   The output control element.
+  * @param array actions
+  *   List of actions from configuration.
+  * @param object doc
+  *   The ES document for the row.
+  *
+  * @return string
+  *   Action link HTML.
+  */
+ indiciaFns.getActions = function getActions(el, actions, doc) {
+   var html = '';
+   $.each(actions, function eachActions() {
+     var item;
+     var link;
+     var params = [];
+     if (!this.tokenDefaults) {
+       this.tokenDefaults = {};
+     }
+     if (typeof this.title === 'undefined') {
+       html += '<span class="fas fa-times-circle error" title="Invalid action definition - missing title"></span>';
+     } else {
+       if (this.iconClass) {
+         item = '<span class="' + this.iconClass + '" title="' + this.title + '"></span>';
+       } else {
+         item = this.title;
+       }
+       if (this.path) {
+         link = this.path
+           .replace(/{rootFolder}/g, indiciaData.rootFolder)
+           .replace(/\{language\}/g, indiciaData.currentLanguage);
+         if (this.urlParams) {
+           link += link.indexOf('?') === -1 ? '?' : '&';
+           $.each(this.urlParams, function eachParam(name, value) {
+             params.push(name + '=' + value);
+           });
+           link += params.join('&');
+         }
+         item = indiciaFns.applyFieldReplacements(el, doc, '<a href="' + link + '" title="' + this.title + '">' + item + '</a>', this.tokenDefaults);
+       }
+       html += item;
+     }
+   });
+   return html;
+ }
 
   /**
    * Instantiate the data sources.
@@ -256,35 +467,6 @@
   };
 
   /**
-   * Convert an ES (ISO) date to local display format.
-   *
-   * @param string dateString
-   *   Date as returned from ES date field, or 64 bit integer for an
-   *   aggregation's date key.
-   *
-   * @return string
-   *   Date formatted.
-   */
-  indiciaFns.formatDate = function formatDate(dateString) {
-    var date;
-    var month;
-    var day;
-    if (typeof dateString === 'undefined' ||
-        (typeof dateString === 'string' && dateString.trim() === '')) {
-      return '';
-    }
-    date = new Date(dateString);
-    month = (1 + date.getMonth()).toString();
-    month = month.length > 1 ? month : '0' + month;
-    day = date.getDate().toString();
-    day = day.length > 1 ? day : '0' + day;
-    return indiciaData.dateFormat
-      .replace('d', day)
-      .replace('m', month)
-      .replace('Y', date.getFullYear());
-  };
-
-  /**
    * Convert an ES media file to thumbnail HTML.
    *
    * @param integer id
@@ -296,11 +478,18 @@
    *   thumbnails.
    */
   indiciaFns.drawMediaFile = function drawMediaFile(id, file, sizeClass) {
-    // Check if an extenral URL.
-    var match = file.path.match(/^http(s)?:\/\/(www\.)?([a-z(\.kr)]+)/);
+    var domainClass;
     var captionItems = [];
     var captionAttr;
-    var html = '';
+    var mediaInfo = {
+      id: file['id'],
+      loaded: {
+        caption: file['caption'],
+        licence_code: file['licence'],
+        type: file['type']
+      }
+    };
+    var mediaAttr = 'data-media-info="' + indiciaFns.escapeHtml(JSON.stringify(mediaInfo)) + '"';
     if (file.caption) {
       captionItems.push(file.caption);
     }
@@ -308,33 +497,30 @@
       captionItems.push('Licence is ' + file.licence);
     }
     captionAttr = captionItems.length ? ' title="' + captionItems.join(' | ').replace('"', '&quot;') + '"' : '';
-    if (match !== null) {
-      // If so, is it iNat? We can work out the image file names if so.
-      if (file.path.match(/^https:\/\/static\.inaturalist\.org/)) {
-        html += '<a ' + captionAttr +
-          'href="' + file.path.replace('/square.', '/large.') + '" ' +
-          'class="inaturalist fancybox" rel="group-' + id + '">' +
-          '<img class="' + sizeClass + '" src="' + file.path + '" /></a>';
-      } else {
-        html += '<a ' +
-          'href="' + file.path + '" class="social-icon ' + match[3].replace('.', '') + '"></a>';
-        if (captionItems.length) {
-          html += '<p>' + captionItems.join(' | ').replace('"', '&quot;') + '</p>';
-        }
-      }
-    } else if ($.inArray(file.path.split('.').pop(), ['mp3', 'wav']) > -1) {
-      // Audio files can have a player control.
-      html += '<audio controls ' +
-        'src="' + indiciaData.warehouseUrl + 'upload/' + file.path + '" type="audio/mpeg"/>';
-    } else {
+    if (file.type === 'Image:Local') {
       // Standard link to Indicia image.
-      html += '<a ' + captionAttr +
+      return '<a ' + mediaAttr + captionAttr +
         'href="' + indiciaData.warehouseUrl + 'upload/' + file.path + '" ' +
-        'class="fancybox" rel="group-' + id + '">' +
-        '<img class="' + sizeClass + '" src="' + indiciaData.warehouseUrl + 'upload/thumb-' + file.path + '" />' +
+        'data-fancybox="group-' + id + '">' +
+        '<img class="' + sizeClass + '" src="' + indiciaData.warehouseUrl + 'upload/' + sizeClass + '-' + file.path + '" />' +
         '</a>';
     }
-    return html;
+    if (file.type === 'Audio:Local') {
+      // Audio files can have a player control.
+      return '<audio controls ' + mediaAttr + ' ' + captionAttr +
+        ' src="' + indiciaData.warehouseUrl + 'upload/' + file.path + '" type="audio/mpeg"/>';
+    }
+    if (file.type === 'Image:iNaturalist') {
+      return '<a ' + mediaAttr + ' ' + captionAttr +
+        ' href="' + file.path.replace('/square.', '/large.') + '" ' +
+        'class="inaturalist" data-fancybox="group-' + id + '">' +
+        '<img class="' + sizeClass + '" src="' + file.path + '" /></a>';
+    }
+    // Everything else will be treated using noembed on the popup.
+    // Build icon class using web domain.
+    domainClass = file.path.match(/^http(s)?:\/\/(www\.)?([a-z]+(\.kr)?)/)[3].replace('.', '');
+    return '<a ' + mediaAttr + ' ' + captionAttr +
+        ' href="' + file.path + '" class="social-icon ' + domainClass + '"></a>';
   };
 
   /**
@@ -582,18 +768,17 @@
     },
 
     /**
-     * Record status and other flag icons.
+     * Output a constant.
+     *
+     * Pass the constant value to output which can be an empty string.
      */
-    status_icons: function statusIcons(doc) {
-      return indiciaFns.getEsStatusIcons({
-        status: doc.identification.verification_status,
-        substatus: doc.identification.verification_substatus,
-        query: doc.identification.query ? doc.identification.query : '',
-        sensitive: doc.metadata.sensitive,
-        confidential: doc.metadata.confidential,
-        zero_abundance: doc.occurrence.zero_abundance,
-        anonymous: doc.metadata.created_by_id === "1"
-      });
+     constant: function constant(doc, params) {
+      if (params.length === 1) {
+        return params[0];
+      }
+      else {
+        return '';
+      }
     },
 
     /**
@@ -701,27 +886,6 @@
     },
 
     /**
-     * A summary of location information.
-     *
-     * Includes the given location name (verbatim locality) as well as list of
-     * higher geography.
-     */
-    locality: function locality(doc) {
-      var info = '';
-      if (doc.location.verbatim_locality) {
-        info += '<div>' + doc.location.verbatim_locality + '</div>';
-        if (doc.location.higher_geography) {
-          info += '<ul>';
-          $.each(doc.location.higher_geography, function eachPlace() {
-            info += '<li>' + this.type + ': ' + this.name + '</li>';
-          });
-          info += '</ul>';
-        }
-      }
-      return info;
-    },
-
-    /**
      * A formatted latitude.
      */
     lat: function lat(doc, params) {
@@ -749,6 +913,27 @@
       var lon = parseFloat(coords[1]);
       return Math.abs(lat).toFixed(3) + (lat >= 0 ? 'N' : 'S') + ' ' +
              Math.abs(lon).toFixed(3) + (lon >= 0 ? 'E' : 'W');
+    },
+
+    /**
+     * A summary of location information.
+     *
+     * Includes the given location name (verbatim locality) as well as list of
+     * higher geography.
+     */
+     locality: function locality(doc) {
+      var info = '';
+      if (doc.location.verbatim_locality) {
+        info += '<div>' + doc.location.verbatim_locality + '</div>';
+        if (doc.location.higher_geography) {
+          info += '<ul>';
+          $.each(doc.location.higher_geography, function eachPlace() {
+            info += '<li>' + this.type + ': ' + this.name + '</li>';
+          });
+          info += '</ul>';
+        }
+      }
+      return info;
     },
 
     /**
@@ -801,6 +986,35 @@
         });
       }
       return media.join('');
+    },
+
+    /**
+     * Record status and other flag icons.
+     */
+    status_icons: function statusIcons(doc) {
+      return indiciaFns.getEsStatusIcons({
+        status: doc.identification.verification_status,
+        substatus: doc.identification.verification_substatus,
+        query: doc.identification.query ? doc.identification.query : '',
+        sensitive: doc.metadata.sensitive,
+        confidential: doc.metadata.confidential,
+        zero_abundance: doc.occurrence.zero_abundance,
+        anonymous: doc.metadata.created_by_id === "1"
+      });
+    },
+
+    taxon_label: function taxonLabel(doc) {
+      var acceptedName;
+      if (doc.taxon.taxon_rank_sort_order >= 290) {
+        acceptedName = '<em>' + doc.taxon.accepted_name + '</em>';
+      } else {
+        acceptedName = doc.taxon.taxon_rank + ' ' + doc.taxon.accepted_name;
+      }
+      if (doc.taxon.vernacular_name) {
+        return '<h3>' + doc.taxon.vernacular_name + '</h3>' + acceptedName;
+      } else {
+        return '<h3>' + acceptedName + '</h3>';
+      }
     }
   };
 
@@ -978,17 +1192,8 @@
    */
   indiciaData.fieldConvertorSortFields = {
     // Unsupported possibilities are commented out.
-    status_icons: [
-      'identification.verification_status',
-      'identification.verification_substatus',
-      'metadata.sensitive',
-      'metadata.confidential',
-      'occurrence.zero_abundance',
-      'metadata.created_by_id'
-    ],
-    data_cleaner_icons: [
-      'identification.auto_checks.result'
-    ],
+    data_cleaner_icons: ['identification.auto_checks.result'],
+    datasource_code: ['metadata.website.id', 'metadata.survey.id'],
     event_date: ['event.date_start'],
     // higher_geography: [],
     // locality: [],
@@ -1003,7 +1208,15 @@
         unit: 'km'
       }
     },
-    datasource_code: ['metadata.website.id', 'metadata.survey.id']
+    status_icons: [
+      'identification.verification_status',
+      'identification.verification_substatus',
+      'metadata.sensitive',
+      'metadata.confidential',
+      'occurrence.zero_abundance',
+      'metadata.created_by_id'
+    ],
+    'taxon_label': ['taxon.accepted_name']
   };
 
   /**
@@ -1258,6 +1471,23 @@
   }
 
   /**
+   * Apply group reporting filter, e.g. group_id=n?implicit=f in URL.
+   */
+  function applyGroupFilter(data) {
+    if (indiciaData.filter_group_id) {
+      if (typeof indiciaData.filter_group_implicit === 'undefined') {
+        // Apply default, strictest mode.
+        indiciaData.filter_group_implicit = false;
+      }
+      // Proxy will be responsible for filter setup.
+      data.group_filter = {
+        id: indiciaData.filter_group_id,
+        implicit: indiciaData.filter_group_implicit
+      };
+    }
+  }
+
+  /**
    * Retrieve the value of a named data attribute from an input.
    *
    * If the input is a select, then the selected option can override the
@@ -1353,43 +1583,12 @@
           }
         });
       }
-
-      // Apply filters from recordContext select drop down.
-      if ($('.permissions-filter').length > 0) {
-        if ($('.permissions-filter').val().substring(0, 2) === 'p-') {
-          // A permissions filter type option selected.
-          data.permissions_filter = $('.permissions-filter').val().substring(2);
-        } else if ($('.permissions-filter').val().substring(0, 2) === 'f-') {
-          // A filter type option selected
-          data.user_filters.push($('.permissions-filter').val().substring(2));
-          if (indiciaData.esUserFiltersLoaded.indexOf($('.permissions-filter').val().substring(2)) === -1) {
-            data.refresh_user_filters = true;
-            indiciaData.esUserFiltersLoaded.push($('.permissions-filter').val().substring(2));
-          }
-        } else if ($('.permissions-filter').val().substring(0, 2) === 'g-') {
-          // A group type option selected.
-          if ($('.permissions-filter').val().substring(0, 4) === 'g-my') {
-            data.permissions_filter = 'my';
-            group = $('.permissions-filter').val().substring(5);
-          } else {
-            data.permissions_filter = 'all';
-            group = $('.permissions-filter').val().substring(6);
-          }
-          data.bool_queries.push({
-            bool_clause: 'must',
-            query_type: 'query_string',
-            value: 'metadata.group.id:' + group
-          });
-        }
+      // Apply filters from permissionFilters select drop down.
+      if ($('.permissions-filter').length > 0 && $('.permissions-filter').val()) {
+        // Just pass through permission filter so proxy can apply settings securely.
+        data.permissions_filter = $('.permissions-filter').val();
       }
-      // A group filter may also be provided in the URL (copied into indiciaData).
-      if (indiciaData.group_id) {
-        data.bool_queries.push({
-          bool_clause: 'must',
-          query_type: 'query_string',
-          value: 'metadata.group.id:' + indiciaData.group_id
-        });
-      }
+      applyGroupFilter(data);
     }
     // Find the map bounds if limited to the viewport of a map and not counting total.
     if (!doingCount && source.settings.filterBoundsUsingMap) {
@@ -1398,23 +1597,25 @@
         alert('Data source incorrectly configured. @filterBoundsUsingMap does not point to a valid map.');
       } else if (!source.settings.initialMapBounds || mapToFilterTo[0].settings.initialBoundsSet) {
         bounds = mapToFilterTo[0].map.getBounds();
-        data.bool_queries.push({
-          bool_clause: 'must',
-          query_type: 'geo_bounding_box',
-          value: {
-            ignore_unmapped: true,
-            'location.point': {
-              top_left: {
-                lat: Math.max(-90, Math.min(90, bounds.getNorth())),
-                lon: Math.max(-180, Math.min(180, bounds.getWest()))
-              },
-              bottom_right: {
-                lat: Math.max(-90, Math.min(90, bounds.getSouth())),
-                lon: Math.max(-180, Math.min(180, bounds.getEast()))
+        if (bounds.getNorth() !== bounds.getSouth() && bounds.getEast() !== bounds.getWest()) {
+          data.bool_queries.push({
+            bool_clause: 'must',
+            query_type: 'geo_bounding_box',
+            value: {
+              ignore_unmapped: true,
+              'location.point': {
+                top_left: {
+                  lat: Math.max(-90, Math.min(90, bounds.getNorth())),
+                  lon: Math.max(-180, Math.min(180, bounds.getWest()))
+                },
+                bottom_right: {
+                  lat: Math.max(-90, Math.min(90, bounds.getSouth())),
+                  lon: Math.max(-180, Math.min(180, bounds.getEast()))
+                }
               }
             }
-          }
-        });
+          });
+        }
       }
     }
     source.settings.showGeomsAsTooClose = source.settings.mode === 'mapGridSquare' && source.settings.switchToGeomsAt

@@ -879,7 +879,7 @@ $.extend($.validator, {
 
 		// clean number parameters
 		$.each(['minlength', 'maxlength', 'min', 'max'], function() {
-			if (rules[this]) {
+			if (rules[this] && (!element.type || element.type !== 'date')) {
 				rules[this] = Number(rules[this]);
 			}
 		});

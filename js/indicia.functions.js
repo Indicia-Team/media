@@ -411,7 +411,7 @@ if (typeof window.indiciaData === 'undefined') {
             popupHtml += '</ul>';
             popupHtml += '<button id="resolveLocationOk" disabled="disabled">Ok</button>';
             popupHtml += '<button id="resolveLocationCancel">Cancel</button>';
-            $.fancybox('<div id="resolveLocationPopup">' + popupHtml + '</div>');
+            $.fancybox.open('<div id="resolveLocationPopup">' + popupHtml + '</div>');
             $('#resolveLocationPopup input[type="radio"]').change(function () {
               $('#resolveLocationOk').removeAttr('disabled');
             });
@@ -484,12 +484,113 @@ if (typeof window.indiciaData === 'undefined') {
     });
   }
 
-  indiciaFns.afterFancyboxLoad = function(upcoming, previous) {
-    var info = $(upcoming.element).parent().find('.image-info');
-    var fancybox = $('.fancybox-outer');
-    if (info.length && fancybox) {
-      $(info).clone().show().appendTo(fancybox);
+  function attachInfoToPopup(mediaInfo) {
+    var mediaClass = 'media-info';
+    var info;
+    var fancybox = $('.fancybox-content');
+    if (mediaInfo.loaded.caption || mediaInfo.loaded.licence_code) {
+      mediaClass += (mediaInfo.loaded.type.match(/^Image:/) ? ' image-info' : '');
+      info = $('<div class="' + mediaClass + '">');
+      if (mediaInfo.loaded.caption) {
+        info.append('<div class="image-caption">' + mediaInfo.loaded.caption + '</div>');
+      }
+      if (mediaInfo.loaded.licence_code) {
+        info.append('<div class="licence">' +
+          '<span class="icon licence-' + mediaInfo.loaded.licence_code.toLowerCase().replace(/ /g, '-') + '"></span>' +
+          (mediaInfo.loaded.licence_title ? mediaInfo.loaded.licence_title : '') +
+          '</div>');
+      }
+      info.append('<span class="media-info-close" title="' + indiciaData.lang.indiciaFns.hideInfo + '">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 10.6L6.6 5.2 5.2 6.6l5.4 5.4-5.4 5.4 1.4 1.4 5.4-5.4 5.4 5.4 1.4-1.4-5.4-5.4 5.4-5.4-1.4-1.4-5.4 5.4z"/>' +
+        '</svg></span>');
+      info.appendTo(fancybox);
     }
+  }
+
+  /**
+   * After a Fancybox popup appears, display media info overlay.
+   *
+   * For media, a data-media-info attribute can either contain ID info to load
+   * from the database, or can contain caption, licence and type data if
+   * already known. This method uses AJAX to fill in the info if not yet loaded
+   * then displays it in an overlay panel.
+   */
+  indiciaFns.afterFancyboxShow = function(e, instance, slide) {
+    var mediaInfo = $(slide.opts.$orig).data('media-info');
+    var fancybox = $('.fancybox-content');
+    var query = null;
+    var mediaEntity;
+    var matches;
+    if (mediaInfo && fancybox) {
+      if (mediaInfo.loaded) {
+        attachInfoToPopup(mediaInfo);
+      } else {
+        // Load image details.
+        // From either entity_media_id, or entity_id + path
+        $.each(mediaInfo, function(prop, val) {
+          if (matches = prop.match(/([a-z_]+)_media_id$/)) {
+            query = {id: val};
+            mediaEntity = matches[1] + '_medium';
+          } else if ((matches = prop.match(/([a-z_]+)_id$/)) && mediaInfo.path) {
+            query = {path: mediaInfo.path};
+            query[prop] = val;
+            mediaEntity = matches[1] + '_medium';
+          }
+          return query === null;
+        });
+        if (query) {
+          query.auth_token = indiciaData.read.auth_token;
+          query.nonce = indiciaData.read.nonce;
+          $.ajax({
+            dataType: 'jsonp',
+            url: indiciaData.read.url + 'index.php/services/data/' + mediaEntity,
+            data: query,
+            success: function (data) {
+              if (data.length > 0) {
+                mediaInfo.loaded = {
+                  caption: data[0].caption,
+                  licence_code: data[0].licence_code,
+                  licence_title: data[0].licence_title,
+                  type: data[0].media_type
+                };
+              }
+              attachInfoToPopup(mediaInfo);
+              // No need to update data attribute - changes are remembered.
+            }
+          });
+        }
+      }
+
+    }
+  };
+
+  /**
+   * Convert an ISO date to website display format.
+   *
+   * @param string dateString
+   *   Date as returned from ES date field, or 64 bit integer for an
+   *   aggregation's date key.
+   *
+   * @return string
+   *   Date formatted.
+   */
+  indiciaFns.formatDate = function formatDate(dateString) {
+    var date;
+    var month;
+    var day;
+    if (typeof dateString === 'undefined' ||
+        (typeof dateString === 'string' && dateString.trim() === '')) {
+      return '';
+    }
+    date = new Date(dateString);
+    month = (1 + date.getMonth()).toString();
+    month = month.length > 1 ? month : '0' + month;
+    day = date.getDate().toString();
+    day = day.length > 1 ? day : '0' + day;
+    return indiciaData.dateFormat
+      .replace('d', day)
+      .replace('m', month)
+      .replace('Y', date.getFullYear());
   };
 
   /**
@@ -531,6 +632,102 @@ if (typeof window.indiciaData === 'undefined') {
       childSelect.change();
     }
   };
+
+  /**
+   * When a taxon has been auto-blurred, appends an icon and hidden input to set blur.
+   *
+   * @param DOM el
+   *   Element to append icon and hidden input to.
+   * @param string inputName
+   *   Name of the hidden input to set sensitivity blur.
+   */
+  function appendSensitiveInfoTo(el, inputName) {
+    $(el).append('<i class="fas fa-exclamation-triangle" title="' + indiciaData.lang.sensitivityScratchpad.sensitiveMessage + '"></i>');
+    $(el).append('<input name="' + inputName + '" type="hidden" value="10000" />');
+  }
+
+  function checkIfSingleTaxonSensitive(e) {
+    var val = $(e.currentTarget).val();
+    if ($.inArray(val, indiciaData.scratchpadBlurList) !== -1) {
+      // If we have a sensitivity control, use that to show sensitive information.
+      if ($('#sensitive-checkbox').length > 0) {
+        $('#sensitive-checkbox').prop('checked', 'checked');
+        $('#sensitive-checkbox').trigger('change');
+        $('#sensitive-blur').val(indiciaData.scratchpadBlursTo);
+        $('#sensitivity-controls').after('<div class="alert alert-warning">' +
+          indiciaData.lang.sensitivityScratchpad.sensitiveMessage + '</div>');
+      } else {
+        // No sensitivity input on the form. So, add warning direct to species input.
+        appendSensitiveInfoTo($('#occurrence\\:taxa_taxon_list_id').parent(), 'occurrence:sensitivity_precision');
+      }
+    }
+  }
+
+  /**
+   * Hook for added taxa in species checklist - sets sensitivity.
+   */
+  function checkAddedSpeciesSensitive(data, row) {
+    var sensitivityControl;
+    var taxonControl;
+    var rect;
+    var tooltip;
+    var tooltipRect;
+    var name;
+    var topPos;
+    if ($.inArray(data.taxa_taxon_list_id, indiciaData.scratchpadBlurList) !== -1) {
+      sensitivityControl = $(row).find('.scSensitivity');
+      taxonControl = $(row).find('.scTaxonCell');
+      if (sensitivityControl.length) {
+        rect = sensitivityControl[0].getBoundingClientRect();
+      } else {
+        rect = taxonControl[0].getBoundingClientRect();
+      }
+      tooltip = $('<div class="ui-tip below-left tip-sensitive">' +
+      indiciaData.lang.sensitivityScratchpad.sensitiveMessage + '</div>')
+        .appendTo('body');
+      tooltipRect = tooltip[0].getBoundingClientRect();
+      // Position the tip.
+      if (tooltip.width() > 300) {
+        tooltip.css({ width: '300px' });
+      }
+      topPos = rect.bottom + 8;
+      if (topPos + tooltipRect.height > $(window).height()) {
+        topPos = rect.top - (tooltipRect.height + 4);
+      }
+      topPos += $(window).scrollTop();
+      // Fade the tip in and out.
+      tooltip.css({
+        display: 'none',
+        left: rect.right - tooltipRect.width,
+        top: topPos
+      }).fadeIn(400, function () {
+        $(this).delay(2000).fadeOut('slow', function() {
+          tooltip.remove();
+        });
+      });
+      if (sensitivityControl.length) {
+        $(sensitivityControl).val(indiciaData.scratchpadBlursTo);
+      } else {
+        name = $(row).find('.scPresence').attr('name').replace(/:present$/, ':occurrence:sensitivity_precision');
+        appendSensitiveInfoTo(taxonControl, name);
+      }
+    }
+  }
+
+  /**
+   * Enables use of a loaded scratchpad list to identify sensitive species as they are input.
+   *
+   * See [sensitivity_scratchpad] control on dynamic_sample_occurrence.php.
+   */
+  indiciaFns.enableScratchpadBlurList = function enableScratchpadBlurList() {
+    if (indiciaData.scratchpadBlurList && $('#occurrence\\:taxa_taxon_list_id').length > 0) {
+      $('#occurrence\\:taxa_taxon_list_id').change(checkIfSingleTaxonSensitive);
+    }
+    if (indiciaData.scratchpadBlurList && typeof hook_species_checklist_new_row !== 'undefined') {
+      hook_species_checklist_new_row.push(checkAddedSpeciesSensitive);
+    }
+  };
+
 }(jQuery));
 
 jQuery(document).ready(function ($) {
@@ -540,7 +737,99 @@ jQuery(document).ready(function ($) {
 
   // Hook up fancybox if enabled.
   if ($.fancybox) {
-    $('a.fancybox').fancybox({ afterLoad: indiciaFns.afterFancyboxLoad });
+
+    // Adds a Fancybox dialog control.
+    $.fancyDialog = function(opts) {
+      var origContentParent;
+      var content = $('<div class="fc-content p-5 rounded">');
+      opts = $.extend(
+        true,
+        {
+          title: null,
+          contentElement: null,
+          message: null,
+          okButton: "OK",
+          cancelButton: "Cancel",
+          callbackInitForm: $.noop,
+          callbackValidate: $.noop,
+          callbackOk: $.noop,
+          callbackCancel: $.noop
+        },
+        opts || {}
+      );
+      if (opts.title) {
+        content.append('<h2>' + opts.title + '</h2');
+      }
+      if (opts.message) {
+        content.append('<p>' + opts.message + '</p>');
+      }
+      if (opts.contentElement) {
+        // Clear old validation errors.
+        $(opts.contentElement + ' .' + indiciaData.inlineErrorClass).remove();
+        // Reparent element into Fancybox content.
+        origContentParent = $(opts.contentElement).parent();
+        content.append($(opts.contentElement));
+      }
+      if (opts.cancelButton) {
+        content.append('<button data-value="0" data-fancybox-close class="' + indiciaData.btnClasses.default + '">' +
+          opts.cancelButton +
+          '</button>');
+      }
+      if (opts.okButton) {
+        content.append('<button data-value="1" data-fancybox-close class="' + indiciaData.btnClasses.highlighted + '">' +
+          opts.okButton +
+          '</button>');
+      }
+      $.fancybox.open({
+        type: "html",
+        src: content,
+        opts: {
+          animationDuration: 350,
+          animationEffect: "material",
+          modal: true,
+          baseTpl:
+            '<div class="fancybox-container fc-container" role="dialog" tabindex="-1">' +
+            '<div class="fancybox-bg"></div>' +
+            '<div class="fancybox-inner">' +
+            '<div class="fancybox-stage"></div>' +
+            "</div>" +
+            "</div>",
+          beforeOpen: function(instance, current, e) {
+            if (opts.callbackInitForm !== $.noop) {
+              opts.callbackInitForm();
+            }
+          },
+          beforeClose: function(instance, current, e) {
+            var button = e ? e.target || e.currentTarget : null;
+            var value = button ? $(button).data("value") : 0;
+            var closing = true;
+            // Validate if OK clicked.
+            if (value && opts.callbackValidate !== $.noop) {
+              closing = opts.callbackValidate();
+            }
+            if (closing && opts.contentElement) {
+              // Closing, so move the content element back where it came from.
+              $(opts.contentElement).appendTo(origContentParent);
+            }
+            return closing;
+          },
+          afterClose: function(instance, current, e) {
+            // Determine if OK or Cancel clicked.
+            var button = e ? e.target || e.currentTarget : null;
+            var value = button ? $(button).data("value") : 0;
+            if (value) {
+              opts.callbackOk(value);
+            } else {
+              opts.callbackCancel(value);
+            }
+          }
+        }
+      });
+    };
+
+    // This is just to pick up any old Fancybox 2 code.
+    $('a.fancybox').fancybox();
+    $(document).on('afterShow.fb', indiciaFns.afterFancyboxShow);
   }
 
   if ($('form input[name=website_id]').length > 0) {
@@ -569,7 +858,8 @@ jQuery(document).ready(function ($) {
   }
   // Close handler for x button on image information panels.
   indiciaFns.on('click', '.media-info-close', {}, function(e) {
-    $(e.currentTarget).parent('.media-info').hide();
+    $(e.currentTarget).closest('.media-info').hide();
+    e.preventDefault();
     return false;
   });
 
