@@ -875,7 +875,7 @@
       setTableHeight(el);
       // Add tool icons for table settings, full screen and multiselect mode.
       if (el.settings.includeMultiSelectTool) {
-        tools.push('<span title="Enable multiple selection mode" class="fas fa-list multiselect-switch"></span><br/>');
+        tools.push('<span title="Enable multiple selection mode" class="fas fa-list multiselect-switch"></span>');
       }
       if (el.settings.includeColumnSettingsTool) {
         tools.push('<span class="fas fa-wrench data-grid-show-settings" title="Click to show grid column settings"></span>');
