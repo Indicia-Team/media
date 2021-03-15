@@ -17,12 +17,7 @@
  * @link https://github.com/indicia-team/client_helpers
  */
 
- /**
-  * @todo:
-  * 2. Test if ajax methods still work in call to helper_base without calling iform_load_helpers.
-  * 3. General check of old verification form.
-  */
- /**
+/**
 * Output plugin for verification buttons.
 */
 (function idcVerificationButtons() {
@@ -111,7 +106,7 @@
         'occurrence_comment:comment': commentToSave
       });
       if (allTableMode) {
-        indiciaPostUrl = indiciaData.esProxyAjaxUrl + '/updateall/' + indiciaData.nid;
+        indiciaPostUrl = indiciaData.esProxyAjaxUrl + '/verifyall/' + indiciaData.nid;
         // Loop sources, only 1 will apply.
         $.each($(listOutputControl)[0].settings.source, function eachSource(sourceId) {
           $.extend(data, {
@@ -186,7 +181,7 @@
       doc: docUpdates
     };
     $.ajax({
-      url: indiciaData.esProxyAjaxUrl + '/updateids/' + indiciaData.nid,
+      url: indiciaData.esProxyAjaxUrl + '/verifyids/' + indiciaData.nid,
       type: 'post',
       data: data,
       success: function success(response) {
@@ -474,6 +469,121 @@
     }
   }
 
+  /**
+   * Handle the next chunk of uploaded decisions spreadsheet.
+   */
+  function nextSpreadsheetTask(metadata) {
+    if (metadata.state === 'checks failed') {
+      $('.upload-output').removeClass('alert-info').addClass('alert-danger');
+      $('.upload-output .msg').html(
+        '<p>The upload failed as errors were found in the spreadsheet so no changes were made to the database. ' +
+        'Download the following file which explains the problems: <br/>' +
+        '<a href="' + indiciaData.warehouseUrl + 'import/' + metadata.fileId + '-errors.csv"><span class="fas fa-file-csv fa-3x"></span></a><br/>' +
+        'Please correct the problems in the original spreadsheet then re-upload it.</p>')
+    } else if (metadata.state === 'done') {
+      $('.upload-output progress').val(100).show();
+      alert(metadata.totalProcessed + ' verifications, comments and queries were applied to the database.');
+      $.fancybox.close();
+    } else {
+      if (metadata.state === 'checking') {
+        $('.upload-output .checked').text(metadata.totalChecked);
+        $('.upload-output .verifications').text(metadata.verificationsFound);
+        $('.upload-output .errors').text(metadata.errorsFound);
+        // Set progress bar as indeterminate.
+        $('.upload-output progress').show().removeAttr('value');
+      } if (metadata.state === 'processing') {
+        $('.upload-output dl').hide();
+        $('.upload-output progress').show().val(metadata.totalProcessed * 100 / metadata.verificationsFound);
+      }
+
+      // UcFirst the state string.
+      $('.upload-output .msg').html(metadata.state.charAt(0).toUpperCase() + metadata.state.slice(1) + '...');
+      $.ajax({
+        url: indiciaData.esProxyAjaxUrl + '/verifyspreadsheet/' + indiciaData.nid,
+        type: 'POST',
+        dataType: 'json',
+        data: { fileId: metadata.fileId },
+        success: nextSpreadsheetTask,
+        error: function(jqXHR, textStatus, errorThrown) {
+          var msg = indiciaData.lang.verificationButtons.uploadError;
+          if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
+            msg += '<br/>' + jqXHR.responseJSON.message;
+          }
+          $('.upload-output').removeClass('alert-info').addClass('alert-danger');
+          $('.upload-output .msg').html('<p>' + msg + '</p>');
+        }
+      });
+    }
+  }
+
+  /**
+   * Reset the upload decisions form if it has already been used.
+   */
+  function resetUploadDecisionsForm() {
+    $('.upload-output').removeClass('alert-danger').addClass('alert-info');
+    $('#upload-decisions-form .instruct').show();
+    $('.upload-output .msg').html('');
+    $('.upload-output').hide();
+    $('.upload-output .checked').text('0');
+    $('.upload-output .verifications').text('0');
+    $('.upload-output .errors').text('0');
+    $('.upload-output dl').show();
+    $('.upload-output progress').hide();
+    $('#upload-decisions-file').prop('disabled', false);
+    $('#decisions-file').val('');
+  }
+
+  /**
+   * Click handler for the upload decisions spreadsheet button.
+   *
+   * Displays the upload decisions dialog.
+   */
+  function uploadDecisions() {
+    if ($('.user-filter.defines-permissions').length === 0) {
+      alert(indiciaData.lang.verificationButtons.csvDisallowedMessage);
+      return;
+    }
+    resetUploadDecisionsForm();
+    $.fancybox.open($('#upload-decisions-form'));
+  }
+
+  /**
+   * Click handler for the button which starts the upload decisions process off.
+   */
+  $('#upload-decisions-file').click(function() {
+    var formdata = new FormData();
+    var file;
+    if($('#decisions-file').prop('files').length > 0) {
+      $('#upload-decisions-form .upload-output').show();
+      $('#upload-decisions-form .instruct').hide();
+      $('#upload-decisions-file').val('').prop('disabled', true);
+      file = $('#decisions-file').prop('files')[0];
+      formdata.append('decisions', file);
+      formdata.append('filter_id', $('.user-filter.defines-permissions').val());
+      formdata.append('es_endpoint', indiciaData.esEndpoint);
+      formdata.append('id_prefix', indiciaData.idPrefix);
+      $.ajax({
+        url: indiciaData.esProxyAjaxUrl + '/verifyspreadsheet/' + indiciaData.nid,
+        type: 'POST',
+        data: formdata,
+        processData: false,
+        contentType: false,
+        success: function (metadata) {
+          nextSpreadsheetTask(metadata);
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+          var msg = indiciaData.lang.verificationButtons.uploadError;
+          if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
+            msg += '<br/>' + jqXHR.responseJSON.message;
+          }
+          $('.upload-output').removeClass('alert-info').addClass('alert-danger');
+          $('.upload-output .msg').html('<p>' + msg + '</p>');
+          $('.upload-output progress').hide();
+        }
+      });
+    }
+  });
+
   /*
    * Saves the authorisation token for the Record Comment Quick Reply.
    *
@@ -627,7 +737,7 @@
         }
       };
       $.ajax({
-        url: indiciaData.esProxyAjaxUrl + '/updateids/' + indiciaData.nid,
+        url: indiciaData.esProxyAjaxUrl + '/verifyids/' + indiciaData.nid,
         type: 'post',
         data: data,
         success: function success() {
@@ -764,6 +874,17 @@
       $(el).find('button.query').click(function buttonClick() {
         queryPopup();
       });
+      // If we have an upload decisions spreadsheet button, set it up.
+      if ($(el).find('button.upload-decisions').length) {
+        // Click handler.
+        $(el).find('button.upload-decisions').click(function buttonClick() {
+          uploadDecisions();
+        });
+        // Move to correct parent.
+        if (el.settings.uploadButtonContainerElement) {
+          $(el.settings.uploadButtonContainerElement).append($(el).find('button.upload-decisions'));
+        }
+      }
       $(el).find('button.redet').click(function expandRedet() {
         $.fancybox.open($('#redet-form'));
       });
