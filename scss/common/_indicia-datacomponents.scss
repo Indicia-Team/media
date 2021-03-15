@@ -272,6 +272,26 @@ table.es-data-grid {
   }
 }
 
+#upload-decisions-form {
+  min-width: 600px;
+  max-width: 900px;
+  .upload-output {
+    margin-top: 15px;
+  }
+  progress {
+    width: 100%;
+    height: 20px;
+  }
+  dl {
+    margin: 15px;
+    dt {
+      min-width: 300px;
+      margin-right: 20px;
+      margin-bottom: 8px;
+    }
+  }
+}
+
 .multiselect-mode {
   .multi-only {
     display: initial;
