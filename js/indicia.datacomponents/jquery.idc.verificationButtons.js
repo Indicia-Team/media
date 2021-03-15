@@ -544,7 +544,10 @@
       return;
     }
     resetUploadDecisionsForm();
-    $.fancybox.open($('#upload-decisions-form'));
+    $.fancybox.open($('#upload-decisions-form'), {
+      clickSlide: false, // disable close on outside click
+      touch: false // disable close on swipe
+    });
   }
 
   /**
