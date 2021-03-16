@@ -533,6 +533,9 @@ body > .loading-spinner {
   flex-shrink: 0;
   margin: 1%;
 }
+.idc-output-cardGallery .es-card-gallery .card .image-container > * img {
+  max-width: 100%;
+}
 .idc-output-cardGallery .es-card-gallery .card ul.data-container li {
   list-style-type: none;
 }

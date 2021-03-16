@@ -73,6 +73,9 @@ body {
           flex-grow: 1;
           flex-shrink: 0;
           margin: 1%;
+          img {
+            max-width: 100%;
+          }
         }
       }
       ul.data-container {
