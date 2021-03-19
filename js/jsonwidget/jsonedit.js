@@ -444,7 +444,6 @@ jsonwidget.editor.clearForm = function () {
 
 jsonwidget.editor.attachHandlers = function () {
   var jsoneditobj = this;
-  document.body.style.background = jsoneditobj.bgcolor;
   this.formdiv.onchange = function (event) {
   if(event.target.className == "jeclass") {
     var jsonnode = jsoneditobj.jsonLookupById[event.target.id.substr(8)];
