@@ -176,14 +176,13 @@ var checkSubmitInProgress = function () {
         tokens = mediaType.split(':');
         if (tokens[1]==='Local') {
           hasLocalFiles = true;
-          if (tokens[0]==='Image') {
-            fileTypes.push(opts.fileTypes.image.join(','));
-          } else if (tokens[0]==='Pdf') {
-            fileTypes.push(opts.fileTypes.pdf.join(','));
-            caption=opts.msgFile;
-          } else if (tokens[0]==='Audio') {
-            fileTypes.push(opts.fileTypes.audio.join(','));
-            caption=opts.msgFile;
+          // If a recognised file type, join it's known extensions.
+          if (typeof opts.fileTypes[tokens[0].toLowerCase()] !== 'undefined') {
+            fileTypes.push(opts.fileTypes[tokens[0].toLowerCase()].join(','));
+          }
+          if (tokens[0] !== 'Image') {
+            // If non-images allowed, change the caption from Image to File .
+            caption = opts.msgFile;
           }
         } else {
           hasLinks = true;
@@ -312,13 +311,15 @@ var checkSubmitInProgress = function () {
               thumbnailfilepath = div.settings.finalImageFolderThumbs + file.path;
             }
           }
-          if ($.inArray(ext, div.settings.fileTypes.audio) === -1 && $.inArray(ext, div.settings.fileTypes.pdf) === -1) {
-            tmpl = div.settings.file_box_uploaded_imageTemplate+div.settings.file_box_uploaded_extra_fieldsTemplate;
-          } else if ($.inArray(ext, div.settings.fileTypes.audio) === -1 && $.inArray(ext, div.settings.fileTypes.image) === -1) {
-            tmpl = div.settings.file_box_uploaded_pdfTemplate + div.settings.file_box_uploaded_extra_fieldsTemplate;
-          } else {
-            tmpl = div.settings.file_box_uploaded_audioTemplate+div.settings.file_box_uploaded_extra_fieldsTemplate;
-          }
+          // Default.
+          tmpl = div.settings['file_box_uploaded_genericTemplate'];
+          // Scan the known types for this extension.
+          $.each(div.settings.fileTypes, function(thisType) {
+            if ($.inArray(ext, this) !== -1) {
+              tmpl = div.settings['file_box_uploaded_' + thisType + 'Template']
+            }
+          });
+          tmpl += div.settings.file_box_uploaded_extra_fieldsTemplate;
           file.caption = file.caption===null ? '' : file.caption;
           $('#' + uniqueId + ' .media-wrapper').html(tmpl
                 .replace(/\{id\}/g, uniqueId)
@@ -415,20 +416,22 @@ var checkSubmitInProgress = function () {
           filepath = div.settings.destinationFolder + file.name;
           uniqueId = $('.filelist .media-wrapper').length - $('.filelist .progress').length;
           ext = filepath.split('.').pop().toLowerCase();
-          if ($.inArray(ext, div.settings.fileTypes.audio)>-1) {
-            fileType = 'Audio';
-          } else if ($.inArray(ext, div.settings.fileTypes.pdf)>-1) {
-            fileType = 'Pdf';
-          } else {
-            fileType = 'Image';
+          // Default.
+          fileType = 'Image';
+          // Scan the known types for this extension.
+          $.each(div.settings.fileTypes, function(thisType) {
+            if ($.inArray(ext, this) !== -1) {
+              fileType = thisType.charAt(0).toUpperCase() + thisType.slice(1);
+            }
+          });
+          // If this type has a template, use it.
+          if (typeof div.settings['file_box_uploaded_' + fileType.toLowerCase() + 'Template'] !== 'undefined') {
+            tmpl = div.settings['file_box_uploaded_' + fileType.toLowerCase() + 'Template']
           }
-          if (fileType==='Audio') {
-            tmpl = div.settings.file_box_uploaded_audioTemplate + div.settings.file_box_uploaded_extra_fieldsTemplate;
-          } else if (fileType==='Pdf') {
-            tmpl = div.settings.file_box_uploaded_pdfTemplate + div.settings.file_box_uploaded_extra_fieldsTemplate;
-          } else {
-            tmpl = div.settings.file_box_uploaded_imageTemplate + div.settings.file_box_uploaded_extra_fieldsTemplate;
+          else {
+            tmpl = div.settings['file_box_uploaded_genericTemplate'];
           }
+          tmpl += div.settings.file_box_uploaded_extra_fieldsTemplate;
           //If indiciaData.subTypes is supplied then the user is intending to use more than one photo control,
           //each control will have their own media sub-type.
           if (indiciaData.subTypes) {
@@ -573,6 +576,7 @@ jQuery.fn.uploader.defaults = {
   file_box_uploaded_imageTemplate : '<a class="fancybox" href="{origfilepath}"><img src="{thumbnailfilepath}" width="{imagewidth}"/></a>',
   file_box_uploaded_audioTemplate : '<audio controls src="{origfilepath}" type="audio/mpeg"/>',
   file_box_uploaded_pdfTemplate : '<div><a href="{origfilepath}" target="_blank" class="file-icon pdf"></a></div>',
+  file_box_uploaded_genericTemplate : '<div><span class="file-icon"></span></div>',
   msgUploadError : 'An error occurred uploading the file.',
   msgFileTooBig : 'The file is too big to upload. Please resize it then try again.',
   msgTooManyFiles : 'Only [0] files can be uploaded.',
@@ -583,7 +587,10 @@ jQuery.fn.uploader.defaults = {
   relativeImageFolder: '',
   runtimes : 'html5,flash,silverlight,html4',
   mediaTypes : ["Image:Local"],
-  fileTypes : {image : ["jpg", "gif", "png", "jpeg"],
-               pdf : ["pdf"],
-               audio : ["mp3", "wav"]}
+  fileTypes : {
+    image : ["jpg", "gif", "png", "jpeg"],
+    pdf : ["pdf"],
+    audio : ["mp3", "wav"],
+    zerocrossing: ['zc']
+  }
 };

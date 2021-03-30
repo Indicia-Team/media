@@ -479,6 +479,7 @@
    */
   indiciaFns.drawMediaFile = function drawMediaFile(id, file, sizeClass) {
     var domainClass;
+    var urlMatch;
     var captionItems = [];
     var captionAttr;
     var mediaInfo = {
@@ -516,11 +517,21 @@
         'class="inaturalist" data-fancybox="group-' + id + '">' +
         '<img class="' + sizeClass + '" src="' + file.path + '" /></a>';
     }
-    // Everything else will be treated using noembed on the popup.
-    // Build icon class using web domain.
-    domainClass = file.path.match(/^http(s)?:\/\/(www\.)?([a-z]+(\.kr)?)/)[3].replace('.', '');
-    return '<a ' + mediaAttr + ' ' + captionAttr +
-        ' href="' + file.path + '" class="social-icon ' + domainClass + '"></a>';
+    // Fallback for any other local files - just a link.
+    if (file.type.match(/:Local$/)) {
+      return '<a ' + mediaAttr + ' ' + captionAttr +
+        ' href="' + indiciaData.warehouseUrl + 'upload/' + file.path + '">' + file.type.split(':')[0] + '</a>';
+    }
+    urlMatch = file.path.match(/^http(s)?:\/\/(www\.)?([a-z]+(\.kr)?)/);
+    if (urlMatch) {
+      // Everything else will be treated using noembed on the popup.
+      // Build icon class using web domain.
+      domainClass = file.path.match(/^http(s)?:\/\/(www\.)?([a-z]+(\.kr)?)/)[3].replace('.', '');
+      return '<a ' + mediaAttr + ' ' + captionAttr +
+          ' href="' + file.path + '" class="social-icon ' + domainClass + '"></a>';
+    }
+    // Shouldn't really get here.
+    return '[file]';
   };
 
   /**
