@@ -47,12 +47,12 @@
    */
   indiciaFns.on('change', '.date-mode-toggle', {}, function(e) {
     var wrap = $(e.currentTarget).closest('.ctrl-wrap');
-    if (wrap.find('input[type="text"]:visible').length > 0) {
-      $(e.currentTarget).closest('.ctrl-wrap').find('input[type="text"]').hide();
-      $(e.currentTarget).closest('.ctrl-wrap').find('input[type="date"]').show();
+    if (wrap.find('.date-text:visible').length > 0) {
+      $(e.currentTarget).closest('.ctrl-wrap').find('.date-text').hide();
+      $(e.currentTarget).closest('.ctrl-wrap').find('.precise-date-picker').show();
     } else {
-      wrap.find('input[type="text"]').show();
-      wrap.find('input[type="date"]').hide();
+      wrap.find('.date-text').show();
+      wrap.find('.precise-date-picker').hide();
     }
   });
 
@@ -68,7 +68,7 @@
       dateToSave = indiciaFns.formatDate(dateToSave);
     }
     // Use prop to not trigger overridden val() method.
-    wrap.find('input[type="text"]').prop('value', dateToSave);
+    wrap.find('.date-text').prop('value', dateToSave);
   });
 
   /**
@@ -89,7 +89,7 @@
         dateVal = '';
       }
     }
-    wrap.find('input[type="date"]').val(dateVal);
+    wrap.find('.precise-date-picker').val(dateVal);
   });
 
 }(jQuery));
