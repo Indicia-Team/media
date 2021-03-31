@@ -72,7 +72,7 @@ var resetSpeciesTextOnEscape;
         var rows = [];
         var taxaTaxonListIds = [];
         var occurrenceIds = [];
-        $.each($('table.species-grid tbody tr'), function() {
+        $.each($(this).find('tbody tr'), function() {
           var scCtrl = $(this).find('.scPresence[name]');
           if (!indiciaData['limitDynamicAttrsTaxonGroupIds-' + gridId] ||
               $.inArray(parseInt($(this).find('.scTaxonGroupId').val()), indiciaData['limitDynamicAttrsTaxonGroupIds-' + gridId]) !== -1) {
