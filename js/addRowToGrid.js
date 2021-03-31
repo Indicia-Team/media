@@ -71,17 +71,15 @@ var resetSpeciesTextOnEscape;
         var gridId = this.id;
         var rows = [];
         var taxaTaxonListIds = [];
-        var occurrenceIds = [];
         $.each($(this).find('tbody tr'), function() {
           var scCtrl = $(this).find('.scPresence[name]');
           if (!indiciaData['limitDynamicAttrsTaxonGroupIds-' + gridId] ||
               $.inArray(parseInt($(this).find('.scTaxonGroupId').val()), indiciaData['limitDynamicAttrsTaxonGroupIds-' + gridId]) !== -1) {
             rows.push(this);
             taxaTaxonListIds.push($(this).find('.scTaxaTaxonListId').val());
-            occurrenceIds.push(scCtrl[0].name.match(/species-grid-\d+-\d+:([a-z0-9\-]+)/)[1]);
           }
         });
-        loadDynamicAttrs(gridId, taxaTaxonListIds, rows, occurrenceIds);
+        loadDynamicAttrs(gridId, taxaTaxonListIds, rows);
       });
     }
   });
@@ -394,7 +392,7 @@ var resetSpeciesTextOnEscape;
       if (indiciaData['enableDynamicAttrs-' + gridId]) {
         if (!indiciaData['limitDynamicAttrsTaxonGroupIds-' + gridId] ||
             $.inArray(parseInt(data.taxon_group_id), indiciaData['limitDynamicAttrsTaxonGroupIds-' + gridId]) !== -1) {
-          loadDynamicAttrs(gridId, [data.taxa_taxon_list_id], [$(row)]);
+          loadDynamicAttrs(gridId, [data.taxa_taxon_list_id], [row]);
         } else {
           $(row).find('.hidden-by-dynamic-attr')
             .removeClass('hidden-by-dynamic-attr')
@@ -857,26 +855,45 @@ var resetSpeciesTextOnEscape;
     }
   });
 
-  function loadDynamicAttrs(gridId, taxaTaxonListIds, rows, occurrenceIds) {
+  /**
+   * Converts the existing occurrence attribute data structure for ease of use.
+   *
+   * Changes key to just attribute ID and occurrence ID.
+   *
+   * @returns obj
+   */
+  function prepareExistingOccAttrData() {
+    var r = {};
+    if (typeof indiciaData.existingOccAttrData !== 'undefined') {
+      $.each(indiciaData.existingOccAttrData, function(key, val) {
+        var tokens = key.split(':');
+        r[tokens[2] + ':' + tokens[4]] = val;
+      });
+    };
+    return r;
+  }
+
+  function loadDynamicAttrs(gridId, taxaTaxonListIds, rows) {
     var urlSep = indiciaData.dynamicAttrProxyUrl.indexOf('?') === -1 ? '?' : '&';
-    occurrenceIds = occurrenceIds ? occurrenceIds : '0';
     // Find available dynamic attributes for the selected species.
     $.get(indiciaData.dynamicAttrProxyUrl + '/getSpeciesChecklistAttrs' + urlSep +
         'survey_id=' + $('#survey_id').val() +
         '&taxa_taxon_list_ids=' + taxaTaxonListIds +
-        '&occurrence_id=' + occurrenceIds +
         '&type=occurrence' +
         '&language=' + indiciaData.userLang +
         // @todo: Otions may need to be passed through for individual attr controls.
         '&options={}', null,
       function getAttrsReportCallback(data) {
+        var existingData = prepareExistingOccAttrData();
+        var replacedNonMappableSysFuncCols = [];
+        var msg;
         $.each(rows, function() {
           var row = this;
           // Capture all current attrs values for each row so they can be placed into new controls.
           $.each($(row).find('td.scOccAttrCell'), function() {
             var theInput = $(this).find(':input').not(':disabled');
             if ($(theInput).is('select')) {
-              $(this).attr('data-oldval', $(theInput).text().trim());
+              $(this).attr('data-oldval', $(theInput).find('option:selected').text().trim());
             } else if ($(theInput).is('input')) {
               $(this).attr('data-oldval', $(theInput).val().trim());
             } else {
@@ -893,63 +910,90 @@ var resetSpeciesTextOnEscape;
         });
         $.each(data, function() {
           var dataRow = this;
-          var row = dataRow.attr.occurrence_id
-            ? $(rows).find('.scPresence[id$=":' + dataRow.attr.occurrence_id + ':present"]').closest('tr')
-            : rows[0];
-          var rowPrefix = $(row).find('.scPresence').last().attr('id').match(/(sc:[a-z0-9\-]+)/)[1];
-          var attrId = dataRow.attr.attribute_id;
-          var systemFunction = dataRow.attr.system_function;
-          var ctrl = $(dataRow.control);
-          if (systemFunction) {
-            ctrl
-              .attr('name', rowPrefix + '::occAttr:' + attrId)
-              .addClass('system-function-' + systemFunction)
-              .addClass('dynamic-attr');
-            $.each(indiciaData['dynamicAttrInfo-' + gridId][systemFunction], function(idx) {
-              var cell = $(row).find('td.' + this + 'Cell');
-              var values;
-              // If multiple columns for same sysfuncton, only use the first
-              // and empty the rest.
-              if (idx === 0) {
-                // Remove old dynamic attributes in the cell as well as errors.
-                cell.find('dynamic-attr, .inline-error').remove();
-                // Hide and disable the non-dynamic attr for this cell, so we don't lose it
-                // if the row is edited to a species without dynamic attrs.
-                cell.find('*')
-                  .addClass('hidden-by-dynamic-attr')
-                  .removeClass('ui-state-error')
-                  .prop('disabled', true);
-                // Tag the control against the column.
-                ctrl.addClass(this);
-                // Set any existint value into the control.
-                if (dataRow.attr.values) {
-                  values = JSON.parse(dataRow.attr.values);
-                  if (values.length) {
-                    ctrl.val(values[0]['raw_value']);
+          // Might be multiple rows for same taxon.
+          $.each($(rows).find('.scTaxaTaxonListId[value="' + dataRow.attr.taxa_taxon_list_id + '"]'), function() {
+            var row = $(this).closest('tr');
+            var rowIdMatch = $(row).find('.scPresence').last().attr('id').match(/(sc:[a-z0-9\-]+):(\d+)?/);
+            var rowPrefix = rowIdMatch[1];
+            var occurrenceId = rowIdMatch.length >= 3 ? rowIdMatch[2] : null;
+            var attrId = dataRow.attr.attribute_id;
+            var systemFunction = dataRow.attr.system_function;
+            var ctrl = $(dataRow.control);
+            if (systemFunction) {
+              ctrl
+                .attr('name', rowPrefix + '::occAttr:' + attrId)
+                .addClass('system-function-' + systemFunction)
+                .addClass('dynamic-attr');
+              $.each(indiciaData['dynamicAttrInfo-' + gridId][systemFunction], function(idx) {
+                var canHideReplacedControl = true;
+                var cell = $(row).find('td.' + this + 'Cell');
+                // If multiple columns for same sysfuncton, only use the first
+                // and empty the rest.
+                if (idx === 0) {
+                  // Remove old dynamic attributes in the cell as well as errors.
+                  cell.find('dynamic-attr, .inline-error').remove();
+                  // Tag the control against the column.
+                  ctrl.addClass(this);
+                  // Set any existing value into the control.
+                  if (occurrenceId && typeof existingData[occurrenceId + ':' + dataRow.attr['attribute_id']] !== 'undefined') {
+                    ctrl.val(existingData[occurrenceId + ':' + dataRow.attr['attribute_id']]);
                   }
-                }
-                if ($(cell).attr('data-oldval')) {
-                  if (ctrl.is('select')) {
-                    ctrl.find('option').filter(function () {
-                      return $(this).html().toLowerCase().trim() === $(cell).attr('data-oldval').toLowerCase();
-                    }).prop('selected', true);
-                  } else if (ctrl.is('input')) {
-                    ctrl.val($(cell).attr('data-oldval'));
+                  if ($(cell).attr('data-oldval')) {
+                    if (ctrl.is('select')) {
+                      ctrl.find('option').filter(function () {
+                        return $(this).html().toLowerCase().trim() === $(cell).attr('data-oldval').toLowerCase();
+                      }).prop('selected', true);
+                      canHideReplacedControl = ctrl.find('option:selected').length > 0 && ctrl.find('option:selected').html().trim() !== '';
+                    } else if (ctrl.is('input')) {
+                      ctrl.val($(cell).attr('data-oldval'));
+                    }
                   }
+                  if (canHideReplacedControl) {
+                    // Hide and disable the non-dynamic attr for this cell, so we don't lose it
+                    // if the row is edited to a species without dynamic attrs.
+                    cell.find('*')
+                      .addClass('hidden-by-dynamic-attr')
+                      .removeClass('ui-state-error')
+                      .prop('disabled', true);
+                  }
+                  else {
+                    cell.find(':input').addClass('ui-state-error old-attr-input');
+                    // Track the columns that contain values that can't be mapped.
+                    if (replacedNonMappableSysFuncCols.indexOf($('#' + cell.attr('headers')).text()) === -1) {
+                      replacedNonMappableSysFuncCols.push($('#' + cell.attr('headers')).text());
+                    }
+                    $(ctrl).change(function() {
+                      cell.find('.old-attr-input').val('')
+                        .removeClass('ui-state-error')
+                        .hide('slow', function() {
+                          // If last one, hide the warning.
+                          if ($('.old-attr-input:visible').length === 0) {
+                            $('.old-attr-val-alert').hide('slow');
+                          }
+                        });
+                    })
+                  }
+                  // Attach existing attrs to the correct occurrence ID.
+                  if (occurrenceId) {
+                    ctrl.attr('name', ctrl.attr('name').replace('::', ':' + occurrenceId + ':'));
+                  }
+                  // Add the new dynamic attr control to the grid cell.
+                  cell.append(ctrl);
+                } else {
+                  // 2nd or later column for same sysfunction, so hide the control.
+                  cell.html('');
                 }
-                // Attach existing attrs to the correct occurrence ID.
-                if (dataRow.attr.occurrence_id) {
-                  ctrl.attr('name', ctrl.attr('name').replace('::', ':' + dataRow.attr.occurrence_id + ':'));
-                }
-                // Add the new dynamic attr control to the grid cell.
-                cell.append(ctrl);
-              } else {
-                // 2nd or later column for same sysfunction, so hide the control.
-                cell.html('');
-              }
-            });
-          }
+              });
+            }
+          });
         });
+        if (replacedNonMappableSysFuncCols.length > 0) {
+          msg = indiciaData.lang.dynamicattrs.manualMappingMessage.replace('{cols}', replacedNonMappableSysFuncCols.join(', '));
+          if ($(rows).closest('table').find('.record-status-set').closest('tr').find('.old-attr-input:visible').length > 0) {
+            msg += '<br/><strong>' + indiciaData.lang.dynamicattrs.manualMappingVerificationWarning + '</strong>';
+          }
+          $(rows).closest('table').before('<div class="alert alert-warning old-attr-val-alert">' + msg + '</div>');
+        }
       },
       'json'
     );
