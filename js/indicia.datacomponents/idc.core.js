@@ -522,7 +522,9 @@
     // Fallback for any other local files - just a link.
     if (file.type.match(/:Local$/)) {
       return '<a ' + mediaAttr + ' ' + captionAttr +
-        ' href="' + indiciaData.warehouseUrl + 'upload/' + file.path + '">' + file.type.split(':')[0] + '</a>';
+        ' href="' + indiciaData.warehouseUrl + 'upload/' + file.path + '">' +
+        '<span class="fas fa-file-invoice fa-2x"></span><br/>'
+        file.type.split(':')[0] + '</a>';
     }
     urlMatch = file.path.match(/^http(s)?:\/\/(www\.)?([a-z]+(\.kr)?)/);
     if (urlMatch) {
