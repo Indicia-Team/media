@@ -877,16 +877,16 @@ var resetSpeciesTextOnEscape;
         });
         $.each(data, function() {
           var dataRow = this;
-          // Might be multiple rows for same taxon.
-          $.each($(rows).find('.scTaxaTaxonListId[value="' + dataRow.attr.taxa_taxon_list_id + '"]'), function() {
-            var row = $(this).closest('tr');
-            var rowIdMatch = $(row).find('.scPresence').last().attr('id').match(/(sc:[a-z0-9\-]+):(\d+)?/);
-            var rowPrefix = rowIdMatch[1];
-            var occurrenceId = rowIdMatch.length >= 3 ? rowIdMatch[2] : null;
-            var attrId = dataRow.attr.attribute_id;
-            var systemFunction = dataRow.attr.system_function;
-            var ctrl = $(dataRow.control);
-            if (systemFunction) {
+          var attrId = dataRow.attr.attribute_id;
+          var systemFunction = dataRow.attr.system_function;
+          if (systemFunction) {
+            // Might be multiple rows for same taxon.
+            $.each($(rows).find('.scTaxaTaxonListId[value="' + dataRow.attr.taxa_taxon_list_id + '"]'), function() {
+              var row = $(this).closest('tr');
+              var rowIdMatch = $(row).find('.scPresence').last().attr('id').match(/(sc:[a-z0-9\-]+):(\d+)?/);
+              var rowPrefix = rowIdMatch[1];
+              var occurrenceId = rowIdMatch.length >= 3 ? rowIdMatch[2] : null;
+              var ctrl = $(dataRow.control);
               ctrl
                 .attr('name', rowPrefix + '::occAttr:' + attrId)
                 .addClass('system-function-' + systemFunction)
@@ -894,6 +894,13 @@ var resetSpeciesTextOnEscape;
               $.each(indiciaData['dynamicAttrInfo-' + gridId][systemFunction], function(idx) {
                 var canHideReplacedControl = true;
                 var cell = $(row).find('td.' + this + 'Cell');
+                // If a row already verified, don't handle as dynamic unless
+                // there is already a dynamic value in the database. Otherwise
+                // attempts to map old non-dynamic values to new dynamic
+                // termlists will cause re-verification.
+                if (!existingData[occurrenceId + ':' + dataRow.attr['attribute_id']] && $(row).find('.record-status-set').length > 0) {
+                  return true;
+                }
                 // If multiple columns for same sysfuncton, only use the first
                 // and empty the rest.
                 if (idx === 0) {
@@ -905,6 +912,8 @@ var resetSpeciesTextOnEscape;
                   if (occurrenceId && typeof existingData[occurrenceId + ':' + dataRow.attr['attribute_id']] !== 'undefined') {
                     ctrl.val(existingData[occurrenceId + ':' + dataRow.attr['attribute_id']]);
                   }
+                  // If a previous (non-dynamic) value in this cell, copy it in
+                  // to the dynamic control if possible.
                   if ($(cell).attr('data-oldval')) {
                     if (ctrl.is('select')) {
                       ctrl.find('option').filter(function () {
@@ -916,12 +925,13 @@ var resetSpeciesTextOnEscape;
                     }
                   }
                   if (canHideReplacedControl) {
-                    // Hide and disable the non-dynamic attr for this cell, so we don't lose it
+                    // Hide the non-dynamic attr for this cell, so we don't lose it
                     // if the row is edited to a species without dynamic attrs.
                     cell.find('*')
                       .addClass('hidden-by-dynamic-attr')
-                      .removeClass('ui-state-error')
-                      .prop('disabled', true);
+                      .removeClass('ui-state-error');
+                    // Clear the value so it get's replaced when saved.
+                    cell.find(':input').val('');
                   }
                   else {
                     cell.find(':input').addClass('ui-state-error old-attr-input');
@@ -951,8 +961,8 @@ var resetSpeciesTextOnEscape;
                   cell.html('');
                 }
               });
-            }
-          });
+            });
+          }
         });
         if (replacedNonMappableSysFuncCols.length > 0) {
           msg = indiciaData.lang.dynamicattrs.manualMappingMessage.replace('{cols}', replacedNonMappableSysFuncCols.join(', '));
