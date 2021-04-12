@@ -699,7 +699,6 @@
           metric = lastGeom === this._source.location.geom ? metric / 2.5 : 5000;
           lastGeom = this._source.location.geom;
           addFeature(el, sourceSettings.id, latlon, this._source.location.geom, metric, '_id', this._id);
-          console.log(metric + ' :: ' + lastGeom);
         });
       }
       // Are there aggregations to map?
