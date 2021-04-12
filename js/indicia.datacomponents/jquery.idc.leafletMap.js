@@ -680,6 +680,8 @@
       var el = this;
       var layers = getLayersForSource(el, sourceSettings.id);
       var bounds;
+      var lastGeom = '';
+      var metric = 5000;
       $.each(layers, function eachLayer() {
         if (this.clearLayers) {
           this.clearLayers();
@@ -689,10 +691,15 @@
       });
       // Are there document hits to map?
       if (typeof response.hits !== 'undefined') {
-        $.each(response.hits.hits, function eachHit(i) {
+        $.each(response.hits.hits, function eachHit() {
           var latlon = this._source.location.point.split(',');
-          addFeature(el, sourceSettings.id, latlon, this._source.location.geom,
-            this._source.location.coordinate_uncertainty_in_meters, '_id', this._id);
+          // Metric defines opacity. Repeat records on same grid square should be
+          // progressively more transparent so they don't block the background
+          // out.
+          metric = lastGeom === this._source.location.geom ? metric / 2.5 : 5000;
+          lastGeom = this._source.location.geom;
+          addFeature(el, sourceSettings.id, latlon, this._source.location.geom, metric, '_id', this._id);
+          console.log(metric + ' :: ' + lastGeom);
         });
       }
       // Are there aggregations to map?
