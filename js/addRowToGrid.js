@@ -893,11 +893,11 @@ var resetSpeciesTextOnEscape;
           $.each($(row).find('td.scOccAttrCell'), function() {
             var theInput = $(this).find(':input').not(':disabled');
             if ($(theInput).is('select')) {
-              $(this).attr('data-oldval', $(theInput).find('option:selected').text().trim());
+              $(this).data('oldval', $(theInput).find('option:selected').text().trim());
             } else if ($(theInput).is('input')) {
-              $(this).attr('data-oldval', $(theInput).val().trim());
+              $(this).data('oldval', $(theInput).val().trim());
             } else {
-              $(this).removeAttr('data-oldval');
+              $(this).removeData('oldval');
             }
           });
           // If dynamic attrs previously loaded for the row, replace the original
@@ -933,29 +933,30 @@ var resetSpeciesTextOnEscape;
                 // If multiple columns for same sysfuncton, only use the first
                 // and empty the rest.
                 if (idx === 0) {
-                  ctrl = $(dataRow.control).is(':input') ? $(dataRow.control) : $(dataRow.control).find(':input');
+                  var container = $(dataRow.control)
+                  ctrl = container.is(':input') ? container : container.find(':input');
                   ctrl
-                    .attr('name', rowPrefix + '::occAttr:' + attrId)
+                    .prop('name', rowPrefix + '::occAttr:' + attrId)
                     .addClass('system-function-' + systemFunction)
                     .addClass('dynamic-attr');
                   // Remove old dynamic attributes in the cell as well as errors.
                   cell.find('dynamic-attr, .inline-error').remove();
                   // Tag the control container against the column.
-                  $(dataRow.control).addClass(this);
+                  container.addClass(this);
                   // Set any existing value into the control.
                   if (occurrenceId && typeof existingData[occurrenceId + ':' + dataRow.attr['attribute_id']] !== 'undefined') {
                     ctrl.val(existingData[occurrenceId + ':' + dataRow.attr['attribute_id']]);
                   }
                   // If a previous (non-dynamic) value in this cell, copy it in
                   // to the dynamic control if possible.
-                  if ($(cell).attr('data-oldval')) {
+                  if ($(cell).data('oldval')) {
                     if (ctrl.is('select')) {
                       ctrl.find('option').filter(function () {
-                        return $(this).html().toLowerCase().trim() === $(cell).attr('data-oldval').toLowerCase();
+                        return $(this).html().toLowerCase().trim() === $(cell).data('oldval').toLowerCase();
                       }).prop('selected', true);
                       canHideReplacedControl = ctrl.find('option:selected').length > 0 && ctrl.find('option:selected').html().trim() !== '';
                     } else if (ctrl.is('input')) {
-                      ctrl.val($(cell).attr('data-oldval'));
+                      ctrl.val($(cell).data('oldval'));
                     }
                   }
                   if (canHideReplacedControl) {
@@ -970,8 +971,8 @@ var resetSpeciesTextOnEscape;
                   else {
                     cell.find(':input').addClass('ui-state-error old-attr-input');
                     // Track the columns that contain values that can't be mapped.
-                    if (replacedNonMappableSysFuncCols.indexOf($('#' + cell.attr('headers')).text()) === -1) {
-                      replacedNonMappableSysFuncCols.push($('#' + cell.attr('headers')).text());
+                    if (replacedNonMappableSysFuncCols.indexOf($('#' + cell.prop('headers')).text()) === -1) {
+                      replacedNonMappableSysFuncCols.push($('#' + cell.prop('headers')).text());
                     }
                     $(ctrl).change(function() {
                       cell.find('.old-attr-input').val('')
@@ -986,10 +987,10 @@ var resetSpeciesTextOnEscape;
                   }
                   // Attach existing attrs to the correct occurrence ID.
                   if (occurrenceId) {
-                    ctrl.attr('name', ctrl.attr('name').replace('::', ':' + occurrenceId + ':'));
+                    ctrl.prop('name', ctrl.prop('name').replace('::', ':' + occurrenceId + ':'));
                   }
                   // Add the new dynamic attr control container to the grid cell.
-                  cell.append($(dataRow.control));
+                  cell.append(container);
                 } else {
                   // 2nd or later column for same sysfunction, so hide the control.
                   cell.html('');
