@@ -854,19 +854,12 @@ var resetSpeciesTextOnEscape;
         var existingData = prepareExistingOccAttrData();
         var replacedNonMappableSysFuncCols = [];
         var msg;
+        var columnsToCopyFromPrevRow = indiciaData['previousRowColumnsToInclude-'+gridId].split(",");
+        columnsToCopyFromPrevRow.forEach(function(value, index) {
+          columnsToCopyFromPrevRow[index] = 'sc' + value.replace(/ /g,'').toLowerCase();
+        });
         $.each(rows, function() {
           var row = this;
-          // Capture all current attrs values for each row so they can be placed into new controls.
-          $.each($(row).find('td.scOccAttrCell'), function() {
-            var theInput = $(this).find(':input').not(':disabled');
-            if ($(theInput).is('select')) {
-              $(this).attr('data-oldval', $(theInput).find('option:selected').text().trim());
-            } else if ($(theInput).is('input')) {
-              $(this).attr('data-oldval', $(theInput).val().trim());
-            } else {
-              $(this).removeAttr('data-oldval');
-            }
-          });
           // If dynamic attrs previously loaded for the row, replace the original
           // inputs before applying the new set (since the new set may not have
           // attrs for the same columns as the old set).
@@ -883,17 +876,15 @@ var resetSpeciesTextOnEscape;
             // Might be multiple rows for same taxon.
             $.each($(rows).find('.scTaxaTaxonListId[value="' + dataRow.attr.taxa_taxon_list_id + '"]'), function() {
               var row = $(this).closest('tr');
+              var prevRow = row.prev('tr');
               var rowIdMatch = $(row).find('.scPresence').last().attr('id').match(/(sc:[a-z0-9\-]+):(\d+)?/);
               var rowPrefix = rowIdMatch[1];
               var occurrenceId = rowIdMatch.length >= 3 ? rowIdMatch[2] : null;
-              var ctrl = $(dataRow.control);
-              ctrl
-                .attr('name', rowPrefix + '::occAttr:' + attrId)
-                .addClass('system-function-' + systemFunction)
-                .addClass('dynamic-attr');
               $.each(indiciaData['dynamicAttrInfo-' + gridId][systemFunction], function(idx) {
-                var canHideReplacedControl = true;
                 var cell = $(row).find('td.' + this + 'Cell');
+                var ctrl;
+                var container;
+                var classToUse;
                 // If a row already verified, don't handle as dynamic unless
                 // there is already a dynamic value in the database. Otherwise
                 // attempts to map old non-dynamic values to new dynamic
@@ -904,6 +895,12 @@ var resetSpeciesTextOnEscape;
                 // If multiple columns for same sysfuncton, only use the first
                 // and empty the rest.
                 if (idx === 0) {
+                  container = $(dataRow.control);
+                  ctrl = container.is(':input') ? container : container.find(':input');
+                  ctrl
+                    .prop('name', rowPrefix + '::occAttr:' + attrId)
+                    .addClass('system-function-' + systemFunction)
+                    .addClass('dynamic-attr');
                   // Remove old dynamic attributes in the cell as well as errors.
                   cell.find('dynamic-attr, .inline-error').remove();
                   // Tag the control against the column.
@@ -911,51 +908,26 @@ var resetSpeciesTextOnEscape;
                   // Set any existing value into the control.
                   if (occurrenceId && typeof existingData[occurrenceId + ':' + dataRow.attr['attribute_id']] !== 'undefined') {
                     ctrl.val(existingData[occurrenceId + ':' + dataRow.attr['attribute_id']]);
-                  }
-                  // If a previous (non-dynamic) value in this cell, copy it in
-                  // to the dynamic control if possible.
-                  if ($(cell).attr('data-oldval')) {
-                    if (ctrl.is('select')) {
-                      ctrl.find('option').filter(function () {
-                        return $(this).html().toLowerCase().trim() === $(cell).attr('data-oldval').toLowerCase();
-                      }).prop('selected', true);
-                      canHideReplacedControl = ctrl.find('option:selected').length > 0 && ctrl.find('option:selected').html().trim() !== '';
-                    } else if (ctrl.is('input')) {
-                      ctrl.val($(cell).attr('data-oldval'));
+                  } else if (prevRow.length > 0) {
+                    // If this column copied from previous, apply value.
+                    classToUse = getScClassForColumnCellInput(ctrl);
+                    if (classToUse && (jQuery.inArray(classToUse.toLowerCase(), columnsToCopyFromPrevRow)>-1)) {
+                      ctrl.val(prevRow.find('.'+classToUse).filter(':visible').val());
                     }
                   }
-                  if (canHideReplacedControl) {
-                    // Hide the non-dynamic attr for this cell, so we don't lose it
-                    // if the row is edited to a species without dynamic attrs.
-                    cell.find('*')
-                      .addClass('hidden-by-dynamic-attr')
-                      .removeClass('ui-state-error');
-                    // Clear the value so it get's replaced when saved.
-                    cell.find(':input').val('');
-                  }
-                  else {
-                    cell.find(':input').addClass('ui-state-error old-attr-input');
-                    // Track the columns that contain values that can't be mapped.
-                    if (replacedNonMappableSysFuncCols.indexOf($('#' + cell.attr('headers')).text()) === -1) {
-                      replacedNonMappableSysFuncCols.push($('#' + cell.attr('headers')).text());
-                    }
-                    $(ctrl).change(function() {
-                      cell.find('.old-attr-input').val('')
-                        .removeClass('ui-state-error')
-                        .hide('slow', function() {
-                          // If last one, hide the warning.
-                          if ($('.old-attr-input:visible').length === 0) {
-                            $('.old-attr-val-alert').hide('slow');
-                          }
-                        });
-                    })
-                  }
+                  // Hide the non-dynamic attr for this cell, so we don't lose it
+                  // if the row is edited to a species without dynamic attrs.
+                  cell.find('*')
+                    .addClass('hidden-by-dynamic-attr')
+                    .removeClass('ui-state-error');
+                  // Clear the value so it get's replaced when saved.
+                  cell.find(':input').val('');
                   // Attach existing attrs to the correct occurrence ID.
                   if (occurrenceId) {
-                    ctrl.attr('name', ctrl.attr('name').replace('::', ':' + occurrenceId + ':'));
+                    ctrl.prop('name', ctrl.prop('name').replace('::', ':' + occurrenceId + ':'));
                   }
-                  // Add the new dynamic attr control to the grid cell.
-                  cell.append(ctrl);
+                  // Add the new dynamic attr control container to the grid cell.
+                  cell.append(container);
                 } else {
                   // 2nd or later column for same sysfunction, so hide the control.
                   cell.html('');
@@ -1085,12 +1057,11 @@ function getScClassForColumnCellInput(input) {
 function changeIn2ndToLastRow(input) {
   //get user specified columns to include in the copy
   var gridId = jQuery(input).closest('table').attr('id'),
-      columnsToInclude = indiciaData['previousRowColumnsToInclude-'+gridId].split(",");
+    columnsToCopyFromPrevRow = indiciaData['previousRowColumnsToInclude-'+gridId].split(",");
   //get rid of all of the spacing and capital letters
-  for (i=0; i<columnsToInclude.length;i++) {
-    columnsToInclude[i] = 'sc'+columnsToInclude[i].replace(/ /g,'').toLowerCase();
+  for (i = 0; i < columnsToCopyFromPrevRow.length; i++) {
+    columnsToCopyFromPrevRow[i] = 'sc'+columnsToCopyFromPrevRow[i].replace(/ /g,'').toLowerCase();
   }
-
   var classToUse = getScClassForColumnCellInput(input),
       $newRow = jQuery('table#'+gridId + ' tr.scClonableRow'),
       //The '.added-row:first' check is there
@@ -1098,8 +1069,8 @@ function changeIn2ndToLastRow(input) {
       $previousRow = $newRow.prevAll(".added-row:first");
   //Copy data from the 2nd last row into the new row only if the column
   //is in the user's options
-  if (classToUse && (jQuery.inArray(classToUse.toLowerCase(), columnsToInclude)>-1)) {
-    $newRow.find('.'+classToUse).val($previousRow.find('.'+classToUse).val());
+  if (classToUse && (jQuery.inArray(classToUse.toLowerCase(), columnsToCopyFromPrevRow)>-1)) {
+    $newRow.find('.'+classToUse).val($previousRow.find('.'+classToUse).filter(':visible').val());
   }
 }
 
@@ -1112,10 +1083,10 @@ function changeIn2ndToLastRowProxy() {
 //function to copy the values for a new row from the previous row as the new row is added.
 function species_checklist_add_another_row(gridId) {
   //get user specified columns to include in the copy
-  var columnsToInclude = indiciaData['previousRowColumnsToInclude-'+gridId].split(",");
+  var columnsToCopyFromPrevRow = indiciaData['previousRowColumnsToInclude-'+gridId].split(",");
   //get rid of all of the spacing and capital letters
-  for (i=0; i<columnsToInclude.length;i++) {
-    columnsToInclude[i] = 'sc'+columnsToInclude[i].replace(/ /g,'').toLowerCase();
+  for (i=0; i<columnsToCopyFromPrevRow.length;i++) {
+    columnsToCopyFromPrevRow[i] = 'sc'+columnsToCopyFromPrevRow[i].replace(/ /g,'').toLowerCase();
   }
 
   var $newRow = jQuery('table#'+gridId + ' tr.scClonableRow');
@@ -1127,13 +1098,13 @@ function species_checklist_add_another_row(gridId) {
     //Get a clean class to work with for the column
     var classToUse = getScClassForColumnCellInput(this);
     //Only continue if the column is part of the user's options.
-    if (classToUse  && (jQuery.inArray(classToUse.toLowerCase(), columnsToInclude)>-1)) {
+    if (classToUse  && (jQuery.inArray(classToUse.toLowerCase(), columnsToCopyFromPrevRow)>-1)) {
       //Bind the cell in the previous cell so that when it is changed the new row will update
       $previousRow.find('.'+classToUse).bind('change', changeIn2ndToLastRowProxy);
       //We set the value for the new row from the previous row if there is a value set on the previous row cell
       //and the user has included that column in their options. (inArray reurns -1 for items not found)
-      if ($previousRow.find('.'+classToUse).val() && (jQuery.inArray(classToUse.toLowerCase(), columnsToInclude)>-1)) {
-        jQuery(this).val($previousRow.find('.'+classToUse).val());
+      if ($previousRow.find('.'+classToUse).val() && (jQuery.inArray(classToUse.toLowerCase(), columnsToCopyFromPrevRow)>-1)) {
+        jQuery(this).val($previousRow.find('.'+classToUse).filter(':visible').val());
       }
       //We need to unbind the 3rd last row as we no longer what changes for that cell to affect the last row.
       $previousRow.prevAll(".added-row:first").find('.'+classToUse).unbind('change', changeIn2ndToLastRowProxy);
