@@ -889,17 +889,6 @@ var resetSpeciesTextOnEscape;
         var msg;
         $.each(rows, function() {
           var row = this;
-          // Capture all current attrs values for each row so they can be placed into new controls.
-          $.each($(row).find('td.scOccAttrCell'), function() {
-            var theInput = $(this).find(':input').not(':disabled');
-            if ($(theInput).is('select')) {
-              $(this).data('oldval', $(theInput).find('option:selected').text().trim());
-            } else if ($(theInput).is('input')) {
-              $(this).data('oldval', $(theInput).val().trim());
-            } else {
-              $(this).removeData('oldval');
-            }
-          });
           // If dynamic attrs previously loaded for the row, replace the original
           // inputs before applying the new set (since the new set may not have
           // attrs for the same columns as the old set).
@@ -921,7 +910,6 @@ var resetSpeciesTextOnEscape;
               var occurrenceId = rowIdMatch.length >= 3 ? rowIdMatch[2] : null;
               var ctrl;
               $.each(indiciaData['dynamicAttrInfo-' + gridId][systemFunction], function(idx) {
-                var canHideReplacedControl = true;
                 var cell = $(row).find('td.' + this + 'Cell');
                 // If a row already verified, don't handle as dynamic unless
                 // there is already a dynamic value in the database. Otherwise
@@ -947,44 +935,13 @@ var resetSpeciesTextOnEscape;
                   if (occurrenceId && typeof existingData[occurrenceId + ':' + dataRow.attr['attribute_id']] !== 'undefined') {
                     ctrl.val(existingData[occurrenceId + ':' + dataRow.attr['attribute_id']]);
                   }
-                  // If a previous (non-dynamic) value in this cell, copy it in
-                  // to the dynamic control if possible.
-                  if ($(cell).data('oldval')) {
-                    if (ctrl.is('select')) {
-                      ctrl.find('option').filter(function () {
-                        return $(this).html().toLowerCase().trim() === $(cell).data('oldval').toLowerCase();
-                      }).prop('selected', true);
-                      canHideReplacedControl = ctrl.find('option:selected').length > 0 && ctrl.find('option:selected').html().trim() !== '';
-                    } else if (ctrl.is('input')) {
-                      ctrl.val($(cell).data('oldval'));
-                    }
-                  }
-                  if (canHideReplacedControl) {
-                    // Hide the non-dynamic attr for this cell, so we don't lose it
-                    // if the row is edited to a species without dynamic attrs.
-                    cell.find('*')
-                      .addClass('hidden-by-dynamic-attr')
-                      .removeClass('ui-state-error');
-                    // Clear the value so it get's replaced when saved.
-                    cell.find(':input').val('');
-                  }
-                  else {
-                    cell.find(':input').addClass('ui-state-error old-attr-input');
-                    // Track the columns that contain values that can't be mapped.
-                    if (replacedNonMappableSysFuncCols.indexOf($('#' + cell.prop('headers')).text()) === -1) {
-                      replacedNonMappableSysFuncCols.push($('#' + cell.prop('headers')).text());
-                    }
-                    $(ctrl).change(function() {
-                      cell.find('.old-attr-input').val('')
-                        .removeClass('ui-state-error')
-                        .hide('slow', function() {
-                          // If last one, hide the warning.
-                          if ($('.old-attr-input:visible').length === 0) {
-                            $('.old-attr-val-alert').hide('slow');
-                          }
-                        });
-                    })
-                  }
+                  // Hide the non-dynamic attr for this cell, so we don't lose it
+                  // if the row is edited to a species without dynamic attrs.
+                  cell.find('*')
+                    .addClass('hidden-by-dynamic-attr')
+                    .removeClass('ui-state-error');
+                  // Clear the value so it get's replaced when saved.
+                  cell.find(':input').val('');
                   // Attach existing attrs to the correct occurrence ID.
                   if (occurrenceId) {
                     ctrl.prop('name', ctrl.prop('name').replace('::', ':' + occurrenceId + ':'));
