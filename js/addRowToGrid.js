@@ -919,11 +919,7 @@ var resetSpeciesTextOnEscape;
               var rowIdMatch = $(row).find('.scPresence').last().attr('id').match(/(sc:[a-z0-9\-]+):(\d+)?/);
               var rowPrefix = rowIdMatch[1];
               var occurrenceId = rowIdMatch.length >= 3 ? rowIdMatch[2] : null;
-              var ctrl = $(dataRow.control);
-              ctrl
-                .attr('name', rowPrefix + '::occAttr:' + attrId)
-                .addClass('system-function-' + systemFunction)
-                .addClass('dynamic-attr');
+              var ctrl;
               $.each(indiciaData['dynamicAttrInfo-' + gridId][systemFunction], function(idx) {
                 var canHideReplacedControl = true;
                 var cell = $(row).find('td.' + this + 'Cell');
@@ -937,10 +933,15 @@ var resetSpeciesTextOnEscape;
                 // If multiple columns for same sysfuncton, only use the first
                 // and empty the rest.
                 if (idx === 0) {
+                  ctrl = $(dataRow.control).is(':input') ? $(dataRow.control) : $(dataRow.control).find(':input');
+                  ctrl
+                    .attr('name', rowPrefix + '::occAttr:' + attrId)
+                    .addClass('system-function-' + systemFunction)
+                    .addClass('dynamic-attr');
                   // Remove old dynamic attributes in the cell as well as errors.
                   cell.find('dynamic-attr, .inline-error').remove();
-                  // Tag the control against the column.
-                  ctrl.addClass(this);
+                  // Tag the control container against the column.
+                  $(dataRow.control).addClass(this);
                   // Set any existing value into the control.
                   if (occurrenceId && typeof existingData[occurrenceId + ':' + dataRow.attr['attribute_id']] !== 'undefined') {
                     ctrl.val(existingData[occurrenceId + ':' + dataRow.attr['attribute_id']]);
@@ -987,8 +988,8 @@ var resetSpeciesTextOnEscape;
                   if (occurrenceId) {
                     ctrl.attr('name', ctrl.attr('name').replace('::', ':' + occurrenceId + ':'));
                   }
-                  // Add the new dynamic attr control to the grid cell.
-                  cell.append(ctrl);
+                  // Add the new dynamic attr control container to the grid cell.
+                  cell.append($(dataRow.control));
                 } else {
                   // 2nd or later column for same sysfunction, so hide the control.
                   cell.html('');
