@@ -122,12 +122,18 @@
    *
    * @param string geom
    *   Well Known Text for the geometry.
+   * @param int metric
+   *   Metric to display for the feature (e.g. records count for a grid square)
+   *   - maxes out at 20,000.
+   * @param float fillOpacity
+   *   Default fillOpacity, unless overridden by fillOpacity=metric in config
+   *   options. Defaults to 0.5
    * @param string filterField
    *   Optional field for filter to apply if this feature selected.
    * @param string filterValue
    *   Optional value for filter to apply if this feature selected.
    */
-  function addFeature(el, sourceId, location, geom, metric, filterField, filterValue) {
+  function addFeature(el, sourceId, location, geom, metric, fillOpacity, filterField, filterValue) {
     var layerIds = getLayerIdsForSource(el, sourceId);
     var circle;
     var config;
@@ -135,6 +141,7 @@
     var obj;
     var sourceSettings = indiciaData.esSourceObjects[sourceId].settings;
     var size = {};
+    fillOpacity = fillOpacity === null || typeof fillOpacity === "undefined" ? 0.5 : fillOpacity;
     $.each(layerIds, function eachLayer() {
       var layerConfig = el.settings.layerConfig[this];
       config = {
@@ -148,7 +155,7 @@
         $.extend(config.options, layerConfig.style);
       }
       if (config.type === 'circle' || config.type === 'square' || config.type === 'geom') {
-        config.options = $.extend({ radius: 'metric', fillOpacity: 0.5 }, config.options);
+        config.options = $.extend({ radius: 'metric', fillOpacity: fillOpacity }, config.options);
         if (!config.options.size && sourceSettings.mapGridSquareSize) {
           config.options.size = sourceSettings.mapGridSquareSize;
           if (config.options.size === 'autoGridSquareSize') {
@@ -214,7 +221,7 @@
           size.x = obj.getBounds().getEast() - obj.getBounds().getWest();
           size.y = obj.getBounds().getNorth() - obj.getBounds().getSouth();
           size.relativeVisual = Math.min(size.x, size.y) * Math.pow(10, el.map.getZoom());
-          obj.options.weight = Math.max(2, 14 - Math.floor(Math.log10(size.relativeVisual)));
+          obj.options.weight = Math.max(1, 13 - Math.round(Math.log10(size.relativeVisual)));
           obj.addTo(el.outputLayers[this]);
           break;
         // Default layer type is markers.
@@ -361,7 +368,7 @@
               coords = this.key.split(' ');
               metric = Math.round((Math.sqrt(this.doc_count) / maxMetric) * 20000);
               if (typeof location !== 'undefined') {
-                addFeature(el, sourceSettings.id, { lat: coords[1], lon: coords[0] }, null, metric, filterField, this.key);
+                addFeature(el, sourceSettings.id, { lat: coords[1], lon: coords[0] }, null, metric, null, filterField, this.key);
               }
             }
           });
@@ -680,8 +687,8 @@
       var el = this;
       var layers = getLayersForSource(el, sourceSettings.id);
       var bounds;
-      var lastGeom = '';
-      var metric = 5000;
+      var fillOpacity = 0.2;
+      var geomCounts = {};
       $.each(layers, function eachLayer() {
         if (this.clearLayers) {
           this.clearLayers();
@@ -690,17 +697,17 @@
         }
       });
       // Are there document hits to map?
-      if (typeof response.hits !== 'undefined') {
-        $.each(response.hits.hits, function eachHit() {
-          var latlon = this._source.location.point.split(',');
-          // Metric defines opacity. Repeat records on same grid square should be
-          // progressively more transparent so they don't block the background
-          // out.
-          metric = lastGeom === this._source.location.geom ? metric / 2.5 : 5000;
-          lastGeom = this._source.location.geom;
-          addFeature(el, sourceSettings.id, latlon, this._source.location.geom, metric, '_id', this._id);
-        });
-      }
+      $.each(response.hits.hits, function eachHit(i) {
+        var latlon = this._source.location.point.split(',');
+        // Repeat records on same grid square should be progressively more
+        // transparent so they don't block the background out.
+        if (typeof geomCounts[this._source.location.point] === 'undefined') {
+          geomCounts[this._source.location.point] = 0;
+        }
+        geomCounts[this._source.location.point]++;
+        fillOpacity = 0.3 / Math.pow(geomCounts[this._source.location.point], 2.5);
+        addFeature(el, sourceSettings.id, latlon, this._source.location.geom, this._source.location.coordinate_uncertainty_in_meters, fillOpacity, '_id', this._id);
+      });
       // Are there aggregations to map?
       if (typeof response.aggregations !== 'undefined') {
         if (sourceSettings.mode === 'mapGeoHash') {
