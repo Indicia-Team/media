@@ -79,9 +79,17 @@ body {
         }
       }
       ul.data-container {
+        padding: 8px;
+        margin-bottom: 0;
         li {
           list-style-type: none;
         }
+      }
+      /* Taxon label titles */
+      h3 {
+        font-size: 1.1em;
+        font-weight: bold;
+        margin: 0;
       }
     }
     @media (min-width: 801px) {

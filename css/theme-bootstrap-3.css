@@ -515,6 +515,7 @@ body > .loading-spinner {
   margin: 1%;
   width: 90%;
   box-sizing: border-box;
+  /* Taxon label titles */
 }
 .idc-output-cardGallery .es-card-gallery .card:last-of-type {
   flex-grow: 0;
@@ -536,8 +537,17 @@ body > .loading-spinner {
 .idc-output-cardGallery .es-card-gallery .card .image-container > * img {
   max-width: 100%;
 }
+.idc-output-cardGallery .es-card-gallery .card ul.data-container {
+  padding: 8px;
+  margin-bottom: 0;
+}
 .idc-output-cardGallery .es-card-gallery .card ul.data-container li {
   list-style-type: none;
+}
+.idc-output-cardGallery .es-card-gallery .card h3 {
+  font-size: 1.1em;
+  font-weight: bold;
+  margin: 0;
 }
 @media (min-width: 801px) {
   .idc-output-cardGallery .es-card-gallery .card {
