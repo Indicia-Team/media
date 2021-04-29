@@ -854,10 +854,13 @@ var resetSpeciesTextOnEscape;
         var existingData = prepareExistingOccAttrData();
         var replacedNonMappableSysFuncCols = [];
         var msg;
-        var columnsToCopyFromPrevRow = indiciaData['previousRowColumnsToInclude-'+gridId].split(",");
-        columnsToCopyFromPrevRow.forEach(function(value, index) {
-          columnsToCopyFromPrevRow[index] = 'sc' + value.replace(/ /g,'').toLowerCase();
-        });
+        var columnsToCopyFromPrevRow = [];
+        if (typeof indiciaData['previousRowColumnsToInclude-'+gridId] !== 'undefined') {
+          columnsToCopyFromPrevRow = indiciaData['previousRowColumnsToInclude-'+gridId].split(",");
+          columnsToCopyFromPrevRow.forEach(function(value, index) {
+            columnsToCopyFromPrevRow[index] = 'sc' + value.replace(/ /g,'').toLowerCase();
+          });
+        }
         $.each(rows, function() {
           var row = this;
           // If dynamic attrs previously loaded for the row, replace the original
