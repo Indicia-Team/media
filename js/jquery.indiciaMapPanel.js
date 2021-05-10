@@ -2582,6 +2582,7 @@ var destroyAllFeatures;
         // Swap the index number of the base layer's ID to the new layer's
         // index to find the correct layer ID. Then swap to that layer.
         onLayer = switchToBaseLayer(div, baseLayerIdParts[0], onLayerIdx);
+        lazyLoadBaseLayer(div.map.baseLayer);
       } finally {
         indiciaData.settingBaseLayer = false;
       }
@@ -2900,6 +2901,8 @@ var destroyAllFeatures;
         // New layer may have different projection.
         matchMapProjectionToLayer(div.map);
       });
+      // In case initial base layer is Google.
+      lazyLoadBaseLayer(div.map.baseLayer);
 
       // Set zoom and centre from cookie, if present, else from initial settings.
       if (typeof zoom === 'undefined' || zoom === null) {
