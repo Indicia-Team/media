@@ -1298,7 +1298,7 @@ var destroyAllFeatures;
                 'https://c.tile.openstreetmap.org/${z}/${x}/${y}.png'
               ], {
                 layerId: 'dynamicOSMGoogleSat.0',
-                maxZoom: 17,
+                maxZoom: 18,
                 dynamicLayerIndex: 0
               }
             );
@@ -2374,7 +2374,7 @@ var destroyAllFeatures;
       if (layerToReplace.lazyLoadGoogleApiLayerFn) {
         if (typeof google === 'undefined') {
           // If Google API not loaded, load then replace layer.
-          $.getScript('http://maps.google.com/maps/api/js?v=3' + key, function() {
+          $.getScript('https://maps.google.com/maps/api/js?v=3' + key, function() {
             replaceGoogleBaseLayer(layerToReplace);
           });
         } else {
