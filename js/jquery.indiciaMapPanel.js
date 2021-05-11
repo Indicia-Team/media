@@ -2901,8 +2901,6 @@ var destroyAllFeatures;
         // New layer may have different projection.
         matchMapProjectionToLayer(div.map);
       });
-      // In case initial base layer is Google.
-      lazyLoadBaseLayer(div.map.baseLayer);
 
       // Set zoom and centre from cookie, if present, else from initial settings.
       if (typeof zoom === 'undefined' || zoom === null) {
