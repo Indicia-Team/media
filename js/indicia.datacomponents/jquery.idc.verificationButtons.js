@@ -482,7 +482,9 @@
         'Please correct the problems in the original spreadsheet then re-upload it.</p>')
     } else if (metadata.state === 'done') {
       $('.upload-output progress').val(100).show();
-      alert(metadata.totalProcessed + ' verifications, comments and queries were applied to the database.');
+      setTimeout(function() {
+        alert(metadata.totalProcessed + ' verifications, comments and queries were applied to the database.');
+      }, 100);
       $.fancybox.close();
     } else {
       if (metadata.state === 'checking') {
