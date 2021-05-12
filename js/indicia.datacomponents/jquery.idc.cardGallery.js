@@ -327,7 +327,7 @@
             classes.push('big');
           }
           $.each(doc.occurrence.media, function() {
-            var thumb = indiciaFns.drawMediaFile(doc.id, this, 'med');
+            var thumb = indiciaFns.drawMediaFile(doc.id, this, 'med', 'med');
             var thumbwrap = $('<div>').append(thumb);
             $(thumbwrap).appendTo(imageContainer);
           });
