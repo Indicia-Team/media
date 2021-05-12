@@ -475,11 +475,15 @@
    *   Document ID.
    * @param object file
    *   Nested file object from ES document.
-   * @param string sizeClass
+   * @param string imgClass
    *   Class to attach to <img>, either single or multi depending on number of
    *   thumbnails.
+   * @param string imgSize
+   *   Default thumb. Specify 'med' or another image size configured on the
+   *   warehouse, or an empty string, to control the warehouse image size
+   *   shown.
    */
-  indiciaFns.drawMediaFile = function drawMediaFile(id, file, sizeClass) {
+  indiciaFns.drawMediaFile = function drawMediaFile(id, file, imgClass, imgSize) {
     var domainClass;
     var urlMatch;
     var captionItems = [];
@@ -493,6 +497,8 @@
       }
     };
     var mediaAttr = 'data-media-info="' + indiciaFns.escapeHtml(JSON.stringify(mediaInfo)) + '"';
+    // Default image size to thumb.
+    imgSize = typeof imgSize === 'undefined' ? 'thumb' : imgSize;
     if (file.caption) {
       captionItems.push(file.caption);
     }
@@ -505,7 +511,7 @@
       return '<a ' + mediaAttr + captionAttr +
         'href="' + indiciaData.warehouseUrl + 'upload/' + file.path + '" ' +
         'data-fancybox="group-' + id + '">' +
-        '<img class="' + sizeClass + '" src="' + indiciaData.warehouseUrl + 'upload/' + sizeClass + '-' + file.path + '" />' +
+        '<img class="' + imgClass + '" src="' + indiciaData.warehouseUrl + 'upload/' + (imgSize === '' ? '' : imgSize + '-') + file.path + '" />' +
         '</a>';
     }
     if (file.type === 'Audio:Local') {
@@ -517,7 +523,7 @@
       return '<a ' + mediaAttr + ' ' + captionAttr +
         ' href="' + file.path.replace('/square.', '/large.') + '" ' +
         'class="inaturalist" data-fancybox="group-' + id + '">' +
-        '<img class="' + sizeClass + '" src="' + file.path + '" /></a>';
+        '<img class="' + imgClass + '" src="' + file.path + '" /></a>';
     }
     // Fallback for any other local files - just a link.
     if (file.type.match(/:Local$/)) {
@@ -992,12 +998,12 @@
     occurrence_media: function occurrenceMedia(doc) {
       var value = doc.occurrence.media;
       // Tweak image sizes if more than 1.
-      var sizeClass = value && value.length === 1 ? 'single' : 'multi';
+      var imgClass = value && value.length === 1 ? 'single' : 'multi';
       var media = [];
       if (value) {
         // Build media HTML.
         $.each(value, function eachFile() {
-          media.push(indiciaFns.drawMediaFile(doc.id, this, sizeClass));
+          media.push(indiciaFns.drawMediaFile(doc.id, this, imgClass));
         });
       }
       return media.join('');
