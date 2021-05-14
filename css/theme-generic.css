@@ -5,13 +5,13 @@
   vertical-align: middle;
 }
 
-.ctrl-wrap.not-full-width-sm {
+.ctrl-wrap.not-full-width-sm input {
   max-width: 200px;
 }
-.ctrl-wrap.not-full-width-md {
+.ctrl-wrap.not-full-width-md input {
   max-width: 400px;
 }
-.ctrl-wrap.not-full-width-lg {
+.ctrl-wrap.not-full-width-lg input {
   max-width: 600px;
 }
 

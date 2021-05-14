@@ -6,13 +6,13 @@
 }
 
 .ctrl-wrap {
-  &.not-full-width-sm {
+  &.not-full-width-sm input {
     max-width: 200px;
   }
-  &.not-full-width-md {
+  &.not-full-width-md input {
     max-width: 400px;
   }
-  &.not-full-width-lg {
+  &.not-full-width-lg input {
     max-width: 600px;
   }
 }
