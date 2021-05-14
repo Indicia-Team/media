@@ -192,6 +192,15 @@ jQuery(document).ready(function ($) {
         if (filterDef.marine_flag && filterDef.marine_flag !== 'all') {
           r.push($('#marine_flag').find('option[value=' + filterDef.marine_flag + ']').text());
         }
+        if (filterDef.freshwater_flag && filterDef.freshwater_flag !== 'all') {
+          r.push($('#freshwater_flag').find('option[value=' + filterDef.freshwater_flag + ']').text());
+        }
+        if (filterDef.terrestrial_flag && filterDef.terrestrial_flag !== 'all') {
+          r.push($('#terrestrial_flag').find('option[value=' + filterDef.terrestrial_flag + ']').text());
+        }
+        if (filterDef.non_native_flag && filterDef.non_native_flag !== 'all') {
+          r.push($('#non_native_flag').find('option[value=' + filterDef.non_native_flag + ']').text());
+        }
         if (typeof filterDef.confidential !== 'undefined') {
           switch (filterDef.confidential) {
             case 't':
@@ -695,7 +704,7 @@ jQuery(document).ready(function ($) {
             siteType = 'my';
           }
           if ($('#site-type').val() !== siteType) {
-            $('#site-type').val(siteType);            
+            $('#site-type').val(siteType);
           }
           changeSiteType();
           loadSites(locationsToLoad);
@@ -1354,7 +1363,7 @@ jQuery(document).ready(function ($) {
     var attrName;
     var option;
     // regexp extracts the pane ID from the href. Loop through the controls in the pane
-    $.each(pane.find(':input').not('#imp-sref-system,:checkbox,[type=button],[name="location_list[]"]'),
+    $.each(pane.find(':input').not('#imp-sref-system,:checkbox,[type=button],[name="location_list[]"],.precise-date-picker'),
       function (idx, ctrl) {
         var value;
         // set control value to the stored filter setting
@@ -1398,7 +1407,7 @@ jQuery(document).ready(function ($) {
   if ($('.fb-filter-link').length){
     $('.fb-filter-link').fancybox({
       beforeLoad: function () {
-        var pane = $(this.href.replace(/^[^#]+/, ''));
+        var pane = $(this.src.replace(/^[^#]+/, ''));
         var paneName = $(pane).attr('id').replace('controls-filter_', '');
         if (typeof paneObjList[paneName].preloadForm !== 'undefined') {
           paneObjList[paneName].preloadForm();
@@ -1409,7 +1418,7 @@ jQuery(document).ready(function ($) {
         loadFilterOntoForm(paneName);
       },
       afterShow: function () {
-        var pane = $(this.href.replace(/^[^#]+/, ''));
+        var pane = $(this.src.replace(/^[^#]+/, ''));
         var element;
         $('.context-instruct').hide();
         if (pane[0].id === 'controls-filter_where') {
@@ -1447,7 +1456,7 @@ jQuery(document).ready(function ($) {
         $('#location_list\\:search\\:name').prop('disabled', false);
       },
       afterClose: function () {
-        var pane = $(this.href.replace(/^[^#]+/, ''));
+        var pane = $(this.src.replace(/^[^#]+/, ''));
         var element;
         if (pane[0].id === 'controls-filter_where' && typeof indiciaData.linkToMapDiv !== 'undefined') {
           element = $('#' + indiciaData.linkToMapDiv);

@@ -30,7 +30,6 @@ This means they cannot normally be seen by the outside world, so in order to mak
 functions, we need to assign it to a global variable. */
 
 var keyHandler;
-var ConvertControlsToPopup;
 var hook_species_checklist_new_row = [];
 var hook_species_checklist_pre_delete_row = [];
 var hook_species_checklist_delete_row = [];
@@ -679,38 +678,6 @@ var resetSpeciesTextOnEscape;
     }
   });
 
-  /**
-   * Method to assist with converting a control in the grid into a popup link. Example usage:
-   * jQuery(document).ready(function() {
-   *   ConvertControlsToPopup($('.scComment'), 'Comment', indiciaData.imagesPath + 'nuvola/package_editors-22px.png');
-   * });
-   *
-   * function hook_species_checklist_new_row(data) {
-   *   var id='#sc:'+data.taxa_taxon_list_id+'::occurrence:comment';
-   *   id = id.replace(/:/g, '\\:');
-   *   ConvertControlsToPopup($(id), 'Comment', indiciaData.imagesPath + 'nuvola/package_editors-22px.png');
-   * }
-  */
-  ConvertControlsToPopup = function (controls, label, icon) {
-    var identifier;
-    $.each(controls, function (i, input) {
-      if ($(input).parents('.scClonableRow').length === 0) {
-        // make a unique id for the item which is jQuery safe.
-        identifier = input.id.replace(/:/g, '-');
-        $(input).after('<div style="display: none;" id="hide-' + identifier + '"><div id="anchor-' + identifier + '"></div></div>');
-        $(input).after('<a href="#anchor-' + identifier + '" id="click-' + identifier + '">' +
-            '<img src="' + icon + '" width="22" height="22" alt="Show ' + label + '" /></a>');
-        $('#anchor-' + identifier).append('<label>' + label + ':</label><br/>');
-        $('#anchor-' + identifier).append(input);
-        $('#anchor-' + identifier).append('<br/><input type="button" value="Close" onclick="jQuery.fancybox.close();" class="ui-state-default ui-corner-all" />');
-        // make sure the input shows, though at this stage it is in a hidden div. @todo This is a bit of a nasty hack,
-        // would rather obay CSS precedence rules but !important is getting in the way.
-        $(input).css('cssText', 'display: inline !important');
-        $('#click-' + identifier).fancybox({ helpers: { title: null }, closeBtn: false });
-      }
-    });
-  };
-
   RegExp.escape = function (s) {
     return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
   };
@@ -887,10 +854,13 @@ var resetSpeciesTextOnEscape;
         var existingData = prepareExistingOccAttrData();
         var replacedNonMappableSysFuncCols = [];
         var msg;
-        var columnsToCopyFromPrevRow = indiciaData['previousRowColumnsToInclude-'+gridId].split(",");
-        columnsToCopyFromPrevRow.forEach(function(value, index) {
-          columnsToCopyFromPrevRow[index] = 'sc' + value.replace(/ /g,'').toLowerCase();
-        });
+        var columnsToCopyFromPrevRow = [];
+        if (typeof indiciaData['previousRowColumnsToInclude-'+gridId] !== 'undefined') {
+          columnsToCopyFromPrevRow = indiciaData['previousRowColumnsToInclude-'+gridId].split(",");
+          columnsToCopyFromPrevRow.forEach(function(value, index) {
+            columnsToCopyFromPrevRow[index] = 'sc' + value.replace(/ /g,'').toLowerCase();
+          });
+        }
         $.each(rows, function() {
           var row = this;
           // If dynamic attrs previously loaded for the row, replace the original

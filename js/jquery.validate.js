@@ -879,8 +879,10 @@ $.extend($.validator, {
 
 		// clean number parameters
 		$.each(['minlength', 'maxlength', 'min', 'max'], function() {
-			if (rules[this]) {
-				rules[this] = Number(rules[this]);
+			if (rules[this] && (!element.type || element.type !== 'date')) {
+				if (!isNaN( Number(rules[this]))) {
+				  rules[this] = Number(rules[this]);
+				}
 			}
 		});
 		$.each(['rangelength', 'range'], function() {

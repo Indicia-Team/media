@@ -592,8 +592,8 @@
             group = L.heatLayer([], $.extend({ radius: 10 }, layer.style ? layer.style : {}));
           } else {
             group = L.featureGroup();
-            // If linked to rows in a dataGrid, then clicking on a feature can
-            // temporarily filter the grid.
+            // If linked to rows in a dataGrid or cardGallery, then clicking on
+            // a feature can temporarily filter the grid.
             if (typeof el.settings.showSelectedRow !== 'undefined') {
               // Use preclick event as this must come before the map click for
               // the filter reset to work at correct time.
@@ -726,22 +726,28 @@
     },
 
     /**
-     * Binds to dataGrid callbacks.
+     * Binds to dataGrid and cardGallery callbacks.
      *
      * Binds to event handlers for row click (to select feature) and row double
      * click (to also zoom in).
      */
-    bindGrids: function bindGrids() {
+    bindRecordListControls: function bindRecordListControls() {
       var el = this;
       var settings = $(el)[0].settings;
+      var controlFn;
       if (typeof settings.showSelectedRow !== 'undefined') {
         if ($('#' + settings.showSelectedRow).length === 0) {
           indiciaFns.controlFail(el, 'Invalid grid ID in @showSelectedRow parameter');
         }
-        $('#' + settings.showSelectedRow).idcDataGrid('on', 'rowSelect', function onRowSelect(tr) {
+        if ($('#' + settings.showSelectedRow).hasClass('idc-output-dataGrid')) {
+          controlFn = 'idcDataGrid';
+        } else if ($('#' + settings.showSelectedRow).hasClass('idc-output-cardGallery')) {
+          controlFn = 'idcCardGallery';
+        }
+        $('#' + settings.showSelectedRow)[controlFn]('on', 'itemSelect', function onItemSelect(tr) {
           rowSelected(el, tr, false);
         });
-        $('#' + settings.showSelectedRow).idcDataGrid('on', 'rowDblClick', function onRowDblClick(tr) {
+        $('#' + settings.showSelectedRow)[controlFn]('on', 'itemDblClick', function onItemDblClick(tr) {
           rowSelected(el, tr, true);
         });
       }

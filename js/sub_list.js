@@ -101,11 +101,14 @@
     searchInput.blur(function () {
       if ($(this).val().trim() !== '') {
         if ($('[name="' + escapedId + '\\:allowTermCreationLang"]').length > 0) {
+          // Term entered has not been linked to a term in db, but we are
+          // allowed to treat it as a new term.
           indiciaFns.addSublistItem(escapedId, escapedCaptionField, fieldname, itemTemplate);
         } else {
+          // Term entered has not been linked to a term in db, but we cannot
+          // create new terms so treat it as an error.
           searchInput.closest('.ctrl-wrap').addClass(indiciaData.controlWrapErrorClass);
           searchInput.addClass('ui-state-error');
-          console.log('error');
         }
       }
     });

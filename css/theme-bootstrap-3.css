@@ -1,5 +1,20 @@
 /* Theme extension to the default_site.css file which provides Bootstrap 3 optimised style output */
 /* Accessible colour ranges from colorbrewer */
+.input-group-addon > * {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.ctrl-wrap.not-full-width-sm {
+  max-width: 200px;
+}
+.ctrl-wrap.not-full-width-md {
+  max-width: 400px;
+}
+.ctrl-wrap.not-full-width-lg {
+  max-width: 600px;
+}
+
 .add-new-taxon {
   position: absolute;
   border-radius: 4px;
@@ -42,8 +57,76 @@ table.species-grid .scTaxonCell {
   font-size: 120%;
 }
 
-.ui-datepicker-trigger {
-  padding: 0;
+/* Toggle/slider switches */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 33px;
+  height: 20px;
+  margin-bottom: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 15px;
+  width: 15px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(12px);
+  -ms-transform: translateX(12px);
+  transform: translateX(12px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 19px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+.sort-handle {
+  background: url(../images/drag-handle.png) no-repeat;
+  width: 26px;
+  height: 26px;
+  display: inline-block;
+  vertical-align: middle;
+  cursor: move;
+  cursor: -webkit-grabbing;
 }
 
 #map-container, #filter-map-container {
@@ -180,7 +263,7 @@ table.report-grid .multi img {
   position: relative;
   width: auto;
   background: white;
-  padding: 8px 16px 8px 8px;
+  padding: 8px;
   border: solid silver 1px;
   border-radius: 4px;
   /* Media info can overlay image (not other file types) */
@@ -192,27 +275,24 @@ table.report-grid .multi img {
   bottom: 18px;
   opacity: 0.7;
 }
+.media-info * {
+  display: inline-block;
+  vertical-align: middle;
+}
 .media-info .media-info-close {
-  width: 16px;
-  height: 16px;
-  position: absolute;
-  right: 0;
-  top: 0;
-  font-size: 12px;
+  margin-left: 8px;
   color: #777777;
   cursor: pointer;
-  text-align: center;
+}
+.media-info .media-info-close svg {
+  width: 16px;
+  height: 16px;
 }
 
 .image-caption.small {
   width: 100px;
   font-family: Arial, Helvetica, sans-serif;
   font-size: 10px;
-}
-
-/* Need to account for Fancybox navigation button z-index */
-.fancybox-outer .media-info {
-  z-index: 9999;
 }
 
 /* Define the purpose of the 3 columns in the sprite. */
@@ -415,13 +495,7 @@ body > .loading-spinner {
   position: fixed;
 }
 
-/* idcDataGrid plugin */
-.idc-output-dataGrid {
-  position: relative;
-  /* Ensure height enough for spinner. */
-  min-height: 140px;
-}
-.idc-output-dataGrid .data-grid-tools {
+.idc-output .idc-output-tools {
   position: absolute;
   top: 0;
   right: 0;
@@ -429,14 +503,102 @@ body > .loading-spinner {
   border-radius: 3px;
   background-color: rgba(225, 235, 225, 0.9);
 }
-.idc-output-dataGrid .data-grid-tools span {
+.idc-output .idc-output-tools span {
   font-size: 20px;
   padding: 0;
   margin: 2px;
   color: #999;
 }
-.idc-output-dataGrid .data-grid-tools span:hover {
+.idc-output .idc-output-tools span:hover {
   color: #333;
+}
+
+/* idcCardGallery plugin */
+.idc-output-cardGallery {
+  position: relative;
+  /* Ensure height enough for spinner. */
+  min-height: 140px;
+}
+.idc-output-cardGallery .es-card-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 auto;
+  padding: 0.5em 0;
+}
+.idc-output-cardGallery .es-card-gallery .card {
+  flex-basis: 98%;
+  flex-grow: 1;
+  margin: 1%;
+  width: 90%;
+  box-sizing: border-box;
+  /* Taxon label titles */
+}
+.idc-output-cardGallery .es-card-gallery .card:last-of-type {
+  flex-grow: 0;
+}
+.idc-output-cardGallery .es-card-gallery .card.selected {
+  background: #f0f0f0;
+  border: 1px solid grey;
+}
+.idc-output-cardGallery .es-card-gallery .card .image-container {
+  display: flex;
+}
+.idc-output-cardGallery .es-card-gallery .card .image-container > * {
+  max-width: 98%;
+  flex-basis: 33%;
+  flex-grow: 1;
+  flex-shrink: 0;
+  margin: 1%;
+}
+.idc-output-cardGallery .es-card-gallery .card .image-container > * img {
+  max-width: 100%;
+}
+.idc-output-cardGallery .es-card-gallery .card ul.data-container {
+  padding: 8px;
+  margin-bottom: 0;
+}
+.idc-output-cardGallery .es-card-gallery .card ul.data-container li {
+  list-style-type: none;
+}
+.idc-output-cardGallery .es-card-gallery .card h3 {
+  font-size: 1.1em;
+  font-weight: bold;
+  margin: 0;
+}
+@media (min-width: 801px) {
+  .idc-output-cardGallery .es-card-gallery .card {
+    flex-basis: 48%;
+  }
+  .idc-output-cardGallery .es-card-gallery .card.big {
+    flex-basis: 98%;
+  }
+}
+@media (min-width: 1201px) {
+  .idc-output-cardGallery .es-card-gallery .card {
+    flex-basis: 31%;
+  }
+  .idc-output-cardGallery .es-card-gallery .card.big {
+    flex-basis: 48%;
+  }
+}
+@media (min-width: 1601px) {
+  .idc-output-cardGallery .es-card-gallery .card {
+    flex-basis: 23%;
+  }
+  .idc-output-cardGallery .es-card-gallery .card.big {
+    flex-basis: 48%;
+  }
+}
+.idc-output-cardGallery .pager {
+  background-color: #eee;
+  padding: 8px;
+}
+
+/* idcDataGrid plugin */
+.idc-output-dataGrid {
+  position: relative;
+  /* Ensure height enough for spinner. */
+  min-height: 140px;
 }
 .idc-output-dataGrid .data-grid-settings {
   position: absolute;
@@ -575,6 +737,26 @@ table.es-data-grid tfoot span {
   width: 1px;
   background-color: silver;
   margin: 0 8px;
+}
+
+#upload-decisions-form {
+  min-width: 600px;
+  max-width: 900px;
+}
+#upload-decisions-form .upload-output {
+  margin-top: 15px;
+}
+#upload-decisions-form progress {
+  width: 100%;
+  height: 20px;
+}
+#upload-decisions-form dl {
+  margin: 15px;
+}
+#upload-decisions-form dl dt {
+  min-width: 300px;
+  margin-right: 20px;
+  margin-bottom: 8px;
 }
 
 .multiselect-mode .multi-only {
@@ -751,6 +933,15 @@ table.es-data-grid tfoot span {
   margin-right: 8px;
   font-size: 150%;
 }
+#entry_form .ctrl-wrap.not-full-width-sm .input-group, #indicia-entry-form .ctrl-wrap.not-full-width-sm .input-group {
+  max-width: 200px;
+}
+#entry_form .ctrl-wrap.not-full-width-md .input-group, #indicia-entry-form .ctrl-wrap.not-full-width-md .input-group {
+  max-width: 400px;
+}
+#entry_form .ctrl-wrap.not-full-width-lg .input-group, #indicia-entry-form .ctrl-wrap.not-full-width-lg .input-group {
+  max-width: 600px;
+}
 
 /*
 Although we don't want to allow control-width classes to override Bootstrap
@@ -759,11 +950,6 @@ do need to do something.
 */
 #form-params input[type=text], #form-params textarea {
   width: 100%;
-}
-
-/* Datepicker z-index used to set overlay z-index, must appear above map etc. */
-#ui-datepicker-div {
-  z-index: 99999 !important;
 }
 
 .input-group-addon.ctrl-addons button {

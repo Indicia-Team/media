@@ -17,6 +17,23 @@
       font-size: 150%;
     }
   }
+  .ctrl-wrap {
+    &.not-full-width-sm {
+      .input-group {
+        max-width: 200px;
+      }
+    }
+    &.not-full-width-md {
+      .input-group {
+        max-width: 400px;
+      }
+    }
+    &.not-full-width-lg {
+      .input-group {
+        max-width: 600px;
+      }
+    }
+  }
 }
 /*
 Although we don't want to allow control-width classes to override Bootstrap
@@ -27,10 +44,6 @@ do need to do something.
   input[type="text"], textarea {
     width: 100%;
   }
-}
-/* Datepicker z-index used to set overlay z-index, must appear above map etc. */
-#ui-datepicker-div {
-  z-index: 99999 !important;
 }
 
 .input-group-addon.ctrl-addons {
