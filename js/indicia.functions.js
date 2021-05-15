@@ -826,6 +826,8 @@ jQuery(document).ready(function ($) {
         }
       });
     };
+    $.fancybox.defaults.animationEffect = "fade";
+    $.fancybox.defaults.loop = true;
 
     // This is just to pick up any old Fancybox 2 code.
     $('a.fancybox').fancybox();
