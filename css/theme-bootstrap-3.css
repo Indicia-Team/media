@@ -295,6 +295,10 @@ table.report-grid .multi img {
   font-size: 10px;
 }
 
+.fancybox-is-open div.fancybox-bg {
+  opacity: 0.5;
+}
+
 /* Define the purpose of the 3 columns in the sprite. */
 /* Define the purpose of the rows in the sprite. */
 .status-icon {
