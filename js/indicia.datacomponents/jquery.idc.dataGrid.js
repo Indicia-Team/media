@@ -364,10 +364,28 @@
           e.preventDefault();
           return false;
         } else if (e.which === 73) {
-          // i key for image popup.
-          var fbLink = $(el).find('tr.selected [data-fancybox]');
-          if (fbLink.length) {
-            $(fbLink[0]).click();
+          var fbLink;
+          // i key toggles image popup.
+          if (!$('.fancybox-image').length) {
+            fbLink = $(el).find('tr.selected [data-fancybox]');
+            if (fbLink.length) {
+              $(fbLink[0]).click();
+              e.preventDefault();
+              return false;
+            }
+          }
+        }
+      });
+      indiciaFns.on('keydown', 'body', {}, function onDocKeydown(e) {
+        // Escape key will hide any popup. i only closes images.
+        if ((e.which === 27 && $.fancybox.getInstance()) || (e.which === 73 && $('.fancybox-image').length)) {
+          setTimeout(function() {
+            // Close on timeout to prevent a JS error.
+            $.fancybox.close();
+          }, 100);
+          // Refocus last selected row.
+          if ($('.selected:visible').length) {
+            $('.selected:visible').focus();
           }
         }
       });
