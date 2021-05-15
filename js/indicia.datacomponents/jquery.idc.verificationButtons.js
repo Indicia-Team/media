@@ -777,19 +777,19 @@
       $('[data-query="Q"]').attr('title', $('[data-query="Q"]').attr('title') + ' (Q)');
       $('button.redet').attr('title', $('button.redet').attr('title') + ' (R)');
       // Keystroke handler for verification action shortcuts.
-      $(document).keydown(function onKeydown(e) {
+      $(document).keypress(function onKeypress(e) {
         // Abort if focus on an input control (as the event bubbles to the
         // container, or fancybox already visible).
         if ($(':input:focus').length || $.fancybox.getInstance()) {
           return true;
         }
         // Only interested in keys 1-5, q and d.
-        if ($('[data-keycode="' + e.which +'"]:visible').length || e.which === 81 || e.which === 82) {
+        if ($('[data-keycode="' + e.which +'"]:visible').length || e.which === 113 || e.which === 114) {
           if ($('[data-keycode="' + e.which +'"]:visible').length) {
             commentPopup({ status: $('[data-keycode="' + e.which +'"]:visible').attr('data-status') });
-          } else if (e.which === 81) {
+          } else if (e.which === 113) {
             queryPopup();
-          } else if (e.which === 82) {
+          } else if (e.which === 114) {
             $.fancybox.open($('#redet-form'));
           }
           e.preventDefault;
