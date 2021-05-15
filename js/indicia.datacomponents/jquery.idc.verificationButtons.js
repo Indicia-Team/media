@@ -776,18 +776,11 @@
       });
       $('[data-query="Q"]').attr('title', $('[data-query="Q"]').attr('title') + ' (Q)');
       $('button.redet').attr('title', $('button.redet').attr('title') + ' (R)');
-
+      // Keystroke handler for verification action shortcuts.
       $(document).keydown(function onKeydown(e) {
-        // Always close Fancybox on escape.
-        if (e.which === 27 && $.fancybox.getInstance()) {
-          $.fancybox.close();
-          if ($('.selected:visible').length) {
-            $('.selected:visible').focus();
-          }
-        }
         // Abort if focus on an input control (as the event bubbles to the
-        // container despite the above selector).
-        if ($(':input:focus').length) {
+        // container, or fancybox already visible).
+        if ($(':input:focus').length || $.fancybox.getInstance()) {
           return true;
         }
         // Only interested in keys 1-5, q and d.
