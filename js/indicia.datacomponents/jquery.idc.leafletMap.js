@@ -550,6 +550,12 @@
           'baseLayer',
           'layerState'
         ]));
+        if (Math.abs(el.settings.initialLat) > 90) {
+          el.settings.initialLat = el.settings.configuredLat;
+        }
+        if (Math.abs(el.settings.initialLng) > 180) {
+          el.settings.initialLng = el.settings.configuredLng;
+        }
       }
       el.map = L.map(el.id).setView([el.settings.initialLat, el.settings.initialLng], el.settings.initialZoom)
         .on('click', function() {
