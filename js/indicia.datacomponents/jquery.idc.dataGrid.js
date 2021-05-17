@@ -76,11 +76,6 @@
   };
 
   /**
-   * Somewhere to keep the count if not bothering to
-   */
-  var lastCount;
-
-  /**
    * Removes the configuration overlay pane.
    */
   function removeConfigPane(el) {
@@ -1031,13 +1026,6 @@
      */
     getNeedsPopulation: function getNeedsPopulation() {
       return true;
-    },
-
-    /**
-     * Return the count of the entire table.
-     */
-    getDatasetCount: function getDatasetCount() {
-      return lastCount;
     }
 
   };

@@ -131,9 +131,9 @@
     } else if (response.aggregations._count) {
       // Aggregation modes use a separate agg to count only when the filter changes.
       total = response.aggregations._count.value;
-      lastCount = total;
-    } else if (lastCount) {
-      total = lastCount;
+      el.settings.lastCount = total;
+    } else if (el.settings.lastCount) {
+      total = el.settings.lastCount;
     }
     // Set up the count info in the footer.
     if (sourceSettings.mode === 'compositeAggregation') {

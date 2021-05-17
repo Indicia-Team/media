@@ -88,7 +88,7 @@
     if (response.total) {
       rowsToDownload = response.total;
     } else if (el.settings.linkToDataGrid) {
-      rowsToDownload = $('#' + el.settings.linkToDataGrid).idcDataGrid('getDatasetCount');
+      rowsToDownload = $('#' + el.settings.linkToDataGrid)[0].settings.lastCount;
     }
     // ES V7 seems to overshoot, reporting whole rather than partial last page size.
     rowsDone = Math.min(rowsDone, rowsToDownload);
@@ -185,7 +185,7 @@
           field: field
         });
       });
-      settings.addColumns = typeof settings.addColumns === [] ? gridColumns : gridColumns.concat(settings.addColumns);
+      settings.addColumns = typeof settings.addColumns === 'undefined' ? gridColumns : gridColumns.concat(settings.addColumns);
     }
     // Only allow a single source for download, so simplify the sources.
     settings.sourceObject = indiciaData.esSourceObjects[Object.keys(settings.source)[0]];
