@@ -47,12 +47,16 @@
    */
   indiciaFns.on('change', '.date-mode-toggle', {}, function(e) {
     var wrap = $(e.currentTarget).closest('.ctrl-wrap');
-    if (wrap.find('.date-text:visible').length > 0) {
-      $(e.currentTarget).closest('.ctrl-wrap').find('.date-text').hide();
-      $(e.currentTarget).closest('.ctrl-wrap').find('.precise-date-picker').show();
-    } else {
+    var showVagueDates = $('.date-mode-toggle').prop('checked');
+    if (showVagueDates) {
       wrap.find('.date-text').show();
       wrap.find('.precise-date-picker').hide();
+    } else {
+      wrap.find('.date-text').hide();
+      wrap.find('.precise-date-picker').show();
+    }
+    if (typeof $.cookie !== 'undefined') {
+      $.cookie('vagueDatesEnabled', showVagueDates);
     }
   });
 
@@ -95,6 +99,14 @@
 }(jQuery));
 
 jQuery(document).ready(function($) {
+  var rememberVagueDatesEnabled;
   // Ensure existing data copied from text date input to HTML5 date.
   $('.date-text').trigger('change');
+  if (typeof $.cookie !== 'undefined') {
+    rememberVagueDatesEnabled = $.cookie('vagueDatesEnabled');
+    if (rememberVagueDatesEnabled === 'true' || typeof indiciaData.enableVagueDateToggle !== 'undefined') {
+      $('.date-mode-toggle').prop('checked', true);
+      $('.date-mode-toggle').change();
+    }
+  }
 });
