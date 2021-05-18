@@ -2952,6 +2952,9 @@ var destroyAllFeatures;
         }
       });
       handleDynamicLayerSwitching(div);
+      if (div.map.baseLayer.lazyLoadGoogleApiLayerFn) {
+        lazyLoadBaseLayer(div.map.baseLayer);
+      }
 
       // Register function on changelayer event to record the display status
       // of Indicia WMS layers. Note this code cannot go in mapLayerChanged
