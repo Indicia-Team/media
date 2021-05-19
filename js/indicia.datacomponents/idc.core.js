@@ -497,6 +497,7 @@
       }
     };
     var mediaAttr = 'data-media-info="' + indiciaFns.escapeHtml(JSON.stringify(mediaInfo)) + '"';
+    var iNatThumbnail;
     // Default image size to thumb.
     imgSize = typeof imgSize === 'undefined' ? 'thumb' : imgSize;
     if (file.caption) {
@@ -520,10 +521,11 @@
         ' src="' + indiciaData.warehouseUrl + 'upload/' + file.path + '" type="audio/mpeg"/>';
     }
     if (file.type === 'Image:iNaturalist') {
+      iNatThumbnail = imgSize === 'med' ? file.path.replace('/square.', '/medium.') : file.path;
       return '<a ' + mediaAttr + ' ' + captionAttr +
-        ' href="' + file.path.replace('/square.', '/large.') + '" ' +
+        ' href="' + file.path.replace('/square.', '/original.') + '" ' +
         'class="inaturalist" data-fancybox="group-' + id + '">' +
-        '<img class="' + imgClass + '" src="' + file.path + '" /></a>';
+        '<img class="' + imgClass + '" src="' + iNatThumbnail + '" /></a>';
     }
     // Fallback for any other local files - just a link.
     if (file.type.match(/:Local$/)) {

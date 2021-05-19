@@ -560,6 +560,7 @@
                       var mediaInfoAttr = '';
                       var entity;
                       var matches;
+                      var iNatThumbnail;
                       if (div.settings.rowId) {
                         if (matches = div.settings.rowId.match(/([a-z_]+)_id$/)) {
                           entity = matches[1];
@@ -575,9 +576,10 @@
                       match = img.match(/^http(s)?:\/\/(www\.)?([a-z]+(\.kr)?)/);
                       if (match !== null) {
                         if (img.match(/^https:\/\/static\.inaturalist\.org/)) {
+                          iNatThumbnail = div.settings.imageThumbPreset === 'med' ? img.replace('/square.', '/medium.') : img;
                           value += '<a ' + mediaInfoAttr +
-                            'href="' + img.replace('/square.', '/large.') + '" ' +
-                            'data-fancybox="' + group + '" class="inaturalist ' + imgclass + '"><img src="' + img + '" /></a>';
+                            'href="' + img.replace('/square.', '/original.') + '" ' +
+                            'data-fancybox="' + group + '" class="inaturalist ' + imgclass + '"><img src="' + iNatThumbnail + '" /></a>';
                         } else {
                           value += '<a ' + mediaInfoAttr +
                             'href="' + img + '" class="social-icon ' + match[3].replace('.', '') + '"></a>';
