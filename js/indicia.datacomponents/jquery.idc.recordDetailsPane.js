@@ -51,7 +51,10 @@
     }
   };
 
-  var dataGrid;
+  /**
+   * The element that the row source is obtained from.
+   */
+  var rowSourceControl;
 
   // Info for tracking loaded tabs.
   var loadedCommentsOcurrenceId = 0;
@@ -356,7 +359,7 @@
   }
 
   function loadCurrentTabAjax(el) {
-    var selectedTr = $(dataGrid).find('tr.selected');
+    var selectedItem = $(rowSourceControl).find('.selected');
     var doc;
     var activeTab = indiciaFns.activeTab($(el).find('.tabs'));
     var functions = [
@@ -369,8 +372,8 @@
       'Comments',
       'Experience'
     ]
-    if (selectedTr.length > 0) {
-      doc = JSON.parse(selectedTr.attr('data-doc-source'));
+    if (selectedItem.length > 0) {
+      doc = JSON.parse(selectedItem.attr('data-doc-source'));
       // Populate the tab.
       functions[activeTab](el, doc);
       // Fire callbacks.
@@ -413,6 +416,91 @@
     }
   }
 
+  function doItemSelect(el, tr) {
+    var doc;
+    var rows = [];
+    var anAnnotation;
+    var vnAnnotation;
+    var key;
+    var externalMessage;
+    var msgClass = 'info';
+    var recordDetails = $(el).find('.record-details');
+    // Clear the stored email until details loaded.
+    indiciaData.thisRecordEmail = null;
+
+    if (tr) {
+      doc = JSON.parse($(tr).attr('data-doc-source'));
+      occurrenceId = doc.id;
+      anAnnotation = doc.taxon.taxon_name === doc.taxon.accepted_name ? ' (as entered)' : '';
+      vnAnnotation = doc.taxon.taxon_name === doc.taxon.vernacular_name ? ' (as entered)' : '';
+      addRow(rows, doc, 'ID|status|checks', ['id', '#status_icons#', '#data_cleaner_icons#'], ' | ');
+      addRow(rows, doc, 'Accepted name' + anAnnotation, ['taxon.accepted_name', 'taxon.accepted_name_authorship'], ' ');
+      addRow(rows, doc, 'Common name' + vnAnnotation, 'taxon.vernacular_name');
+      if (doc.taxon.taxon_name !== doc.taxon.accepted_name && doc.taxon.taxon_name !== doc.taxon.vernacular_name) {
+        addRow(rows, doc, 'Name as entered', ['taxon.taxon_name', 'taxon.taxon_name_authorship'], ' ');
+      }
+      if (el.settings.locationTypes) {
+        addRow(rows, doc, 'Location', 'location.verbatim_locality');
+        $.each(el.settings.locationTypes, function eachType() {
+          addRow(rows, doc, this, '#higher_geography:' + this + ':name#');
+        });
+      } else {
+        addRow(rows, doc, 'Location', '#locality#');
+      }
+      addRow(rows, doc, 'Grid ref', 'location.output_sref');
+      addRow(rows, doc, 'Date seen', '#event_date#');
+      addRow(rows, doc, 'Recorder', 'event.recorded_by');
+      addRow(rows, doc, 'Determiner', 'identification.identified_by');
+      addRow(rows, doc, 'Dataset',
+        ['metadata.website.title', 'metadata.survey.title', 'metadata.group.title'], ' :: ');
+      addRow(rows, doc, 'Sample comment', 'event.event_remarks');
+      addRow(rows, doc, 'Occurrence comment', 'occurrence.occurrence_remarks');
+
+      extraFieldValues = {
+        created_on: indiciaFns.getValueForField(doc, 'metadata.created_on'),
+        updated_on: indiciaFns.getValueForField(doc, 'metadata.updated_on'),
+        licence: indiciaFns.getValueForField(doc, 'metadata.licence_code'),
+        external_key: indiciaFns.getValueForField(doc, 'occurrence.source_system_key'),
+      };
+
+      $(recordDetails).html('<table><tbody>' + rows.join('') + '</tbody></table>');
+      $(recordDetails).append('<div class="attrs"><div class="loading-spinner"><div>Loading...</div></div></div>');
+      rows = [];
+      addRow(rows, doc, 'Taxonomy', ['taxon.phylum', 'taxon.order', 'taxon.family'], ' :: ');
+      if (el.settings.extraLocationTypes) {
+        $.each(el.settings.extraLocationTypes, function eachType() {
+          addRow(rows, doc, this, '#higher_geography:' + this + ':name#');
+        });
+      }
+      $(recordDetails).append('<h3>Derived info</h3>');
+      $(recordDetails).append('<table><tbody>' + rows.join('') + '</tbody></table>');
+      loadedAttrsOcurrenceId = 0;
+      // Reference to doc.occurrence_external_key is deprecated and can be
+      // removed if the BRC index has been re-indexed.
+      if (doc.occurrence.source_system_key || doc.occurrence_external_key) {
+        key = doc.occurrence.source_system_key ? doc.occurrence.source_system_key : doc.occurrence_external_key;
+        if (key.match(/^iNat:/)) {
+          externalMessage = 'View details of this record in iNaturalist using the link above.';
+          if (!doc.occurrence.media) {
+            externalMessage += ' Although there are no media files linked to the imported record, this may be ' +
+              'because the source record\'s images were not licensed so could not be imported. If so then they ' +
+              'may be viewed in iNaturalist.';
+            msgClass = 'warning';
+          }
+          $(recordDetails).prepend('<div class="alert alert-' + msgClass + '">' + externalMessage + '</div>');
+        }
+      }
+      $(el).find('.empty-message').hide();
+      $(el).find('.tabs').show();
+      // Load Ajax content depending on the tab.
+      loadCurrentTabAjax(el);
+    } else {
+      // If no row selected, hide the details tabs.
+      $(el).find('.empty-message').show();
+      $(el).find('.tabs').hide();
+    }
+  }
+
   /**
    * Declare public methods.
    */
@@ -424,7 +512,6 @@
      */
     init: function init(options) {
       var el = this;
-      var recordDetails = $(el).find('.record-details');
       el.settings = $.extend({}, defaults);
       // Apply settings passed in the HTML data-* attribute.
       if (typeof $(el).attr('data-idc-config') !== 'undefined') {
@@ -438,9 +525,9 @@
       if (typeof el.settings.showSelectedRow === 'undefined') {
         indiciaFns.controlFail(el, 'Missing showSelectedRow config for idcRecordDetailsPane.');
       }
-      dataGrid = $('#' + el.settings.showSelectedRow);
-      if (dataGrid.length === 0) {
-        indiciaFns.controlFail(el, 'Missing idcDataGrid ' + el.settings.showSelectedRow +
+      rowSourceControl = $('#' + el.settings.showSelectedRow);
+      if (rowSourceControl.length === 0) {
+        indiciaFns.controlFail(el, 'Missing control ' + el.settings.showSelectedRow +
           ' for idcRecordDetailsPane @showSelectedRow setting.');
       }
       // Tabify
@@ -450,93 +537,25 @@
       // Clean tabs
       $('.ui-tabs-nav').removeClass('ui-widget-header');
       $('.ui-tabs-nav').removeClass('ui-corner-all');
-      $(dataGrid).idcDataGrid('on', 'itemSelect', function itemSelect(tr) {
-        var doc;
-        var rows = [];
-        var anAnnotation;
-        var vnAnnotation;
-        var key;
-        var externalMessage;
-        var msgClass = 'info';
-        // Clear the stored email until details loaded.
-        indiciaData.thisRecordEmail = null;
-
-        if (tr) {
-          doc = JSON.parse($(tr).attr('data-doc-source'));
-          occurrenceId = doc.id;
-          anAnnotation = doc.taxon.taxon_name === doc.taxon.accepted_name ? ' (as entered)' : '';
-          vnAnnotation = doc.taxon.taxon_name === doc.taxon.vernacular_name ? ' (as entered)' : '';
-          addRow(rows, doc, 'ID|status|checks', ['id', '#status_icons#', '#data_cleaner_icons#'], ' | ');
-          addRow(rows, doc, 'Accepted name' + anAnnotation, ['taxon.accepted_name', 'taxon.accepted_name_authorship'], ' ');
-          addRow(rows, doc, 'Common name' + vnAnnotation, 'taxon.vernacular_name');
-          if (doc.taxon.taxon_name !== doc.taxon.accepted_name && doc.taxon.taxon_name !== doc.taxon.vernacular_name) {
-            addRow(rows, doc, 'Name as entered', ['taxon.taxon_name', 'taxon.taxon_name_authorship'], ' ');
-          }
-          if (el.settings.locationTypes) {
-            addRow(rows, doc, 'Location', 'location.verbatim_locality');
-            $.each(el.settings.locationTypes, function eachType() {
-              addRow(rows, doc, this, '#higher_geography:' + this + ':name#');
-            });
-          } else {
-            addRow(rows, doc, 'Location', '#locality#');
-          }
-          addRow(rows, doc, 'Grid ref', 'location.output_sref');
-          addRow(rows, doc, 'Date seen', '#event_date#');
-          addRow(rows, doc, 'Recorder', 'event.recorded_by');
-          addRow(rows, doc, 'Determiner', 'identification.identified_by');
-          addRow(rows, doc, 'Dataset',
-            ['metadata.website.title', 'metadata.survey.title', 'metadata.group.title'], ' :: ');
-          addRow(rows, doc, 'Sample comment', 'event.event_remarks');
-          addRow(rows, doc, 'Occurrence comment', 'occurrence.occurrence_remarks');
-
-          extraFieldValues = {
-            created_on: indiciaFns.getValueForField(doc, 'metadata.created_on'),
-            updated_on: indiciaFns.getValueForField(doc, 'metadata.updated_on'),
-            licence: indiciaFns.getValueForField(doc, 'metadata.licence_code'),
-            external_key: indiciaFns.getValueForField(doc, 'occurrence.source_system_key'),
-          };
-
-          $(recordDetails).html('<table><tbody>' + rows.join('') + '</tbody></table>');
-          $(recordDetails).append('<div class="attrs"><div class="loading-spinner"><div>Loading...</div></div></div>');
-          rows = [];
-          addRow(rows, doc, 'Taxonomy', ['taxon.phylum', 'taxon.order', 'taxon.family'], ' :: ');
-          if (el.settings.extraLocationTypes) {
-            $.each(el.settings.extraLocationTypes, function eachType() {
-              addRow(rows, doc, this, '#higher_geography:' + this + ':name#');
-            });
-          }
-          $(recordDetails).append('<h3>Derived info</h3>');
-          $(recordDetails).append('<table><tbody>' + rows.join('') + '</tbody></table>');
-          loadedAttrsOcurrenceId = 0;
-          // Reference to doc.occurrence_external_key is deprecated and can be
-          // removed if the BRC index has been re-indexed.
-          if (doc.occurrence.source_system_key || doc.occurrence_external_key) {
-            key = doc.occurrence.source_system_key ? doc.occurrence.source_system_key : doc.occurrence_external_key;
-            if (key.match(/^iNat:/)) {
-              externalMessage = 'View details of this record in iNaturalist using the link above.';
-              if (!doc.occurrence.media) {
-                externalMessage += ' Although there are no media files linked to the imported record, this may be ' +
-                  'because the source record\'s images were not licensed so could not be imported. If so then they ' +
-                  'may be viewed in iNaturalist.';
-                msgClass = 'warning';
-              }
-              $(recordDetails).prepend('<div class="alert alert-' + msgClass + '">' + externalMessage + '</div>');
-            }
-          }
-          $(el).find('.empty-message').hide();
-          $(el).find('.tabs').show();
-          // Load Ajax content depending on the tab.
-          loadCurrentTabAjax(el);
-        } else {
-          // If no row selected, hide the details tabs.
+      if (rowSourceControl.hasClass('idc-output-cardGallery')) {
+        $(rowSourceControl).idcCardGallery('on', 'itemSelect', function itemSelect(tr) {
+          doItemSelect(el, tr);
+        });
+        $(rowSourceControl).idcCardGallery('on', 'populate', function populate() {
           $(el).find('.empty-message').show();
           $(el).find('.tabs').hide();
-        }
-      });
-      $(dataGrid).idcDataGrid('on', 'populate', function itemSelect() {
-        $(el).find('.empty-message').show();
-        $(el).find('.tabs').hide();
-      });
+        });
+      } else {
+        $(rowSourceControl).idcDataGrid('on', 'itemSelect', function itemSelect(tr) {
+          doItemSelect(el, tr);
+        });
+        $(rowSourceControl).idcDataGrid('on', 'populate', function populate() {
+          $(el).find('.empty-message').show();
+          $(el).find('.tabs').hide();
+        });
+      }
+
+
     },
 
     on: function on(event, handler) {
