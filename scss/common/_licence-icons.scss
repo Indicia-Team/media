@@ -18,5 +18,14 @@ $icon-height: 18px;
     &.licence-cc0 {
       background-position-y: -$icon-height*3;
     }
+    &.licence-cc-by-nc-sa {
+      background-position-y: -$icon-height*4;
+    }
+    &.licence-cc-by-nd {
+      background-position-y: -$icon-height*5;
+    }
+    &.licence-cc-by-nc-nd {
+      background-position-y: -$icon-height*6;
+    }
   }
 }
