@@ -497,7 +497,7 @@ if (typeof window.indiciaData === 'undefined') {
       if (mediaInfo.loaded.licence_code) {
         info.append('<div class="licence">' +
           '<span class="icon licence-' + mediaInfo.loaded.licence_code.toLowerCase().replace(/ /g, '-') + '"></span>' +
-          (mediaInfo.loaded.licence_title ? mediaInfo.loaded.licence_title : '') +
+          (mediaInfo.loaded.licence_title ? mediaInfo.loaded.licence_title : mediaInfo.loaded.licence_code) +
           '</div>');
       }
       info.append('<span class="media-info-close" title="' + indiciaData.lang.indiciaFns.hideInfo + '">' +
