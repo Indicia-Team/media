@@ -490,6 +490,15 @@ table.report-grid .multi img {
 .licence span.icon.licence-cc0 {
   background-position-y: -54px;
 }
+.licence span.icon.licence-cc-by-nc-sa {
+  background-position-y: -72px;
+}
+.licence span.icon.licence-cc-by-nd {
+  background-position-y: -90px;
+}
+.licence span.icon.licence-cc-by-nc-nd {
+  background-position-y: -108px;
+}
 
 /* So we can absolute position the loading spinner */
 body {
