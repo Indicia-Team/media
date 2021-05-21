@@ -63,6 +63,11 @@
   var listOutputControlClass;
 
   /**
+   * Flag to prevent double click on Query button.
+   */
+  var doingQueryPopup = false;
+
+  /**
    * Saves the comment associated with a verification or query event.
    */
   function saveVerifyComment(occurrenceIds, status, comment, email) {
@@ -437,6 +442,9 @@
    */
   function queryPopup() {
     var doc;
+    if (doingQueryPopup) {
+      return;
+    }
     if ($(listOutputControl).hasClass('multiselect-mode')) {
       // As there are multiple records possibly selected, sending an email
       // option not available.
@@ -445,6 +453,7 @@
       doc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
       getCurrentRecordEmail(doc, function callback(emailTo) {
         var t = indiciaData.lang.verificationButtons;
+        doc.metadata.created_by_id = 2;
         if (doc.metadata.created_by_id == 1 && emailTo === '' || !emailTo.match(/@/)) {
           // Anonymous record with no valid email.
           tabbedQueryPopup(doc, true, t.queryCommentTabAnonWithoutEmail, t.queryEmailTabAnonWithoutEmail, emailTo);
@@ -452,6 +461,7 @@
           // Anonymous record with valid email.
           tabbedQueryPopup(doc, false,t.queryCommentTabAnonWithEmail, t.queryEmailTabAnonWithEmail, emailTo);
         } else {
+          doingQueryPopup = true;
           // Got a logged in user with email address. Need to know if they check notifications.
           $.ajax({
             url: indiciaData.esProxyAjaxUrl + '/doesUserSeeNotifications/' + indiciaData.nid,
@@ -462,6 +472,9 @@
               } else {
                 tabbedQueryPopup(doc, false, t.queryCommentTabUserIsNotNotified, t.queryEmailTabUserIsNotNotified, emailTo);
               }
+            },
+            complete: function complete() {
+              doingQueryPopup = false;
             }
           });
         }
