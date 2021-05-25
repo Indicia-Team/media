@@ -134,8 +134,9 @@ var control_speciesmap_addcontrols;
       $(indiciaData.control_speciesmap_opts.mapDiv)
         .show(indiciaData.control_speciesmap_opts.animationDuration, function after() {
           // Trigger map resize to ensure redraws correctly.
-          if (indiciaData.control_speciesmap_opts.mapDiv.map) {
-            indiciaData.control_speciesmap_opts.mapDiv.map.updateSize();
+          var div = $(indiciaData.control_speciesmap_opts.mapDiv)[0];
+          if (div.map) {
+            div.map.updateSize();
           }
         });
       // Show tab navigation buttons that we previously hid.
