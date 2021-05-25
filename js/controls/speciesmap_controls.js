@@ -312,7 +312,7 @@ var control_speciesmap_addcontrols;
           rowsToShow.next('.supplementary-row').show();
           $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(
               indiciaData.lang.speciesMap.ModifyMessage2);
-          showButtons(['mod', 'finish']);
+          showButtons(['finish']);
           $('#' + indiciaData.control_speciesmap_opts.id + ' .scClonableRow').find("[name$='\:sampleIDX']").each(
             function (idx, field) {
               $(field).val(indiciaData.control_speciesmap_existing_feature.attributes.subSampleIndex);
