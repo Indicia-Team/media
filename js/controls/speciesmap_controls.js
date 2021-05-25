@@ -579,17 +579,17 @@ var control_speciesmap_addcontrols;
     opts = $.extend({}, defaults, options);
     indiciaData.control_speciesmap_opts = opts;
     container = $('<div id="' + opts.buttonsId + '" class="' + opts.panelClasses + '">').insertBefore(opts.mapDiv);
-    $('<button id="' + opts.addButtonId + '" class="' + indiciaData.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.AddLabel +
+    $('<button id="' + opts.addButtonId + '" class="' + indiciaData.btnClasses.default + '" type="button">' + indiciaData.lang.speciesMap.AddLabel +
         '</button>').click(controlSpeciesmapAddbutton).appendTo(container);
-    $('<button id="' + opts.modButtonId + '" class="' + indiciaData.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.ModifyLabel +
+    $('<button id="' + opts.modButtonId + '" class="' + indiciaData.btnClasses.default + '" type="button">' + indiciaData.lang.speciesMap.ModifyLabel +
         '</button>').click(controlSpeciesmapModifybutton).appendTo(container);
-    $('<button id="' + opts.moveButtonId + '" class="' + indiciaData.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.MoveLabel +
+    $('<button id="' + opts.moveButtonId + '" class="' + indiciaData.btnClasses.default + '" type="button">' + indiciaData.lang.speciesMap.MoveLabel +
         '</button>').click(controlSpeciesmapMovebutton).appendTo(container);
-    $('<button id="' + opts.delButtonId + '" class="' + indiciaData.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.DeleteLabel +
+    $('<button id="' + opts.delButtonId + '" class="' + indiciaData.btnClasses.default + '" type="button">' + indiciaData.lang.speciesMap.DeleteLabel +
         '</button>').click(controlSpeciesmapDeletebutton).appendTo(container);
-    $('<button id="' + opts.cancelButtonId + '" class="' + indiciaData.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.CancelLabel +
+    $('<button id="' + opts.cancelButtonId + '" class="' + indiciaData.btnClasses.default + '" type="button">' + indiciaData.lang.speciesMap.CancelLabel +
         '</button>').click(controlSpeciesmapCancelbutton).appendTo(container).hide();
-    $('<button id="' + opts.finishButtonId + '" class="' + indiciaData.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.FinishLabel +
+    $('<button id="' + opts.finishButtonId + '" class="' + indiciaData.btnClasses.default + '" type="button">' + indiciaData.lang.speciesMap.FinishLabel +
         '</button>').click(controlSpeciesmapFinishbutton).appendTo(container).hide();
     $('<div id="' + opts.messageId + '" class="' + opts.messageClasses + '"></div>').appendTo(container);
     indiciaData.control_speciesmap_mode = 'Off';
