@@ -337,50 +337,47 @@
      * Implement arrow key and other navigation tools.
      */
     if (el.settings.keyboardNavigation) {
-      indiciaFns.on('keydown', '#' + el.id + ' .es-data-grid tbody tr', {}, function onDataGridKeydown(e) {
-        var tr = this;
-        var oldSelected;
-        var newSelected;
-        if (e.which === 38 || e.which === 40) {
-          oldSelected = $(tr).closest('tbody').find('tr.selected');
-          newSelected = e.which === 38 ? $(oldSelected).prev('tr') : $(oldSelected).next('tr');
-          if (newSelected.length) {
-            $(newSelected).addClass('selected');
-            $(newSelected).focus();
-            $(oldSelected).removeClass('selected');
+
+      /**
+       * Navigate when arrow key pressed.
+       */
+      function handleArrowKeyNavigation(keyCode, oldSelected) {
+        var newSelected = keyCode === 38 ? $(oldSelected).prev('tr') : $(oldSelected).next('tr');
+        if (newSelected.length) {
+          $(newSelected).addClass('selected');
+          $(newSelected).focus();
+          $(oldSelected).removeClass('selected');
+        }
+        // Load row on timeout to avoid rapidly hitting services if repeat-hitting key.
+        if (loadRowTimeout) {
+          clearTimeout(loadRowTimeout);
+        }
+        loadRowTimeout = setTimeout(function() {
+          loadSelectedRow();
+        }, 500);
+      }
+
+      indiciaFns.on('keydown', 'body', {}, function onDataGridKeydown(e) {
+        var oldSelected = $(el).find('tr.selected');
+        if ($(':input:focus').length) {
+          // Input focused, so the only keystroke we are interested in is
+          // escape to close a Fancbox dialog.
+          if (e.which === 27 && $.fancybox.getInstance()) {
+            indiciaFns.closeFancyboxForSelectedItem();
           }
-          // Load row on timeout to avoid rapidly hitting services if repeat-hitting key.
-          if (loadRowTimeout) {
-            clearTimeout(loadRowTimeout);
-          }
-          loadRowTimeout = setTimeout(function() {
-            loadSelectedRow();
-          }, 500);
+        } else if (e.which === 38 || e.which === 40) {
+          handleArrowKeyNavigation(e.which, oldSelected);
           e.preventDefault();
           return false;
         } else if (e.which === 73) {
-          var fbLink;
-          // i key toggles image popup.
-          if (!$('.fancybox-image').length) {
-            fbLink = $(el).find('tr.selected [data-fancybox]');
+          // i key opens and closes image popups.
+          if ($('.fancybox-image').length) {
+            indiciaFns.closeFancyboxForSelectedItem();
+          } else {
+            var fbLink = oldSelected.find('[data-fancybox]');
             if (fbLink.length) {
-              $(fbLink[0]).click();
-              e.preventDefault();
-              return false;
+              $(fbLink).click();
             }
-          }
-        }
-      });
-      indiciaFns.on('keydown', 'body', {}, function onDocKeydown(e) {
-        // Escape key will hide any popup. i only closes images.
-        if ((e.which === 27 && $.fancybox.getInstance()) || (e.which === 73 && $('.fancybox-image').length)) {
-          setTimeout(function() {
-            // Close on timeout to prevent a JS error.
-            $.fancybox.close();
-          }, 100);
-          // Refocus last selected row.
-          if ($('.selected:visible').length) {
-            $('.selected:visible').focus();
           }
         }
       });

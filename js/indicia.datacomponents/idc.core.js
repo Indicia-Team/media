@@ -469,6 +469,22 @@
   };
 
   /**
+   * Close a Fancybox popup and reselects the item it was called by.
+   *
+   * Used by dataGrid and cardGallery controls.
+   */
+  indiciaFns.closeFancyboxForSelectedItem = function closeFancyboxForSelectedItem() {
+    setTimeout(function() {
+      // Close on timeout to prevent a JS error.
+      $.fancybox.close();
+    }, 100);
+    // Refocus last selected row or card.
+    if ($('.selected:visible').length) {
+      $('.selected:visible').focus();
+    }
+  }
+
+  /**
    * Convert an ES media file to thumbnail HTML.
    *
    * @param integer id

@@ -114,69 +114,84 @@
      * Implement arrow key and other navigation tools.
      */
     if (el.settings.keyboardNavigation) {
-      indiciaFns.on('keydown', '#' + el.id + ' .es-card-gallery .card', {}, function onDataGridKeydown(e) {
-        var card = this;
-        var oldSelected;
+
+      /**
+       * Navigate when arrow key pressed.
+       */
+      function handleArrowKeyNavigation(keyCode, oldSelected) {
         var newSelected;
         var oldCardBounds;
         var nextRowTop;
         var nextRowContents = [];
         var navFn;
         var closestVerticalDistance = null;
-        // Was the key an arrow key?
-        if (e.which >= 37 && e.which <= 40) {
-          oldSelected = $(card).closest('.es-card-gallery').find('.card.selected');
-          if (e.which === 37) {
-            newSelected = $(oldSelected).prev('.card');
-          } else if (e.which === 39) {
-            newSelected = $(oldSelected).next('.card');
-          } else {
-            navFn = e.which === 38 ? 'prev' : 'next';
-            oldCardBounds = oldSelected[0].getBoundingClientRect();
-            newSelected = $(oldSelected)[navFn]('.card');
-            // Since we are going up or down, find the whole contents of the
-            // row we are moving into by inspecting the y position.
-            while (newSelected.length !== 0) {
-              if (newSelected[0].getBoundingClientRect().y !== oldCardBounds.y) {
-                if (!nextRowTop) {
-                  nextRowTop = newSelected[0].getBoundingClientRect().y;
-                } else if (nextRowTop !== newSelected[0].getBoundingClientRect().y) {
-                  break;
-                }
-                nextRowContents.push(newSelected);
+        if (keyCode === 37) {
+          newSelected = $(oldSelected).prev('.card');
+        } else if (keyCode === 39) {
+          newSelected = $(oldSelected).next('.card');
+        } else {
+          navFn = keyCode === 38 ? 'prev' : 'next';
+          oldCardBounds = oldSelected[0].getBoundingClientRect();
+          newSelected = $(oldSelected)[navFn]('.card');
+          // Since we are going up or down, find the whole contents of the
+          // row we are moving into by inspecting the y position.
+          while (newSelected.length !== 0) {
+            if (newSelected[0].getBoundingClientRect().y !== oldCardBounds.y) {
+              if (!nextRowTop) {
+                nextRowTop = newSelected[0].getBoundingClientRect().y;
+              } else if (nextRowTop !== newSelected[0].getBoundingClientRect().y) {
+                break;
               }
-              newSelected = $(newSelected)[navFn]('.card');
+              nextRowContents.push(newSelected);
             }
-            // Now find the item in that row with the closest vertical centre
-            // to the card we are leaving.
-            $.each(nextRowContents, function() {
-              var thisCardBounds = this[0].getBoundingClientRect();
-              var thisVerticalDistance = Math.abs((oldCardBounds.left + oldCardBounds.right) / 2 - (thisCardBounds.left + thisCardBounds.right) / 2);
-              if (closestVerticalDistance === null || thisVerticalDistance < closestVerticalDistance) {
-                newSelected = this;
-                closestVerticalDistance = thisVerticalDistance;
-              }
-            });
+            newSelected = $(newSelected)[navFn]('.card');
           }
-          if (newSelected.length) {
-            $(newSelected).addClass('selected');
-            $(newSelected).focus();
-            $(oldSelected).removeClass('selected');
+          // Now find the item in that row with the closest vertical centre
+          // to the card we are leaving.
+          $.each(nextRowContents, function() {
+            var thisCardBounds = this[0].getBoundingClientRect();
+            var thisVerticalDistance = Math.abs((oldCardBounds.left + oldCardBounds.right) / 2 - (thisCardBounds.left + thisCardBounds.right) / 2);
+            if (closestVerticalDistance === null || thisVerticalDistance < closestVerticalDistance) {
+              newSelected = this;
+              closestVerticalDistance = thisVerticalDistance;
+            }
+          });
+        }
+        if (newSelected.length) {
+          $(newSelected).addClass('selected');
+          $(newSelected).focus();
+          $(oldSelected).removeClass('selected');
+        }
+        // Load row on timeout to avoid rapidly hitting services if repeat-hitting key.
+        if (loadRowTimeout) {
+          clearTimeout(loadRowTimeout);
+        }
+        loadRowTimeout = setTimeout(function() {
+          loadSelectedCard();
+        }, 500);
+      }
+
+      indiciaFns.on('keydown', 'body', {}, function onDataGridKeydown(e) {
+        var oldSelected = $(el).find('.card.selected');
+        if ($(':input:focus').length) {
+          // Input focused, so the only keystroke we are interested in is
+          // escape to close a Fancbox dialog.
+          if (e.which === 27 && $.fancybox.getInstance()) {
+            indiciaFns.closeFancyboxForSelectedItem();
           }
-          // Load row on timeout to avoid rapidly hitting services if repeat-hitting key.
-          if (loadRowTimeout) {
-            clearTimeout(loadRowTimeout);
-          }
-          loadRowTimeout = setTimeout(function() {
-            loadSelectedCard();
-          }, 500);
+        } else if (e.which >= 37 && e.which <= 40) {
+          handleArrowKeyNavigation(e.which, oldSelected);
           e.preventDefault();
           return false;
         } else if (e.which === 73) {
-          // i key for image popup.
-          var fbLink = $(card).closest('.es-card-gallery').find('.card.selected [data-fancybox]');
-          if (fbLink.length) {
-            $(fbLink).click();
+          // i key opens and closes image popups.
+          if ($('.fancybox-image').length) {
+            indiciaFns.closeFancyboxForSelectedItem();
+          } else {
+            var fbLink = oldSelected.find('[data-fancybox]');
+            if (fbLink.length) {
+              $(fbLink).click();
+            }
           }
         }
       });
