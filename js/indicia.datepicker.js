@@ -46,14 +46,14 @@
    * Toggle switch handler for vague date control mode.
    */
   indiciaFns.on('change', '.date-mode-toggle', {}, function(e) {
-    var wrap = $(e.currentTarget).closest('.ctrl-wrap');
-    var showVagueDates = $('.date-mode-toggle').prop('checked');
+    var rootId = e.currentTarget.id.replace(/:toggle$/, '').replace(':', '\\:');
+    var showVagueDates = $(e.currentTarget).prop('checked');
     if (showVagueDates) {
-      wrap.find('.date-text').show();
-      wrap.find('.precise-date-picker').hide();
+      $('#' + rootId).show();
+      $('#' + rootId + '\\:date').hide();
     } else {
-      wrap.find('.date-text').hide();
-      wrap.find('.precise-date-picker').show();
+      $('#' + rootId).hide();
+      $('#' + rootId + '\\:date').show();
     }
     if (typeof $.cookie !== 'undefined') {
       $.cookie('vagueDatesEnabled', showVagueDates);
@@ -64,22 +64,22 @@
    * Copy changes to the date picker associated with a vague date text into the text input.
    */
   indiciaFns.on('change', '.precise-date-picker', {}, function(e) {
+    var rootId = e.currentTarget.id.replace(/:date$/, '').replace(':', '\\:');
     var dateToSave = $(e.currentTarget).val();
-    var wrap = $(e.currentTarget).closest('.ctrl-wrap');
     if (dateToSave.trim().match(/^\d{4}/)) {
       // Date given year first, so ISO format. That's how HTML5 date input
       // values are formatted.
       dateToSave = indiciaFns.formatDate(dateToSave);
     }
     // Use prop to not trigger overridden val() method.
-    wrap.find('.date-text').prop('value', dateToSave);
+    $('#' + rootId).prop('value', dateToSave);
   });
 
   /**
    * Copy changes from the vague date text box back to the date picker.
    */
   indiciaFns.on('change', '.date-text', {}, function(e) {
-    var wrap = $(e.currentTarget).closest('.ctrl-wrap');
+    var rootId = e.currentTarget.id.replace(':', '\\:');
     var dateVal = $(e.currentTarget).val();
     var parts;
     var order;
@@ -93,7 +93,7 @@
         dateVal = '';
       }
     }
-    wrap.find('.precise-date-picker').val(dateVal);
+    $('#' + rootId + '\\:date').val(dateVal);
   });
 
 }(jQuery));
