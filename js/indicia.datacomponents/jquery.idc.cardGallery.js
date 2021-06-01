@@ -179,7 +179,8 @@
           if (e.which === 27 && $.fancybox.getInstance()) {
             indiciaFns.closeFancyboxForSelectedItem();
           }
-        } else if (e.which >= 37 && e.which <= 40) {
+        } else if (e.which >= 37 && e.which <= 40 && !$('.fancybox-image').length) {
+          // Arrow key pressed when image popup not shown.
           handleArrowKeyNavigation(e.which, oldSelected);
           e.preventDefault();
           return false;
@@ -190,7 +191,8 @@
           } else {
             var fbLink = oldSelected.find('[data-fancybox]');
             if (fbLink.length) {
-              $(fbLink).click();
+              // Open first image in set.
+              $(fbLink[0]).click();
             }
           }
         }
