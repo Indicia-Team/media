@@ -476,7 +476,7 @@
   indiciaFns.closeFancyboxForSelectedItem = function closeFancyboxForSelectedItem() {
     setTimeout(function() {
       // Close on timeout to prevent a JS error.
-      $.fancybox.close();
+      $.fancybox.close(true);
     }, 100);
     // Refocus last selected row or card.
     if ($('.selected:visible').length) {
