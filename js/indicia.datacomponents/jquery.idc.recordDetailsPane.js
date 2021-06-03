@@ -264,7 +264,11 @@
     data = {
       size: 0,
       query: {
-        term: { 'metadata.created_by_id': doc.metadata.created_by_id }
+        bool: {
+          must: [{
+            term: { 'metadata.created_by_id': doc.metadata.created_by_id }
+          }]
+        }
       },
       aggs: {
         group_status: {
