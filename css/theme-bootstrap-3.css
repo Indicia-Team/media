@@ -848,10 +848,13 @@ table.es-data-grid tfoot span {
   position: relative;
   min-height: 150px;
 }
-.record-details-container .recorder-experience th {
+.record-details-container .recorder-experience table {
+  width: 100%;
+}
+.record-details-container .recorder-experience table th {
   width: 25%;
 }
-.record-details-container .recorder-experience td span {
+.record-details-container .recorder-experience table td span {
   margin-left: 8px;
   display: inline-block;
   vertical-align: middle;
@@ -859,16 +862,16 @@ table.es-data-grid tfoot span {
   border-radius: 4px;
   box-shadow: #aaa 0px 2px 4px 0px;
 }
-.record-details-container .recorder-experience td span.exp-V {
+.record-details-container .recorder-experience table td span.exp-V {
   background-color: green;
 }
-.record-details-container .recorder-experience td span.exp-C {
+.record-details-container .recorder-experience table td span.exp-C {
   background-color: silver;
 }
-.record-details-container .recorder-experience td span.exp-R {
+.record-details-container .recorder-experience table td span.exp-R {
   background-color: red;
 }
-.record-details-container .recorder-experience td a {
+.record-details-container .recorder-experience table td a {
   min-width: 30px;
   display: inline-block;
   vertical-align: middle;

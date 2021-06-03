@@ -382,32 +382,35 @@ table.es-data-grid {
   .recorder-experience {
     position: relative;
     min-height: 150px;
-    th {
-      width: 25%;
-    }
-    td {
-      span {
-        margin-left: 8px;
-        display: inline-block;
-        vertical-align: middle;
-        height: 15px;
-        border-radius: 4px;
-        box-shadow: #aaa 0px 2px 4px 0px;
-        &.exp-V {
-          background-color: green;
-        }
-        &.exp-C {
-          background-color: silver;
-        }
-        &.exp-R {
-          background-color: red;
-        }
+    table {
+      width: 100%;
+      th {
+        width: 25%;
       }
-      a {
-        min-width: 30px;
-        display: inline-block;
-        vertical-align: middle;
-        text-align: right;
+      td {
+        span {
+          margin-left: 8px;
+          display: inline-block;
+          vertical-align: middle;
+          height: 15px;
+          border-radius: 4px;
+          box-shadow: #aaa 0px 2px 4px 0px;
+          &.exp-V {
+            background-color: green;
+          }
+          &.exp-C {
+            background-color: silver;
+          }
+          &.exp-R {
+            background-color: red;
+          }
+        }
+        a {
+          min-width: 30px;
+          display: inline-block;
+          vertical-align: middle;
+          text-align: right;
+        }
       }
     }
   }
