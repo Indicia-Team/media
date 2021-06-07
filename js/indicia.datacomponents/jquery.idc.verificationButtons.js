@@ -841,6 +841,10 @@
       listOutputControlClass = $(listOutputControl).hasClass('idc-output-cardGallery') ? 'idcCardGallery' : 'idcDataGrid';
       // Form validation for redetermination
       redetFormValidator = $('#redet-form').validate();
+      // Plus setup redet form texts.
+      $('.alt-taxon-list-message').html(
+        $('.alt-taxon-list-message').html().replace('{message}', indiciaData.lang.verificationButtons.redetPartialListInfo)
+      );
       $(listOutputControl)[listOutputControlClass]('on', 'itemSelect', function itemSelect(tr) {
         var sep;
         var doc;
@@ -871,12 +875,32 @@
                 '<span class="fas fa-file-invoice"></span>iNaturalist</a>');
             }
           }
+          // Ensure redets against same list as recorded taxon.
+          $('#redet-species\\:taxon').setExtraParams({"taxon_list_id": doc.taxon.taxon_list.id});
+          // If list used for search is not master list, then controls shown
+          // to allow user to opt for master list instead.
+          if (doc.taxon.taxon_list.id === indiciaData.mainTaxonListId) {
+            $('.alt-taxon-list-controls').hide();
+          }
+          else {
+            $('.alt-taxon-list-controls').show();
+            $('#redet-from-full-list').prop('checked', false);
+            indiciaData.selectedRecordTaxonListId = doc.taxon.taxon_list.id;
+          }
         } else {
           $('.idc-verification-buttons').hide();
         }
       });
       $(listOutputControl)[listOutputControlClass]('on', 'populate', function populate() {
         $('.idc-verification-buttons').hide();
+      });
+      // Redet form use main taxon list checkbox.
+      $('#redet-from-full-list').change(function(e) {
+        if ($(e.currentTarget).prop('checked')) {
+          $('#redet-species\\:taxon').setExtraParams({ taxon_list_id: indiciaData.mainTaxonListId });
+        } else {
+          $('#redet-species\\:taxon').setExtraParams({ taxon_list_id: indiciaData.selectedRecordTaxonListId });
+        }
       });
       $(el).find('button.verify').click(function buttonClick(e) {
         var status = $(e.currentTarget).attr('data-status');
