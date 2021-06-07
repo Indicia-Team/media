@@ -842,9 +842,11 @@
       // Form validation for redetermination
       redetFormValidator = $('#redet-form').validate();
       // Plus setup redet form texts.
-      $('.alt-taxon-list-message').html(
-        $('.alt-taxon-list-message').html().replace('{message}', indiciaData.lang.verificationButtons.redetPartialListInfo)
-      );
+      if ($('.alt-taxon-list-message').length > 0) {
+        $('.alt-taxon-list-message').html(
+          $('.alt-taxon-list-message').html().replace('{message}', indiciaData.lang.verificationButtons.redetPartialListInfo)
+        );
+      }
       $(listOutputControl)[listOutputControlClass]('on', 'itemSelect', function itemSelect(tr) {
         var sep;
         var doc;
