@@ -734,6 +734,11 @@
       if ($('#redet-comment').val()) {
         data['occurrence_comment:comment'] = $('#redet-comment').val();
       }
+      if ($('#no-update-determiner') && $('#no-update-determiner').prop('checked')) {
+        // Determiner_id=-1 is special value that keeps the original
+        // determiner info.
+        data['occurrence:determiner_id'] = -1;
+      }
       $.post(
         indiciaData.ajaxFormPostRedet,
         data,
