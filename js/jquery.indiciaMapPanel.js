@@ -955,7 +955,7 @@ var destroyAllFeatures;
     */
     function _getPresetLayers(settings) {
       var osOptions = {
-        url: 'https://api2.ordnancesurvey.co.uk/mapping_api/v1/service/wmts?key=' + settings.os_api_key,
+        url: 'https://api.os.uk/maps/raster/v1/wmts?key=' + settings.os_api_key,
         version: '1.0.0',
         style: true,
         format: 'image/png',
@@ -1010,7 +1010,7 @@ var destroyAllFeatures;
         name: 'Ordnance Survey Leisure',
         layer: 'Leisure 27700',
         layerId: 'os_leisure.0',
-        url: 'https://api2.ordnancesurvey.co.uk/mapping_api/v1/service/wmts?key=' + settings.os_api_key,
+        url: 'https://api.os.uk/maps/raster/v1/wmts?key=' + settings.os_api_key,
         version: '1.0.0',
         style: true,
         format: 'image/png',
