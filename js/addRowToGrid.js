@@ -875,7 +875,7 @@ var resetSpeciesTextOnEscape;
           var dataRow = this;
           var attrId = dataRow.attr.attribute_id;
           var systemFunction = dataRow.attr.system_function;
-          if (systemFunction) {
+          if (systemFunction && typeof indiciaData['dynamicAttrInfo-' + gridId][systemFunction] !== 'undefined') {
             // Might be multiple rows for same taxon.
             $.each($(rows).find('.scTaxaTaxonListId[value="' + dataRow.attr.taxa_taxon_list_id + '"]'), function() {
               var row = $(this).closest('tr');
