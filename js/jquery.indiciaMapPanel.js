@@ -955,6 +955,9 @@ var destroyAllFeatures;
     */
     function _getPresetLayers(settings) {
       var osOptions = {
+        // Values obtained from 
+        // https://api.os.uk/maps/raster/v1/wmts?request=getcapabilities&service=WMTS&key=
+        // and https://osdatahub.os.uk/docs/wmts/technicalSpecification
         url: 'https://api.os.uk/maps/raster/v1/wmts?key=' + settings.os_api_key,
         version: '1.0.0',
         style: true,
@@ -963,6 +966,15 @@ var destroyAllFeatures;
         matrixSet: 'EPSG:3857',
         tileOrigin: new OpenLayers.LonLat(-20037508, 20037508),
         tileSize: new OpenLayers.Size(256, 256),
+        /* resolutions in web mercator result from assuming an earth with 
+         * equatorial radius 6378137m being shown on a 256 pixel wide map at 
+         * zoom level 0, i.e 
+         *   resolution[0] (m/pixel) = 2 * pi * 6378137 (m) / 256 (pixel)
+         * Each subsequent zoom level has half the resolution of the preceeding
+         * hence, at zoom level 7
+         *   2 * 3.14159265 * 6378137 / (256 * 2^7) = 1222.99245
+         * Not sure just where I got the numbers below from orginally.
+         */
         resolutions: [
           1222.9924523925783,
           611.4962261962892,
@@ -981,32 +993,33 @@ var destroyAllFeatures;
         ],
         // 49.52834N 10.76418W ; 61.33122N 1.7801E
         maxExtent: [-1198264, 6364988, 198162, 8702278],
+        /* OGC spec assumes a pixel is 0.28mm so 
+         *   resolution (m/pixel) = scaleDenominator (m/m) * 0.00028 (m/pixel)
+         *   e.g. 1223 = 43678730 * 0.00028
+         * scaleDenominators below come from getcapabilities API request.
+         */
         matrixIds: [
-          { identifier: 'EPSG:3857:0', scaleDenominator: 559082263.9508929 },
-          { identifier: 'EPSG:3857:1', scaleDenominator: 279541131.97544646 },
-          { identifier: 'EPSG:3857:2', scaleDenominator: 139770565.98772323 },
-          { identifier: 'EPSG:3857:3', scaleDenominator: 69885282.99386162 },
-          { identifier: 'EPSG:3857:4', scaleDenominator: 34942641.49693081 },
-          { identifier: 'EPSG:3857:5', scaleDenominator: 17471320.748465404 },
-          { identifier: 'EPSG:3857:6', scaleDenominator: 8735660.374232702 },
-          { identifier: 'EPSG:3857:7', scaleDenominator: 4367830.187116351 },
-          { identifier: 'EPSG:3857:8', scaleDenominator: 2183915.0935581755 },
-          { identifier: 'EPSG:3857:9', scaleDenominator: 1091957.5467790877 },
-          { identifier: 'EPSG:3857:10', scaleDenominator: 545978.7733895439 },
-          { identifier: 'EPSG:3857:11', scaleDenominator: 272989.38669477194 },
-          { identifier: 'EPSG:3857:12', scaleDenominator: 136494.69334738597 },
-          { identifier: 'EPSG:3857:13', scaleDenominator: 68247.34667369298 },
-          { identifier: 'EPSG:3857:14', scaleDenominator: 34123.67333684649 },
-          { identifier: 'EPSG:3857:15', scaleDenominator: 17061.836668423246 },
-          { identifier: 'EPSG:3857:16', scaleDenominator: 8530.918334211623 },
-          { identifier: 'EPSG:3857:17', scaleDenominator: 4265.4591671058115 },
-          { identifier: 'EPSG:3857:18', scaleDenominator: 2132.7295835529058 },
-          { identifier: 'EPSG:3857:19', scaleDenominator: 1066.3647917764529 },
-          { identifier: 'EPSG:3857:20', scaleDenominator: 533.1823958882264 }
+          { identifier: 'EPSG:3857:7', scaleDenominator: 4367830.1870353315 },
+          { identifier: 'EPSG:3857:8', scaleDenominator: 2183915.0935181477 },
+          { identifier: 'EPSG:3857:9', scaleDenominator: 1091957.5467586026 },
+          { identifier: 'EPSG:3857:10', scaleDenominator: 545978.7733797727 },
+          { identifier: 'EPSG:3857:11', scaleDenominator: 272989.3866894138 },
+          { identifier: 'EPSG:3857:12', scaleDenominator: 136494.6933447069 },
+          { identifier: 'EPSG:3857:13', scaleDenominator: 68247.34667235345 },
+          { identifier: 'EPSG:3857:14', scaleDenominator: 34123.673336176726 },
+          { identifier: 'EPSG:3857:15', scaleDenominator: 17061.836668560845 },
+          { identifier: 'EPSG:3857:16', scaleDenominator: 8530.918334280406 },
+          { identifier: 'EPSG:3857:17', scaleDenominator: 4265.459166667739 },
+          { identifier: 'EPSG:3857:18', scaleDenominator: 2132.7295838063405 },
+          { identifier: 'EPSG:3857:19', scaleDenominator: 1066.3647914307007 },
+          { identifier: 'EPSG:3857:20', scaleDenominator: 533.1823957153497 }
         ]
       };
 
       var osLeisureOptions = {
+        // Values obtained from 
+        // https://api.os.uk/maps/raster/v1/wmts?request=getcapabilities&service=WMTS&key=
+        // and https://osdatahub.os.uk/docs/wmts/technicalSpecification
         name: 'Ordnance Survey Leisure',
         layer: 'Leisure 27700',
         layerId: 'os_leisure.0',
@@ -1019,21 +1032,27 @@ var destroyAllFeatures;
         matrixSet: 'EPSG:27700',
         tileOrigin: new OpenLayers.LonLat(-238375, 1376256),
         tileSize: new OpenLayers.Size(256, 256),
-        /*  serverResolutions have to have the values set by the provider in order to position the layer correctly.
-         *  resolutions different to serverResolutions cause the tiles to be resized and allows approximate matching
-         *  of the scales between this and the standard Web Mercator layers.
+        /* serverResolutions have to have the values set by the provider in 
+         * order to position the layer correctly.
+         * resolutions different to serverResolutions cause the tiles to be 
+         * resized and allows approximate matching of the scales between this 
+         * and the standard Web Mercator layers.
+         * http://dev.openlayers.org/docs/files/OpenLayers/Layer/WMTS-js.html#OpenLayers.Layer.WMTS.serverResolutions
          *
-         *  The resolution of Web Mercator varies with the cosine of the latitude. Britain is roughly centred on
-         *  54 degrees north. Our target resolutions are therefore res = wm_res * cos(54). E.g, for the lowest zoom
-         *  level
+         * The resolution of Web Mercator varies with the cosine of the 
+         * latitude. Britain is roughly centred on 54 degrees north. Our target
+         * resolutions are therefore res = wm_res * cos(54). E.g, for the 
+         * lowest zoom level
          *      r = 1222.9924523925783 * cos(54) = 718.8569
          *
-         *  Providing more resolutions than serverResolutions allows us to magnify/reduce the final/first tile layer
-         *  and add extra zoom levels.
+         * Providing more resolutions than serverResolutions allows us to 
+         * magnify/reduce the final/first tile layer and add extra zoom levels.
          *
-         *  When switching to a Web Mercator base layer, the new zoom is set based upon closest matching resolution.
-         *  This means that from zoom 0 (res 718) we will end up with zoom 1 (res 611). Likewise, when switching
-         *  back we will end up zoomed out a level. This is compensated for in matchMapProjectionToLayer()
+         * When switching to a Web Mercator base layer, the new zoom is set 
+         * based upon closest matching resolution. This means that from zoom 0
+         * (res 718) we will end up with zoom 1 (res 611). Likewise, when 
+         * switching back we will end up zoomed out a level. This is 
+         * compensated for in matchMapProjectionToLayer()
          */
         serverResolutions: [896, 448, 224, 112, 56, 28, 14, 7, 3.5, 1.75],
         resolutions: [
@@ -1051,17 +1070,22 @@ var destroyAllFeatures;
           0.702008718,
           0.351004359],
         maxExtent: [0, 0, 700000, 1300000],
+        /* OGC spec assumes a pixel is 0.28mm so 
+         *   serverResolution (m/pixel) = scaleDenominator (m/m) * 0.00028 (m/pixel)
+         *   e.g. 896 = 3200000 * 0.00028
+         * scaleDenominators below come from getcapabilities API request.
+         */
         matrixIds: [
-          { identifier: 'EPSG:27700:0', scaleDenominator: 3200000.0000000005 },
-          { identifier: 'EPSG:27700:1', scaleDenominator: 1600000.0000000002 },
-          { identifier: 'EPSG:27700:2', scaleDenominator: 800000.0000000001 },
-          { identifier: 'EPSG:27700:3', scaleDenominator: 400000.00000000006 },
-          { identifier: 'EPSG:27700:4', scaleDenominator: 200000.00000000003 },
-          { identifier: 'EPSG:27700:5', scaleDenominator: 100000.00000000001 },
-          { identifier: 'EPSG:27700:6', scaleDenominator: 50000.00000000001 },
-          { identifier: 'EPSG:27700:7', scaleDenominator: 25000.000000000004 },
-          { identifier: 'EPSG:27700:8', scaleDenominator: 12500.000000000002 },
-          { identifier: 'EPSG:27700:9', scaleDenominator: 6250.000000000001 }
+          { identifier: 'EPSG:27700:0', scaleDenominator: 3199999.999496063 },
+          { identifier: 'EPSG:27700:1', scaleDenominator: 1599999.9997480316 },
+          { identifier: 'EPSG:27700:2', scaleDenominator: 799999.9998740158 },
+          { identifier: 'EPSG:27700:3', scaleDenominator: 399999.9999370079 },
+          { identifier: 'EPSG:27700:4', scaleDenominator: 199999.99996850395 },
+          { identifier: 'EPSG:27700:5', scaleDenominator: 99999.99998425198 },
+          { identifier: 'EPSG:27700:6', scaleDenominator: 49999.99999212599 },
+          { identifier: 'EPSG:27700:7', scaleDenominator: 24999.999996062994 },
+          { identifier: 'EPSG:27700:8', scaleDenominator: 12499.999998031497 },
+          { identifier: 'EPSG:27700:9', scaleDenominator: 6249.9999990157485 }
         ]
       };
       // List of available preset layers. A layer can either be defined by a
