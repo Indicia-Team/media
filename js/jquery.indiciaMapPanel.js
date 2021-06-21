@@ -1179,13 +1179,6 @@ var destroyAllFeatures;
             layerId: 'os_light.0'
           }, osOptions));
         },
-        os_night: function osNight() {
-          return new OpenLayers.Layer.WMTS($.extend({
-            name: 'Ordnance Survey Night',
-            layer: 'Night 3857',
-            layerId: 'os_night.0'
-          }, osOptions));
-        },
         os_leisure: function osLeisure() {
           return new OpenLayers.Layer.WMTS(osLeisureOptions);
         }
@@ -1865,14 +1858,18 @@ var destroyAllFeatures;
     }
 
     /**
-     * Converts a point to a spatial reference, and also generates the indiciaProjection and mapProjection wkts.
-     * The point should be a point geometry in the map projection or projection defined by pointSystem, system should hold the system we wish to
-     * display the Sref. pointSystem is optional and defines the projection of the point if not the map projection.
-     * Precision can be set to the number of digits in the grid ref to return or left for default which depends on the
-     * map zoom.
-     * We have consistency problems between the proj4 on the client and in the database, so go to the services
-     * whereever possible to convert.
-     * Callback gets called with the sref in system, and the wkt in indiciaProjection. These may be different.
+     * Converts a point to a spatial reference, and also generates the 
+     * indiciaProjection and mapProjection wkts. The point should be a point 
+     * geometry in the map projection or projection defined by pointSystem,
+     * system should hold the system we wish to display the Sref. pointSystem
+     * is optional and defines the projection of the point if not the map 
+     * projection.
+     * Precision can be set to the number of digits in the grid ref to return
+     * or left for default which depends on the map zoom.
+     * We have consistency problems between the proj4 on the client and in the
+     * database, so go to the services whereever possible to convert.
+     * Callback gets called with the sref in system, and the wkt in 
+     * indiciaProjection. These may be different.
      */
     function pointToSref(div, point, system, callback, pointSystem, precision) {
       if (typeof pointSystem === 'undefined') {
@@ -2042,9 +2039,10 @@ var destroyAllFeatures;
      */
 
     function processLonLatPositionOnMap(lonlat, div) {
-      // This is in the SRS of the current base layer, which should but may not be the same projection
-      // as the map! Definitely not indiciaProjection!
-      // Need to convert this map based Point to a _getSystem based Sref (done by pointToSref) and a
+      // This is in the SRS of the current base layer, which should but may
+      // not be the same projection as the map! Definitely not 
+      // indiciaProjection! Need to convert this map based Point to a 
+      // _getSystem based Sref (done by pointToSref) and a
       // indiciaProjection based geometry (done by the callback)
       var point = new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat);
       var polygon;
