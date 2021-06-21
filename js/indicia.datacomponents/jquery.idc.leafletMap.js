@@ -305,7 +305,7 @@
     if (tr) {
       doc = JSON.parse($(tr).attr('data-doc-source'));
       if (doc.location) {
-        obj = showFeatureWkt(el, doc.location.geom, zoom, 11).obj;
+        obj = showFeatureWkt(el, doc.location.geom, zoom, 11);
         ensureFeatureClear(el, obj);
         selectedRowMarker = obj;
       }
@@ -808,7 +808,7 @@
         color: '#3333DD',
         fillColor: '#4444CC',
         fillOpacity: 0.05
-      }).obj;
+      });
     },
 
     /**
