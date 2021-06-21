@@ -249,12 +249,13 @@
   }
 
   /**
-   * Adds a Wkt geometry to the map.
+   * Converts a geom to a feature object with the supplied style.
+   *
+   * Returns an obj with 2 properties, obj - the feature, and type - the
+   * geometry type.
    */
-  function showFeatureWkt(el, geom, zoom, maxZoom, style) {
-    var centre;
+  function getFeatureFromGeom(geom, style) {
     var wkt = new Wkt.Wkt();
-    var obj;
     var objStyle = {
       color: '#0000FF',
       opacity: 1.0,
@@ -265,18 +266,30 @@
     if (style) {
       $.extend(objStyle, style);
     }
-    obj = wkt.toObject(objStyle);
-    obj.addTo(el.map);
-    centre = typeof obj.getCenter === 'undefined' ? obj.getLatLng() : obj.getCenter();
+    return {
+      obj: wkt.toObject(objStyle),
+      type: wkt.type
+    };
+  }
+
+  /**
+   * Adds a Wkt geometry to the map.
+   */
+  function showFeatureWkt(el, geom, zoom, maxZoom, style) {
+    var centre;
+    var feature = getFeatureFromGeom(geom, style);
+    feature.obj.addTo(el.map);
+    centre = typeof feature.obj.getCenter === 'undefined' ? feature.obj.getLatLng() : feature.obj.getCenter();
     // Pan and zoom the map. Method differs for points vs polygons.
     if (!zoom) {
       el.map.panTo(centre);
-    } else if (wkt.type === 'polygon' || wkt.type === 'multipolygon') {
-      el.map.fitBounds(obj.getBounds(), { maxZoom: maxZoom });
+    } else if (feature.type === 'polygon' || feature.type === 'multipolygon') {
+      el.map.fitBounds(feature.obj.getBounds(), { maxZoom: maxZoom });
     } else {
+      // Incompatible geometry type so we guess the zoom.
       el.map.setView(centre, 11);
     }
-    return obj;
+    return feature.obj;
   }
 
   /**
@@ -292,7 +305,7 @@
     if (tr) {
       doc = JSON.parse($(tr).attr('data-doc-source'));
       if (doc.location) {
-        obj = showFeatureWkt(el, doc.location.geom, zoom, 11);
+        obj = showFeatureWkt(el, doc.location.geom, zoom, 11).obj;
         ensureFeatureClear(el, obj);
         selectedRowMarker = obj;
       }
@@ -760,6 +773,20 @@
     },
 
     /**
+     * Adds a list of geoms to the map to display the boundary for report data.
+     */
+    addBoundaryGroup: function addBoundaryGroup(geoms, style) {
+      var featureList = [];
+      var group;
+      geoms.forEach(function(geom) {
+        featureList.push(getFeatureFromGeom(geom, style).obj);
+      });
+      group = L.featureGroup(featureList)
+        .addTo(this.map);
+      this.map.fitBounds(group.getBounds(), { maxZoom: 14 });
+    },
+
+    /**
      * Clears the selected feature boundary (e.g. a selected location).
      */
     clearFeature: function clearFeature() {
@@ -781,7 +808,7 @@
         color: '#3333DD',
         fillColor: '#4444CC',
         fillOpacity: 0.05
-      });
+      }).obj;
     },
 
     /**
@@ -871,8 +898,10 @@
       $.each($('.idc-output-leafletMap'), function eachMap() {
         var map = this;
         if (!map.settings.initialBoundsSet) {
-          $.each(indiciaData.reportBoundaries, function eachBoundary() {
-            $(map).idcLeafletMap('showFeature', this, true);
+          $(map).idcLeafletMap('addBoundaryGroup', indiciaData.reportBoundaries, {
+            color: '#3333DD',
+            fillColor: '#4444CC',
+            fillOpacity: 0.05
           });
           map.settings.initialBoundsSet = true;
         }
