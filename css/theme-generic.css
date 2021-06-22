@@ -185,8 +185,10 @@ input:checked + .slider:before {
 }
 
 table.report-grid {
-  /* Ensure height enough for spinner. For tables, height acts as min-height. */
+  /* Ensure height enough for spinner. For tables, height acts as min-height
+  as long as overflow-x not set. */
   height: 140px;
+  overflow-x: initial;
   /* Sizing of thumbnails in image columns */
 }
 table.report-grid tr {
