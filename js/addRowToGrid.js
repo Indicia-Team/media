@@ -902,6 +902,7 @@ var resetSpeciesTextOnEscape;
                   ctrl = container.is(':input') ? container : container.find(':input');
                   ctrl
                     .prop('name', rowPrefix + '::occAttr:' + attrId)
+                    .prop('id', rowPrefix + '::occAttr:' + attrId)
                     .addClass('system-function-' + systemFunction)
                     .addClass('dynamic-attr');
                   // Remove old dynamic attributes in the cell as well as errors.
