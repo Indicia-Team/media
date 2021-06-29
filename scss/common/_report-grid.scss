@@ -1,8 +1,8 @@
 table.report-grid {
   /* Ensure height enough for spinner. For tables, height acts as min-height
-  as long as overflow-x not set. */
+  as long as display not altered from browser default. */
   height: 140px;
-  overflow-x: initial;
+  display: table;
   tr {
     /* Odd row colouration */
     &.odd {
