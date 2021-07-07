@@ -878,16 +878,21 @@ jQuery(document).ready(function ($) {
     }
   }
 
-  // Ensure that pane controls that are exclusive of others are only filled in one at a time
+  // Ensure that pane controls that are exclusive of others are only filled in one at a time.
   $('.filter-controls fieldset :input').change(function (e) {
     var formDiv = $(e.currentTarget).parents('.filter-popup');
     var thisFieldset = $(e.currentTarget).parents('fieldset')[0];
-    $.each($(formDiv).find('fieldset.exclusive'), function (idx, fieldset) {
-      if (fieldset !== thisFieldset) {
-        $(fieldset).find(':input').not('#imp-sref-system,:checkbox,[type=button]').val('');
-        $(fieldset).find(':checkbox').prop('checked', false);
-      }
-    });
+    if ($(this).val() !== '') {
+      $.each($(formDiv).find('fieldset.exclusive'), function (idx, fieldset) {
+        if (fieldset !== thisFieldset) {
+          // Only change if it has a value, to avoid unnecessary loops.
+          $(fieldset).find(':input').filter(function() {
+              return this.value;
+            }).not('#imp-sref-system,:checkbox,[type=button]').val('');
+          $(fieldset).find(':checkbox').prop('checked', false);
+        }
+      });
+    }
   });
 
   // Ensure that only one of families, species and species groups are picked on the what filter
