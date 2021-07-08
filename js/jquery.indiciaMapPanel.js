@@ -726,6 +726,12 @@ var destroyAllFeatures;
       // data holds the sref in _getSystem format, wkt in indiciaProjection, optional mapwkt in mapProjection
       var feature;
       var parser = new OpenLayers.Format.WKT();
+      if ($('.scSpatialRefFromMap.active').length > 0) {
+        // Fetching grid ref for a grid row is active.
+        $('.scSpatialRefFromMap.active').parent().find('.scSpatialRef').val(data.sref);
+        $('.scSpatialRefFromMap.active').parent().find('.scSpatialRef').change();
+        return;
+      }
       // Update the spatial reference control
       $('#' + opts.srefId).val(data.sref);
       // If the sref is in two parts, then we might need to split it across 2 input fields for lat and long
@@ -743,7 +749,9 @@ var destroyAllFeatures;
         var toRemove = [];
         $.each(div.map.editLayer.features, function () {
           // Annotations is a special seperate mode added after original code was written, so do not interfere with annotations even in inverse mode.
-          if (this.attributes.type !== 'boundary' && this.attributes.type !== 'zoomToBoundary' && this.attributes.type !== 'annotation') {
+          // Subsample geoms should be left in place (linked to grid data).
+          if (this.attributes.type !== 'boundary' && this.attributes.type !== 'zoomToBoundary' &&
+              this.attributes.type !== 'annotation' && !this.attributes.type.match(/^subsample/)) {
             toRemove.push(this);
           }
         });
@@ -955,7 +963,7 @@ var destroyAllFeatures;
     */
     function _getPresetLayers(settings) {
       var osOptions = {
-        // Values obtained from 
+        // Values obtained from
         // https://api.os.uk/maps/raster/v1/wmts?request=getcapabilities&service=WMTS&key=
         // and https://osdatahub.os.uk/docs/wmts/technicalSpecification
         url: 'https://api.os.uk/maps/raster/v1/wmts?key=' + settings.os_api_key,
@@ -966,9 +974,9 @@ var destroyAllFeatures;
         matrixSet: 'EPSG:3857',
         tileOrigin: new OpenLayers.LonLat(-20037508, 20037508),
         tileSize: new OpenLayers.Size(256, 256),
-        /* resolutions in web mercator result from assuming an earth with 
-         * equatorial radius 6378137m being shown on a 256 pixel wide map at 
-         * zoom level 0, i.e 
+        /* resolutions in web mercator result from assuming an earth with
+         * equatorial radius 6378137m being shown on a 256 pixel wide map at
+         * zoom level 0, i.e
          *   resolution[0] (m/pixel) = 2 * pi * 6378137 (m) / 256 (pixel)
          * Each subsequent zoom level has half the resolution of the preceeding
          * hence, at zoom level 7
@@ -993,7 +1001,7 @@ var destroyAllFeatures;
         ],
         // 49.52834N 10.76418W ; 61.33122N 1.7801E
         maxExtent: [-1198264, 6364988, 198162, 8702278],
-        /* OGC spec assumes a pixel is 0.28mm so 
+        /* OGC spec assumes a pixel is 0.28mm so
          *   resolution (m/pixel) = scaleDenominator (m/m) * 0.00028 (m/pixel)
          *   e.g. 1223 = 43678730 * 0.00028
          * scaleDenominators below come from getcapabilities API request.
@@ -1017,7 +1025,7 @@ var destroyAllFeatures;
       };
 
       var osLeisureOptions = {
-        // Values obtained from 
+        // Values obtained from
         // https://api.os.uk/maps/raster/v1/wmts?request=getcapabilities&service=WMTS&key=
         // and https://osdatahub.os.uk/docs/wmts/technicalSpecification
         name: 'Ordnance Survey Leisure',
@@ -1032,26 +1040,26 @@ var destroyAllFeatures;
         matrixSet: 'EPSG:27700',
         tileOrigin: new OpenLayers.LonLat(-238375, 1376256),
         tileSize: new OpenLayers.Size(256, 256),
-        /* serverResolutions have to have the values set by the provider in 
+        /* serverResolutions have to have the values set by the provider in
          * order to position the layer correctly.
-         * resolutions different to serverResolutions cause the tiles to be 
-         * resized and allows approximate matching of the scales between this 
+         * resolutions different to serverResolutions cause the tiles to be
+         * resized and allows approximate matching of the scales between this
          * and the standard Web Mercator layers.
          * http://dev.openlayers.org/docs/files/OpenLayers/Layer/WMTS-js.html#OpenLayers.Layer.WMTS.serverResolutions
          *
-         * The resolution of Web Mercator varies with the cosine of the 
+         * The resolution of Web Mercator varies with the cosine of the
          * latitude. Britain is roughly centred on 54 degrees north. Our target
-         * resolutions are therefore res = wm_res * cos(54). E.g, for the 
+         * resolutions are therefore res = wm_res * cos(54). E.g, for the
          * lowest zoom level
          *      r = 1222.9924523925783 * cos(54) = 718.8569
          *
-         * Providing more resolutions than serverResolutions allows us to 
+         * Providing more resolutions than serverResolutions allows us to
          * magnify/reduce the final/first tile layer and add extra zoom levels.
          *
-         * When switching to a Web Mercator base layer, the new zoom is set 
+         * When switching to a Web Mercator base layer, the new zoom is set
          * based upon closest matching resolution. This means that from zoom 0
-         * (res 718) we will end up with zoom 1 (res 611). Likewise, when 
-         * switching back we will end up zoomed out a level. This is 
+         * (res 718) we will end up with zoom 1 (res 611). Likewise, when
+         * switching back we will end up zoomed out a level. This is
          * compensated for in matchMapProjectionToLayer()
          */
         serverResolutions: [896, 448, 224, 112, 56, 28, 14, 7, 3.5, 1.75],
@@ -1070,7 +1078,7 @@ var destroyAllFeatures;
           0.702008718,
           0.351004359],
         maxExtent: [0, 0, 700000, 1300000],
-        /* OGC spec assumes a pixel is 0.28mm so 
+        /* OGC spec assumes a pixel is 0.28mm so
          *   serverResolution (m/pixel) = scaleDenominator (m/m) * 0.00028 (m/pixel)
          *   e.g. 896 = 3200000 * 0.00028
          * scaleDenominators below come from getcapabilities API request.
@@ -1858,17 +1866,17 @@ var destroyAllFeatures;
     }
 
     /**
-     * Converts a point to a spatial reference, and also generates the 
-     * indiciaProjection and mapProjection wkts. The point should be a point 
+     * Converts a point to a spatial reference, and also generates the
+     * indiciaProjection and mapProjection wkts. The point should be a point
      * geometry in the map projection or projection defined by pointSystem,
      * system should hold the system we wish to display the Sref. pointSystem
-     * is optional and defines the projection of the point if not the map 
+     * is optional and defines the projection of the point if not the map
      * projection.
      * Precision can be set to the number of digits in the grid ref to return
      * or left for default which depends on the map zoom.
      * We have consistency problems between the proj4 on the client and in the
      * database, so go to the services whereever possible to convert.
-     * Callback gets called with the sref in system, and the wkt in 
+     * Callback gets called with the sref in system, and the wkt in
      * indiciaProjection. These may be different.
      */
     function pointToSref(div, point, system, callback, pointSystem, precision) {
@@ -2040,8 +2048,8 @@ var destroyAllFeatures;
 
     function processLonLatPositionOnMap(lonlat, div) {
       // This is in the SRS of the current base layer, which should but may
-      // not be the same projection as the map! Definitely not 
-      // indiciaProjection! Need to convert this map based Point to a 
+      // not be the same projection as the map! Definitely not
+      // indiciaProjection! Need to convert this map based Point to a
       // _getSystem based Sref (done by pointToSref) and a
       // indiciaProjection based geometry (done by the callback)
       var point = new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat);
