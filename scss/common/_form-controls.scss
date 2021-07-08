@@ -17,17 +17,18 @@
   }
 }
 
-.add-new-taxon {
+@mixin buttonInsideInput {
   position: absolute;
-  border-radius: 4px;
-  background: silver;
-  text-align: center;
-  opacity: 0.5;
   z-index: 999;
-  cursor: pointer;
+  opacity: 0.5;
   &:hover {
     opacity: 0.8;
   }
+}
+
+.add-new-taxon {
+  @include buttonInsideInput();
+  padding: 0;
 }
 
 /* Set the species checklist entry grid width to 100% */
@@ -36,9 +37,17 @@ table.species-grid {
   .hidden-by-dynamic-attr {
     display: none;
   }
-  /* Add taxon button alignment. */
-  .scTaxonCell {
+  /* Inside control button alignment. */
+  .scTaxonCell, .scSpatialRefCell {
     position: relative;
+  }
+  .scSpatialRefFromMap {
+    @include buttonInsideInput();
+    right: 4px;
+    &.active {
+      opacity: 1;
+      background-color: lightyellow;
+    }
   }
 }
 

@@ -17,12 +17,9 @@
 
 .add-new-taxon {
   position: absolute;
-  border-radius: 4px;
-  background: silver;
-  text-align: center;
-  opacity: 0.5;
   z-index: 999;
-  cursor: pointer;
+  opacity: 0.5;
+  padding: 0;
 }
 .add-new-taxon:hover {
   opacity: 0.8;
@@ -31,13 +28,26 @@
 /* Set the species checklist entry grid width to 100% */
 table.species-grid {
   width: 100%;
-  /* Add taxon button alignment. */
+  /* Inside control button alignment. */
 }
 table.species-grid .hidden-by-dynamic-attr {
   display: none;
 }
-table.species-grid .scTaxonCell {
+table.species-grid .scTaxonCell, table.species-grid .scSpatialRefCell {
   position: relative;
+}
+table.species-grid .scSpatialRefFromMap {
+  position: absolute;
+  z-index: 999;
+  opacity: 0.5;
+  right: 4px;
+}
+table.species-grid .scSpatialRefFromMap:hover {
+  opacity: 0.8;
+}
+table.species-grid .scSpatialRefFromMap.active {
+  opacity: 1;
+  background-color: lightyellow;
 }
 
 #new-taxon-form {
