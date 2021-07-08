@@ -17,12 +17,8 @@
 
 .add-new-taxon {
   position: absolute;
-  border-radius: 4px;
-  background: silver;
-  text-align: center;
-  opacity: 0.5;
   z-index: 999;
-  cursor: pointer;
+  opacity: 0.5;
 }
 .add-new-taxon:hover {
   opacity: 0.8;
