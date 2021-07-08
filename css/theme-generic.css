@@ -19,6 +19,7 @@
   position: absolute;
   z-index: 999;
   opacity: 0.5;
+  padding: 0;
 }
 .add-new-taxon:hover {
   opacity: 0.8;
@@ -27,13 +28,17 @@
 /* Set the species checklist entry grid width to 100% */
 table.species-grid {
   width: 100%;
-  /* Add taxon button alignment. */
+  /* Inside control button alignment. */
 }
 table.species-grid .hidden-by-dynamic-attr {
   display: none;
 }
-table.species-grid .scTaxonCell {
+table.species-grid .scTaxonCell, table.species-grid .scSpatialRefCell {
   position: relative;
+}
+table.species-grid .scSpatialRefFromMap {
+  position: absolute;
+  right: 4px;
 }
 
 #new-taxon-form {

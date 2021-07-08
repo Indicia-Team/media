@@ -21,6 +21,7 @@
   position: absolute;
   z-index: 999;
   opacity: 0.5;
+  padding: 0;
   &:hover {
     opacity: 0.8;
   }
@@ -32,9 +33,13 @@ table.species-grid {
   .hidden-by-dynamic-attr {
     display: none;
   }
-  /* Add taxon button alignment. */
-  .scTaxonCell {
+  /* Inside control button alignment. */
+  .scTaxonCell, .scSpatialRefCell {
     position: relative;
+  }
+  .scSpatialRefFromMap {
+    position: absolute;
+    right: 4px;
   }
 }
 
