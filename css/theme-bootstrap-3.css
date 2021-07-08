@@ -38,7 +38,16 @@ table.species-grid .scTaxonCell, table.species-grid .scSpatialRefCell {
 }
 table.species-grid .scSpatialRefFromMap {
   position: absolute;
+  z-index: 999;
+  opacity: 0.5;
   right: 4px;
+}
+table.species-grid .scSpatialRefFromMap:hover {
+  opacity: 0.8;
+}
+table.species-grid .scSpatialRefFromMap.active {
+  opacity: 1;
+  background-color: lightyellow;
 }
 
 #new-taxon-form {

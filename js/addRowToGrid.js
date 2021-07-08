@@ -823,6 +823,17 @@ var resetSpeciesTextOnEscape;
   });
 
   /**
+   * Allow a single button for fetching map ref to be active at one time.
+   */
+  indiciaFns.on('click', '.scSpatialRefFromMap', {}, function (e) {
+    var wasActive = $(this).hasClass('active')
+    $('.scSpatialRefFromMap.active').removeClass('active');
+    if (!wasActive) {
+      $(this).addClass('active');
+    }
+  });
+
+  /**
    * Converts the existing occurrence attribute data structure for ease of use.
    *
    * Changes key to just attribute ID and occurrence ID.

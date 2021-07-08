@@ -17,14 +17,18 @@
   }
 }
 
-.add-new-taxon {
+@mixin buttonInsideInput {
   position: absolute;
   z-index: 999;
   opacity: 0.5;
-  padding: 0;
   &:hover {
     opacity: 0.8;
   }
+}
+
+.add-new-taxon {
+  @include buttonInsideInput();
+  padding: 0;
 }
 
 /* Set the species checklist entry grid width to 100% */
@@ -38,8 +42,12 @@ table.species-grid {
     position: relative;
   }
   .scSpatialRefFromMap {
-    position: absolute;
+    @include buttonInsideInput();
     right: 4px;
+    &.active {
+      opacity: 1;
+      background-color: lightyellow;
+    }
   }
 }
 
