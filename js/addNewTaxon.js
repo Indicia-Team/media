@@ -140,11 +140,11 @@
   indiciaFns.hookTaxonLookupFailed.push(function(input) {
     if (indiciaData.allowTaxonAdditionToList) {
       if ($(input).parent().find('.add-new-taxon').length === 0) {
-        $(input).after('<span class="add-new-taxon" title="Request a new taxon" style="' +
-          'top: ' + (input.offsetTop + 2) + 'px; ' +
+        $(input).after('<button type="button" class="add-new-taxon" title="Request a new taxon" style="' +
+          'top: ' + (input.clientTop + 2) + 'px; ' +
           'height: ' + (input.clientHeight - 4) + 'px; ' +
           'width: ' + (input.clientHeight - 4) + 'px; ' +
-          'left: ' + (input.clientWidth - input.clientHeight) + 'px; ' +
+          'left: ' + (2 + input.clientWidth - input.clientHeight) + 'px; ' +
           '">+</span>');
       }
     }
