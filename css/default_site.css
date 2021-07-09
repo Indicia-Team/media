@@ -107,20 +107,6 @@ a {
   vertical-align: middle;
 }
 
-.page-notice {
-  margin-bottom: 1em;
-  padding: 0.3em;
-  display: block;
-}
-
-.page-notice p {
-  margin: 0.5em 1.5em 0.5em 1.5em;
-}
-
-.page-notice span.ui-icon {
-  float: left;
-}
-
 .flickr-panel {
   padding: 0.5em;
 }

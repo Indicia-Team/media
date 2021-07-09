@@ -25,6 +25,10 @@
   opacity: 0.8;
 }
 
+.species-checklist-wrap {
+  margin-bottom: 15px;
+}
+
 /* Set the species checklist entry grid width to 100% */
 table.species-grid {
   width: 100%;
@@ -940,6 +944,29 @@ table.es-data-grid tfoot span {
 .progress-circle-container.download-done circle.circle {
   stroke: #49D3B8;
   fill: #B1E5DB;
+}
+
+.page-notice {
+  padding: 0.3em;
+  display: block;
+  margin-bottom: 1em;
+}
+.page-notice.ui-state-default {
+  background-color: lightyellow;
+}
+.page-notice.ui-state-highlight {
+  border-color: #fdae61;
+  background-color: #ffefdf;
+  color: #333;
+}
+.page-notice p {
+  margin: 0.5em 1.5em 0.5em 1.5em;
+}
+.page-notice span.ui-icon {
+  float: left;
+}
+.page-notice span.fas, .page-notice span.far {
+  font-size: 150%;
 }
 
 label, form label {
