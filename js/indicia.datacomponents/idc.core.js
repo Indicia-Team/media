@@ -295,7 +295,7 @@
     return updatedText;
   }
 
- /**
+  /**
   * Retrieve any action links to attach to an idcDataGrid or idcCardCalendar row.
   *
   * @param object el
@@ -308,41 +308,52 @@
   * @return string
   *   Action link HTML.
   */
- indiciaFns.getActions = function getActions(el, actions, doc) {
-   var html = '';
-   $.each(actions, function eachActions() {
-     var item;
-     var link;
-     var params = [];
-     if (!this.tokenDefaults) {
-       this.tokenDefaults = {};
-     }
-     if (typeof this.title === 'undefined') {
-       html += '<span class="fas fa-times-circle error" title="Invalid action definition - missing title"></span>';
-     } else {
-       if (this.iconClass) {
-         item = '<span class="' + this.iconClass + '" title="' + this.title + '"></span>';
-       } else {
-         item = this.title;
-       }
-       if (this.path) {
-         link = this.path
-           .replace(/{rootFolder}/g, indiciaData.rootFolder)
-           .replace(/\{language\}/g, indiciaData.currentLanguage);
-         if (this.urlParams) {
-           link += link.indexOf('?') === -1 ? '?' : '&';
-           $.each(this.urlParams, function eachParam(name, value) {
-             params.push(name + '=' + value);
-           });
-           link += params.join('&');
-         }
-         item = indiciaFns.applyFieldReplacements(el, doc, '<a href="' + link + '" title="' + this.title + '">' + item + '</a>', this.tokenDefaults);
-       }
-       html += item;
-     }
-   });
-   return html;
- }
+  indiciaFns.getActions = function getActions(el, actions, doc) {
+    var html = '';
+    $.each(actions, function eachActions() {
+      var item;
+      var link;
+      var params = [];
+      if (this.hideIfFromOtherWebsite && doc.metadata.website.id != indiciaData.website_id) {
+        // Skip this action.
+        return true;
+      }
+      if (this.hideIfFromOtherUser && doc.metadata.created_by_id != indiciaData.user_id) {
+        // Skip this action.
+        return true;
+      }
+      if (!this.tokenDefaults) {
+        this.tokenDefaults = {};
+      }
+      if (typeof this.title === 'undefined') {
+        html += '<span class="fas fa-times-circle error" title="Invalid action definition - missing title"></span>';
+      } else {
+        if (this.iconClass) {
+          item = '<span class="' + this.iconClass + '" title="' + this.title + '"></span>';
+        } else {
+          item = this.title;
+        }
+        if (this.path) {
+          link = this.path
+            .replace(/{rootFolder}/g, indiciaData.rootFolder)
+            .replace(/\{language\}/g, indiciaData.currentLanguage);
+          if (this.urlParams) {
+            link += link.indexOf('?') === -1 ? '?' : '&';
+            $.each(this.urlParams, function eachParam(name, value) {
+              params.push(name + '=' + value);
+            });
+            link += params.join('&');
+          }
+          item = '<a href="' + indiciaFns.applyFieldReplacements(el, doc, link, this.tokenDefaults) + '" title="' + this.title + '">' + item + '</a>';
+        }
+        else if (this.onClickFn) {
+          item = '<a onclick="indiciaFns.' + this.onClickFn + '(jQuery(this).closest(\'tr\')[0], jQuery(this).closest(\'tr\').attr(\'data-doc-source\'));" title="' + this.title + '">' + item + '</a>';
+        }
+        html += item;
+      }
+    });
+    return html;
+  }
 
   /**
    * Instantiate the data sources.

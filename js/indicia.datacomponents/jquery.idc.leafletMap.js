@@ -541,8 +541,8 @@
         if (this.type !== 'WMS') {
           el.settings.source[this.source] = typeof this.title === 'undefined' ? this.source : this.title;
         }
-      })
-;      // Apply settings passed to the constructor.
+      });
+      // Apply settings passed to the constructor.
       if (typeof options !== 'undefined') {
         $.extend(el.settings, options);
       }
