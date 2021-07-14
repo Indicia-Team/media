@@ -65,14 +65,21 @@
    */
   indiciaFns.on('change', '.precise-date-picker', {}, function(e) {
     var rootId = e.currentTarget.id.replace(/:date$/, '').replace(':', '\\:');
+    var wrap = $('#' + rootId).closest('.ctrl-wrap');
     var dateToSave = $(e.currentTarget).val();
     if (dateToSave.trim().match(/^\d{4}/)) {
       // Date given year first, so ISO format. That's how HTML5 date input
       // values are formatted.
       dateToSave = indiciaFns.formatDate(dateToSave);
     }
-    // Use prop to not trigger overridden val() method.
-    $('#' + rootId).prop('value', dateToSave);
+    $('#' + rootId)
+      // Copy over value using prop to not trigger overridden val() method.
+      .prop('value', dateToSave)
+      // But clean up it's error state now it has a new value.
+      .removeClass('ui-state-error');
+    if (wrap.length) {
+      $(wrap).find('.inline-error').remove();
+    }
   });
 
   /**
