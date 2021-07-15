@@ -704,6 +704,7 @@
         'occurrence_id=' + occurrenceId + '&sample_id=' + sampleId,
         dataType: 'json',
         success: function handleResponse(response) {
+          email.body = email.body.replace('\n', '<br/>');
           email.body = email.body.replace(/\{{ photos }}/g, response.media);
           email.body = email.body.replace(/\{{ comments }}/g, response.comments);
           // save a comment to indicate that the mail was sent
