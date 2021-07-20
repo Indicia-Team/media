@@ -99,11 +99,11 @@
         });
       }
       // Extract any parameters from the attached form as long as they are report parameters
-      $('form#' + div.settings.reportGroup + '-params input, form#' + div.settings.reportGroup + '-params select').each(function (idx, input) {
-        if (input.type !== 'submit' && $(input).attr('name').indexOf(div.settings.reportGroup + '-') === 0
-            && (input.type !== 'checkbox' || $(input).prop('checked'))) {
-          paramName = $(input).attr('name').replace(div.settings.reportGroup + '-', '');
-          request[paramName] = $(input).val();
+      $('form#' + div.settings.reportGroup + '-params').find(':input[name]').each(function () {
+        if (this.type !== 'submit' && $(this).attr('name').indexOf(div.settings.reportGroup + '-') === 0
+            && (this.type !== 'checkbox' || $(this).prop('checked'))) {
+          paramName = $(this).attr('name').replace(div.settings.reportGroup + '-', '');
+          request[paramName] = $(this).val();
         }
       });
       $.extend(request, getQueryParam(div), div.settings.immutableParams);
