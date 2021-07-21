@@ -61,7 +61,7 @@ var resetSpeciesTextOnEscape;
   $(document).ready(function () {
     // prevent validation of the clonable row
     $('.scClonableRow :input').addClass('inactive');
-    if ($('#existingSampleGeomsBySref')) {
+    if ($('#existingSampleGeomsBySref').length) {
       mapInitialisationHooks.push(showExistingSubsamplesOnMap);
     }
 
