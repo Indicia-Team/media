@@ -46,7 +46,7 @@
    * Toggle switch handler for vague date control mode.
    */
   indiciaFns.on('change', '.date-mode-toggle', {}, function(e) {
-    var rootId = e.currentTarget.id.replace(/:toggle$/, '').replace(':', '\\:');
+    var rootId = e.currentTarget.id.replace(/:toggle$/, '').replace(/:/g, '\\:');
     var showVagueDates = $(e.currentTarget).prop('checked');
     if (showVagueDates) {
       $('#' + rootId).show();
