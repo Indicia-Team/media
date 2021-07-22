@@ -64,7 +64,7 @@
    * Copy changes to the date picker associated with a vague date text into the text input.
    */
   indiciaFns.on('change', '.precise-date-picker', {}, function(e) {
-    var rootId = e.currentTarget.id.replace(/:date$/, '').replace(':', '\\:');
+    var rootId = e.currentTarget.id.replace(/:date$/, '').replace(/:/g, '\\:');
     var wrap = $('#' + rootId).closest('.ctrl-wrap');
     var dateToSave = $(e.currentTarget).val();
     if (dateToSave.trim().match(/^\d{4}/)) {
@@ -86,7 +86,7 @@
    * Copy changes from the vague date text box back to the date picker.
    */
   indiciaFns.on('change', '.date-text', {}, function(e) {
-    var rootId = e.currentTarget.id.replace(':', '\\:');
+    var rootId = e.currentTarget.id.replace(/:/g, '\\:');
     var dateVal = $(e.currentTarget).val();
     var parts;
     var order;
