@@ -109,6 +109,10 @@ jQuery(document).ready(function($) {
   var rememberVagueDatesEnabled;
   // Ensure existing data copied from text date input to HTML5 date.
   $('.date-text').trigger('change');
+
+  // Toggle all vague dates on if
+  // - one was turned on last time the page was visited,
+  // - the server has requested it.
   if (typeof $.cookie !== 'undefined') {
     rememberVagueDatesEnabled = $.cookie('vagueDatesEnabled');
     if (rememberVagueDatesEnabled === 'true' || typeof indiciaData.enableVagueDateToggle !== 'undefined') {
@@ -116,4 +120,15 @@ jQuery(document).ready(function($) {
       $('.date-mode-toggle').change();
     }
   }
+
+  // Toggle individual vague dates on if current value cannot be shown precisely.
+  $('.date-mode-toggle').each(function(){
+    var rootId = this.id.replace(/:toggle$/, '').replace(/:/g, '\\:');
+    var precise_date = $('#' + rootId + '\\:date').val();
+    var vague_date = $('#' + rootId).val();
+    if (precise_date === '' && vague_date !== '') {
+      $(this).prop('checked', true);
+      $(this).change();
+    }
+  });
 });
