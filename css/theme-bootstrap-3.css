@@ -205,19 +205,39 @@ table.report-grid {
   display: table;
   /* Sizing of thumbnails in image columns */
 }
-table.report-grid tr {
-  /* Odd row colouration */
+table.report-grid tbody tr {
+  /* Alternate row colouration */
+  /* Disable hover highlight for row shown when no data available */
   /* Workflow related styling */
 }
-table.report-grid tr.odd {
-  background-color: #eeeeee;
-  border: none;
+table.report-grid tbody tr:nth-child(even), table.report-grid tbody tr:nth-child(even) td {
+  background-color: #f7f7f7;
 }
-table.report-grid tr.overdue {
+table.report-grid tbody tr:nth-child(odd), table.report-grid tbody tr:nth-child(odd) td {
+  background-color: #ffffff;
+}
+table.report-grid tbody tr:hover, table.report-grid tbody tr:hover td {
+  color: #333333;
+  background-color: #fffbcc;
+}
+table.report-grid tbody tr.empty-row, table.report-grid tbody tr.empty-row:hover, table.report-grid tbody tr.empty-row td, table.report-grid tbody tr.empty-row:hover td {
+  background-color: #f7f7f7;
+}
+table.report-grid tbody tr.selected, table.report-grid tbody tr.selected td {
+  color: #ffffff;
+  background-color: #2c7bb6;
+}
+table.report-grid tbody tr.zero-abundance, table.report-grid tbody tr.zero-t {
+  text-decoration: line-through;
+}
+table.report-grid tbody tr.overdue {
   border-left: solid 8px #d7191c;
 }
-table.report-grid tr.overdue-soon {
+table.report-grid tbody tr.overdue-soon {
   border-left: solid 8px #fdae61;
+}
+table.report-grid .nowrap {
+  white-space: nowrap;
 }
 table.report-grid .single img {
   width: 100px;
@@ -565,8 +585,13 @@ body > .loading-spinner {
 .idc-output-cardGallery .es-card-gallery .card:last-of-type {
   flex-grow: 0;
 }
+.idc-output-cardGallery .es-card-gallery .card:hover {
+  color: #333333;
+  background-color: #fffbcc;
+}
 .idc-output-cardGallery .es-card-gallery .card.selected {
-  background: #f0f0f0;
+  color: #ffffff;
+  background-color: #2c7bb6;
   border: 1px solid grey;
 }
 .idc-output-cardGallery .es-card-gallery .card .image-container {
@@ -680,6 +705,10 @@ table.es-data-grid thead tr .fa-sort {
 table.es-data-grid thead tr .fa-sort:hover {
   opacity: 1;
 }
+table.es-data-grid tbody tr {
+  /* Alternate row colouration */
+  /* Disable hover highlight for row shown when no data available */
+}
 table.es-data-grid tbody tr th, table.es-data-grid tbody tr td {
   padding: 4px 2px;
   word-wrap: break-word;
@@ -692,13 +721,16 @@ table.es-data-grid tbody tr:nth-child(odd), table.es-data-grid tbody tr:nth-chil
 }
 table.es-data-grid tbody tr:hover, table.es-data-grid tbody tr:hover td {
   color: #333333;
-  background-color: #fff899;
+  background-color: #fffbcc;
+}
+table.es-data-grid tbody tr.empty-row, table.es-data-grid tbody tr.empty-row:hover, table.es-data-grid tbody tr.empty-row td, table.es-data-grid tbody tr.empty-row:hover td {
+  background-color: #f7f7f7;
 }
 table.es-data-grid tbody tr.selected, table.es-data-grid tbody tr.selected td {
   color: #ffffff;
-  background-color: #3333ee;
+  background-color: #2c7bb6;
 }
-table.es-data-grid tbody tr.zero-abundance {
+table.es-data-grid tbody tr.zero-abundance, table.es-data-grid tbody tr.zero-t {
   text-decoration: line-through;
 }
 table.es-data-grid tbody tr img {

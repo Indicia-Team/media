@@ -3,12 +3,8 @@ table.report-grid {
   as long as display not altered from browser default. */
   height: 140px;
   display: table;
-  tr {
-    /* Odd row colouration */
-    &.odd {
-      background-color: #eeeeee;
-      border: none;
-    }
+  tbody tr {
+    @include grid-rows;
     /* Workflow related styling */
     &.overdue {
       border-left: solid 8px $colour-range-1-a;
@@ -16,6 +12,9 @@ table.report-grid {
     &.overdue-soon {
       border-left: solid 8px $colour-range-1-b;
     }
+  }
+  .nowrap {
+    white-space: nowrap;
   }
   /* Sizing of thumbnails in image columns */
   .single img {

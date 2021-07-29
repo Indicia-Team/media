@@ -1,5 +1,6 @@
 /* Theme extension to the default_site.css file which provides Bootstrap 3 optimised style output */
 @import "common/variables";
+@import "common/mixins";
 @import "bootstrap-3/variables";
 @import "common/form-controls";
 @import "common/toggle-slider";
