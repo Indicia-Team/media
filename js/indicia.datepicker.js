@@ -46,7 +46,7 @@
    * Toggle switch handler for vague date control mode.
    */
   indiciaFns.on('change', '.date-mode-toggle', {}, function(e) {
-    var rootId = e.currentTarget.id.replace(/:toggle$/, '').replace(':', '\\:');
+    var rootId = e.currentTarget.id.replace(/:toggle$/, '').replace(/:/g, '\\:');
     var showVagueDates = $(e.currentTarget).prop('checked');
     if (showVagueDates) {
       $('#' + rootId).show();
@@ -64,7 +64,7 @@
    * Copy changes to the date picker associated with a vague date text into the text input.
    */
   indiciaFns.on('change', '.precise-date-picker', {}, function(e) {
-    var rootId = e.currentTarget.id.replace(/:date$/, '').replace(':', '\\:');
+    var rootId = e.currentTarget.id.replace(/:date$/, '').replace(/:/g, '\\:');
     var wrap = $('#' + rootId).closest('.ctrl-wrap');
     var dateToSave = $(e.currentTarget).val();
     if (dateToSave.trim().match(/^\d{4}/)) {
@@ -86,7 +86,7 @@
    * Copy changes from the vague date text box back to the date picker.
    */
   indiciaFns.on('change', '.date-text', {}, function(e) {
-    var rootId = e.currentTarget.id.replace(':', '\\:');
+    var rootId = e.currentTarget.id.replace(/:/g, '\\:');
     var dateVal = $(e.currentTarget).val();
     var parts;
     var order;
@@ -109,6 +109,10 @@ jQuery(document).ready(function($) {
   var rememberVagueDatesEnabled;
   // Ensure existing data copied from text date input to HTML5 date.
   $('.date-text').trigger('change');
+
+  // Toggle all vague dates on if
+  // - one was turned on last time the page was visited,
+  // - the server has requested it.
   if (typeof $.cookie !== 'undefined') {
     rememberVagueDatesEnabled = $.cookie('vagueDatesEnabled');
     if (rememberVagueDatesEnabled === 'true' || typeof indiciaData.enableVagueDateToggle !== 'undefined') {
@@ -116,4 +120,15 @@ jQuery(document).ready(function($) {
       $('.date-mode-toggle').change();
     }
   }
+
+  // Toggle individual vague dates on if current value cannot be shown precisely.
+  $('.date-mode-toggle').each(function(){
+    var rootId = this.id.replace(/:toggle$/, '').replace(/:/g, '\\:');
+    var precise_date = $('#' + rootId + '\\:date').val();
+    var vague_date = $('#' + rootId).val();
+    if (precise_date === '' && vague_date !== '') {
+      $(this).prop('checked', true);
+      $(this).change();
+    }
+  });
 });

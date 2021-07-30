@@ -5,39 +5,53 @@
   vertical-align: middle;
 }
 
-.ctrl-wrap.not-full-width-sm input {
+.ctrl-wrap.not-full-width-sm * {
   max-width: 200px;
 }
-.ctrl-wrap.not-full-width-md input {
+.ctrl-wrap.not-full-width-md * {
   max-width: 400px;
 }
-.ctrl-wrap.not-full-width-lg input {
+.ctrl-wrap.not-full-width-lg * {
   max-width: 600px;
 }
 
 .add-new-taxon {
   position: absolute;
-  border-radius: 4px;
-  background: silver;
-  text-align: center;
-  opacity: 0.5;
   z-index: 999;
-  cursor: pointer;
+  opacity: 0.5;
+  padding: 0;
 }
 .add-new-taxon:hover {
   opacity: 0.8;
 }
 
+.species-checklist-wrap {
+  margin-bottom: 15px;
+}
+
 /* Set the species checklist entry grid width to 100% */
 table.species-grid {
   width: 100%;
-  /* Add taxon button alignment. */
+  /* Inside control button alignment. */
 }
 table.species-grid .hidden-by-dynamic-attr {
   display: none;
 }
-table.species-grid .scTaxonCell {
+table.species-grid .scTaxonCell, table.species-grid .scSpatialRefCell {
   position: relative;
+}
+table.species-grid .scSpatialRefFromMap {
+  position: absolute;
+  z-index: 999;
+  opacity: 0.5;
+  right: 4px;
+}
+table.species-grid .scSpatialRefFromMap:hover {
+  opacity: 0.8;
+}
+table.species-grid .scSpatialRefFromMap.active {
+  opacity: 1;
+  background-color: lightyellow;
 }
 
 #new-taxon-form {
@@ -185,23 +199,45 @@ input:checked + .slider:before {
 }
 
 table.report-grid {
-  /* Ensure height enough for spinner. For tables, height acts as min-height. */
+  /* Ensure height enough for spinner. For tables, height acts as min-height
+  as long as display not altered from browser default. */
   height: 140px;
+  display: table;
   /* Sizing of thumbnails in image columns */
 }
-table.report-grid tr {
-  /* Odd row colouration */
+table.report-grid tbody tr {
+  /* Alternate row colouration */
+  /* Disable hover highlight for row shown when no data available */
   /* Workflow related styling */
 }
-table.report-grid tr.odd {
-  background-color: #eeeeee;
-  border: none;
+table.report-grid tbody tr:nth-child(even), table.report-grid tbody tr:nth-child(even) td {
+  background-color: #f7f7f7;
 }
-table.report-grid tr.overdue {
+table.report-grid tbody tr:nth-child(odd), table.report-grid tbody tr:nth-child(odd) td {
+  background-color: #ffffff;
+}
+table.report-grid tbody tr:hover, table.report-grid tbody tr:hover td {
+  color: #333333;
+  background-color: #fffbcc;
+}
+table.report-grid tbody tr.empty-row, table.report-grid tbody tr.empty-row:hover, table.report-grid tbody tr.empty-row td, table.report-grid tbody tr.empty-row:hover td {
+  background-color: #f7f7f7;
+}
+table.report-grid tbody tr.selected, table.report-grid tbody tr.selected td {
+  color: #ffffff;
+  background-color: #2c7bb6;
+}
+table.report-grid tbody tr.zero-abundance, table.report-grid tbody tr.zero-t {
+  text-decoration: line-through;
+}
+table.report-grid tbody tr.overdue {
   border-left: solid 8px #d7191c;
 }
-table.report-grid tr.overdue-soon {
+table.report-grid tbody tr.overdue-soon {
   border-left: solid 8px #fdae61;
+}
+table.report-grid .nowrap {
+  white-space: nowrap;
 }
 table.report-grid .single img {
   width: 100px;
@@ -549,8 +585,13 @@ body > .loading-spinner {
 .idc-output-cardGallery .es-card-gallery .card:last-of-type {
   flex-grow: 0;
 }
+.idc-output-cardGallery .es-card-gallery .card:hover {
+  color: #333333;
+  background-color: #fffbcc;
+}
 .idc-output-cardGallery .es-card-gallery .card.selected {
-  background: #f0f0f0;
+  color: #ffffff;
+  background-color: #2c7bb6;
   border: 1px solid grey;
 }
 .idc-output-cardGallery .es-card-gallery .card .image-container {
@@ -664,6 +705,10 @@ table.es-data-grid thead tr .fa-sort {
 table.es-data-grid thead tr .fa-sort:hover {
   opacity: 1;
 }
+table.es-data-grid tbody tr {
+  /* Alternate row colouration */
+  /* Disable hover highlight for row shown when no data available */
+}
 table.es-data-grid tbody tr th, table.es-data-grid tbody tr td {
   padding: 4px 2px;
   word-wrap: break-word;
@@ -676,13 +721,16 @@ table.es-data-grid tbody tr:nth-child(odd), table.es-data-grid tbody tr:nth-chil
 }
 table.es-data-grid tbody tr:hover, table.es-data-grid tbody tr:hover td {
   color: #333333;
-  background-color: #fff899;
+  background-color: #fffbcc;
+}
+table.es-data-grid tbody tr.empty-row, table.es-data-grid tbody tr.empty-row:hover, table.es-data-grid tbody tr.empty-row td, table.es-data-grid tbody tr.empty-row:hover td {
+  background-color: #f7f7f7;
 }
 table.es-data-grid tbody tr.selected, table.es-data-grid tbody tr.selected td {
   color: #ffffff;
-  background-color: #3333ee;
+  background-color: #2c7bb6;
 }
-table.es-data-grid tbody tr.zero-abundance {
+table.es-data-grid tbody tr.zero-abundance, table.es-data-grid tbody tr.zero-t {
   text-decoration: line-through;
 }
 table.es-data-grid tbody tr img {
@@ -848,10 +896,13 @@ table.es-data-grid tfoot span {
   position: relative;
   min-height: 150px;
 }
-.record-details-container .recorder-experience th {
+.record-details-container .recorder-experience table {
+  width: 100%;
+}
+.record-details-container .recorder-experience table th {
   width: 25%;
 }
-.record-details-container .recorder-experience td span {
+.record-details-container .recorder-experience table td span {
   margin-left: 8px;
   display: inline-block;
   vertical-align: middle;
@@ -859,16 +910,16 @@ table.es-data-grid tfoot span {
   border-radius: 4px;
   box-shadow: #aaa 0px 2px 4px 0px;
 }
-.record-details-container .recorder-experience td span.exp-V {
+.record-details-container .recorder-experience table td span.exp-V {
   background-color: green;
 }
-.record-details-container .recorder-experience td span.exp-C {
+.record-details-container .recorder-experience table td span.exp-C {
   background-color: silver;
 }
-.record-details-container .recorder-experience td span.exp-R {
+.record-details-container .recorder-experience table td span.exp-R {
   background-color: red;
 }
-.record-details-container .recorder-experience td a {
+.record-details-container .recorder-experience table td a {
   min-width: 30px;
   display: inline-block;
   vertical-align: middle;
@@ -925,6 +976,29 @@ table.es-data-grid tfoot span {
 .progress-circle-container.download-done circle.circle {
   stroke: #49D3B8;
   fill: #B1E5DB;
+}
+
+.page-notice {
+  padding: 0.3em;
+  display: block;
+  margin-bottom: 1em;
+}
+.page-notice.ui-state-default {
+  background-color: lightyellow;
+}
+.page-notice.ui-state-highlight {
+  border-color: #fdae61;
+  background-color: #ffefdf;
+  color: #333;
+}
+.page-notice p {
+  margin: 0.5em 1.5em 0.5em 1.5em;
+}
+.page-notice span.ui-icon {
+  float: left;
+}
+.page-notice span.fas, .page-notice span.far {
+  font-size: 150%;
 }
 
 label, form label {
@@ -1269,10 +1343,15 @@ label#click-buffer {
 .btn {
   padding: 6px 12px;
 }
-.btn .btn-primary {
+.btn.btn-primary {
   color: #fff;
   background-color: #337ab7;
   border-color: #2e6da4;
+}
+
+a.btn {
+  border: solid silver 1px;
+  border-radius: 2px;
 }
 
 /* Data value lists */

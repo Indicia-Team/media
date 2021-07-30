@@ -1,3 +1,18 @@
+.alert {
+  /* Fix AAA accessibility in Bootstrap alerts */
+  &.alert-info {
+    color: #235067;
+  }
+  &.alert-warning {
+    color: #614D29;
+  }
+  span.ui-icon {
+    float: left;
+  }
+  span.fas, span.far {
+    font-size: 150%;
+  }
+}
 /* Reintroduce spacing that is removed from the last control in a list */
 #controls > div {
   padding-bottom: $form-group-margin-bottom;

@@ -1,5 +1,6 @@
 /* Theme extension to the default_site.css file which provides the default Indicia style output */
 @import "common/variables";
+@import "common/mixins";
 @import "generic/variables";
 @import "common/form-controls";
 @import "common/toggle-slider";

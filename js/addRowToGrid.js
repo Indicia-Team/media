@@ -61,7 +61,7 @@ var resetSpeciesTextOnEscape;
   $(document).ready(function () {
     // prevent validation of the clonable row
     $('.scClonableRow :input').addClass('inactive');
-    if ($('#existingSampleGeomsBySref')) {
+    if ($('#existingSampleGeomsBySref').length) {
       mapInitialisationHooks.push(showExistingSubsamplesOnMap);
     }
 
@@ -823,6 +823,17 @@ var resetSpeciesTextOnEscape;
   });
 
   /**
+   * Allow a single button for fetching map ref to be active at one time.
+   */
+  indiciaFns.on('click', '.scSpatialRefFromMap', {}, function (e) {
+    var wasActive = $(this).hasClass('active')
+    $('.scSpatialRefFromMap.active').removeClass('active');
+    if (!wasActive) {
+      $(this).addClass('active');
+    }
+  });
+
+  /**
    * Converts the existing occurrence attribute data structure for ease of use.
    *
    * Changes key to just attribute ID and occurrence ID.
@@ -875,7 +886,7 @@ var resetSpeciesTextOnEscape;
           var dataRow = this;
           var attrId = dataRow.attr.attribute_id;
           var systemFunction = dataRow.attr.system_function;
-          if (systemFunction) {
+          if (systemFunction && typeof indiciaData['dynamicAttrInfo-' + gridId][systemFunction] !== 'undefined') {
             // Might be multiple rows for same taxon.
             $.each($(rows).find('.scTaxaTaxonListId[value="' + dataRow.attr.taxa_taxon_list_id + '"]'), function() {
               var row = $(this).closest('tr');

@@ -2,12 +2,6 @@ $shadow-colour: silver;
 $file-box-width: 400px;
 $file-box-padding: 20px;
 $file-box-icon-size: 30px;
-$colour-even-row: #f7f7f7;
-$colour-odd-row: #ffffff;
-$colour-hover-row-bg: #fff899;
-$colour-hover-row: #333333;
-$colour-select-row: #ffffff;
-$colour-select-row-bg: #3333ee;
 
 @mixin cell {
   padding: 4px 2px;
@@ -61,8 +55,13 @@ body {
       &:last-of-type {
         flex-grow: 0;
       }
+      &:hover {
+        color: $colour-hover-row;
+        background-color: $colour-hover-row-bg;
+      }
       &.selected {
-        background: #f0f0f0;
+        color: $colour-select-row;
+        background-color: $colour-select-row-bg;
         border: 1px solid grey;
       }
       .image-container {
@@ -187,23 +186,7 @@ table.es-data-grid {
       th, td {
         @include cell;
       }
-      &:nth-child(even), &:nth-child(even) td {
-        background-color: $colour-even-row;
-      }
-      &:nth-child(odd), &:nth-child(odd) td {
-        background-color: $colour-odd-row;
-      }
-      &:hover, &:hover td {
-        color: $colour-hover-row;
-        background-color: $colour-hover-row-bg;
-      }
-      &.selected, &.selected td {
-        color: $colour-select-row;
-        background-color: $colour-select-row-bg;
-      }
-      &.zero-abundance {
-        text-decoration: line-through;
-      }
+      @include grid-rows;
       img {
         max-height: 60px;
         border-radius: 4px;
@@ -382,32 +365,35 @@ table.es-data-grid {
   .recorder-experience {
     position: relative;
     min-height: 150px;
-    th {
-      width: 25%;
-    }
-    td {
-      span {
-        margin-left: 8px;
-        display: inline-block;
-        vertical-align: middle;
-        height: 15px;
-        border-radius: 4px;
-        box-shadow: #aaa 0px 2px 4px 0px;
-        &.exp-V {
-          background-color: green;
-        }
-        &.exp-C {
-          background-color: silver;
-        }
-        &.exp-R {
-          background-color: red;
-        }
+    table {
+      width: 100%;
+      th {
+        width: 25%;
       }
-      a {
-        min-width: 30px;
-        display: inline-block;
-        vertical-align: middle;
-        text-align: right;
+      td {
+        span {
+          margin-left: 8px;
+          display: inline-block;
+          vertical-align: middle;
+          height: 15px;
+          border-radius: 4px;
+          box-shadow: #aaa 0px 2px 4px 0px;
+          &.exp-V {
+            background-color: green;
+          }
+          &.exp-C {
+            background-color: silver;
+          }
+          &.exp-R {
+            background-color: red;
+          }
+        }
+        a {
+          min-width: 30px;
+          display: inline-block;
+          vertical-align: middle;
+          text-align: right;
+        }
       }
     }
   }

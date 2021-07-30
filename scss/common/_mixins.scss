@@ -1,0 +1,24 @@
+@mixin grid-rows {
+  /* Alternate row colouration */
+  &:nth-child(even), &:nth-child(even) td {
+    background-color: $colour-even-row;
+  }
+  &:nth-child(odd), &:nth-child(odd) td {
+    background-color: $colour-odd-row;
+  }
+  &:hover, &:hover td {
+    color: $colour-hover-row;
+    background-color: $colour-hover-row-bg;
+  }
+  /* Disable hover highlight for row shown when no data available */
+  &.empty-row, &.empty-row:hover, &.empty-row td, &.empty-row:hover td {
+    background-color: $colour-even-row;
+  }
+  &.selected, &.selected td {
+    color: $colour-select-row;
+    background-color: $colour-select-row-bg;
+  }
+  &.zero-abundance, &.zero-t {
+    text-decoration: line-through;
+  }
+}

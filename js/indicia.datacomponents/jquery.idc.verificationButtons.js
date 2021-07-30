@@ -704,6 +704,7 @@
         'occurrence_id=' + occurrenceId + '&sample_id=' + sampleId,
         dataType: 'json',
         success: function handleResponse(response) {
+          email.body = email.body.replace('\n', '<br/>');
           email.body = email.body.replace(/\{{ photos }}/g, response.media);
           email.body = email.body.replace(/\{{ comments }}/g, response.comments);
           // save a comment to indicate that the mail was sent
@@ -733,6 +734,11 @@
       };
       if ($('#redet-comment').val()) {
         data['occurrence_comment:comment'] = $('#redet-comment').val();
+      }
+      if ($('#no-update-determiner') && $('#no-update-determiner').prop('checked')) {
+        // Determiner_id=-1 is special value that keeps the original
+        // determiner info.
+        data['occurrence:determiner_id'] = -1;
       }
       $.post(
         indiciaData.ajaxFormPostRedet,

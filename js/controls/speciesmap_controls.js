@@ -134,8 +134,9 @@ var control_speciesmap_addcontrols;
       $(indiciaData.control_speciesmap_opts.mapDiv)
         .show(indiciaData.control_speciesmap_opts.animationDuration, function after() {
           // Trigger map resize to ensure redraws correctly.
-          if (indiciaData.control_speciesmap_opts.mapDiv.map) {
-            indiciaData.control_speciesmap_opts.mapDiv.map.updateSize();
+          var div = $(indiciaData.control_speciesmap_opts.mapDiv)[0];
+          if (div.map) {
+            div.map.updateSize();
           }
         });
       // Show tab navigation buttons that we previously hid.
@@ -232,7 +233,7 @@ var control_speciesmap_addcontrols;
       subsampleBlock = $('<div class="new added scm-block" id="scm-' + indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id] + '-block"></div>')
         .appendTo('#' + indiciaData.control_speciesmap_opts.id + '-blocks');
       $('<label>' + indiciaData.lang.speciesMap.SRefLabel + ':</label> ').appendTo(subsampleBlock);
-      $('<input type="text" name="sc:' + indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id] + '::sample:entered_sref" "readonly="readonly" value="' + $('#imp-sref').val() + '" />')
+      $('<input type="text" name="sc:' + indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id] + '::sample:entered_sref" readonly="readonly" value="' + $('#imp-sref').val() + '" />')
         .appendTo(subsampleBlock);
       $('<input type="hidden" name="sc:' + indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id] + '::sample:geom" value="' + $('#imp-geom').val() + '" />')
         .appendTo(subsampleBlock);
@@ -244,7 +245,7 @@ var control_speciesmap_addcontrols;
       // new rows have no deleted field
       $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(indiciaData.lang.speciesMap.AddDataMessage);
       $('#' + indiciaData.control_speciesmap_opts.buttonsId).each(function () {window.scroll(0, $(this).offset().top); });
-      showButtons(['add', 'cancel', 'finish']);
+      showButtons(['cancel', 'finish']);
       gridIdx = indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id];
       if (typeof indiciaData.control_speciesmap_opts.sampleMethodId !== "undefined" && indiciaData.control_speciesmap_opts.sampleMethodId !== '') {
         $('<input type="hidden" name="sc:' + indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id] + '::sample:sample_method_id" value="' + indiciaData.control_speciesmap_opts.sampleMethodId + '" />')
@@ -311,7 +312,7 @@ var control_speciesmap_addcontrols;
           rowsToShow.next('.supplementary-row').show();
           $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(
               indiciaData.lang.speciesMap.ModifyMessage2);
-          showButtons(['mod', 'finish']);
+          showButtons(['finish']);
           $('#' + indiciaData.control_speciesmap_opts.id + ' .scClonableRow').find("[name$='\:sampleIDX']").each(
             function (idx, field) {
               $(field).val(indiciaData.control_speciesmap_existing_feature.attributes.subSampleIndex);
@@ -579,17 +580,17 @@ var control_speciesmap_addcontrols;
     opts = $.extend({}, defaults, options);
     indiciaData.control_speciesmap_opts = opts;
     container = $('<div id="' + opts.buttonsId + '" class="' + opts.panelClasses + '">').insertBefore(opts.mapDiv);
-    $('<button id="' + opts.addButtonId + '" class="' + indiciaData.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.AddLabel +
+    $('<button id="' + opts.addButtonId + '" class="' + indiciaData.btnClasses.default + '" type="button">' + indiciaData.lang.speciesMap.AddLabel +
         '</button>').click(controlSpeciesmapAddbutton).appendTo(container);
-    $('<button id="' + opts.modButtonId + '" class="' + indiciaData.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.ModifyLabel +
+    $('<button id="' + opts.modButtonId + '" class="' + indiciaData.btnClasses.default + '" type="button">' + indiciaData.lang.speciesMap.ModifyLabel +
         '</button>').click(controlSpeciesmapModifybutton).appendTo(container);
-    $('<button id="' + opts.moveButtonId + '" class="' + indiciaData.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.MoveLabel +
+    $('<button id="' + opts.moveButtonId + '" class="' + indiciaData.btnClasses.default + '" type="button">' + indiciaData.lang.speciesMap.MoveLabel +
         '</button>').click(controlSpeciesmapMovebutton).appendTo(container);
-    $('<button id="' + opts.delButtonId + '" class="' + indiciaData.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.DeleteLabel +
+    $('<button id="' + opts.delButtonId + '" class="' + indiciaData.btnClasses.default + '" type="button">' + indiciaData.lang.speciesMap.DeleteLabel +
         '</button>').click(controlSpeciesmapDeletebutton).appendTo(container);
-    $('<button id="' + opts.cancelButtonId + '" class="' + indiciaData.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.CancelLabel +
+    $('<button id="' + opts.cancelButtonId + '" class="' + indiciaData.btnClasses.default + '" type="button">' + indiciaData.lang.speciesMap.CancelLabel +
         '</button>').click(controlSpeciesmapCancelbutton).appendTo(container).hide();
-    $('<button id="' + opts.finishButtonId + '" class="' + indiciaData.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.FinishLabel +
+    $('<button id="' + opts.finishButtonId + '" class="' + indiciaData.btnClasses.default + '" type="button">' + indiciaData.lang.speciesMap.FinishLabel +
         '</button>').click(controlSpeciesmapFinishbutton).appendTo(container).hide();
     $('<div id="' + opts.messageId + '" class="' + opts.messageClasses + '"></div>').appendTo(container);
     indiciaData.control_speciesmap_mode = 'Off';
