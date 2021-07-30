@@ -718,6 +718,32 @@ var destroyAllFeatures;
     }
 
     /**
+     * Return a clicked spatial ref to the species checklist that requested it.
+     *
+     * @param object data
+     *   Data containing the clicked spatial ref.
+     */
+    function returnClickPointToSpeciesGrid(data) {
+      var gridId;
+      // Fetching grid ref for a grid row is active.
+      $('.scSpatialRefFromMap.active').parent().find('.scSpatialRef').val(data.sref);
+      $('.scSpatialRefFromMap.active').parent().find('.scSpatialRef').change();
+      gridId = $('.scSpatialRefFromMap.active').closest('table').attr('id');
+      if (indiciaData['spatialRefPerRowUseFullscreenMap-' + gridId] &&
+          ((document.fullscreenElement && document.fullscreenElement !== null) ||    // alternative standard methods
+            document.mozFullScreen || document.webkitIsFullScreen)) {
+        (document.exitFullscreen || document.mozCancelFullScreen || webkitExitFullScreen || msExitFullScreen).call(document);
+        $('.scSpatialRefFromMap.active').removeClass('active');
+        if (indiciaData.lastScrollTop) {
+          setTimeout(function () {
+            $(document).scrollTop(indiciaData.lastScrollTop);
+            delete indiciaData.lastScrollTop;
+          }, 200);
+        }
+      }
+    }
+
+    /**
      * Having clicked on the map, and asked warehouse services to transform this to a WKT,
      * add the feature to the map editlayer. If the feature is a plot, enable dragging and
      * rotating. Finally add relevant help.
@@ -726,10 +752,9 @@ var destroyAllFeatures;
       // data holds the sref in _getSystem format, wkt in indiciaProjection, optional mapwkt in mapProjection
       var feature;
       var parser = new OpenLayers.Format.WKT();
+
       if ($('.scSpatialRefFromMap.active').length > 0) {
-        // Fetching grid ref for a grid row is active.
-        $('.scSpatialRefFromMap.active').parent().find('.scSpatialRef').val(data.sref);
-        $('.scSpatialRefFromMap.active').parent().find('.scSpatialRef').change();
+        returnClickPointToSpeciesGrid(data);
         return;
       }
       // Update the spatial reference control
