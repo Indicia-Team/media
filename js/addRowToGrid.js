@@ -869,7 +869,7 @@ var resetSpeciesTextOnEscape;
         if (typeof indiciaData['previousRowColumnsToInclude-'+gridId] !== 'undefined') {
           columnsToCopyFromPrevRow = indiciaData['previousRowColumnsToInclude-'+gridId].split(",");
           columnsToCopyFromPrevRow.forEach(function(value, index) {
-            columnsToCopyFromPrevRow[index] = 'sc' + value.replace(/ /g,'').toLowerCase();
+            columnsToCopyFromPrevRow[index] = 'sc' + value.replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
           });
         }
         $.each(rows, function() {
@@ -1101,7 +1101,7 @@ function species_checklist_add_another_row(gridId) {
   var columnsToCopyFromPrevRow = indiciaData['previousRowColumnsToInclude-'+gridId].split(",");
   //get rid of all of the spacing and capital letters
   for (i=0; i<columnsToCopyFromPrevRow.length;i++) {
-    columnsToCopyFromPrevRow[i] = 'sc'+columnsToCopyFromPrevRow[i].replace(/ /g,'').toLowerCase();
+    columnsToCopyFromPrevRow[i] = 'sc'+columnsToCopyFromPrevRow[i].replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
   }
 
   var $newRow = jQuery('table#'+gridId + ' tr.scClonableRow');
