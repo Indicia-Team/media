@@ -826,10 +826,21 @@ var resetSpeciesTextOnEscape;
    * Allow a single button for fetching map ref to be active at one time.
    */
   indiciaFns.on('click', '.scSpatialRefFromMap', {}, function (e) {
-    var wasActive = $(this).hasClass('active')
+    var wasActive = $(this).hasClass('active');
+    var fs;
+    var mapdiv = indiciaData.mapdiv;
+    var gridId = $(this).closest('table').attr('id');
     $('.scSpatialRefFromMap.active').removeClass('active');
     if (!wasActive) {
+      // Enable fetch from map.
       $(this).addClass('active');
+      if (indiciaData['spatialRefPerRowUseFullscreenMap-' + gridId]) {
+        // Track scroll position so we can reset it.
+        indiciaData.lastScrollTop = $(document).scrollTop();
+        // Request map fullscreen.
+        fs = mapdiv.requestFullscreen || mapdiv.mozRequestFullScreen || mapdiv.webkitRequestFullScreen || mapdiv.msRequestFullscreen;
+        fs.call(mapdiv);
+      }
     }
   });
 
