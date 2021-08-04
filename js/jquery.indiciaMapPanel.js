@@ -2376,7 +2376,7 @@ var destroyAllFeatures;
      *   Layer that's being swapped out.
      */
     function replaceGoogleBaseLayer(layerToReplace) {
-      var map = layerToReplace.map;
+      var map = indiciaData.mapdiv.map;
       var layerIndex = map.getLayerIndex(layerToReplace);
       // Calls the fn to build the new layer.
       var newLayer = layerToReplace.lazyLoadGoogleApiLayerFn();
@@ -2386,6 +2386,13 @@ var destroyAllFeatures;
         map.setLayerIndex(newLayer, layerIndex);
         map.setBaseLayer(newLayer);
         map.removeLayer(layerToReplace);
+        // On initial page load, we may have to re-apply the initial zoom level
+        // if the zoom level is not supported by the default sub-layer (OSM),
+        // but is supported by Google.
+        if (indiciaData.zoomToAfterFetchingGoogleApiScript) {
+          map.zoomTo(indiciaData.zoomToAfterFetchingGoogleApiScript);
+          delete indiciaData.zoomToAfterFetchingGoogleApiScript;
+        }
       } finally {
         indiciaData.settingBaseLayer = false;
       }
@@ -2404,12 +2411,17 @@ var destroyAllFeatures;
       if (layerToReplace.lazyLoadGoogleApiLayerFn) {
         if (typeof google === 'undefined') {
           // If Google API not loaded, load then replace layer.
-          $.getScript('https://maps.google.com/maps/api/js?v=3' + key, function() {
-            replaceGoogleBaseLayer(layerToReplace);
-          });
+          if (!indiciaData.fetchingGoogleApiScript) {
+            // Flag to ensure we don't request twice.
+            indiciaData.fetchingGoogleApiScript = true;
+            $.getScript('https://maps.google.com/maps/api/js?v=3' + key, function() {
+              replaceGoogleBaseLayer(layerToReplace);
+              delete indiciaData.fetchingGoogleApiScript;
+            });
+          }
         } else {
           // Google API already loaded so just replace the layer.
-          replaceGoogleBaseLayer( layerToReplace);
+          replaceGoogleBaseLayer(layerToReplace);
         }
       }
     }
@@ -2652,6 +2664,163 @@ var destroyAllFeatures;
       OpenLayers.Control.prototype.deactivate.call(ctrl);
     }
 
+    /**
+     * Adds custom base layers in the settings to the map.
+     *
+     * @param DOM div
+     *   Container element.
+     */
+    function addCustomBaseLayers(div) {
+      // Add any custom layers.
+      $.each(div.settings.otherBaseLayerConfig, function(i, item) {
+        var params = item.params;
+        var layer;
+        // Pad to max 4 params, just so the function call can be the same whatever.
+        while (params.length < 4) {
+          params.push(null);
+        }
+        layer = new OpenLayers.Layer[item.class](params[0], params[1], params[2], params[3]);
+        if (!layer.layerId) {
+          layer.layerId = 'custom-' + i;
+        }
+        div.map.addLayer(layer);
+      });
+    }
+
+    /**
+     * Adds preset base layers in the settings to the map.
+     *
+     * @param DOM div
+     *   Container element.
+     */
+    function addPresetBaseLayers(div) {
+      // Iterate over the preset layers, adding them to the map
+      var presetLayers = _getPresetLayers(div.settings);
+      $.each(div.settings.presetLayers, function(i, item) {
+        var layer;
+        // Check whether this is a defined layer
+        if (presetLayers.hasOwnProperty(item)) {
+          // Load each predefined layer. If a layer group (i.e. a dynamic
+          // layer) only initially load the first.
+          layer = $.isArray(presetLayers[item]) ? presetLayers[item][0]() : presetLayers[item]();
+          div.map.addLayer(layer);
+          if (typeof layer.mapObject !== 'undefined') {
+            layer.mapObject.setTilt(0);
+            // Workaround.
+            // If there is a Google layer loaded but the initial layer is smaller (e.g. OS Leisure)
+            // then both may appear. This occurs because the Google layer cannot be
+            // hidden until it has been loaded. Therefore, set up a callback to handle this.
+            google.maps.event.addListenerOnce(layer.mapObject, 'tilesloaded', hideGMapCallback);
+          }
+        } else {
+          alert('Requested preset layer ' + item + ' is not recognised.');
+        }
+      });
+    }
+
+    /**
+     * Creates additional layers for any WMS or WFS in the settings.
+     *
+     * @param DOM div
+     *   Container element.
+     */
+    function addMappingServiceLayers(div) {
+      // Convert indicia WMS/WFS layers into js objects
+      $.each(div.settings.indiciaWMSLayers, function (key, value) {
+        // If key is int, title wasn't provided so work it out from the layer name.
+        var layerTitle = (key === parseInt(key, 10)) ? value.replace(/^.*:/, '').replace(/_/g, ' ') : key;
+        div.settings.layers.push(new OpenLayers.Layer.WMS(
+          layerTitle,
+          div.settings.indiciaGeoSvc + 'wms',
+          { layers: value, transparent: true },
+          { singleTile: true, isBaseLayer: false, sphericalMercator: true, isIndiciaWMSLayer: true }
+        ));
+      });
+      $.each(div.settings.indiciaWFSLayers, function (key, value) {
+        div.settings.layers.push(new OpenLayers.Layer.WFS(
+          key,
+          div.settings.indiciaGeoSvc + 'wms',
+          { typename: value, request: 'GetFeature' },
+          { sphericalMercator: true }
+        ));
+      });
+    }
+
+    /**
+     * Find the setup for the initial map view.
+     *
+     * @param DOM div
+     *   Container element.
+     *
+     * @return object
+     *   Object containing centre, zoom and layer visibility data.
+     */
+    function getInitialMapViewSetup(div) {
+      var setup = {
+        zoom: div.settings.initial_zoom,
+        centre: {
+          lon: div.settings.initial_long,
+          lat: div.settings.initial_lat
+        },
+        rememberedBaseLayer: null,
+        rememberedSublayerIndex: 0,
+        wmsvisibility: null,
+      };
+      var baseLayerIdParts;
+
+      if (typeof $.cookie !== 'undefined' && div.settings.rememberPos !== false) {
+        // Missing cookies result in null or undefined variables.
+        if ($.cookie('mapzoom')) {
+          setup.zoom = $.cookie('mapzoom');
+        }
+        if ($.cookie('maplongitude')) {
+          setup.centre.lon = $.cookie('maplongitude');
+        }
+        if ($.cookie('maplatitude')) {
+          setup.centre.lat = $.cookie('maplatitude');
+        }
+        if ($.cookie('mapbaselayerid')) {
+          // Note the stored mapbaselayerid should include both the stem of the
+          // base layer name, then a dot, then the sub-layer index (zero unless
+          // a dynamic layer). But, if the cookie saved via older version of
+          // the code the layer index will be missing.
+          baseLayerIdParts = $.cookie('mapbaselayerid').split('.');
+          setup.rememberedBaseLayer = baseLayerIdParts[0];
+          if (baseLayerIdParts.length > 1) {
+            setup.rememberedSublayerIndex = baseLayerIdParts[1];
+          }
+        }
+        if ($.cookie('mapwmsvisibility')) {
+          setup.wmsvisibility = $.cookie('mapwmsvisibility');
+        }
+      }
+      // Add a useful object version of the data.
+      setup.centre.lonLat = new OpenLayers.LonLat(setup.centre.lon, setup.centre.lat);
+      return setup;
+    }
+
+    /**
+     * Applies any remembers settings for WMS layer visibility on map load.
+     *
+     * @param DOM div
+     *   Container element.
+     * @param object setup
+     *   Initial view setup object.
+     */
+    function applyWMSVisibilitySettings(div, setup) {
+      // Loop through layers and if it is an Indicia WMS layer, then set its
+      // visibility according to next value in array derived from cookie.
+      var visiblityInfo;
+      if (setup.wmsvisibility) {
+        visiblityInfo = JSON.parse(setup.wmsvisibility);
+        div.map.layers.forEach(function (l) {
+          if (l.isIndiciaWMSLayer) {
+            l.setVisibility(visiblityInfo[l.name]);
+          }
+        });
+      }
+    }
+
     // Extend our default options with those provided, basing this on an empty object
     // so the defaults don't get changed.
     var opts = $.extend({}, $.fn.indiciaMapPanel.defaults, options);
@@ -2835,94 +3004,22 @@ var destroyAllFeatures;
         div.georeferencer = new Georeferencer(div, _displayGeorefOutput);
       }
 
-      // Add any custom layers.
-      $.each(this.settings.otherBaseLayerConfig, function(i, item) {
-        var params = item.params;
-        var layer;
-        // Pad to max 4 params, just so the function call can be the same whatever.
-        while (params.length < 4) {
-          params.push(null);
-        }
-        layer = new OpenLayers.Layer[item.class](params[0], params[1], params[2], params[3]);
-        if (!layer.layerId) {
-          layer.layerId = 'custom-' + i;
-        }
-        div.map.addLayer(layer);
-      });
-
-      // Iterate over the preset layers, adding them to the map
-      var presetLayers = _getPresetLayers(this.settings);
-      $.each(this.settings.presetLayers, function(i, item) {
-        var layer;
-        // Check whether this is a defined layer
-        if (presetLayers.hasOwnProperty(item)) {
-          // Load each predefined layer. If a layer group (i.e. a dynamic
-          // layer) only initially load the first.
-          layer = $.isArray(presetLayers[item]) ? presetLayers[item][0]() : presetLayers[item]()
-          div.map.addLayer(layer);
-          if (typeof layer.mapObject !== 'undefined') {
-            layer.mapObject.setTilt(0);
-            // Workaround.
-            // If there is a Google layer loaded but the initial layer is smaller (e.g. OS Leisure)
-            // then both may appear. This occurs because the Google layer cannot be
-            // hidden until it has been loaded. Therefore, set up a callback to handle this.
-            google.maps.event.addListenerOnce(layer.mapObject, 'tilesloaded', hideGMapCallback);
-          }
-        } else {
-          alert('Requested preset layer ' + item + ' is not recognised.');
-        }
-      });
-
-      // Convert indicia WMS/WFS layers into js objects
-      $.each(this.settings.indiciaWMSLayers, function (key, value) {
-        // If key is int, title wasn't provided so work it out from the layer name.
-        var layerTitle = (key === parseInt(key, 10)) ? value.replace(/^.*:/, '').replace(/_/g, ' ') : key;
-        div.settings.layers.push(new OpenLayers.Layer.WMS(
-          layerTitle,
-          div.settings.indiciaGeoSvc + 'wms',
-          { layers: value, transparent: true },
-          { singleTile: true, isBaseLayer: false, sphericalMercator: true, isIndiciaWMSLayer: true }
-        ));
-      });
-      $.each(this.settings.indiciaWFSLayers, function (key, value) {
-        div.settings.layers.push(new OpenLayers.Layer.WFS(
-          key,
-          div.settings.indiciaGeoSvc + 'wms',
-          { typename: value, request: 'GetFeature' },
-          { sphericalMercator: true }
-        ));
-      });
-
-      div.map.addLayers(this.settings.layers);
-
-      // Centre the map, using cookie if remembering position, otherwise default setting.
-      var zoom = null;
-      var centre = { lat: null, lon: null };
-      var baseLayerId;
-      var baseLayerIdParts;
-      var wmsvisibility;
-      var added;
-      if (typeof $.cookie !== 'undefined' && div.settings.rememberPos !== false) {
-        zoom = $.cookie('mapzoom');
-        centre.lon = $.cookie('maplongitude');
-        centre.lat = $.cookie('maplatitude');
-        baseLayerId = $.cookie('mapbaselayerid');
-        wmsvisibility = $.cookie('mapwmsvisibility');
-      }
-      // Missing cookies result in null or undefined variables
+      addCustomBaseLayers(div);
+      addPresetBaseLayers(div);
+      addMappingServiceLayers(div);
+      // Plus any other types of layers in the settings.
+      div.map.addLayers(div.settings.layers);
+      var initialMapViewSetup = getInitialMapViewSetup(div);
+      console.log(initialMapViewSetup);
+      applyWMSVisibilitySettings(div, initialMapViewSetup);
 
       // Set the base layer using cookie if remembering.
       // Do this before centring to ensure lat/long are in correct projection.
-      if (baseLayerId) {
-        baseLayerIdParts = baseLayerId.split('.');
-        // Note the stored mapbaselayerid should include both the stem of the
-        // base layer name, then a dot, then the sub-layer index (zero unless
-        // a dynamic layer). But, if the cookie saved via older version of the
-        // code the layer index will be missing.
-        switchToBaseLayer(div, baseLayerIdParts[0], baseLayerIdParts.length > 1 ? baseLayerIdParts[1] : 0);
+      if (initialMapViewSetup.rememberedBaseLayer) {
+        switchToBaseLayer(div, initialMapViewSetup.rememberedBaseLayer, initialMapViewSetup.rememberedSublayerIndex);
       }
-      // OpenLayers takes the first added base layer as map.baseLayer if not
-      // overriden by cookie. Now find the projection for that layer.
+
+      // Find the projection for the initial base layer.
       matchMapProjectionToLayer(div.map);
       div.map.events.register('changebaselayer', null, function (e) {
         if (!indiciaData.settingBaseLayer) {
@@ -2931,33 +3028,15 @@ var destroyAllFeatures;
         // New layer may have different projection.
         matchMapProjectionToLayer(div.map);
       });
+      // Clone so lastMapCentre not affected by transform.
+      div.settings.lastMapCentre = new OpenLayers.LonLat(initialMapViewSetup.centre.lonLat.lon, initialMapViewSetup.centre.lonLat.lat);
+      initialMapViewSetup.centre.lonLat.transform(div.map.displayProjection, div.map.projection);
+      div.map.setCenter(initialMapViewSetup.centre.lonLat, initialMapViewSetup.zoom);
+      handleDynamicLayerSwitching(div);
+      if (indiciaData.fetchingGoogleApiScript) {
+        indiciaData.zoomToAfterFetchingGoogleApiScript = initialMapViewSetup.zoom;
+      }
 
-      // Set zoom and centre from cookie, if present, else from initial settings.
-      if (typeof zoom === 'undefined' || zoom === null) {
-        zoom = this.settings.initial_zoom;
-      }
-      if (typeof centre.lat === 'undefined' || centre.lat === null
-          || typeof centre.lon === 'undefined' || centre.lon === null) {
-        centre = new OpenLayers.LonLat(this.settings.initial_long, this.settings.initial_lat);
-      } else {
-        centre = new OpenLayers.LonLat(centre.lon, centre.lat);
-      }
-      div.settings.lastMapCentre = centre;
-      if (div.map.displayProjection.getCode() !== div.map.projection.getCode()) {
-        centre.transform(div.map.displayProjection, div.map.projection);
-      }
-      div.map.setCenter(centre, zoom);
-
-      // Loop through layers and if it is an Indicia WMS layer, then set its
-      // visibility according to next value in array derived from cookie.
-      if (wmsvisibility) {
-        wmsvisibility = JSON.parse(wmsvisibility);
-        div.map.layers.forEach(function (l) {
-          if (l.isIndiciaWMSLayer) {
-            l.setVisibility(wmsvisibility[l.name]);
-          }
-        });
-      }
       // Register moveend must come after panning and zooming the initial map
       // so the dynamic layer switcher does not mess up the centering code.
       div.map.events.register('moveend', null, function () {
@@ -2981,10 +3060,7 @@ var destroyAllFeatures;
           $.cookie('mapbaselayerid', div.map.baseLayer.layerId, { expires: 7 });
         }
       });
-      handleDynamicLayerSwitching(div);
-      if (div.map.baseLayer.lazyLoadGoogleApiLayerFn) {
-        lazyLoadBaseLayer(div.map.baseLayer);
-      }
+
 
       // Register function on changelayer event to record the display status
       // of Indicia WMS layers. Note this code cannot go in mapLayerChanged
