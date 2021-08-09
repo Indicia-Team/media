@@ -845,6 +845,16 @@ var resetSpeciesTextOnEscape;
   });
 
   /**
+   * Ensure presence/absence checkboxes are mutually exclusive.
+   */
+  indiciaFns.on('change', '.scPresence, .scAbsence', {}, function(e) {
+    var tr = $(this).closest('tr');
+    if ($(this).prop('checked')) {
+      $(tr).closest('tr').find('.scPresence,.scAbsence').not('.' + this.className).prop('checked', false);
+    }
+  });
+
+  /**
    * Converts the existing occurrence attribute data structure for ease of use.
    *
    * Changes key to just attribute ID and occurrence ID.
