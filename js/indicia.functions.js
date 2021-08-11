@@ -847,9 +847,11 @@ jQuery(document).ready(function ($) {
       // For Chrome, Safari, IE8+ and Opera 12+
       return message;
     };
-    detectInput = function () {
-      window.onbeforeunload = confirmOnPageExit;
-      $(iform).find(':input').unbind('change', detectInput);
+    detectInput = function (e) {
+      if (indiciaData.documentReady === 'done') {
+        window.onbeforeunload = confirmOnPageExit;
+        $(iform).find(':input').unbind('change', detectInput);
+      }
     };
     // any data input, need to confirm if navigating away
     $(iform).find(':input').bind('change', detectInput);
