@@ -847,7 +847,7 @@ jQuery(document).ready(function ($) {
       // For Chrome, Safari, IE8+ and Opera 12+
       return message;
     };
-    detectInput = function (e) {
+    detectInput = function () {
       if (indiciaData.documentReady === 'done') {
         window.onbeforeunload = confirmOnPageExit;
         $(iform).find(':input').unbind('change', detectInput);
