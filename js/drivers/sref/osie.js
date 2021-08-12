@@ -53,13 +53,35 @@ indiciaData.srefHandlers['osie'] = {
   },
 
   getPrecisionInfo: function(accuracy) {
-    switch(accuracy) {
-      case 2: return {display:'10km',metres:10000};
-      case 3: return {display:'2km',metres:2000};
-      case 4: return {display:'1km',metres:1000};
-      case 6: return {display:'100m',metres:100};
-      case 8: return {display:'10m',metres:10};
-      case 10: return {display:'1m',metres:1};
+    switch (accuracy) {
+      case 2: return {
+        display: '10km',
+        metres: 10000,
+        type: 'square'
+      };
+      case 3: return {
+        display:'2km',
+        metres:2000,
+        type: 'square'
+      };
+      case 4: return {
+        display:'1km',
+        metres:1000,
+        type: 'square'
+      };
+      case 6: return {
+        display:'100m',
+        metres:100, type: 'square'};
+      case 8: return {
+        display:'10m',
+        metres:10,
+        type: 'square'
+      };
+      case 10: return {
+        display:'1m',
+        metres:1,
+        type: 'square'
+      };
     }
     return false;
   },
@@ -68,7 +90,7 @@ indiciaData.srefHandlers['osie'] = {
     // OSIE grid ref length correspond exactly to the scale of accuracy used on the warehouse, excluding the 100km square letter
     return value.length-1;
   },
-  
+
   /**
    * Converts an easting northing point to a grid ref.
    * Thanks to Chris Veness, http://www.movable-type.co.uk/scripts/latlong-gridref.html, for the original script.
@@ -79,7 +101,7 @@ indiciaData.srefHandlers['osie'] = {
 
     // get the 100km-grid indices
     e100k = Math.floor(e/100000), n100k = Math.floor(n/100000);
-    
+
     if (e100k<0 || e100k>5 || n100k<0 || n100k>5) return '';
 
     // translate this into numeric equivalents of the grid letter

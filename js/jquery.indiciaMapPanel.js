@@ -542,13 +542,13 @@ var destroyAllFeatures;
           $.inArray('precisions', indiciaData.srefHandlers[_getSystem().toLowerCase()].returns) !== -1) {
         info = handler.getPrecisionInfo(handler.valueToAccuracy(value));
         if (info.metres > div.settings.helpToPickPrecisionMin) {
-          helpText.push(div.settings.hlpImproveResolution1.replace('{size}', info.display));
+          helpText.push(div.settings.hlpImproveResolution1.replace('{size}', info.display).replace('{type}', info.type));
           helpClass = 'help-red';
         } else if (info.metres > div.settings.helpToPickPrecisionMax) {
-          helpText.push(div.settings.hlpImproveResolution2.replace('{size}', info.display));
+          helpText.push(div.settings.hlpImproveResolution2.replace('{size}', info.display).replace('{type}', info.type));
           helpClass = 'help-amber';
         } else {
-          helpText.push(div.settings.hlpImproveResolution3.replace('{size}', info.display));
+          helpText.push(div.settings.hlpImproveResolution3.replace('{size}', info.display).replace('{type}', info.type));
           helpClass = 'help-green';
         }
         // Switch layer, but not if on a dynamic layer which already handles this.
@@ -3753,9 +3753,9 @@ jQuery.fn.indiciaMapPanel.defaults = {
     helpToPickPrecisionMin: false,
     helpToPickPrecisionMax: 10,
     helpToPickPrecisionSwitchAt: false,
-    hlpImproveResolution1: "{size} square selected. Please click on the map again to provide a more accurate location.",
-    hlpImproveResolution2: "Good. {size} square selected.",
-    hlpImproveResolution3: "Excellent! {size} square selected. If your position is wrong, either click your actual position again or zoom out until your position comes to view, then retry.",
+    hlpImproveResolution1: "{size} {type} selected. Please click on the map again to provide a more accurate location.",
+    hlpImproveResolution2: "Good. {size} {type} selected.",
+    hlpImproveResolution3: "Excellent! {size} {type} selected. If your position is wrong, either click your actual position again or zoom out until your position comes to view, then retry.",
     hlpImproveResolutionSwitch: "We've switched to a satellite view to allow you to locate your position even better.",
     hlpCustomPolygon: "Excellent! A custom polygon has been drawn for this record."
 

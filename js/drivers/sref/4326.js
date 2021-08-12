@@ -30,16 +30,20 @@ indiciaData.srefHandlers['4326'] = {
   returns: ['precisions','gridNotation'], // sref
 
   getPrecisionInfo: function() {
-    return {display:'Lat/Long', metres:1};
+    return {
+      display: 'Lat/Long',
+      metres: 1,
+      type: 'coordinate'
+    };
   },
 
   valueToAccuracy: function() {
     // accuracy value 10 corresponds to 1m.
     return 10;
   },
-  
+
   /**
-   * Format an x, y into a lat long 
+   * Format an x, y into a lat long
    */
   pointToGridNotation: function(point, digits) {
     precision = (typeof indiciaData.latLongNotationPrecision==="undefined") ?
