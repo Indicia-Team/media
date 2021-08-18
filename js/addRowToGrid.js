@@ -911,7 +911,8 @@ var resetSpeciesTextOnEscape;
             // Might be multiple rows for same taxon.
             $.each($(rows).find('.scTaxaTaxonListId[value="' + dataRow.attr.taxa_taxon_list_id + '"]'), function() {
               var row = $(this).closest('tr');
-              var prevRow = row.prev('tr');
+              // Use prevAll with :first so it skips image rows.
+              var prevRow = row.prevAll('tr.added-row:first');
               var rowIdMatch = $(row).find('.scPresence').last().attr('id').match(/(sc:[a-z0-9\-]+):(\d+)?/);
               var rowPrefix = rowIdMatch[1];
               var occurrenceId = rowIdMatch.length >= 3 ? rowIdMatch[2] : null;
