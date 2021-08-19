@@ -845,6 +845,8 @@ $.Autocompleter.Select = function (options, input, select, config) {
     },
     show: function() {
       var offset = $(input).offset();
+      // Correct alignment if body padded.
+      offset.left -= $('body').offset().left;
       element.css({
         width: typeof options.width == "string" || options.width > 0 ? options.width : Math.max($(input).width(), 250),
         top: offset.top + input.offsetHeight - parseInt($('body').css('margin-top'), 10),
