@@ -204,22 +204,22 @@ jQuery(document).ready(function ($) {
         if (typeof filterDef.confidential !== 'undefined') {
           switch (filterDef.confidential) {
             case 't':
-              r.push(indiciaData.lang.reportFilters.OnlyConfidentialRecords);
+              r.push(indiciaData.lang.reportFilterParser.OnlyConfidentialRecords);
               break;
             case 'all':
-              r.push(indiciaData.lang.reportFilters.AllConfidentialRecords);
+              r.push(indiciaData.lang.reportFilterParser.AllConfidentialRecords);
               break;
             default:
-              r.push(indiciaData.lang.reportFilters.NoConfidentialRecords);
+              r.push(indiciaData.lang.reportFilterParser.NoConfidentialRecords);
           }
         }
         if (typeof filterDef.release_status !== 'undefined') {
           switch (filterDef.release_status) {
             case 'A':
-              r.push(indiciaData.lang.reportFilters.includeUnreleasedRecords);
+              r.push(indiciaData.lang.reportFilterParser.includeUnreleasedRecords);
               break;
             default:
-              r.push(indiciaData.lang.reportFilters.excludeUnreleasedRecords);
+              r.push(indiciaData.lang.reportFilterParser.excludeUnreleasedRecords);
           }
         }
         if (typeof filterDef.taxa_taxon_list_attribute_term_descriptions !== 'undefined') {
@@ -282,7 +282,7 @@ jQuery(document).ready(function ($) {
     who: {
       getDescription: function (filterDef) {
         if (filterDef.my_records) {
-          return indiciaData.lang.reportFilters.MyRecords;
+          return indiciaData.lang.reportFilterParser.MyRecords;
         } else {
           return '';
         }
@@ -330,21 +330,21 @@ jQuery(document).ready(function ($) {
           r.push($('#quality-filter option[value=' + quality.replace('!', '\\!') + ']').html());
         }
         if (filterDef.autochecks === 'F') {
-          r.push(indiciaData.lang.reportFilters.AutochecksFailed);
+          r.push(indiciaData.lang.reportFilterParser.AutochecksFailed);
         } else if (filterDef.autochecks === 'P') {
-          r.push(indiciaData.lang.reportFilters.AutochecksPassed);
+          r.push(indiciaData.lang.reportFilterParser.AutochecksPassed);
         }
         if (filterDef.identification_difficulty) {
           op = typeof filterDef.identification_difficulty_op === 'undefined' ?
             '=' : filterDef.identification_difficulty_op.replace(/[<=>]/g, '\\$&');
-          r.push(indiciaData.lang.reportFilters.IdentificationDifficulty + ' ' +
+          r.push(indiciaData.lang.reportFilterParser.IdentificationDifficulty + ' ' +
             $('#identification_difficulty_op').find("option[value='" + op + "']").html() +
             ' ' + filterDef.identification_difficulty);
         }
         if (filterDef.has_photos && filterDef.has_photos === '1') {
-          r.push(indiciaData.lang.reportFilters.HasPhotos);
+          r.push(indiciaData.lang.reportFilterParser.HasPhotos);
         } else if (filterDef.has_photos && filterDef.has_photos === '0') {
-          r.push(indiciaData.lang.reportFilters.HasNoPhotos);
+          r.push(indiciaData.lang.reportFilterParser.HasNoPhotos);
         }
         return r.join(sep);
       },
