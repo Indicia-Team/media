@@ -1358,9 +1358,16 @@ jQuery(document).ready(function ($) {
     }]);
   };
 
+  /**
+   * Identify the form as having been changed by the user.
+   */
   function filterParamsChanged() {
-    $('#standard-params .header span.changed').show();
-    $('#filter-reset').removeClass('disabled');
+    // Don't proceed if change happens before doc ready done, as this will be
+    // code changing values rather than the user.
+    if (indiciaData.documentReady === 'done') {
+      $('#standard-params .header span.changed').show();
+      $('#filter-reset').removeClass('disabled');
+    }
   }
 
   // Applies the current loaded filter to the controls within the pane.
