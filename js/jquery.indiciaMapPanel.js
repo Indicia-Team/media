@@ -3035,7 +3035,6 @@ var destroyAllFeatures;
       // Plus any other types of layers in the settings.
       div.map.addLayers(div.settings.layers);
       var initialMapViewSetup = getInitialMapViewSetup(div);
-      console.log(initialMapViewSetup);
       applyWMSVisibilitySettings(div, initialMapViewSetup);
 
       // Set the base layer using cookie if remembering.
