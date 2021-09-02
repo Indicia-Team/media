@@ -565,7 +565,11 @@ var resetSpeciesTextOnEscape;
     var table = $(e.currentTarget).closest('table.species-grid');
     var row = $(e.currentTarget).closest('tr');
     var proceed = true;
+    // Find numeric index of row from control ID.
+    var rowIndex = row.find('.scPresence').attr('id').match(/^sc:species-grid-\d+-(\d+)/)[1];
     e.preventDefault();
+    // Clear if this row has a marker on the map.
+    indiciaData.mapdiv.removeAllFeatures(indiciaData.mapdiv.map.editLayer, 'subsample-' + rowIndex);
     // Allow forms to hook into the event of a row being deleted, most likely use would be to have a confirmation dialog
     $.each(window.hook_species_checklist_pre_delete_row, function (idx, fn) {
       proceed = proceed && fn(e, table, row);
@@ -751,11 +755,18 @@ var resetSpeciesTextOnEscape;
     }
   }
 
+  /**
+   * Change handler if there is a spatial ref cell in the row.
+   *
+   * Draws the location of the record on the map.
+   */
   indiciaFns.on('change', '.scSpatialRef', {}, function (e) {
     var parser;
     var feature;
     var system = $('#' + indiciaData.mapdiv.settings.srefSystemId).val();
-    indiciaData.mapdiv.removeAllFeatures(indiciaData.mapdiv.map.editLayer, 'subsample-' + e.currentTarget.id);
+    // Find numeric index of row from control ID.
+    var rowIndex = e.currentTarget.id.match(/^sc:species-grid-\d+-(\d+)/)[1];
+    indiciaData.mapdiv.removeAllFeatures(indiciaData.mapdiv.map.editLayer, 'subsample-' + rowIndex);
     // If in a grid system and provided ref matches 4326 format, assume 4326.
     if (usingGridSystem() && $(e.currentTarget).val().match(/^[+-]?[0-9]*(\.[0-9]*)?[NS]?,?\s+[+-]?[0-9]*(\.[0-9]*)?[EW]?$/)) {
       system = '4326';
@@ -768,6 +779,7 @@ var resetSpeciesTextOnEscape;
         '&system=' + system +
         '&mapsystem=' + indiciaFns.projectionToSystem(indiciaData.mapdiv.map.projection, false),
       success: function (data) {
+        var taxonNameEl = $(e.currentTarget).closest('tr').find('.taxon-name');
         if (typeof data.error !== 'undefined') {
           if (data.code === 4001) {
             alert(indiciaData.mapdiv.settings.msgSrefNotRecognised);
@@ -780,7 +792,24 @@ var resetSpeciesTextOnEscape;
           $(e.currentTarget).removeClass('warning');
           parser = new OpenLayers.Format.WKT();
           feature = parser.read(data.mapwkt);
-          feature.attributes.type = 'subsample-' + e.currentTarget.id;
+          feature.attributes.type = 'subsample-' + rowIndex;
+          feature.style = {
+            label: taxonNameEl.text(),
+            fontSize: '10px',
+            fontFamily: 'Tahoma',
+            fontColor: '#555',
+            strokeColor: 'red',
+            strokeWidth: 2,
+            fillOpacity: 0.3,
+            labelAlign: 'lb',
+            labelXOffset: 12,
+            labelOutlineColor: "white",
+            labelOutlineWidth: 2
+          };
+          // Italicise if scientific name.
+          if (taxonNameEl[0].nodeName === 'EM') {
+            feature.style.fontStyle = 'italic';
+          }
           $(e.currentTarget).attr('title', '');
           if ($('#review-input').length > 0) {
             $.each(indiciaData.mapdiv.map.editLayer.features, function () {
