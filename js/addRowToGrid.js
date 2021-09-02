@@ -284,6 +284,24 @@ var resetSpeciesTextOnEscape;
     return ctrl;
   }
 
+  function updateRowSpatialRefFeatureLabel(row) {
+    var spatialRefInput = $(row).find('.scSpatialRef');
+    var rowUniqueIdx = $(row).find('.scPresence').attr('id').match(/^sc:species-grid-\d+-(\d+)/)[1];
+    var feature;
+    var taxonNameEl = $(row).find('.taxon-name');
+    if (spatialRefInput.length) {
+      feature = indiciaData.mapdiv.map.editLayer.getFeatureById('subsample-' + rowUniqueIdx);
+      if (feature) {
+        feature.style.label = taxonNameEl.text();
+        // Italicise if scientific name.
+        if (taxonNameEl[0].nodeName === 'EM') {
+          feature.style.fontStyle = 'italic';
+        }
+        indiciaData.mapdiv.map.editLayer.redraw();
+      }
+    }
+  }
+
   // Create an inner function for adding blank rows to the bottom of the grid
   var makeSpareRow = function(gridId, lookupListId, scroll, force) {
 
@@ -406,6 +424,7 @@ var resetSpeciesTextOnEscape;
       if (indiciaData['copyDataFromPreviousRow-' + gridId]) {
         species_checklist_add_another_row(gridId);
       }
+      updateRowSpatialRefFeatureLabel(row);
       // Allow forms to hook into the event of a new row being added
       $.each(hook_species_checklist_new_row, function (idx, fn) {
         fn(data, row);
@@ -566,10 +585,13 @@ var resetSpeciesTextOnEscape;
     var row = $(e.currentTarget).closest('tr');
     var proceed = true;
     // Find numeric index of row from control ID.
-    var rowIndex = row.find('.scPresence').attr('id').match(/^sc:species-grid-\d+-(\d+)/)[1];
+    var rowUniqueIdx = $(row).find('.scPresence').attr('id').match(/^sc:species-grid-\d+-(\d+)/)[1];
+    var existingFeature = indiciaData.mapdiv.map.editLayer.getFeatureById('subsample-' + rowUniqueIdx);
     e.preventDefault();
     // Clear if this row has a marker on the map.
-    indiciaData.mapdiv.removeAllFeatures(indiciaData.mapdiv.map.editLayer, 'subsample-' + rowIndex);
+    if (existingFeature) {
+      indiciaData.mapdiv.map.editLayer.removeFeatures([existingFeature]);
+    }
     // Allow forms to hook into the event of a row being deleted, most likely use would be to have a confirmation dialog
     $.each(window.hook_species_checklist_pre_delete_row, function (idx, fn) {
       proceed = proceed && fn(e, table, row);
@@ -765,8 +787,11 @@ var resetSpeciesTextOnEscape;
     var feature;
     var system = $('#' + indiciaData.mapdiv.settings.srefSystemId).val();
     // Find numeric index of row from control ID.
-    var rowIndex = e.currentTarget.id.match(/^sc:species-grid-\d+-(\d+)/)[1];
-    indiciaData.mapdiv.removeAllFeatures(indiciaData.mapdiv.map.editLayer, 'subsample-' + rowIndex);
+    var rowUniqueIdx = e.currentTarget.id.match(/^sc:species-grid-\d+-(\d+)/)[1];
+    var existingFeature = indiciaData.mapdiv.map.editLayer.getFeatureById('subsample-' + rowUniqueIdx);
+    if (existingFeature) {
+      indiciaData.mapdiv.map.editLayer.removeFeatures([existingFeature]);
+    }
     // If in a grid system and provided ref matches 4326 format, assume 4326.
     if (usingGridSystem() && $(e.currentTarget).val().match(/^[+-]?[0-9]*(\.[0-9]*)?[NS]?,?\s+[+-]?[0-9]*(\.[0-9]*)?[EW]?$/)) {
       system = '4326';
@@ -792,9 +817,8 @@ var resetSpeciesTextOnEscape;
           $(e.currentTarget).removeClass('warning');
           parser = new OpenLayers.Format.WKT();
           feature = parser.read(data.mapwkt);
-          feature.attributes.type = 'subsample-' + rowIndex;
+          feature.id = 'subsample-' + rowUniqueIdx;
           feature.style = {
-            label: taxonNameEl.text(),
             fontSize: '10px',
             fontFamily: 'Tahoma',
             fontColor: '#555',
@@ -806,10 +830,14 @@ var resetSpeciesTextOnEscape;
             labelOutlineColor: "white",
             labelOutlineWidth: 2
           };
-          // Italicise if scientific name.
-          if (taxonNameEl[0].nodeName === 'EM') {
-            feature.style.fontStyle = 'italic';
+          if (taxonNameEl.length) {
+            feature.style.label = taxonNameEl.text();
+            // Italicise if scientific name.
+            if (taxonNameEl[0].nodeName === 'EM') {
+              feature.style.fontStyle = 'italic';
+            }
           }
+
           $(e.currentTarget).attr('title', '');
           if ($('#review-input').length > 0) {
             $.each(indiciaData.mapdiv.map.editLayer.features, function () {
