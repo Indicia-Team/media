@@ -3587,189 +3587,188 @@ var destroyAllFeatures;
  * Main default options for the map
  */
 jQuery.fn.indiciaMapPanel.defaults = {
-    indiciaSvc : '',
-    indiciaGeoSvc : '',
-    readAuth : '',
-    height: "600",
-    width: "470",
-    initial_lat: 55.1,
-    initial_long: -2,
-    initial_zoom: 5,
-    scroll_wheel_zoom: true,
-    click_zoom: false, // zoom in and recentre on grid square after clicking map
-    bing_api_key: '',
-    os_api_key: '',
-    proxy: '',
-    presetLayers: [],
-    otherBaseLayerConfig: [],
-    indiciaWMSLayers: {},
-    indiciaWFSLayers : {},
-    layers: [],
-    hoverShowsDetails: false,
-    clickableLayers: [],
-    clickableLayersOutputMode: 'popup', // options are popup, div or customFunction
-    clickableLayersOutputFn: format_selected_features,
-    clickableLayersOutputDiv: '',
-    clickableLayersOutputColumns: [],
-    selectFeatureBufferProjection: false,
-    allowBox: true, // can disable drag boxes for querying info, so navigation works
-    featureIdField: '',
-    clickPixelTolerance: 5,
-    reportGroup: null, // name of the collection of report outputs that this map is linked to when doing dashboard reporting
-    locationLayerName: '', // define a feature type that can be used to auto-populate the location control when clicking on a location
-    locationLayerFilter: '', // a cql filter that can be used to limit locations shown on the location layer
-    controls: [],
-    standardControls: ['layerSwitcher','panZoom'],
-    activatedStandardControls: ['hoverFeatureHighlight', 'graticule'],
-    toolbarDiv: 'map', // map, top, bottom, or div ID
-    toolbarPrefix: '', // content to prepend to the toolbarDiv content if not on the map
-    toolbarSuffix: '', // content to append to the toolbarDiv content if not on the map
-    helpDiv: false,
-    editLayer: true,
-    clickForSpatialRef: true, // if true, then enables the click to get spatial references control
-    clickForPlot: false, // if true, overrides clickForSpatialRef to locate a plot instead of a grid square.
-    allowPolygonRecording: false,
-    autoFillInCentroid: false, // if true will automatically complete the centroid and Sref when polygon recording.
-    editLayerName: 'Selection layer',
-    editLayerInSwitcher: false,
-    searchLayer: false, // determines whether we have a separate layer for the display of location searches, eg georeferencing. Defaults to editLayer.
-    searchUpdatesSref: false,
-    searchDisplaysPoint: true,
-    searchLayerName: 'Search layer',
-    searchLayerInSwitcher: false,
-    initialFeatureWkt: null,
-    initialBoundaryWkt: null,
-    defaultSystem: 'OSGB',
-    latLongFormat: 'D',
-    srefId: 'imp-sref',
-    srefLatId: 'imp-sref-lat',
-    srefLongId: 'imp-sref-long',
-    srefSystemId: 'imp-sref-system',
-    geomId: 'imp-geom',
-    plotShapeId: 'attr-shape', // html id of plot shape control. Can be 'rectangle' or 'circle'.
-    plotWidthId: 'attr-width', // html id of plot width control for plotShape = 'rectangle'
-    plotLengthId: 'attr-length', // html id of plot length control for plotShape = 'rectangle'
-    plotRadiusId: 'attr-radius', // html id of plot radius control for plotShape = 'circle'
-    boundaryGeomId: 'imp-boundary-geom',
-    clickedSrefPrecisionMin: 2, // depends on sref system, but for OSGB this would be 2,4,6,8,10 etc = length of grid reference
-    clickedSrefPrecisionMax: 10,
-    plotPrecision: '10', // when clickForPlot is true, the precision of grid ref associated with plot.
-    msgGeorefSelectPlace: 'Select from the following places that were found matching your search, then click on the map to specify the exact location:',
-    msgGeorefNothingFound: 'No locations found with that name. Try a nearby town name.',
-    msgGetInfoNothingFound: 'No occurrences were found at the location you clicked.',
-    msgSrefOutsideGrid: 'The position is outside the range of the selected map reference system.',
-    msgSrefNotRecognised: 'The map reference is not recognised.',
-    msgSrefSystemNotSet: 'The spatial reference system is not set.',
-    msgReplaceBoundary: 'Would you like to replace the existing boundary with the new one?',
-    maxZoom: 19, //maximum zoom when relocating to gridref, postcode etc.
-    maxZoomBuffer: 0.33, //margin around feature when relocating to gridref or initialFeatureWkt
-    drawObjectType: 'boundary',
+  indiciaSvc : '',
+  indiciaGeoSvc : '',
+  readAuth : '',
+  height: "600",
+  width: "470",
+  initial_lat: 55.1,
+  initial_long: -2,
+  initial_zoom: 5,
+  scroll_wheel_zoom: true,
+  click_zoom: false, // zoom in and recentre on grid square after clicking map
+  bing_api_key: '',
+  os_api_key: '',
+  proxy: '',
+  presetLayers: [],
+  otherBaseLayerConfig: [],
+  indiciaWMSLayers: {},
+  indiciaWFSLayers : {},
+  layers: [],
+  hoverShowsDetails: false,
+  clickableLayers: [],
+  clickableLayersOutputMode: 'popup', // options are popup, div or customFunction
+  clickableLayersOutputFn: format_selected_features,
+  clickableLayersOutputDiv: '',
+  clickableLayersOutputColumns: [],
+  selectFeatureBufferProjection: false,
+  allowBox: true, // can disable drag boxes for querying info, so navigation works
+  featureIdField: '',
+  clickPixelTolerance: 5,
+  reportGroup: null, // name of the collection of report outputs that this map is linked to when doing dashboard reporting
+  locationLayerName: '', // define a feature type that can be used to auto-populate the location control when clicking on a location
+  locationLayerFilter: '', // a cql filter that can be used to limit locations shown on the location layer
+  controls: [],
+  standardControls: ['layerSwitcher','panZoom'],
+  activatedStandardControls: ['hoverFeatureHighlight', 'graticule'],
+  toolbarDiv: 'map', // map, top, bottom, or div ID
+  toolbarPrefix: '', // content to prepend to the toolbarDiv content if not on the map
+  toolbarSuffix: '', // content to append to the toolbarDiv content if not on the map
+  helpDiv: false,
+  editLayer: true,
+  clickForSpatialRef: true, // if true, then enables the click to get spatial references control
+  clickForPlot: false, // if true, overrides clickForSpatialRef to locate a plot instead of a grid square.
+  allowPolygonRecording: false,
+  autoFillInCentroid: false, // if true will automatically complete the centroid and Sref when polygon recording.
+  editLayerName: 'Selection layer',
+  editLayerInSwitcher: false,
+  searchLayer: false, // determines whether we have a separate layer for the display of location searches, eg georeferencing. Defaults to editLayer.
+  searchUpdatesSref: false,
+  searchDisplaysPoint: true,
+  searchLayerName: 'Search layer',
+  searchLayerInSwitcher: false,
+  initialFeatureWkt: null,
+  initialBoundaryWkt: null,
+  defaultSystem: 'OSGB',
+  latLongFormat: 'D',
+  srefId: 'imp-sref',
+  srefLatId: 'imp-sref-lat',
+  srefLongId: 'imp-sref-long',
+  srefSystemId: 'imp-sref-system',
+  geomId: 'imp-geom',
+  plotShapeId: 'attr-shape', // html id of plot shape control. Can be 'rectangle' or 'circle'.
+  plotWidthId: 'attr-width', // html id of plot width control for plotShape = 'rectangle'
+  plotLengthId: 'attr-length', // html id of plot length control for plotShape = 'rectangle'
+  plotRadiusId: 'attr-radius', // html id of plot radius control for plotShape = 'circle'
+  boundaryGeomId: 'imp-boundary-geom',
+  clickedSrefPrecisionMin: 2, // depends on sref system, but for OSGB this would be 2,4,6,8,10 etc = length of grid reference
+  clickedSrefPrecisionMax: 10,
+  plotPrecision: '10', // when clickForPlot is true, the precision of grid ref associated with plot.
+  msgGeorefSelectPlace: 'Select from the following places that were found matching your search, then click on the map to specify the exact location:',
+  msgGeorefNothingFound: 'No locations found with that name. Try a nearby town name.',
+  msgGetInfoNothingFound: 'No occurrences were found at the location you clicked.',
+  msgSrefOutsideGrid: 'The position is outside the range of the selected map reference system.',
+  msgSrefNotRecognised: 'The map reference is not recognised.',
+  msgSrefSystemNotSet: 'The spatial reference system is not set.',
+  msgReplaceBoundary: 'Would you like to replace the existing boundary with the new one?',
+  maxZoom: 19, //maximum zoom when relocating to gridref, postcode etc.
+  maxZoomBuffer: 0.33, //margin around feature when relocating to gridref or initialFeatureWkt
+  drawObjectType: 'boundary',
 
-    //options for OpenLayers. Feature. Vector. style
-    fillColor: '#773333',
-    fillOpacity: 0.3,
-    strokeColor: '#660000',
-    strokeOpacity: 1,
-    strokeWidth: 1.5,
-    strokeLinecap: 'round',
-    strokeDashstyle: 'solid',
-    hoverFillColor: 'white',
-    hoverFillOpacity: 0.8,
-    hoverStrokeColor: 'red',
-    hoverStrokeOpacity: 1,
-    hoverStrokeWidth: 0.2,
-    pointRadius: 6,
-    hoverPointRadius: 1,
-    hoverPointUnit: '%',
-    pointerEvents: 'visiblePainted',
-    cursor: '',
-    graticules: {
-      'OSGB': {
-        projection: 27700,
-        bounds: [0, 0, 700000, 1300000],
-        intervals: [100000, 10000, 1000, 100]
-      },
-      'OSIE': {
-        projection: 29901,
-        bounds: [0, 0, 400000, 500000],
-        intervals: [100000, 10000, 1000, 100]
-      },
-      'utm30ed50': {
-        projection: 23030,
-        bounds: [500000, 5400000, 600000, 5550000],
-        intervals: [100000, 10000, 1000, 100]
-      },
-      'mtbqqq': {
-        projection: 4314,
-        bounds: [35/6, 46, 134/6, 55.9],
-        intervals: [[ 10/60, 5/60, 150/3600, 75/3600 ],[ 6/60, 3/60, 90/3600, 45/3600 ]]
-      }
+  //options for OpenLayers. Feature. Vector. style
+  fillColor: '#773333',
+  fillOpacity: 0.3,
+  strokeColor: '#660000',
+  strokeOpacity: 1,
+  strokeWidth: 1.5,
+  strokeLinecap: 'round',
+  strokeDashstyle: 'solid',
+  hoverFillColor: 'white',
+  hoverFillOpacity: 0.8,
+  hoverStrokeColor: 'red',
+  hoverStrokeOpacity: 1,
+  hoverStrokeWidth: 0.2,
+  pointRadius: 6,
+  hoverPointRadius: 1,
+  hoverPointUnit: '%',
+  pointerEvents: 'visiblePainted',
+  cursor: '',
+  graticules: {
+    'OSGB': {
+      projection: 27700,
+      bounds: [0, 0, 700000, 1300000],
+      intervals: [100000, 10000, 1000, 100]
     },
-    /* Intention is to also implement hoveredSrefPrecisionMin and Max for a square size shown when you hover, and also a
-     * displayedSrefPrecisionMin and Mx for a square size output into a list box as you hover. Both of these could either be
-     * absolute numbers, or a number preceded by - or + to be relative to the default square size for this zoom level. */
-    // Additional options for OpenLayers.Feature.Vector.style on the search layer.
-    fillColorSearch: '#ee0000',
-    fillOpacitySearch: 0.5,
-    strokeColorSearch: '#ee0000',
-    // Additional options for OpenLayers.Feature.Vector.style for the ghost
-    fillColorGhost: '#777777',
-    fillOpacityGhost: 0.3,
-    strokeColorGhost: '#ee9900',
-    strokeOpacityGhost: 1,
-    strokeDashstyleGhost: 'dash',
-    // Additional options for OpenLayers.Feature.Vector.style for a boundary
-    fillColorBoundary: '#0000FF',
-    fillOpacityBoundary: 0.1,
-    strokeColorBoundary: '#FF0000',
-    strokeWidthBoundary: 2,
-    strokeDashstyleBoundary: 'dash',
-    // hint for the grid ref you are over
-    gridRefHint: false,
+    'OSIE': {
+      projection: 29901,
+      bounds: [0, 0, 400000, 500000],
+      intervals: [100000, 10000, 1000, 100]
+    },
+    'utm30ed50': {
+      projection: 23030,
+      bounds: [500000, 5400000, 600000, 5550000],
+      intervals: [100000, 10000, 1000, 100]
+    },
+    'mtbqqq': {
+      projection: 4314,
+      bounds: [35/6, 46, 134/6, 55.9],
+      intervals: [[ 10/60, 5/60, 150/3600, 75/3600 ],[ 6/60, 3/60, 90/3600, 45/3600 ]]
+    }
+  },
+  /* Intention is to also implement hoveredSrefPrecisionMin and Max for a square size shown when you hover, and also a
+    * displayedSrefPrecisionMin and Mx for a square size output into a list box as you hover. Both of these could either be
+    * absolute numbers, or a number preceded by - or + to be relative to the default square size for this zoom level. */
+  // Additional options for OpenLayers.Feature.Vector.style on the search layer.
+  fillColorSearch: '#ee0000',
+  fillOpacitySearch: 0.5,
+  strokeColorSearch: '#ee0000',
+  // Additional options for OpenLayers.Feature.Vector.style for the ghost
+  fillColorGhost: '#777777',
+  fillOpacityGhost: 0.3,
+  strokeColorGhost: '#ee9900',
+  strokeOpacityGhost: 1,
+  strokeDashstyleGhost: 'dash',
+  // Additional options for OpenLayers.Feature.Vector.style for a boundary
+  fillColorBoundary: '#0000FF',
+  fillOpacityBoundary: 0.1,
+  strokeColorBoundary: '#FF0000',
+  strokeWidthBoundary: 2,
+  strokeDashstyleBoundary: 'dash',
+  // hint for the grid ref you are over
+  gridRefHint: false,
 
-    // Are we using the OpenLayers defaults, or are they all provided?
-    useOlDefaults: true,
-    rememberPos: false, // set to true to enable restoring the map position when the page is reloaded. Requires jquery.cookie plugin.
-    hintNavigation: 'Select this tool to navigate around the map by dragging, or double clicking to zoom the map.',
-    hintScrollWheel: ' Holding Ctrl and using the mouse scroll wheel whilst over the map will zoom in and out.',
-    hintClickSpatialRefTool: 'Select this tool to enable clicking on the map to set your location',
-    hintQueryDataPointsTool: 'Select this tool then click on or drag a box over data points on the map to view the underlying records.',
-    hintQueryBufferTool: 'The search area covered by a clicked point or dragged box will be enlarged by the amount specified in the Tolerance box shown when this control is active.',
-    hintDrawPolygonHint: 'Select this tool to draw a polygon, clicking on the map to draw the shape and double clicking to finish.',
-    hintDrawLineHint: 'Select this tool to draw a line, clicking on the map to draw the shape and double clicking to finish.',
-    hintDrawPointHint: 'Select this tool to draw points by clicking on the map.',
-    hintDrawForReportingHint: 'You can then filter the report for intersecting records.',
-    hintClearSelection: 'Clear the edit layer',
-    hintModifyFeature: 'Modify the selected feature. Click on the feature to select it then grab and drag the circular handles to change the boundary.',
-    hintFullscreen: 'Display the map in full screen mode',
-    hlpClickOnceSetSref: 'Click once on the map to set your location.',
-    hlpClickAgainToCorrect: 'Click on the map again to correct your position if necessary.',
-    hlpPanZoom: 'Pan and zoom the map to the required place by dragging the map and double clicking or Shift-dragging to zoom.',
-    hlpPanZoomButtons: 'Pan and zoom the map to the required place using the navigation buttons or '+
-        'by dragging the map and double clicking or Shift-dragging to zoom.',
-    hlpZoomChangesPrecision: 'By zooming the map in or out before clicking you can alter the precision of the '+
-        'selected grid square.',
-    helpToPickPrecisionMin: false,
-    helpToPickPrecisionMax: 10,
-    helpToPickPrecisionSwitchAt: false,
-    hlpImproveResolution1: "{size} {type} selected. Please click on the map again to provide a more accurate location.",
-    hlpImproveResolution2: "Good. {size} {type} selected.",
-    hlpImproveResolution3: "Excellent! {size} {type} selected. If your position is wrong, either click your actual position again or zoom out until your position comes to view, then retry.",
-    hlpImproveResolutionSwitch: "We've switched to a satellite view to allow you to locate your position even better.",
-    hlpCustomPolygon: "Excellent! A custom polygon has been drawn for this record."
-
+  // Are we using the OpenLayers defaults, or are they all provided?
+  useOlDefaults: true,
+  rememberPos: false, // set to true to enable restoring the map position when the page is reloaded. Requires jquery.cookie plugin.
+  hintNavigation: 'Select this tool to navigate around the map by dragging, or double clicking to zoom the map.',
+  hintScrollWheel: ' Holding Ctrl and using the mouse scroll wheel whilst over the map will zoom in and out.',
+  hintClickSpatialRefTool: 'Select this tool to enable clicking on the map to set your location',
+  hintQueryDataPointsTool: 'Select this tool then click on or drag a box over data points on the map to view the underlying records.',
+  hintQueryBufferTool: 'The search area covered by a clicked point or dragged box will be enlarged by the amount specified in the Tolerance box shown when this control is active.',
+  hintDrawPolygonHint: 'Select this tool to draw a polygon, clicking on the map to draw the shape and double clicking to finish.',
+  hintDrawLineHint: 'Select this tool to draw a line, clicking on the map to draw the shape and double clicking to finish.',
+  hintDrawPointHint: 'Select this tool to draw points by clicking on the map.',
+  hintDrawForReportingHint: 'You can then filter the report for intersecting records.',
+  hintClearSelection: 'Clear the edit layer',
+  hintModifyFeature: 'Modify the selected feature. Click on the feature to select it then grab and drag the circular handles to change the boundary.',
+  hintFullscreen: 'Display the map in full screen mode',
+  hlpClickOnceSetSref: 'Click once on the map to set your location.',
+  hlpClickAgainToCorrect: 'Click on the map again to correct your position if necessary.',
+  hlpPanZoom: 'Pan and zoom the map to the required place by dragging the map and double clicking or Shift-dragging to zoom.',
+  hlpPanZoomButtons: 'Pan and zoom the map to the required place using the navigation buttons or '+
+      'by dragging the map and double clicking or Shift-dragging to zoom.',
+  hlpZoomChangesPrecision: 'By zooming the map in or out before clicking you can alter the precision of the '+
+      'selected grid square.',
+  helpToPickPrecisionMin: false,
+  helpToPickPrecisionMax: 10,
+  helpToPickPrecisionSwitchAt: false,
+  hlpImproveResolution1: "{size} {type} selected. Please click on the map again to provide a more accurate location.",
+  hlpImproveResolution2: "Good. {size} {type} selected.",
+  hlpImproveResolution3: "Excellent! {size} {type} selected. If your position is wrong, either click your actual position again or zoom out until your position comes to view, then retry.",
+  hlpImproveResolutionSwitch: "We've switched to a satellite view to allow you to locate your position even better.",
+  hlpCustomPolygon: "Excellent! A custom polygon has been drawn for this record."
 };
 
 /**
  * Default options to pass to the openlayers map constructor
  */
 jQuery.fn.indiciaMapPanel.openLayersDefaults = {
-    projection: 3857,
-    displayProjection: 4326,
-    units: "m",
-    numZoomLevels: 18,
-    maxResolution: 156543.0339,
-    maxExtent: new OpenLayers.Bounds(-20037508, -20037508, 20037508, 20037508.34)
+  projection: 3857,
+  displayProjection: 4326,
+  units: "m",
+  numZoomLevels: 18,
+  maxResolution: 156543.0339,
+  maxExtent: new OpenLayers.Bounds(-20037508, -20037508, 20037508, 20037508.34)
 };
 
 
@@ -3777,11 +3776,11 @@ jQuery.fn.indiciaMapPanel.openLayersDefaults = {
  * Settings for the georeference lookup.
  */
 jQuery.fn.indiciaMapPanel.georeferenceLookupSettings = {
-    georefSearchId: 'imp-georef-search',
-    georefSearchBtnId: 'imp-georef-search-btn',
-    georefCloseBtnId: 'imp-georef-close-btn',
-    georefOutputDivId: 'imp-georef-output-div',
-    georefDivId: 'imp-georef-div'
+  georefSearchId: 'imp-georef-search',
+  georefSearchBtnId: 'imp-georef-search-btn',
+  georefCloseBtnId: 'imp-georef-close-btn',
+  georefOutputDivId: 'imp-georef-output-div',
+  georefDivId: 'imp-georef-div'
 };
 
 
