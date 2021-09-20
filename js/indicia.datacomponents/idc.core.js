@@ -439,6 +439,7 @@
       'message',
       'metadata.group.title',
       'metadata.licence_code',
+      'metadata.query',
       'metadata.survey.title',
       'metadata.website.title',
       'occurrence.associated_media',
