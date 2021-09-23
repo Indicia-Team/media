@@ -848,8 +848,10 @@ jQuery(document).ready(function ($) {
       return message;
     };
     detectInput = function () {
-      window.onbeforeunload = confirmOnPageExit;
-      $(iform).find(':input').unbind('change', detectInput);
+      if (indiciaData.documentReady === 'done') {
+        window.onbeforeunload = confirmOnPageExit;
+        $(iform).find(':input').unbind('change', detectInput);
+      }
     };
     // any data input, need to confirm if navigating away
     $(iform).find(':input').bind('change', detectInput);

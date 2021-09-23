@@ -284,6 +284,24 @@ var resetSpeciesTextOnEscape;
     return ctrl;
   }
 
+  function updateRowSpatialRefFeatureLabel(row) {
+    var spatialRefInput = $(row).find('.scSpatialRef');
+    var rowUniqueIdx = $(row).find('.scPresence').attr('name').match(/^sc:species-grid-\d+-(\d+)/)[1];
+    var feature;
+    var taxonNameEl = $(row).find('.taxon-name');
+    if (spatialRefInput.length) {
+      feature = indiciaData.mapdiv.map.editLayer.getFeatureById('subsample-' + rowUniqueIdx);
+      if (feature) {
+        feature.style.label = taxonNameEl.text();
+        // Italicise if scientific name.
+        if (taxonNameEl[0].nodeName === 'EM') {
+          feature.style.fontStyle = 'italic';
+        }
+        indiciaData.mapdiv.map.editLayer.redraw();
+      }
+    }
+  }
+
   // Create an inner function for adding blank rows to the bottom of the grid
   var makeSpareRow = function(gridId, lookupListId, scroll, force) {
 
@@ -406,6 +424,7 @@ var resetSpeciesTextOnEscape;
       if (indiciaData['copyDataFromPreviousRow-' + gridId]) {
         species_checklist_add_another_row(gridId);
       }
+      updateRowSpatialRefFeatureLabel(row);
       // Allow forms to hook into the event of a new row being added
       $.each(hook_species_checklist_new_row, function (idx, fn) {
         fn(data, row);
@@ -565,7 +584,14 @@ var resetSpeciesTextOnEscape;
     var table = $(e.currentTarget).closest('table.species-grid');
     var row = $(e.currentTarget).closest('tr');
     var proceed = true;
+    // Find numeric index of row from control ID.
+    var rowUniqueIdx = $(row).find('.scPresence').attr('name').match(/^sc:species-grid-\d+-(\d+)/)[1];
+    var existingFeature = indiciaData.mapdiv.map.editLayer.getFeatureById('subsample-' + rowUniqueIdx);
     e.preventDefault();
+    // Clear if this row has a marker on the map.
+    if (existingFeature) {
+      indiciaData.mapdiv.map.editLayer.removeFeatures([existingFeature]);
+    }
     // Allow forms to hook into the event of a row being deleted, most likely use would be to have a confirmation dialog
     $.each(window.hook_species_checklist_pre_delete_row, function (idx, fn) {
       proceed = proceed && fn(e, table, row);
@@ -751,11 +777,21 @@ var resetSpeciesTextOnEscape;
     }
   }
 
+  /**
+   * Change handler if there is a spatial ref cell in the row.
+   *
+   * Draws the location of the record on the map.
+   */
   indiciaFns.on('change', '.scSpatialRef', {}, function (e) {
     var parser;
     var feature;
     var system = $('#' + indiciaData.mapdiv.settings.srefSystemId).val();
-    indiciaData.mapdiv.removeAllFeatures(indiciaData.mapdiv.map.editLayer, 'subsample-' + e.currentTarget.id);
+    // Find numeric index of row from control ID.
+    var rowUniqueIdx = e.currentTarget.id.match(/^sc:species-grid-\d+-(\d+)/)[1];
+    var existingFeature = indiciaData.mapdiv.map.editLayer.getFeatureById('subsample-' + rowUniqueIdx);
+    if (existingFeature) {
+      indiciaData.mapdiv.map.editLayer.removeFeatures([existingFeature]);
+    }
     // If in a grid system and provided ref matches 4326 format, assume 4326.
     if (usingGridSystem() && $(e.currentTarget).val().match(/^[+-]?[0-9]*(\.[0-9]*)?[NS]?,?\s+[+-]?[0-9]*(\.[0-9]*)?[EW]?$/)) {
       system = '4326';
@@ -768,6 +804,7 @@ var resetSpeciesTextOnEscape;
         '&system=' + system +
         '&mapsystem=' + indiciaFns.projectionToSystem(indiciaData.mapdiv.map.projection, false),
       success: function (data) {
+        var taxonNameEl = $(e.currentTarget).closest('tr').find('.taxon-name');
         if (typeof data.error !== 'undefined') {
           if (data.code === 4001) {
             alert(indiciaData.mapdiv.settings.msgSrefNotRecognised);
@@ -780,7 +817,27 @@ var resetSpeciesTextOnEscape;
           $(e.currentTarget).removeClass('warning');
           parser = new OpenLayers.Format.WKT();
           feature = parser.read(data.mapwkt);
-          feature.attributes.type = 'subsample-' + e.currentTarget.id;
+          feature.id = 'subsample-' + rowUniqueIdx;
+          feature.style = {
+            fontSize: '10px',
+            fontFamily: 'Tahoma',
+            fontColor: '#555',
+            strokeColor: 'red',
+            strokeWidth: 2,
+            fillOpacity: 0.3,
+            labelAlign: 'lb',
+            labelXOffset: 12,
+            labelOutlineColor: "white",
+            labelOutlineWidth: 2
+          };
+          if (taxonNameEl.length) {
+            feature.style.label = taxonNameEl.text();
+            // Italicise if scientific name.
+            if (taxonNameEl[0].nodeName === 'EM') {
+              feature.style.fontStyle = 'italic';
+            }
+          }
+
           $(e.currentTarget).attr('title', '');
           if ($('#review-input').length > 0) {
             $.each(indiciaData.mapdiv.map.editLayer.features, function () {
@@ -826,10 +883,31 @@ var resetSpeciesTextOnEscape;
    * Allow a single button for fetching map ref to be active at one time.
    */
   indiciaFns.on('click', '.scSpatialRefFromMap', {}, function (e) {
-    var wasActive = $(this).hasClass('active')
+    var wasActive = $(this).hasClass('active');
+    var fs;
+    var mapdiv = indiciaData.mapdiv;
+    var gridId = $(this).closest('table').attr('id');
     $('.scSpatialRefFromMap.active').removeClass('active');
     if (!wasActive) {
+      // Enable fetch from map.
       $(this).addClass('active');
+      if (indiciaData['spatialRefPerRowUseFullscreenMap-' + gridId]) {
+        // Track scroll position so we can reset it.
+        indiciaData.lastScrollTop = $(document).scrollTop();
+        // Request map fullscreen.
+        fs = mapdiv.requestFullscreen || mapdiv.mozRequestFullScreen || mapdiv.webkitRequestFullScreen || mapdiv.msRequestFullscreen;
+        fs.call(mapdiv);
+      }
+    }
+  });
+
+  /**
+   * Ensure presence/absence checkboxes are mutually exclusive.
+   */
+  indiciaFns.on('change', '.scPresence, .scAbsence', {}, function(e) {
+    var tr = $(this).closest('tr');
+    if ($(this).prop('checked')) {
+      $(tr).closest('tr').find('.scPresence,.scAbsence').not('.' + this.className).prop('checked', false);
     }
   });
 
