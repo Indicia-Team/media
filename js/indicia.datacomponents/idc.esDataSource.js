@@ -375,6 +375,11 @@ var IdcEsDataSource;
           url += url.indexOf('?') === -1 ? '?' : '&';
           url += 'filter_path=' + source.settings.filterPath;
         }
+        // Allow switch of Elasticsearch API endpoint.
+        if (source.settings.endpoint) {
+          url += url.indexOf('?') === -1 ? '?' : '&';
+          url += 'endpoint=' + source.settings.endpoint
+        }
         $.ajax({
           url: url,
           type: 'post',
