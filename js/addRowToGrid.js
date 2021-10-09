@@ -894,9 +894,63 @@ var resetSpeciesTextOnEscape;
       if (indiciaData['spatialRefPerRowUseFullscreenMap-' + gridId]) {
         // Track scroll position so we can reset it.
         indiciaData.lastScrollTop = $(document).scrollTop();
+        // Ensure map not on a hidden element, remembering which we changed.
+        indiciaData.initiallyHiddenMapParents = $(mapdiv).parents().filter(function() {
+          return $(this).css('display') === 'none';
+        });
+        $(indiciaData.initiallyHiddenMapParents).show();
         // Request map fullscreen.
         fs = mapdiv.requestFullscreen || mapdiv.mozRequestFullScreen || mapdiv.webkitRequestFullScreen || mapdiv.msRequestFullscreen;
         fs.call(mapdiv);
+      }
+    }
+  });
+
+  /**
+   * Format a date in UK style, as required by vague date component dates.
+   *
+   * @param date date
+   *   Date to format.
+   *
+   * @return string
+   *   Formatted date.
+   */
+  function formatDate(date) {
+    return ('0' + date.getDate()).slice(-2) + '/'
+      + ('0' + (date.getMonth()+1)).slice(-2) + '/'
+      + date.getFullYear();
+  }
+
+  /**
+   * Change a grid date cell updates the overview sample's date.
+   */
+  indiciaFns.on('change', '.scDateCell input', {}, function() {
+    var vagueDateSetting = $('#sample\\:date').parent().find('.date-mode-toggle');
+    var dateParts;
+    var inputDate;
+    var startDate;
+    var endDate;
+    if ($(this).val() !== '') {
+      inputDate = new Date($(this).val());
+      // If the main sample has a vague date control which is either empty, or
+      // set to a range, update the range.
+      if (vagueDateSetting && $('#sample\\:date').val() === '' || $('#sample\\:date').val().match(/^\d\d\/\d\d\/\d{4} - \d\d\/\d\d\/\d{4}$/)) {
+        // First ensure sample date in vague date mode to accept a range.
+        if (!vagueDateSetting.is(':checked')) {
+          vagueDateSetting.prop('checked', true);
+          vagueDateSetting.change();
+        }
+        if ($('#sample\\:date').val() === '') {
+          $('#sample\\:date').val(formatDate(inputDate) + ' - ' + formatDate(inputDate));
+        } else {
+          // Capture d(ay), m(onth) and y(ear) for s(tart) and e(nd) dates.
+          dateParts = $('#sample\\:date').val().match(/^(?<sd>\d\d)\/(?<sm>\d\d)\/(?<sy>\d{4}) - (?<ed>\d\d)\/(?<em>\d\d)\/(?<ey>\d{4})$/);
+          startDate = new Date(dateParts.groups.sy + '-' + dateParts.groups.sm + '-' + dateParts.groups.sd);
+          endDate = new Date(dateParts.groups.ey + '-' + dateParts.groups.em + '-' + dateParts.groups.ed);
+          startDate = inputDate < startDate ? inputDate : startDate;
+          endDate = inputDate > endDate ? inputDate : endDate;
+          $('#sample\\:date').val(formatDate(startDate) + ' - ' + formatDate(endDate));
+        }
       }
     }
   });
