@@ -725,6 +725,9 @@ var destroyAllFeatures;
      */
     function returnClickPointToSpeciesGrid(data) {
       var gridId;
+      var div = indiciaData.mapdiv;
+      var centre;
+      var wkt;
       // Fetching grid ref for a grid row is active.
       $('.scSpatialRefFromMap.active').parent().find('.scSpatialRef').val(data.sref);
       $('.scSpatialRefFromMap.active').parent().find('.scSpatialRef').change();
@@ -732,6 +735,11 @@ var destroyAllFeatures;
       if (indiciaData['spatialRefPerRowUseFullscreenMap-' + gridId] &&
           ((document.fullscreenElement && document.fullscreenElement !== null) ||    // alternative standard methods
             document.mozFullScreen || document.webkitIsFullScreen)) {
+        if (typeof indiciaData.initiallyHiddenMapParents !== 'undefined') {
+          // Reset if map was previously hidden.
+          $(indiciaData.initiallyHiddenMapParents).hide();
+          delete indiciaData.initiallyHiddenMapParents;
+        }
         (document.exitFullscreen || document.mozCancelFullScreen || webkitExitFullScreen || msExitFullScreen).call(document);
         $('.scSpatialRefFromMap.active').removeClass('active');
         if (indiciaData.lastScrollTop) {
@@ -740,6 +748,21 @@ var destroyAllFeatures;
             delete indiciaData.lastScrollTop;
           }, 200);
         }
+        // Update the overview sample spatial ref to centre of all points.
+        centre = div.map.editLayer.getDataExtent().getCenterLonLat();
+        wkt = new OpenLayers.Format.WKT().extractGeometry(new OpenLayers.Geometry.Point(centre.lon, centre.lat));
+        $.getJSON(div.settings.indiciaSvc + '/index.php/services/spatial/wkt_to_sref?wkt=' + wkt +
+          '&system=' + $('[name="sample\:entered_sref_system"]').val() + '&wktsystem=' +
+          div.map.projection.proj.srsProjNumber + '&precision=8&callback=?',
+          function (data) {
+            if (typeof data.error !== 'undefined') {
+              alert(data.error);
+            } else {
+              $('[name="sample\:entered_sref"]').val(data.sref);
+              $('[name="sample\:geom"]').val(data.wkt);
+            }
+          });
+        $('[name="sample\:entered_sref"]').val(centre.lat + ' ' + centre.lon);
       }
     }
 
