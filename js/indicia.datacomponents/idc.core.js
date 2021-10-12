@@ -347,7 +347,7 @@
           item = '<a href="' + indiciaFns.applyFieldReplacements(el, doc, link, this.tokenDefaults) + '" title="' + this.title + '">' + item + '</a>';
         }
         else if (this.onClickFn) {
-          item = '<a onclick="indiciaFns.' + this.onClickFn + '(jQuery(this).closest(\'tr\')[0], jQuery(this).closest(\'tr\').attr(\'data-doc-source\'));" title="' + this.title + '">' + item + '</a>';
+          item = '<a onclick="indiciaFns.' + this.onClickFn + '(JSON.parse(jQuery(this).closest(\'tr\').attr(\'data-doc-source\')), jQuery(this).closest(\'tr\')[0]);" title="' + this.title + '">' + item + '</a>';
         }
         html += item;
       }
