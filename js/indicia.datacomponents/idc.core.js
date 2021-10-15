@@ -944,26 +944,32 @@
       var coords = point.split(',') || doc.p;
       var lat = parseFloat(coords[0]);
       var format = params && params[0] ? params[0] : "";
+      var precision;
       switch(format) {
         case "decimal":
+          if (params && params[1]) {
+            return lat.toFixed(params[1]);
+          }
           return lat;
         case "nssuffix":
           // Implemented as the default.
         default:
-          return Math.abs(lat).toFixed(3) + (lat >= 0 ? 'N' : 'S');
+          precision = params && params[1] ? params[1] : 3;
+          return Math.abs(lat).toFixed(precision) + (lat >= 0 ? 'N' : 'S');
       }
     },
 
     /**
      * A formatted lat long.
      */
-    lat_lon: function latLon(doc) {
+    lat_lon: function latLon(doc, params) {
       var point = doc.location.point || doc.point;
       var coords = point.split(',') || doc.p;
       var lat = parseFloat(coords[0]);
       var lon = parseFloat(coords[1]);
-      return Math.abs(lat).toFixed(3) + (lat >= 0 ? 'N' : 'S') + ' ' +
-             Math.abs(lon).toFixed(3) + (lon >= 0 ? 'E' : 'W');
+      var precision = params && params[0] ? params[0] : 3;
+      return Math.abs(lat).toFixed(precision) + (lat >= 0 ? 'N' : 'S') + ' ' +
+             Math.abs(lon).toFixed(precision) + (lon >= 0 ? 'E' : 'W');
     },
 
     /**
@@ -995,13 +1001,18 @@
       var coords = point.split(',') || doc.p;
       var lon = parseFloat(coords[1]);
       var format = params && params[0] ? params[0] : "";
+      var precision;
       switch(format) {
         case "decimal":
+          if (params && params[1]) {
+            return lon.toFixed(params[1]);
+          }
           return lon;
         case "ewsuffix":
           // Implemented as the default.
         default:
-          return Math.abs(lon).toFixed(3) + (lon >= 0 ? 'E' : 'W');
+          precision = params && params[1] ? params[1] : 3;
+          return Math.abs(lon).toFixed(precision) + (lon >= 0 ? 'E' : 'W');
       }
     },
 
