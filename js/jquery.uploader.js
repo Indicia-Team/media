@@ -286,31 +286,38 @@ var checkSubmitInProgress = function () {
       var existing, uniqueId, requestId, thumbnailfilepath, origfilepath, tmpl, ext;
       indiciaData.linkRequestCount=div.settings.existingFiles.length;
       $.each(div.settings.existingFiles, function(i, file) {
+        var isLocal = file.media_type.match(/:Local$/) || file.media_type.match(/:Local:/);
         requestId = $('.filelist .mediafile, .filelist .link').length,
             uniqueId = 'link-' + requestId;
         //Media sub-types are now supported of the form like "Image:Local:SubTypeName
         //The original format for media items would just have "Local" at the end.
         //So include both of these possibilities
-        if (file.media_type.match(/:Local$/)||file.media_type.match(/:Local:/)) {
-          origfilepath = div.settings.finalImageFolder + file.path;
-          ext = file.path.split('.').pop().toLowerCase();
+        if (isLocal || file.media_type === 'Image:iNaturalist') {
+          if (file.media_type === 'Image:iNaturalist') {
+            origfilepath = file.path.replace('/square.', '/original.');
+            thumbnailfilepath = file.path;
+          } else {
+            origfilepath = div.settings.finalImageFolder + file.path;
+            if (file.id === '') {
+              thumbnailfilepath = div.settings.destinationFolder + file.path;
+            }
+            else {
+              if (typeof div.settings.finalImageFolderThumbs === 'undefined') {
+                // default thumbnail location if Indicia in charge of images
+                thumbnailfilepath = div.settings.finalImageFolder + 'med-' + file.path;
+              } else {
+                // overridden thumbnail location
+                thumbnailfilepath = div.settings.finalImageFolderThumbs + file.path;
+              }
+            }
+          }
+          ext = file.path.split('.').pop().split('?')[0].toLowerCase();
           existing = div.settings.file_box_initial_file_infoTemplate.replace(/\{id\}/g, uniqueId)
               .replace(/\{filename\}/g, file.media_type.match(/^(Audio|Pdf):/) ? div.settings.msgFile : div.settings.msgPhoto)
               .replace(/\{imagewidth\}/g, div.settings.imageWidth);
           $('#' + div.id.replace(/:/g,'\\:') + ' .filelist').append(existing);
           $('#' + uniqueId + ' .progress-wrapper').remove();
-          if (file.id === '') {
-            thumbnailfilepath = div.settings.destinationFolder + file.path;
-          }
-          else {
-            if (div.settings.finalImageFolderThumbs===undefined) {
-              // default thumbnail location if Indicia in charge of images
-              thumbnailfilepath = div.settings.finalImageFolder + 'med-' + file.path;
-            } else {
-              // overridden thumbnail location
-              thumbnailfilepath = div.settings.finalImageFolderThumbs + file.path;
-            }
-          }
+
           // Default.
           tmpl = div.settings['file_box_uploaded_genericTemplate'];
           // Scan the known types for this extension.
@@ -320,7 +327,7 @@ var checkSubmitInProgress = function () {
             }
           });
           tmpl += div.settings.file_box_uploaded_extra_fieldsTemplate;
-          file.caption = file.caption===null ? '' : file.caption;
+          file.caption = file.caption === null ? '' : file.caption;
           $('#' + uniqueId + ' .media-wrapper').html(tmpl
                 .replace(/\{id\}/g, uniqueId)
                 .replace(/\{thumbnailfilepath\}/g, thumbnailfilepath)
@@ -334,7 +341,7 @@ var checkSubmitInProgress = function () {
                 .replace(/\{typeField\}/g, div.settings.table + ':media_type_id:' + uniqueId)
                 .replace(/\{typeValue\}/g, file.media_type_id)
                 .replace(/\{typeNameField\}/g, div.settings.table + ':media_type:' + uniqueId)
-                .replace(/\{typeNameValue\}/g, 'Image:Local')
+                .replace(/\{typeNameValue\}/g, isLocal ? 'Image:Local' : file.media_type)
                 .replace(/\{deletedField\}/g, div.settings.table + ':deleted:' + uniqueId)
                 .replace(/\{deletedValue\}/g, 'f')
                 .replace(/\{isNewField\}/g, 'isNew-' + uniqueId)
