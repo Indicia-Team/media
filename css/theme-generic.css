@@ -19,7 +19,11 @@
   position: absolute;
   z-index: 999;
   opacity: 0.5;
+  margin: 0;
   padding: 0;
+  right: 4px;
+  top: 6px;
+  bottom: 6px;
 }
 .add-new-taxon:hover {
   opacity: 0.8;
@@ -44,7 +48,11 @@ table.species-grid .scSpatialRefFromMap {
   position: absolute;
   z-index: 999;
   opacity: 0.5;
+  margin: 0;
+  padding: 0;
   right: 4px;
+  top: 6px;
+  bottom: 6px;
 }
 table.species-grid .scSpatialRefFromMap:hover {
   opacity: 0.8;
@@ -52,6 +60,19 @@ table.species-grid .scSpatialRefFromMap:hover {
 table.species-grid .scSpatialRefFromMap.active {
   opacity: 1;
   background-color: lightyellow;
+}
+table.species-grid .row-buttons {
+  border-bottom: solid silver 1px;
+}
+table.species-grid .row-buttons .action-button {
+  opacity: 0.5;
+  padding: 2px;
+  border-radius: 2px;
+  margin: 1px;
+}
+table.species-grid .row-buttons .action-button:hover {
+  opacity: 1;
+  background-color: #ccc;
 }
 
 #new-taxon-form {

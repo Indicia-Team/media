@@ -21,6 +21,11 @@
   position: absolute;
   z-index: 999;
   opacity: 0.5;
+  margin: 0;
+  padding: 0;
+  right: 4px;
+  top: 6px;
+  bottom: 6px;
   &:hover {
     opacity: 0.8;
   }
@@ -28,7 +33,6 @@
 
 .add-new-taxon {
   @include buttonInsideInput();
-  padding: 0;
 }
 
 .species-checklist-wrap {
@@ -47,10 +51,23 @@ table.species-grid {
   }
   .scSpatialRefFromMap {
     @include buttonInsideInput();
-    right: 4px;
+
     &.active {
       opacity: 1;
       background-color: lightyellow;
+    }
+  }
+  .row-buttons {
+    border-bottom: solid silver 1px;
+    .action-button {
+      opacity: 0.5;
+      padding: 2px;
+      border-radius: 2px;
+      margin: 1px;
+      &:hover {
+        opacity: 1;
+        background-color: #ccc;
+      }
     }
   }
 }

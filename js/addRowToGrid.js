@@ -347,23 +347,15 @@ var resetSpeciesTextOnEscape;
       taxonCell = e.target.parentNode;
       /* Create edit icons for taxon cells. Only add the edit icon if the user has this functionality available on the
       edit tab. Also create Notes and Delete icons when required */
-      var linkPageIconSource = indiciaData.imagesPath + 'nuvola/find-22px.png';
+      deleteAndEditHtml = "<td class='row-buttons'>";
+      deleteAndEditHtml += '<i class="fas fa-trash-alt action-button remove-row" title="' + indiciaData.lang.speciesChecklistRowButtons.deleteOccurrence + '"></i>';
       if (indiciaData['editTaxaNames-' + gridId]) {
-        deleteAndEditHtml = "<td class='row-buttons'>\n\
-            <img class='action-button remove-row' src=" + indiciaData.imagesPath + "nuvola/cancel-16px.png>\n"
-        deleteAndEditHtml += "<img class='action-button edit-taxon-name' src=" + indiciaData.imagesPath + "nuvola/package_editors-16px.png>\n";
-        if (indiciaData['includeSpeciesGridLinkPage-' + gridId]) {
-          deleteAndEditHtml += '<img class="species-grid-link-page-icon" title="'+indiciaData.speciesGridPageLinkTooltip+'" alt="Notes icon" src=' + linkPageIconSource + '>';
-        }
-        deleteAndEditHtml += '</td>';
-      } else {
-        deleteAndEditHtml = "<td class='row-buttons'>\n\
-            <img class='action-button action-button remove-row' src=" + indiciaData.imagesPath + 'nuvola/cancel-16px.png>\n';
-        if (indiciaData['includeSpeciesGridLinkPage-' + gridId]) {
-          deleteAndEditHtml += '<img class="species-grid-link-page-icon" title="' + indiciaData.speciesGridPageLinkTooltip+'" alt="Notes icon" src=' + linkPageIconSource + '>';
-        }
-        deleteAndEditHtml += '</td>';
+        deleteAndEditHtml += '<i class="fas fa-edit action-button edit-taxon-name" title="' + indiciaData.lang.speciesChecklistRowButtons.editName + '"></i>';
       }
+      if (indiciaData['includeSpeciesGridLinkPage-' + gridId]) {
+        deleteAndEditHtml += '<i class="fas fa-info-circle" action-button species-grid-link-page-icon" title="' + indiciaData.lang.speciesChecklistRowButtons.speciesGridPageLinkTooltip + '"></i>';
+      }
+      deleteAndEditHtml += '</td>';
       // Put the edit and delete icons just before the taxon name
       $(taxonCell).before(deleteAndEditHtml);
       // Note case must be colSpan to work in IE!
@@ -438,7 +430,6 @@ var resetSpeciesTextOnEscape;
       var taxonCell;
       var gridId;
       var selectorId;
-      var linkPageIconSource;
       // Only do reset if the autocomplete drop down isn't showing, else we assume the user is still working with
       // the cell
       if ($('.ac_over').length === 0) {
@@ -450,13 +441,11 @@ var resetSpeciesTextOnEscape;
         $('#' + selectorId).remove();
         // replace with the previous plain text species name
         $(taxonCell).html(taxonNameBeforeUserEdit);
-        deleteAndEditHtml = '<td class="row-buttons">\n' +
-            '<img class="action-button remove-row" src="' + indiciaData.imagesPath + 'nuvola/cancel-16px.png">\n' +
-            '<img class="edit-taxon-name" src="' + indiciaData.imagesPath + 'nuvola/package_editors-16px.png">\n';
+        deleteAndEditHtml = '<td class="row-buttons">' +
+          '<i class="fas fa-trash-alt action-button remove-row" title="' + indiciaData.lang.speciesChecklistRowButtons.deleteOccurrence + '"></i>' +
+          '<i class="fas fa-edit action-button edit-taxon-name" title="' + indiciaData.lang.speciesChecklistRowButtons.editName + '"></i>';
         if (indiciaData['includeSpeciesGridLinkPage-' + gridId]) {
-          linkPageIconSource = indiciaData.imagesPath + 'nuvola/find-22px.png';
-          deleteAndEditHtml += '<img class="species-grid-link-page-icon" title="' +
-            indiciaData.speciesGridPageLinkTooltip + '" alt="Notes icon" src=' + linkPageIconSource + '>\n';
+          deleteAndEditHtml += '<i class="fas fa-info-circle" action-button species-grid-link-page-icon" title="' + indiciaData.lang.speciesChecklistRowButtons.speciesGridPageLinkTooltip + '"></i>';
         }
         deleteAndEditHtml += '</td>\n';
         $(taxonCell).attr('colSpan', 1);

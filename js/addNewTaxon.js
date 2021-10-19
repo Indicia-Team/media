@@ -138,15 +138,9 @@
     indiciaFns.hookTaxonLookupFailed = [];
   }
   indiciaFns.hookTaxonLookupFailed.push(function(input) {
-    var btnSize = input.clientHeight - 4;
     if (indiciaData.allowTaxonAdditionToList) {
       if ($(input).parent().find('.add-new-taxon').length === 0) {
-        $(input).after('<button type="button" class="add-new-taxon" title="Request a new taxon" style="' +
-          'top: ' + (input.offsetTop + input.clientTop + 2) + 'px; ' +
-          'height: ' + btnSize + 'px; ' +
-          'width: ' + btnSize + 'px; ' +
-          'left: ' + (input.offsetLeft + input.clientLeft + input.clientWidth - (2 + btnSize)) + 'px; ' +
-          '">+</span>');
+        $(input).after('<button type="button" class="add-new-taxon" title="Request a new taxon"><i class="fas fa-plus"></i></span>');
       }
     }
   });
