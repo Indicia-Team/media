@@ -28,27 +28,22 @@ indiciaData.srefHandlers['osie'] = {
   returns: ['wkt', 'precisions', 'gridNotation'], // sref
 
   /**
-   * Receives a point after a click on the map and converts to a grid square
+   * Receives a point after a click on the map and converts to a WKT grid square.
    */
   pointToWkt: function(point, precisionInfo) {
     var sqrSize = Math.pow(10, (10-precisionInfo.precision)/2);
     var x=Math.floor(point.x/sqrSize)*sqrSize,
         y=Math.floor(point.y/sqrSize)*sqrSize;
     if (x>=0 && x<=500000-sqrSize && y>=0 && y<=500000-sqrSize) {
-      return {
-        // @todo: sref:
-        wkt: 'POLYGON(('+
-          x+' '+y+','+
-          (x+sqrSize)+' '+y+','+
-          (x+sqrSize)+' '+(y+sqrSize)+','+
-          x+' '+(y+sqrSize)+','+
-          x+' '+y+
-          '))'
-      };
+      return 'POLYGON(('+
+        x+' '+y+','+
+        (x+sqrSize)+' '+y+','+
+        (x+sqrSize)+' '+(y+sqrSize)+','+
+        x+' '+(y+sqrSize)+','+
+        x+' '+y+
+        '))';
     } else {
-      return {
-        error: 'Out of bounds'
-      }
+      return 'Out of bounds';
     }
   },
 

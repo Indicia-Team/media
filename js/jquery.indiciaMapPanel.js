@@ -1927,7 +1927,7 @@ var destroyAllFeatures;
      * Callback gets called with the sref in system, and the wkt in
      * indiciaProjection. These may be different.
      */
-    function pointToWkt(div, point, system, callback, pointSystem, precision) {
+    function pointToSref(div, point, system, callback, pointSystem, precision) {
       if (typeof pointSystem === 'undefined') {
         pointSystem = indiciaFns.projectionToSystem(div.map.projection, false);
       }
@@ -1935,8 +1935,8 @@ var destroyAllFeatures;
       var precisionInfo = getPrecisionInfo(div, precision);
       if (typeof indiciaData.srefHandlers === 'undefined' ||
           typeof indiciaData.srefHandlers[system.toLowerCase()] === 'undefined' ||
-          $.inArray('wkt', indiciaData.srefHandlers[_getSystem().toLowerCase()].returns) === -1 ||
-          $.inArray('sref', indiciaData.srefHandlers[_getSystem().toLowerCase()].returns) === -1) {
+          $.inArray('wkt', indiciaData.srefHandlers[system.toLowerCase()].returns) === -1 ||
+          $.inArray('gridNotation', indiciaData.srefHandlers[system.toLowerCase()].returns) === -1) {
         // next call also generates the wkt in map projection
         $.getJSON(opts.indiciaSvc + 'index.php/services/spatial/wkt_to_sref' +
           '?wkt=' + point +
@@ -1950,15 +1950,24 @@ var destroyAllFeatures;
         );
       } else {
         // passing a point in the mapSystem.
-        var r, pt, feature, parser,
+        var wkt;
+        var r;
+        var pt, parser,
           ll = new OpenLayers.LonLat(point.x, point.y),
-          proj = new OpenLayers.Projection('EPSG:' + indiciaData.srefHandlers[_getSystem().toLowerCase()].srid);
+          proj = new OpenLayers.Projection('EPSG:' + indiciaData.srefHandlers[system.toLowerCase()].srid);
         ll.transform(div.map.projection, proj);
         pt = { x: ll.lon, y: ll.lat };
-        r = indiciaData.srefHandlers[_getSystem().toLowerCase()].pointToWkt(pt, precisionInfo);
-        parser = new OpenLayers.Format.WKT();
-        feature = parser.read(r.wkt);
-        r.wkt = feature.geometry.transform(proj, div.indiciaProjection).toString();
+        wkt = indiciaData.srefHandlers[system.toLowerCase()].pointToWkt(pt, precisionInfo);
+        if (wkt === 'Out of bounds') {
+          r = {error: wkt};
+        } else {
+          parser = new OpenLayers.Format.WKT();
+          r = {
+            sref: indiciaData.srefHandlers[system.toLowerCase()].pointToGridNotation(pt, precisionInfo.precision),
+            wkt: parser.read(wkt).geometry.transform(proj, div.indiciaProjection).toString(),
+            mapwkt: parser.read(wkt).geometry.transform(proj, div.map.projection).toString(),
+          };
+        }
         callback(r);
       }
     }
@@ -2014,7 +2023,7 @@ var destroyAllFeatures;
           if(this.map.div.settings.autoFillInCentroid) {
             var centroid = evt.feature.geometry.getCentroid();
             $('#imp-geom').val(centroid.toString());
-            pointToWkt(this.map.div, centroid, _getSystem(), function (data) {
+            pointToSref(this.map.div, centroid, _getSystem(), function (data) {
               if (typeof data.sref !== 'undefined') {
                 $('#' + map.div.settings.srefId).val(data.sref);
               }
@@ -2030,7 +2039,7 @@ var destroyAllFeatures;
           // As we are not separating the boundary geom, the geom's sref goes in the
           // centroid, unless on filter popup.
           if (!$(div).closest('#controls-filter_where').length) {
-            pointToWkt(div, geom.getCentroid(), _getSystem(), function (data) {
+            pointToSref(div, geom.getCentroid(), _getSystem(), function (data) {
               if (typeof data.sref !== 'undefined') {
                 $('#' + div.settings.srefId).val(data.sref);
               }
@@ -2067,7 +2076,7 @@ var destroyAllFeatures;
       $('#imp-geom').val(feature.geometry.toString());
       $('#imp-boundary-geom').val(feature.geometry.toString());
       // Get the sref of the swVertex and show in control
-      pointToWkt(map.div, swVertex, _getSystem(), function(data) {
+      pointToSref(map.div, swVertex, _getSystem(), function(data) {
         if (typeof data.sref !== 'undefined') {
           $('#'+map.div.settings.srefId).val(data.sref);
         }
@@ -2098,7 +2107,7 @@ var destroyAllFeatures;
       // This is in the SRS of the current base layer, which should but may
       // not be the same projection as the map! Definitely not
       // indiciaProjection! Need to convert this map based Point to a
-      // _getSystem based Sref (done by pointToWkt) and a
+      // _getSystem based Sref (done by pointToSref) and a
       // indiciaProjection based geometry (done by the callback)
       var point = new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat);
       var polygon;
@@ -2161,7 +2170,7 @@ var destroyAllFeatures;
         }
         var precision = div.settings.plotPrecision;
         // Request sref of point that was clicked
-        pointToWkt(div, point, _getSystem(), function (data) {
+        pointToSref(div, point, _getSystem(), function (data) {
           plot.sref = data.sref;
           handleSelectedPositionOnMap(lonlat, div, plot);
         }, undefined, precision);
@@ -2169,7 +2178,7 @@ var destroyAllFeatures;
         // Clicking to locate an sref (eg an OSGB grid square)
         var system = chooseBestSystem(div, point, _getSystem());
         $('select#' + opts.srefSystemId).val(system);
-        pointToWkt(div, point, system, function(data) {
+        pointToSref(div, point, system, function(data) {
           handleSelectedPositionOnMap(lonlat, div, data);
           chooseBestLayer(div, point);
         });
@@ -2380,7 +2389,7 @@ var destroyAllFeatures;
           var system=$('#'+opts.srefSystemId+' option[value=4326]');
           if (system.length===1) {
             $('#'+opts.srefSystemId).val('4326');
-            pointToWkt(div, new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat), '4326', function (data) {
+            pointToSref(div, new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat), '4326', function (data) {
               setClickPoint(data, div); // data sref in 4326, wkt in indiciaProjection, mapwkt in mapProjection
             });
           } else {
@@ -2894,7 +2903,7 @@ var destroyAllFeatures;
     return this.each(function () {
       // expose public stuff
       this.settings = opts;
-      this.pointToWkt = pointToWkt;
+      this.pointToSref = pointToSref;
       this.addPt = addPt;
       this.reapplyQuery = reapplyQuery;
       this.getFeaturesByVal = getFeaturesByVal;
@@ -3221,18 +3230,18 @@ var destroyAllFeatures;
                     pt = {x:ll.lon, y:ll.lat};
                     // If we have a client-side handler for this system which can return the wkt then we can
                     // draw a ghost of the proposed sref if they click
-                    var r, feature, parser;
-                    r=handler.pointToWkt(pt, precisionInfo);
-                    if (typeof r.error!=='undefined') {
+                    var wkt, feature, parser;
+                    wkt = handler.pointToWkt(pt, precisionInfo);
+                    if (wkt === 'Out of bounds') {
                       removeAllFeatures(div.map.editLayer, 'ghost');
                     } else {
                       parser = new OpenLayers.Format.WKT();
-                      feature = parser.read(r.wkt);
-                      r.wkt = feature.geometry.transform(proj, div.map.projection).toString();
+                      feature = parser.read(wkt);
+                      wkt = feature.geometry.transform(proj, div.map.projection).toString();
                       //If this line is used, it breaks the rotation handles on the plots without
                       //actually having any other effect as far as I can tell.
                       if (!div.settings.clickForPlot) {
-                        ghost=_showWktFeature(div, r.wkt, div.map.editLayer, null, true, 'ghost', false);
+                        ghost=_showWktFeature(div, wkt, div.map.editLayer, null, true, 'ghost', false);
                       }
                     }
                   } else if (parseInt(_getSystem())==_getSystem()) {
@@ -3361,7 +3370,7 @@ var destroyAllFeatures;
             if(div.settings.autoFillInCentroid) {
               var centroid = evt.feature.geometry.getCentroid();
               $('#imp-geom').val(centroid.toString());
-              pointToWkt(div, centroid, _getSystem(), function(data) {
+              pointToSref(div, centroid, _getSystem(), function(data) {
                 if (typeof data.sref !== 'undefined') {
                   $('#'+div.settings.srefId).val(data.sref);
                 }
