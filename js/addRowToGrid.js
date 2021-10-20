@@ -817,7 +817,8 @@ var resetSpeciesTextOnEscape;
             labelAlign: 'lb',
             labelXOffset: 12,
             labelOutlineColor: "white",
-            labelOutlineWidth: 2
+            labelOutlineWidth: 2,
+            pointRadius: 6
           };
           if (taxonNameEl.length) {
             feature.style.label = taxonNameEl.text();
