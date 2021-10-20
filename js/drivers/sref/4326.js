@@ -27,7 +27,14 @@ indiciaData.srefHandlers['4326'] = {
 
   srid: 4326,
 
-  returns: ['precisions', 'gridNotation'], // sref
+  returns: ['wkt', 'precisions', 'gridNotation'],
+
+  /**
+   * Receives a point after a click on the map and converts to a WKT point.
+   */
+  pointToWkt: function(point) {
+    return 'POINT(' + point.x + ' ' + point.y + ')';
+  },
 
   getPrecisionInfo: function() {
     return {
@@ -47,7 +54,7 @@ indiciaData.srefHandlers['4326'] = {
    */
   pointToGridNotation: function(point, digits) {
     precision = (typeof indiciaData.latLongNotationPrecision==="undefined") ?
-      3 : indiciaData.latLongNotationPrecision;
+      5 : indiciaData.latLongNotationPrecision;
     var SN = point.y > 0 ? 'N' : 'S', EW = point.x > 0 ? 'E' : 'W';
     return Math.abs(point.y).toFixed(precision) + SN + ', ' + Math.abs(point.x).toFixed(precision) + EW;
   }

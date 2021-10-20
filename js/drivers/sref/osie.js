@@ -25,7 +25,7 @@ indiciaData.srefHandlers['osie'] = {
 
   srid: 29901,
 
-  returns: ['wkt', 'precisions', 'gridNotation'], // sref
+  returns: ['wkt', 'precisions', 'gridNotation'],
 
   /**
    * Receives a point after a click on the map and converts to a WKT grid square.
