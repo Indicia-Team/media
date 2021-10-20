@@ -27,7 +27,7 @@ indiciaData.srefHandlers['4326'] = {
 
   srid: 4326,
 
-  returns: ['precisions','gridNotation'], // sref
+  returns: ['precisions', 'gridNotation'], // sref
 
   getPrecisionInfo: function() {
     return {

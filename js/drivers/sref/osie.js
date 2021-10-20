@@ -25,12 +25,12 @@ indiciaData.srefHandlers['osie'] = {
 
   srid: 29901,
 
-  returns: ['wkt','precisions','gridNotation'], // sref
+  returns: ['wkt', 'precisions', 'gridNotation'], // sref
 
   /**
    * Receives a point after a click on the map and converts to a grid square
    */
-  pointToSref: function(point, precisionInfo) {
+  pointToWkt: function(point, precisionInfo) {
     var sqrSize = Math.pow(10, (10-precisionInfo.precision)/2);
     var x=Math.floor(point.x/sqrSize)*sqrSize,
         y=Math.floor(point.y/sqrSize)*sqrSize;

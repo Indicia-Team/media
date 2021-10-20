@@ -1927,7 +1927,7 @@ var destroyAllFeatures;
      * Callback gets called with the sref in system, and the wkt in
      * indiciaProjection. These may be different.
      */
-    function pointToSref(div, point, system, callback, pointSystem, precision) {
+    function pointToWkt(div, point, system, callback, pointSystem, precision) {
       if (typeof pointSystem === 'undefined') {
         pointSystem = indiciaFns.projectionToSystem(div.map.projection, false);
       }
@@ -1955,7 +1955,7 @@ var destroyAllFeatures;
           proj = new OpenLayers.Projection('EPSG:' + indiciaData.srefHandlers[_getSystem().toLowerCase()].srid);
         ll.transform(div.map.projection, proj);
         pt = { x: ll.lon, y: ll.lat };
-        r = indiciaData.srefHandlers[_getSystem().toLowerCase()].pointToSref(pt, precisionInfo);
+        r = indiciaData.srefHandlers[_getSystem().toLowerCase()].pointToWkt(pt, precisionInfo);
         parser = new OpenLayers.Format.WKT();
         feature = parser.read(r.wkt);
         r.wkt = feature.geometry.transform(proj, div.indiciaProjection).toString();
@@ -2014,7 +2014,7 @@ var destroyAllFeatures;
           if(this.map.div.settings.autoFillInCentroid) {
             var centroid = evt.feature.geometry.getCentroid();
             $('#imp-geom').val(centroid.toString());
-            pointToSref(this.map.div, centroid, _getSystem(), function (data) {
+            pointToWkt(this.map.div, centroid, _getSystem(), function (data) {
               if (typeof data.sref !== 'undefined') {
                 $('#' + map.div.settings.srefId).val(data.sref);
               }
@@ -2030,7 +2030,7 @@ var destroyAllFeatures;
           // As we are not separating the boundary geom, the geom's sref goes in the
           // centroid, unless on filter popup.
           if (!$(div).closest('#controls-filter_where').length) {
-            pointToSref(div, geom.getCentroid(), _getSystem(), function (data) {
+            pointToWkt(div, geom.getCentroid(), _getSystem(), function (data) {
               if (typeof data.sref !== 'undefined') {
                 $('#' + div.settings.srefId).val(data.sref);
               }
@@ -2067,7 +2067,7 @@ var destroyAllFeatures;
       $('#imp-geom').val(feature.geometry.toString());
       $('#imp-boundary-geom').val(feature.geometry.toString());
       // Get the sref of the swVertex and show in control
-      pointToSref(map.div, swVertex, _getSystem(), function(data) {
+      pointToWkt(map.div, swVertex, _getSystem(), function(data) {
         if (typeof data.sref !== 'undefined') {
           $('#'+map.div.settings.srefId).val(data.sref);
         }
@@ -2098,7 +2098,7 @@ var destroyAllFeatures;
       // This is in the SRS of the current base layer, which should but may
       // not be the same projection as the map! Definitely not
       // indiciaProjection! Need to convert this map based Point to a
-      // _getSystem based Sref (done by pointToSref) and a
+      // _getSystem based Sref (done by pointToWkt) and a
       // indiciaProjection based geometry (done by the callback)
       var point = new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat);
       var polygon;
@@ -2161,7 +2161,7 @@ var destroyAllFeatures;
         }
         var precision = div.settings.plotPrecision;
         // Request sref of point that was clicked
-        pointToSref(div, point, _getSystem(), function (data) {
+        pointToWkt(div, point, _getSystem(), function (data) {
           plot.sref = data.sref;
           handleSelectedPositionOnMap(lonlat, div, plot);
         }, undefined, precision);
@@ -2169,7 +2169,7 @@ var destroyAllFeatures;
         // Clicking to locate an sref (eg an OSGB grid square)
         var system = chooseBestSystem(div, point, _getSystem());
         $('select#' + opts.srefSystemId).val(system);
-        pointToSref(div, point, system, function(data) {
+        pointToWkt(div, point, system, function(data) {
           handleSelectedPositionOnMap(lonlat, div, data);
           chooseBestLayer(div, point);
         });
@@ -2380,7 +2380,7 @@ var destroyAllFeatures;
           var system=$('#'+opts.srefSystemId+' option[value=4326]');
           if (system.length===1) {
             $('#'+opts.srefSystemId).val('4326');
-            pointToSref(div, new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat), '4326', function (data) {
+            pointToWkt(div, new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat), '4326', function (data) {
               setClickPoint(data, div); // data sref in 4326, wkt in indiciaProjection, mapwkt in mapProjection
             });
           } else {
@@ -2894,7 +2894,7 @@ var destroyAllFeatures;
     return this.each(function () {
       // expose public stuff
       this.settings = opts;
-      this.pointToSref = pointToSref;
+      this.pointToWkt = pointToWkt;
       this.addPt = addPt;
       this.reapplyQuery = reapplyQuery;
       this.getFeaturesByVal = getFeaturesByVal;
@@ -3222,7 +3222,7 @@ var destroyAllFeatures;
                     // If we have a client-side handler for this system which can return the wkt then we can
                     // draw a ghost of the proposed sref if they click
                     var r, feature, parser;
-                    r=handler.pointToSref(pt, precisionInfo);
+                    r=handler.pointToWkt(pt, precisionInfo);
                     if (typeof r.error!=='undefined') {
                       removeAllFeatures(div.map.editLayer, 'ghost');
                     } else {
@@ -3361,7 +3361,7 @@ var destroyAllFeatures;
             if(div.settings.autoFillInCentroid) {
               var centroid = evt.feature.geometry.getCentroid();
               $('#imp-geom').val(centroid.toString());
-              pointToSref(div, centroid, _getSystem(), function(data) {
+              pointToWkt(div, centroid, _getSystem(), function(data) {
                 if (typeof data.sref !== 'undefined') {
                   $('#'+div.settings.srefId).val(data.sref);
                 }
