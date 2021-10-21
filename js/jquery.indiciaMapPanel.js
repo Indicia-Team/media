@@ -735,11 +735,6 @@ var destroyAllFeatures;
       if (indiciaData['spatialRefPerRowUseFullscreenMap-' + gridId] &&
           ((document.fullscreenElement && document.fullscreenElement !== null) ||    // alternative standard methods
             document.mozFullScreen || document.webkitIsFullScreen)) {
-        if (typeof indiciaData.initiallyHiddenMapParents !== 'undefined') {
-          // Reset if map was previously hidden.
-          $(indiciaData.initiallyHiddenMapParents).hide();
-          delete indiciaData.initiallyHiddenMapParents;
-        }
         (document.exitFullscreen || document.mozCancelFullScreen || webkitExitFullScreen || msExitFullScreen).call(document);
         $('.scSpatialRefFromMap.active').removeClass('active');
         if (indiciaData.lastScrollTop) {
@@ -748,27 +743,28 @@ var destroyAllFeatures;
             delete indiciaData.lastScrollTop;
           }, 200);
         }
-        // Update the overview sample spatial ref to centre of all points.
-        centre = div.map.editLayer.getDataExtent().getCenterLonLat();
-        wkt = new OpenLayers.Format.WKT().extractGeometry(new OpenLayers.Geometry.Point(centre.lon, centre.lat));
-        $.getJSON(div.settings.indiciaSvc + '/index.php/services/spatial/wkt_to_sref?wkt=' + wkt +
-          '&system=' + $('[name="sample\:entered_sref_system"]').val() + '&wktsystem=' +
-          div.map.projection.proj.srsProjNumber + '&precision=8&callback=?',
-          function (data) {
+        // Update the overview sample spatial ref to centre of all points, only if never manually set.
+        if ($('#' + div.settings.srefId).val() === '' || (indiciaData.lastAutosetSref && $('#' + div.settings.srefId).val() === indiciaData.lastAutosetSref)) {
+          removeAllFeatures(div.map.editLayer, 'clickPoint');
+          centre = div.map.editLayer.getDataExtent().getCenterLonLat();
+          wkt = new OpenLayers.Format.WKT().extractGeometry(new OpenLayers.Geometry.Point(centre.lon, centre.lat));
+          pointToSref(div, new OpenLayers.Geometry.Point(centre.lon, centre.lat), _getSystem(), function (data) {
             if (typeof data.error !== 'undefined') {
               alert(data.error);
             } else {
-              $('[name="sample\:entered_sref"]').val(data.sref);
-              $('[name="sample\:geom"]').val(data.wkt);
+              $('#' + div.settings.srefId).val(data.sref);
+              indiciaData.lastAutosetSref = data.sref;
+              $('#' + div.settings.geomId).val(data.wkt).change();
+              _showWktFeature(div, data.wkt, div.map.editLayer, null, false, 'clickPoint', false);
             }
           });
-        $('[name="sample\:entered_sref"]').val(centre.lat + ' ' + centre.lon);
+        }
       }
     }
 
     /**
-     * Having clicked on the map, and asked warehouse services to transform this to a WKT,
-     * add the feature to the map editlayer. If the feature is a plot, enable dragging and
+     * Having clicked on the map, transform this to a WKT, add the feature to
+     * the map editlayer. If the feature is a plot, enable dragging and
      * rotating. Finally add relevant help.
      */
     function setClickPoint(data, div) {
@@ -798,7 +794,7 @@ var destroyAllFeatures;
         $.each(div.map.editLayer.features, function () {
           // Annotations is a special seperate mode added after original code was written, so do not interfere with annotations even in inverse mode.
           // Subsample geoms should be left in place (linked to grid data).
-          if (this.attributes.type !== 'boundary' && this.attributes.type !== 'zoomToBoundary' &&
+          if (this.attributes.type && this.attributes.type !== 'boundary' && this.attributes.type !== 'zoomToBoundary' &&
               this.attributes.type !== 'annotation' && !this.attributes.type.match(/^subsample/)) {
             toRemove.push(this);
           }
@@ -1916,7 +1912,7 @@ var destroyAllFeatures;
     /**
      * Converts a point to a spatial reference, and also generates the
      * indiciaProjection and mapProjection wkts. The point should be a point
-     * geometry in the map projection or projection defined by pointSystem,
+     * geometry object in the map projection or projection defined by pointSystem,
      * system should hold the system we wish to display the Sref. pointSystem
      * is optional and defines the projection of the point if not the map
      * projection.
@@ -3490,11 +3486,11 @@ var destroyAllFeatures;
           fullscreenchange=function () {
             var fullscreenElement = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement;
             if (fullscreenElement) {
-              if (typeof indiciaData.origMapStyle==='undefined') {
-                indiciaData.origMapStyle=$(div).attr('style');
+              if (typeof indiciaData.origMapStyle === 'undefined') {
+                indiciaData.origMapStyle = $(div).attr('style');
               }
-              $(div).css('width','100%');
-              $(div).css('height','100%');
+              $(div).css('width', '100%');
+              $(div).css('height', '100%');
             } else {
               $(div).attr('style', indiciaData.origMapStyle);
             }
@@ -3509,7 +3505,7 @@ var destroyAllFeatures;
                 displayClass: "olControlFullscreen", title: div.settings.hintFullscreen, trigger: function() {
                   if ((document.fullscreenElement && document.fullscreenElement !== null) ||    // alternative standard methods
                       document.mozFullScreen || document.webkitIsFullScreen) {
-                    var cancel=document.exitFullscreen || document.mozCancelFullScreen || webkitExitFullScreen || msExitFullScreen;
+                    var cancel = document.exitFullscreen || document.mozCancelFullScreen || webkitExitFullScreen || msExitFullScreen;
                     cancel.call(document);
                   } else {
                     var fs = div.requestFullscreen || div.mozRequestFullScreen || div.webkitRequestFullScreen || div.msRequestFullscreen;

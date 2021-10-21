@@ -870,6 +870,20 @@ var resetSpeciesTextOnEscape;
   });
 
   /**
+   * When leaving full screen map mode, reset the spatialRefFromMap button and map visibility state.
+   */
+  document.addEventListener("fullscreenchange", function() {
+    if (!(document.fullscreenElement || document.webkitFullscreenElement)) {
+      $('.scSpatialRefFromMap.active').removeClass('active');
+      if (typeof indiciaData.initiallyHiddenMapParents !== 'undefined') {
+        // Reset if map was previously hidden.
+        $(indiciaData.initiallyHiddenMapParents).hide();
+        delete indiciaData.initiallyHiddenMapParents;
+      }
+    }
+  });
+
+  /**
    * Allow a single button for fetching map ref to be active at one time.
    */
   indiciaFns.on('click', '.scSpatialRefFromMap', {}, function (e) {
