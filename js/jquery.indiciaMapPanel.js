@@ -94,6 +94,38 @@ var destroyAllFeatures;
       return feature;
     }
 
+    /**
+     * Add a feature from a WKT string to a layer.
+     */
+    function addWkt(wkt, layer, type) {
+      _showWktFeature(this, wkt, layer, null, false, type, false);
+    }
+
+    /**
+     * Version of layer.getDataExtent that filters to a feature type.
+     *
+     * @return OpenLayers.Bounds.
+     */
+    function getDataExtent(layer, type) {
+      var maxExtent = null;
+      var features = layer.features;
+      if (features && (features.length > 0)) {
+        var geometry = null;
+        for(var i=0, len=features.length; i<len; i++) {
+          if (features[i].attributes.type === type) {
+            geometry = features[i].geometry;
+            if (geometry) {
+              if (maxExtent === null) {
+                maxExtent = new OpenLayers.Bounds();
+              }
+              maxExtent.extend(geometry.getBounds());
+            }
+          }
+        }
+      }
+      return maxExtent;
+    }
+
     function reapplyQuery() {
       if (this.settings.rememberSelectionGeom) {
         selectFeaturesAndRowsInBufferedGeom(this.settings.rememberSelectionGeom, this.settings.clickableLayers, this);
@@ -725,9 +757,6 @@ var destroyAllFeatures;
      */
     function returnClickPointToSpeciesGrid(data) {
       var gridId;
-      var div = indiciaData.mapdiv;
-      var centre;
-      var wkt;
       // Fetching grid ref for a grid row is active.
       $('.scSpatialRefFromMap.active').parent().find('.scSpatialRef').val(data.sref);
       $('.scSpatialRefFromMap.active').parent().find('.scSpatialRef').change();
@@ -742,22 +771,6 @@ var destroyAllFeatures;
             $(document).scrollTop(indiciaData.lastScrollTop);
             delete indiciaData.lastScrollTop;
           }, 200);
-        }
-        // Update the overview sample spatial ref to centre of all points, only if never manually set.
-        if ($('#' + div.settings.srefId).val() === '' || (indiciaData.lastAutosetSref && $('#' + div.settings.srefId).val() === indiciaData.lastAutosetSref)) {
-          removeAllFeatures(div.map.editLayer, 'clickPoint');
-          centre = div.map.editLayer.getDataExtent().getCenterLonLat();
-          wkt = new OpenLayers.Format.WKT().extractGeometry(new OpenLayers.Geometry.Point(centre.lon, centre.lat));
-          pointToSref(div, new OpenLayers.Geometry.Point(centre.lon, centre.lat), _getSystem(), function (data) {
-            if (typeof data.error !== 'undefined') {
-              alert(data.error);
-            } else {
-              $('#' + div.settings.srefId).val(data.sref);
-              indiciaData.lastAutosetSref = data.sref;
-              $('#' + div.settings.geomId).val(data.wkt).change();
-              _showWktFeature(div, data.wkt, div.map.editLayer, null, false, 'clickPoint', false);
-            }
-          });
         }
       }
     }
@@ -795,7 +808,7 @@ var destroyAllFeatures;
           // Annotations is a special seperate mode added after original code was written, so do not interfere with annotations even in inverse mode.
           // Subsample geoms should be left in place (linked to grid data).
           if (this.attributes.type && this.attributes.type !== 'boundary' && this.attributes.type !== 'zoomToBoundary' &&
-              this.attributes.type !== 'annotation' && !this.attributes.type.match(/^subsample/)) {
+              this.attributes.type !== 'annotation' && this.attributes.type !== 'subsample') {
             toRemove.push(this);
           }
         });
@@ -2901,6 +2914,8 @@ var destroyAllFeatures;
       this.settings = opts;
       this.pointToSref = pointToSref;
       this.addPt = addPt;
+      this.addWkt = addWkt;
+      this.getDataExtent = getDataExtent;
       this.reapplyQuery = reapplyQuery;
       this.getFeaturesByVal = getFeaturesByVal;
       this.removeAllFeatures = removeAllFeatures;
@@ -3240,10 +3255,6 @@ var destroyAllFeatures;
                         ghost=_showWktFeature(div, wkt, div.map.editLayer, null, true, 'ghost', false);
                       }
                     }
-                  } else if (parseInt(_getSystem())==_getSystem()) {
-                    // also draw a selection ghost if using a point ref system we can simply transform client-side
-                    ll = div.map.getLonLatFromPixel({ x: evt.layerX, y: evt.layerY });
-                    ghost = _showWktFeature(div, 'POINT(' + ll.lon + ' ' + ll.lat + ')', div.map.editLayer, null, true, 'ghost', false);
                   }
                 }
               }

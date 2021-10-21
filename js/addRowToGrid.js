@@ -767,6 +767,30 @@ var resetSpeciesTextOnEscape;
   }
 
   /**
+   * When a sub-sample sref is updated, update the main sample's sref to the new centre.
+   */
+  function recentreMainSampleSref(data) {
+    var div = indiciaData.mapdiv;
+    var centre;
+    var wkt;
+    if ($('#' + div.settings.srefId).val() === '' || (indiciaData.lastAutosetSref && $('#' + div.settings.srefId).val() === indiciaData.lastAutosetSref)) {
+      div.removeAllFeatures(div.map.editLayer, 'clickPoint');
+      centre = div.getDataExtent(div.map.editLayer, 'subsample').getCenterLonLat();
+      wkt = new OpenLayers.Format.WKT().extractGeometry(new OpenLayers.Geometry.Point(centre.lon, centre.lat));
+      div.pointToSref(div, new OpenLayers.Geometry.Point(centre.lon, centre.lat), $('#' + div.settings.srefSystemId).val(), function (data) {
+        if (typeof data.error !== 'undefined') {
+          alert(data.error);
+        } else {
+          $('#' + div.settings.srefId).val(data.sref);
+          indiciaData.lastAutosetSref = data.sref;
+          $('#' + div.settings.geomId).val(data.wkt).change();
+          div.addWkt(data.wkt, div.map.editLayer, 'clickPoint');
+        }
+      });
+    }
+  }
+
+  /**
    * Change handler if there is a spatial ref cell in the row.
    *
    * Draws the location of the record on the map.
@@ -807,6 +831,7 @@ var resetSpeciesTextOnEscape;
           parser = new OpenLayers.Format.WKT();
           feature = parser.read(data.mapwkt);
           feature.id = 'subsample-' + rowUniqueIdx;
+          feature.attributes.type = 'subsample';
           feature.style = {
             fontSize: '10px',
             fontFamily: 'Tahoma',
@@ -845,6 +870,8 @@ var resetSpeciesTextOnEscape;
             });
           }
           indiciaData.mapdiv.map.editLayer.addFeatures([feature]);
+          // Update the overview sample spatial ref to centre of all points, only if never manually set.
+          recentreMainSampleSref(data);
         }
       }
     });
@@ -872,7 +899,7 @@ var resetSpeciesTextOnEscape;
   /**
    * When leaving full screen map mode, reset the spatialRefFromMap button and map visibility state.
    */
-  document.addEventListener("fullscreenchange", function() {
+  function fsChange() {
     if (!(document.fullscreenElement || document.webkitFullscreenElement)) {
       $('.scSpatialRefFromMap.active').removeClass('active');
       if (typeof indiciaData.initiallyHiddenMapParents !== 'undefined') {
@@ -881,9 +908,15 @@ var resetSpeciesTextOnEscape;
         delete indiciaData.initiallyHiddenMapParents;
       }
     } else {
-      div.map.updateSize();
+      indiciaData.mapdiv.map.updateSize();
+      indiciaData.mapdiv.map.baseLayer.redraw();
     }
-  });
+  }
+
+  document.addEventListener("fullscreenchange", fsChange);
+  document.addEventListener("mozfullscreenchange", fsChange);
+  document.addEventListener("webkitfullscreenchange", fsChange);
+  document.addEventListener("msfullscreenchange", fsChange);
 
   /**
    * Allow a single button for fetching map ref to be active at one time.
