@@ -880,6 +880,8 @@ var resetSpeciesTextOnEscape;
         $(indiciaData.initiallyHiddenMapParents).hide();
         delete indiciaData.initiallyHiddenMapParents;
       }
+    } else {
+      div.map.updateSize();
     }
   });
 
