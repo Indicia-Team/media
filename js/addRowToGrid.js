@@ -50,9 +50,10 @@ var resetSpeciesTextOnEscape;
     if ($('#existingSampleGeomsBySref').length) {
       parser = new OpenLayers.Format.WKT();
       samples = JSON.parse($('#existingSampleGeomsBySref').val());
-      $.each($('.scSpatialRef:not([value=""])'), function () {
+      $.each($('.scSpatialRef:not([value=""])'), function (idx) {
         feature = parser.read(samples[$(this).val().toUpperCase()]);
-        feature.attributes.type = 'subsample-' + this.id;
+        feature.id = 'subsample-' + idx;
+        feature.attributes.type = 'subsample';
         indiciaData.mapdiv.map.editLayer.addFeatures([feature]);
       });
     }
@@ -838,12 +839,13 @@ var resetSpeciesTextOnEscape;
             fontColor: '#555',
             strokeColor: 'red',
             strokeWidth: 2,
+            strokeDashstyle: 'dash',
             fillOpacity: 0.3,
             labelAlign: 'lb',
             labelXOffset: 12,
             labelOutlineColor: "white",
             labelOutlineWidth: 2,
-            pointRadius: 6
+            pointRadius: 10
           };
           if (taxonNameEl.length) {
             feature.style.label = taxonNameEl.text();
@@ -875,6 +877,26 @@ var resetSpeciesTextOnEscape;
         }
       }
     });
+  });
+
+  /**
+   * Highlight subsample features when the grid's spatial ref control is focused.
+   */
+  function setInputFeatureStyle(e, style) {
+    var rowUniqueIdx = e.currentTarget.id.match(/^sc:species-grid-\d+-(\d+)/)[1];
+    var existingFeature = indiciaData.mapdiv.map.editLayer.getFeatureById('subsample-' + rowUniqueIdx);
+    if (existingFeature) {
+      $.extend(existingFeature.style, style);
+      indiciaData.mapdiv.map.editLayer.redraw()
+    }
+  }
+
+  indiciaFns.on('focus', '.scSpatialRef', {}, function (e) {
+    setInputFeatureStyle(e, {strokeWidth: 4, strokeDashstyle: 'solid'});
+  });
+
+  indiciaFns.on('blur', '.scSpatialRef', {}, function (e) {
+    setInputFeatureStyle(e, {strokeWidth: 2, strokeDashstyle: 'dash'});
   });
 
   /**
