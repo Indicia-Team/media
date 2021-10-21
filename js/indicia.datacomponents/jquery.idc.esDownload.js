@@ -298,6 +298,10 @@
         // Arbitrary choice of page size.
         currentRequestData.aggs._rows.composite.size = 500;
       }
+      // Allow switch of Elasticsearch API endpoint.
+      if (srcSettings.endpoint) {
+        query += '&endpoint=' + srcSettings.endpoint;
+      }
       $.extend(currentRequestData, columnSettings);
       // Reset.
       rowsToDownload = null;
