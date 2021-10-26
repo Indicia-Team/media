@@ -886,8 +886,12 @@ var resetSpeciesTextOnEscape;
     var rowUniqueIdx = e.currentTarget.id.match(/^sc:species-grid-\d+-(\d+)/)[1];
     var existingFeature = indiciaData.mapdiv.map.editLayer.getFeatureById('subsample-' + rowUniqueIdx);
     if (existingFeature) {
-      $.extend(existingFeature.style, style);
-      indiciaData.mapdiv.map.editLayer.redraw()
+      if (existingFeature.style === null) {
+        existingFeature.style = $.extend({}, indiciaData.mapdiv.map.editLayer.styleMap.styles.default.defaultStyle, style);
+      } else {
+        $.extend(existingFeature.style, style);
+      }
+      indiciaData.mapdiv.map.editLayer.redraw();
     }
   }
 

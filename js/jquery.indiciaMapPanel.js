@@ -789,6 +789,9 @@ var destroyAllFeatures;
         returnClickPointToSpeciesGrid(data);
         return;
       }
+      if (div.settings.disallowManualSrefUpdate) {
+        return;
+      }
       // Update the spatial reference control
       $('#' + opts.srefId).val(data.sref);
       // If the sref is in two parts, then we might need to split it across 2 input fields for lat and long
@@ -3182,9 +3185,21 @@ var destroyAllFeatures;
           );
         } else {
           // Add an editable layer to the map
+          var styleMap = new OpenLayers.StyleMap({
+            default: new Style('boundary', this.settings),
+            vertex: {
+              strokeColor: "#004488",
+              fillColor: "#004488",
+              fillOpacity: 0.2,
+              strokeOpacity: 1,
+              strokeWidth: 1,
+              pointRadius: 6,
+              graphicName: "square"
+            }
+          }, {extendDefault: false});
           editLayer = new OpenLayers.Layer.Vector(
             this.settings.editLayerName,
-            { style: new Style('boundary', this.settings), sphericalMercator: true, displayInLayerSwitcher: this.settings.editLayerInSwitcher }
+            { styleMap: styleMap, sphericalMercator: true, displayInLayerSwitcher: this.settings.editLayerInSwitcher }
           );
         }
         div.map.editLayer = editLayer;
@@ -3468,9 +3483,28 @@ var destroyAllFeatures;
         } else if (ctrl=='modifyFeature' && div.settings.editLayer) {
           ctrlObj = new OpenLayers.Control.ModifyFeature(
             div.map.editLayer,
-            { 'displayClass': align + 'olControlModifyFeature', 'title':div.settings.hintModifyFeature }
+            {
+              displayClass: align + 'olControlModifyFeature',
+              title: div.settings.hintModifyFeature,
+              vertexRenderIntent: 'vertex',
+              virtualStyle: {
+                strokeColor: "#007744",
+                strokeOpacity: 1,
+                strokeWidth: 1,
+                pointRadius: 4,
+                fillOpacity: 0.1,
+                graphicName: "square",
+                rotation: 45
+              }
+            }
           );
           toolbarControls.push(ctrlObj);
+          if (typeof div.map.editLayer !== 'undefined') {
+            div.map.editLayer.events.register('beforefeaturemodified', null, function(e) {
+              // Sub-sample polygons shouldn't be edited this way.
+              return e.feature.attributes.type !== 'subsample';
+            });
+          }
         } else if (ctrl === 'graticule') {
           $.each($('select#' + div.settings.srefSystemId + ' option,input#' + div.settings.srefSystemId), function() {
             var graticuleDef;
@@ -3665,7 +3699,12 @@ jQuery.fn.indiciaMapPanel.defaults = {
   toolbarSuffix: '', // content to append to the toolbarDiv content if not on the map
   helpDiv: false,
   editLayer: true,
-  clickForSpatialRef: true, // if true, then enables the click to get spatial references control
+  // If clickForSpatialRef=true, then enables the click to get spatial
+  // references control.
+  clickForSpatialRef: true,
+  // If disallowManualSrefUpdate set, then functionality for setting spatial
+  // ref is available, but disabled, so must be invoked by code.
+  disallowManualSrefUpdate: false,
   clickForPlot: false, // if true, overrides clickForSpatialRef to locate a plot instead of a grid square.
   allowPolygonRecording: false,
   autoFillInCentroid: false, // if true will automatically complete the centroid and Sref when polygon recording.

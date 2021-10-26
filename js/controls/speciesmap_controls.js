@@ -597,7 +597,7 @@ var control_speciesmap_addcontrols;
 
     // We are assuming that this the species map control is invoked after the
     mapInitialisationHooks.push(function (div) {
-      var defaultStyle = $.extend(true, {}, div.map.editLayer.style);
+      var defaultStyle = $.extend(true, {}, div.map.editLayer.styleMap.styles.default.defaultStyle);
       var selectStyle = { fillColor: 'Blue', fillOpacity: 0.3, strokeColor: 'Blue', strokeWidth: 2 };
       var parentStyle = { fillOpacity: 0, strokeColor: 'Red', strokeWidth: 2 };
       var cloned;
