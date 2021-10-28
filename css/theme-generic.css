@@ -74,6 +74,9 @@ table.species-grid .row-buttons .action-button:hover {
   opacity: 1;
   background-color: #ccc;
 }
+table.species-grid tr.selected-row input, table.species-grid tr.selected-row select, table.species-grid tr.selected-row td {
+  background-color: lightyellow;
+}
 
 #new-taxon-form {
   max-width: 600px;

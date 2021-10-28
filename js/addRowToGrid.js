@@ -882,25 +882,24 @@ var resetSpeciesTextOnEscape;
   /**
    * Highlight subsample features when the grid's spatial ref control is focused.
    */
-  function setInputFeatureStyle(e, style) {
+  function selectInputFeature(e, selected) {
     var rowUniqueIdx = e.currentTarget.id.match(/^sc:species-grid-\d+-(\d+)/)[1];
     var existingFeature = indiciaData.mapdiv.map.editLayer.getFeatureById('subsample-' + rowUniqueIdx);
     if (existingFeature) {
-      if (existingFeature.style === null) {
-        existingFeature.style = $.extend({}, indiciaData.mapdiv.map.editLayer.styleMap.styles.default.defaultStyle, style);
-      } else {
-        $.extend(existingFeature.style, style);
+      if (selected) {
+        indiciaData.mapdiv.map.setSelection(indiciaData.mapdiv.map.editLayer, [existingFeature]);
+      } else if (feature.renderIntent === 'select') {
+        indiciaData.mapdiv.map.setSelection(indiciaData.mapdiv.map.editLayer, []);
       }
-      indiciaData.mapdiv.map.editLayer.redraw();
     }
   }
 
   indiciaFns.on('focus', '.scSpatialRef', {}, function (e) {
-    setInputFeatureStyle(e, {strokeWidth: 4, strokeDashstyle: 'solid'});
+    selectInputFeature(e, true);
   });
 
   indiciaFns.on('blur', '.scSpatialRef', {}, function (e) {
-    setInputFeatureStyle(e, {strokeWidth: 2, strokeDashstyle: 'dash'});
+    selectInputFeature(e, false);
   });
 
   /**
@@ -956,6 +955,18 @@ var resetSpeciesTextOnEscape;
     if (!wasActive) {
       // Enable fetch from map.
       $(this).addClass('active');
+      // Deselect features and rows first.
+      indiciaData.mapdiv.map.setSelection(indiciaData.mapdiv.map.editLayer, []);
+      $('.species-grid').find('tr').removeClass('selected-row');
+      // Ensure only the clickSref control is enabled.
+      $.each(mapdiv.map.controls, function() {
+        if (this.displayClass === 'olControlClickSref') {
+          this.activate();
+        }
+        if (this.CLASS_NAME === 'OpenLayers.Control.SelectFeature') {
+          this.deactivate();
+        }
+      });
       if (indiciaData['spatialRefPerRowUseFullscreenMap-' + gridId]) {
         // Track scroll position so we can reset it.
         indiciaData.lastScrollTop = $(document).scrollTop();
