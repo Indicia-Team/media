@@ -888,7 +888,7 @@ var resetSpeciesTextOnEscape;
     if (existingFeature) {
       if (selected) {
         indiciaData.mapdiv.map.setSelection(indiciaData.mapdiv.map.editLayer, [existingFeature]);
-      } else if (feature.renderIntent === 'select') {
+      } else if (existingFeature.renderIntent === 'select') {
         indiciaData.mapdiv.map.setSelection(indiciaData.mapdiv.map.editLayer, []);
       }
     }
