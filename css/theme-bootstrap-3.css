@@ -22,8 +22,8 @@
   margin: 0;
   padding: 0;
   right: 4px;
-  top: 6px;
-  bottom: 6px;
+  top: 50%;
+  transform: translate(0, -50%);
 }
 .add-new-taxon:hover {
   opacity: 0.8;
@@ -51,8 +51,8 @@ table.species-grid .scSpatialRefFromMap {
   margin: 0;
   padding: 0;
   right: 4px;
-  top: 6px;
-  bottom: 6px;
+  top: 50%;
+  transform: translate(0, -50%);
 }
 table.species-grid .scSpatialRefFromMap:hover {
   opacity: 0.8;
