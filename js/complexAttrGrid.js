@@ -43,7 +43,7 @@ jQuery(document).ready(function($) {
 
     gridDef.rowCount++;
     $.each(gridDef.cols, function(idx, def) {
-      fieldname = attrTypeTag+"+:"+attrId+"::"+(gridDef.rowCount-1)+":"+idx;
+      fieldname = attrTypeTag+"Complex:"+attrId+"::"+(gridDef.rowCount-1)+":"+idx;
       row += '<td>';
       if (def.datatype==='lookup' && typeof def.control!=="undefined" && def.control==='checkbox_group') {
         var checkboxes=[];
@@ -65,7 +65,7 @@ jQuery(document).ready(function($) {
       }
       row += '</td>';
     });
-    fieldname = attrTypeTag+"+:"+attrId+"::"+gridDef.rowCount+":deleted";
+    fieldname = attrTypeTag+"Complex:"+attrId+"::"+gridDef.rowCount+":deleted";
     row += '<td><input type="hidden" name="'+fieldname+'" value="f" class="delete-flag"/>';
     if (gridDef.rowCountControl==='') {
       row += '<span class="ind-delete-icon"/>';
