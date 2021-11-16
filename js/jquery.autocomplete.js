@@ -201,7 +201,20 @@ $.Autocompleter = function(input, options) {
         }
       case KEY.TAB:
         if (options.continueOnBlur || event.keyCode===KEY.RETURN) {
+          // If in a species checklist grid, tab also moves to next cell.
+          var sg = $input.closest('.species-grid');
+          if (sg.length) {
+            // Check input position in grid row must be done before
+            // selectCurrent so the input is still in place.
+            var inputs = $(sg).find(':input:visible');
+            var newInput = inputs.eq(inputs.index($input[0]) + 1);
+          }
+          // Now select the current item (whether or not in species checklist grid).
           selectCurrent(event.keyCode);
+          // Do the actual move to the next cell.
+          if (sg.length && newInput) {
+            newInput.focus();
+          }
         }
         break;
 
