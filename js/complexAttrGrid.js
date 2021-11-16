@@ -43,7 +43,7 @@ jQuery(document).ready(function($) {
     
     gridDef.rowCount++; 
     $.each(gridDef.cols, function(idx, def) {
-      fieldname = attrTypeTag+"+:"+attrId+"::"+(gridDef.rowCount-1)+":"+idx;
+      fieldname = attrTypeTag+"Complex:"+attrId+"::"+(gridDef.rowCount-1)+":"+idx;
       row += '<td>';
       if (def.datatype==='lookup' && typeof def.control!=="undefined" && def.control==='checkbox_group') {
         var checkboxes=[];
@@ -53,7 +53,7 @@ jQuery(document).ready(function($) {
         row += checkboxes.join('</td><td>');
       } else if (def.datatype==='lookup') {
         row += '<select name="'+fieldname+'"><option value="">&lt;'+indiciaData.langPleaseSelect+'&gt;</option>';
-        $.each(indiciaData['tl'+idx], function(idx, term) {
+        $.each(indiciaData['tl'+def.termlist_id], function(idx, term) {
           row += '<option value="'+term[0]+':' + term[1] + '">'+term[1]+'</option>';
         });
         row += '</select>';
@@ -65,7 +65,7 @@ jQuery(document).ready(function($) {
       }
       row += '</td>';
     });
-    fieldname = attrTypeTag+"+:"+attrId+"::"+gridDef.rowCount+":deleted";
+    fieldname = attrTypeTag+"Complex:"+attrId+"::"+gridDef.rowCount+":deleted";
     row += '<td><input type="hidden" name="'+fieldname+'" value="f" class="delete-flag"/>';
     if (gridDef.rowCountControl==='') {
       row += '<span class="ind-delete-icon"/>';
