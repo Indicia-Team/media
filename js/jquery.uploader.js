@@ -68,10 +68,12 @@ var checkSubmitInProgress = function () {
           $('#link-'+requestId).remove();
         } else {
           $('#link-title-'+requestId).html(data.title);
-          var uniqueId='link-' + requestId,
-              typeId = indiciaData.mediaTypeTermIdLookup[typename],
-              tmpl=div.settings.file_box_uploaded_linkTemplate+div.settings.file_box_uploaded_extra_fieldsTemplate;
-
+          var uniqueId='link-' + requestId;
+          var typeId = indiciaData.mediaTypeTermIdLookup[typename];
+          var tmpl = div.settings.file_box_uploaded_linkTemplate + div.settings.file_box_uploaded_extra_fieldsTemplate;
+          if (isNew && div.settings.mediaLicenceId) {
+            tmpl += div.settings.file_box_uploaded_licence_fieldTemplate;
+          }
           $('#link-embed-'+requestId).html(tmpl
               .replace(/\{embed\}/g, data.html)
               .replace(/\{idField\}/g, div.settings.table + ':id:' + uniqueId)
@@ -89,6 +91,8 @@ var checkSubmitInProgress = function () {
               .replace(/\{deletedValue\}/g, 'f')
               .replace(/\{isNewField\}/g, 'isNew-' + uniqueId)
               .replace(/\{isNewValue\}/g, isNew ? 't' : 'f')
+              .replace(/\{licenceIdField\}/g, div.settings.table + ':licence_id:' + uniqueId)
+              .replace(/\{licenceIdValue\}/g, div.settings.mediaLicenceId)
           );
         }
       },
@@ -439,6 +443,9 @@ var checkSubmitInProgress = function () {
             tmpl = div.settings['file_box_uploaded_genericTemplate'];
           }
           tmpl += div.settings.file_box_uploaded_extra_fieldsTemplate;
+          if (div.settings.mediaLicenceId) {
+            tmpl += div.settings.file_box_uploaded_licence_fieldTemplate;
+          }
           //If indiciaData.subTypes is supplied then the user is intending to use more than one photo control,
           //each control will have their own media sub-type.
           if (indiciaData.subTypes) {
@@ -487,6 +494,8 @@ var checkSubmitInProgress = function () {
                 .replace(/\{isNewValue\}/g, 't')
                 .replace(/\{idField\}/g, div.settings.table + ':id:' + uniqueId)
                 .replace(/\{idValue\}/g, '') // Set ID to blank, as this is a new record.
+                .replace(/\{licenceIdField\}/g, div.settings.table + ':licence_id:' + uniqueId)
+                .replace(/\{licenceIdValue\}/g, div.settings.mediaLicenceId)
           );
           // Copy the path into the hidden path input. Watch colon escaping for jQuery selectors.
           $('#' + div.settings.table.replace(/:/g,'\\:') + '\\:path\\:' + uniqueId).val(file.name);
@@ -579,6 +588,7 @@ jQuery.fn.uploader.defaults = {
       '<input type="hidden" name="{deletedField}" id="{deletedField}" value="{deletedValue}" class="deleted-value" />' +
       '<input type="hidden" id="{isNewField}" value="{isNewValue}" />' +
       '<input type="text" maxlength="100" style="width: {imagewidth}px" name="{captionField}" id="{captionField}" value="{captionValue}" placeholder="{captionPlaceholder}" />',
+  file_box_uploaded_licence_fieldTemplate: '<input type="hidden" name="{licenceIdField}" id="{licenceIdField}" value="{licenceIdValue}" />',
   file_box_uploaded_linkTemplate : '<div>{embed}</div>',
   file_box_uploaded_imageTemplate : '<a class="fancybox" href="{origfilepath}"><img src="{thumbnailfilepath}" width="{imagewidth}"/></a>',
   file_box_uploaded_audioTemplate : '<audio controls src="{origfilepath}" type="audio/mpeg"/>',

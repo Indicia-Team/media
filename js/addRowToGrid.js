@@ -645,7 +645,8 @@ var resetSpeciesTextOnEscape;
       'uploadScript', 'destinationFolder', 'relativeImageFolder',
       'resizeWidth', 'resizeHeight', 'resizeQuality',
       'caption', 'addBtnCaption', 'msgPhoto', 'msgFile',
-      'msgLink', 'msgNewImage', 'msgDelete'
+      'msgLink', 'msgNewImage', 'msgDelete',
+      'mediaLicenceId'
     ];
     evt.preventDefault();
     imageRow += '<div class="file-box" id="' + ctrlId + '"></div>';
