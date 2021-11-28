@@ -17,6 +17,12 @@
   }
 }
 
+.helpText, .helpTextLeft {
+  color:gray;
+  font-size: 90%;
+  margin: 4px 0 8px 0px;
+}
+
 @mixin buttonInsideInput {
   position: absolute;
   z-index: 999;
