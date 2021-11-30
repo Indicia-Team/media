@@ -2445,7 +2445,7 @@ var destroyAllFeatures;
      *   Layer that's being swapped out.
      */
     function replaceGoogleBaseLayer(layerToReplace) {
-      var map = indiciaData.mapdiv.map;
+      var map = layerToReplace.map;
       var layerIndex = map.getLayerIndex(layerToReplace);
       // Calls the fn to build the new layer.
       var newLayer = layerToReplace.lazyLoadGoogleApiLayerFn();
