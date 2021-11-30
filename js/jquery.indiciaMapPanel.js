@@ -2672,6 +2672,10 @@ var destroyAllFeatures;
       var mapWidth;
       // Careful about recursion. Also don't bother if not on a dynamic layer.
       if (indiciaData.settingBaseLayer || typeof baseLayer.dynamicLayerIndex === 'undefined') {
+        // Non-dynamic Google layers still need to be loaded.
+        if (!indiciaData.settingBaseLayer && typeof baseLayer.lazyLoadGoogleApiLayerFn !== 'undefined') {
+          lazyLoadBaseLayer(baseLayer);
+        }
         return;
       }
       // If we need to switch dynamic layer because of the zoom, find the new
