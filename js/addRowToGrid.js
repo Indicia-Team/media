@@ -50,9 +50,10 @@ var resetSpeciesTextOnEscape;
     if ($('#existingSampleGeomsBySref').length) {
       parser = new OpenLayers.Format.WKT();
       samples = JSON.parse($('#existingSampleGeomsBySref').val());
-      $.each($('.scSpatialRef:not([value=""])'), function () {
+      $.each($('.scSpatialRef:not([value=""])'), function (idx) {
         feature = parser.read(samples[$(this).val().toUpperCase()]);
-        feature.attributes.type = 'subsample-' + this.id;
+        feature.id = 'subsample-' + idx;
+        feature.attributes.type = 'subsample';
         indiciaData.mapdiv.map.editLayer.addFeatures([feature]);
       });
     }
@@ -347,23 +348,15 @@ var resetSpeciesTextOnEscape;
       taxonCell = e.target.parentNode;
       /* Create edit icons for taxon cells. Only add the edit icon if the user has this functionality available on the
       edit tab. Also create Notes and Delete icons when required */
-      var linkPageIconSource = indiciaData.imagesPath + 'nuvola/find-22px.png';
+      deleteAndEditHtml = "<td class='row-buttons'>";
+      deleteAndEditHtml += '<i class="fas fa-trash-alt action-button remove-row" title="' + indiciaData.lang.speciesChecklistRowButtons.deleteOccurrence + '"></i>';
       if (indiciaData['editTaxaNames-' + gridId]) {
-        deleteAndEditHtml = "<td class='row-buttons'>\n\
-            <img class='action-button remove-row' src=" + indiciaData.imagesPath + "nuvola/cancel-16px.png>\n"
-        deleteAndEditHtml += "<img class='action-button edit-taxon-name' src=" + indiciaData.imagesPath + "nuvola/package_editors-16px.png>\n";
-        if (indiciaData['includeSpeciesGridLinkPage-' + gridId]) {
-          deleteAndEditHtml += '<img class="species-grid-link-page-icon" title="'+indiciaData.speciesGridPageLinkTooltip+'" alt="Notes icon" src=' + linkPageIconSource + '>';
-        }
-        deleteAndEditHtml += '</td>';
-      } else {
-        deleteAndEditHtml = "<td class='row-buttons'>\n\
-            <img class='action-button action-button remove-row' src=" + indiciaData.imagesPath + 'nuvola/cancel-16px.png>\n';
-        if (indiciaData['includeSpeciesGridLinkPage-' + gridId]) {
-          deleteAndEditHtml += '<img class="species-grid-link-page-icon" title="' + indiciaData.speciesGridPageLinkTooltip+'" alt="Notes icon" src=' + linkPageIconSource + '>';
-        }
-        deleteAndEditHtml += '</td>';
+        deleteAndEditHtml += '<i class="fas fa-edit action-button edit-taxon-name" title="' + indiciaData.lang.speciesChecklistRowButtons.editName + '"></i>';
       }
+      if (indiciaData['includeSpeciesGridLinkPage-' + gridId]) {
+        deleteAndEditHtml += '<i class="fas fa-info-circle" action-button species-grid-link-page-icon" title="' + indiciaData.lang.speciesChecklistRowButtons.speciesGridPageLinkTooltip + '"></i>';
+      }
+      deleteAndEditHtml += '</td>';
       // Put the edit and delete icons just before the taxon name
       $(taxonCell).before(deleteAndEditHtml);
       // Note case must be colSpan to work in IE!
@@ -438,7 +431,6 @@ var resetSpeciesTextOnEscape;
       var taxonCell;
       var gridId;
       var selectorId;
-      var linkPageIconSource;
       // Only do reset if the autocomplete drop down isn't showing, else we assume the user is still working with
       // the cell
       if ($('.ac_over').length === 0) {
@@ -450,13 +442,11 @@ var resetSpeciesTextOnEscape;
         $('#' + selectorId).remove();
         // replace with the previous plain text species name
         $(taxonCell).html(taxonNameBeforeUserEdit);
-        deleteAndEditHtml = '<td class="row-buttons">\n' +
-            '<img class="action-button remove-row" src="' + indiciaData.imagesPath + 'nuvola/cancel-16px.png">\n' +
-            '<img class="edit-taxon-name" src="' + indiciaData.imagesPath + 'nuvola/package_editors-16px.png">\n';
+        deleteAndEditHtml = '<td class="row-buttons">' +
+          '<i class="fas fa-trash-alt action-button remove-row" title="' + indiciaData.lang.speciesChecklistRowButtons.deleteOccurrence + '"></i>' +
+          '<i class="fas fa-edit action-button edit-taxon-name" title="' + indiciaData.lang.speciesChecklistRowButtons.editName + '"></i>';
         if (indiciaData['includeSpeciesGridLinkPage-' + gridId]) {
-          linkPageIconSource = indiciaData.imagesPath + 'nuvola/find-22px.png';
-          deleteAndEditHtml += '<img class="species-grid-link-page-icon" title="' +
-            indiciaData.speciesGridPageLinkTooltip + '" alt="Notes icon" src=' + linkPageIconSource + '>\n';
+          deleteAndEditHtml += '<i class="fas fa-info-circle" action-button species-grid-link-page-icon" title="' + indiciaData.lang.speciesChecklistRowButtons.speciesGridPageLinkTooltip + '"></i>';
         }
         deleteAndEditHtml += '</td>\n';
         $(taxonCell).attr('colSpan', 1);
@@ -655,7 +645,8 @@ var resetSpeciesTextOnEscape;
       'uploadScript', 'destinationFolder', 'relativeImageFolder',
       'resizeWidth', 'resizeHeight', 'resizeQuality',
       'caption', 'addBtnCaption', 'msgPhoto', 'msgFile',
-      'msgLink', 'msgNewImage', 'msgDelete'
+      'msgLink', 'msgNewImage', 'msgDelete',
+      'mediaLicenceId'
     ];
     evt.preventDefault();
     imageRow += '<div class="file-box" id="' + ctrlId + '"></div>';
@@ -778,6 +769,30 @@ var resetSpeciesTextOnEscape;
   }
 
   /**
+   * When a sub-sample sref is updated, update the main sample's sref to the new centre.
+   */
+  function recentreMainSampleSref(data) {
+    var div = indiciaData.mapdiv;
+    var centre;
+    var wkt;
+    if ($('#' + div.settings.srefId).val() === '' || (indiciaData.lastAutosetSref && $('#' + div.settings.srefId).val() === indiciaData.lastAutosetSref)) {
+      div.removeAllFeatures(div.map.editLayer, 'clickPoint');
+      centre = div.getDataExtent(div.map.editLayer, 'subsample').getCenterLonLat();
+      wkt = new OpenLayers.Format.WKT().extractGeometry(new OpenLayers.Geometry.Point(centre.lon, centre.lat));
+      div.pointToSref(div, new OpenLayers.Geometry.Point(centre.lon, centre.lat), $('#' + div.settings.srefSystemId).val(), function (data) {
+        if (typeof data.error !== 'undefined') {
+          alert(data.error);
+        } else {
+          $('#' + div.settings.srefId).val(data.sref);
+          indiciaData.lastAutosetSref = data.sref;
+          $('#' + div.settings.geomId).val(data.wkt).change();
+          div.addWkt(data.wkt, div.map.editLayer, 'clickPoint');
+        }
+      });
+    }
+  }
+
+  /**
    * Change handler if there is a spatial ref cell in the row.
    *
    * Draws the location of the record on the map.
@@ -818,17 +833,20 @@ var resetSpeciesTextOnEscape;
           parser = new OpenLayers.Format.WKT();
           feature = parser.read(data.mapwkt);
           feature.id = 'subsample-' + rowUniqueIdx;
+          feature.attributes.type = 'subsample';
           feature.style = {
             fontSize: '10px',
             fontFamily: 'Tahoma',
             fontColor: '#555',
             strokeColor: 'red',
             strokeWidth: 2,
+            strokeDashstyle: 'dash',
             fillOpacity: 0.3,
             labelAlign: 'lb',
             labelXOffset: 12,
             labelOutlineColor: "white",
-            labelOutlineWidth: 2
+            labelOutlineWidth: 2,
+            pointRadius: 10
           };
           if (taxonNameEl.length) {
             feature.style.label = taxonNameEl.text();
@@ -855,9 +873,34 @@ var resetSpeciesTextOnEscape;
             });
           }
           indiciaData.mapdiv.map.editLayer.addFeatures([feature]);
+          // Update the overview sample spatial ref to centre of all points, only if never manually set.
+          recentreMainSampleSref(data);
         }
       }
     });
+  });
+
+  /**
+   * Highlight subsample features when the grid's spatial ref control is focused.
+   */
+  function selectInputFeature(e, selected) {
+    var rowUniqueIdx = e.currentTarget.id.match(/^sc:species-grid-\d+-(\d+)/)[1];
+    var existingFeature = indiciaData.mapdiv.map.editLayer.getFeatureById('subsample-' + rowUniqueIdx);
+    if (existingFeature) {
+      if (selected) {
+        indiciaData.mapdiv.map.setSelection(indiciaData.mapdiv.map.editLayer, [existingFeature]);
+      } else if (existingFeature.renderIntent === 'select') {
+        indiciaData.mapdiv.map.setSelection(indiciaData.mapdiv.map.editLayer, []);
+      }
+    }
+  }
+
+  indiciaFns.on('focus', '.scSpatialRef', {}, function (e) {
+    selectInputFeature(e, true);
+  });
+
+  indiciaFns.on('blur', '.scSpatialRef', {}, function (e) {
+    selectInputFeature(e, false);
   });
 
   /**
@@ -880,6 +923,28 @@ var resetSpeciesTextOnEscape;
   });
 
   /**
+   * When leaving full screen map mode, reset the spatialRefFromMap button and map visibility state.
+   */
+  function fsChange() {
+    if (!(document.fullscreenElement || document.webkitFullscreenElement)) {
+      $('.scSpatialRefFromMap.active').removeClass('active');
+      if (typeof indiciaData.initiallyHiddenMapParents !== 'undefined') {
+        // Reset if map was previously hidden.
+        $(indiciaData.initiallyHiddenMapParents).hide();
+        delete indiciaData.initiallyHiddenMapParents;
+      }
+    } else {
+      indiciaData.mapdiv.map.updateSize();
+      indiciaData.mapdiv.map.baseLayer.redraw();
+    }
+  }
+
+  document.addEventListener("fullscreenchange", fsChange);
+  document.addEventListener("mozfullscreenchange", fsChange);
+  document.addEventListener("webkitfullscreenchange", fsChange);
+  document.addEventListener("msfullscreenchange", fsChange);
+
+  /**
    * Allow a single button for fetching map ref to be active at one time.
    */
   indiciaFns.on('click', '.scSpatialRefFromMap', {}, function (e) {
@@ -891,6 +956,18 @@ var resetSpeciesTextOnEscape;
     if (!wasActive) {
       // Enable fetch from map.
       $(this).addClass('active');
+      // Deselect features and rows first.
+      indiciaData.mapdiv.map.setSelection(indiciaData.mapdiv.map.editLayer, []);
+      $('.species-grid').find('tr').removeClass('selected-row');
+      // Ensure only the clickSref control is enabled.
+      $.each(mapdiv.map.controls, function() {
+        if (this.displayClass === 'olControlClickSref') {
+          this.activate();
+        }
+        if (this.CLASS_NAME === 'OpenLayers.Control.SelectFeature') {
+          this.deactivate();
+        }
+      });
       if (indiciaData['spatialRefPerRowUseFullscreenMap-' + gridId]) {
         // Track scroll position so we can reset it.
         indiciaData.lastScrollTop = $(document).scrollTop();

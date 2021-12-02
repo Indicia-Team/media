@@ -32,6 +32,11 @@
       font-size: 150%;
     }
   }
+  .species-grid {
+    div.form-group:last-child {
+      margin-bottom: 0;
+    }
+  }
   .ctrl-wrap {
     &.not-full-width-sm {
       .input-group {

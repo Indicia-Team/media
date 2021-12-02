@@ -15,11 +15,21 @@
   max-width: 600px;
 }
 
+.helpText, .helpTextLeft {
+  color: gray;
+  font-size: 90%;
+  margin: 4px 0 8px 0px;
+}
+
 .add-new-taxon {
   position: absolute;
   z-index: 999;
   opacity: 0.5;
+  margin: 0;
   padding: 0;
+  right: 4px;
+  top: 50%;
+  transform: translate(0, -50%);
 }
 .add-new-taxon:hover {
   opacity: 0.8;
@@ -44,13 +54,33 @@ table.species-grid .scSpatialRefFromMap {
   position: absolute;
   z-index: 999;
   opacity: 0.5;
+  margin: 0;
+  padding: 0;
   right: 4px;
+  top: 50%;
+  transform: translate(0, -50%);
 }
 table.species-grid .scSpatialRefFromMap:hover {
   opacity: 0.8;
 }
 table.species-grid .scSpatialRefFromMap.active {
   opacity: 1;
+  background-color: lightyellow;
+}
+table.species-grid .row-buttons {
+  border-bottom: solid silver 1px;
+}
+table.species-grid .row-buttons .action-button {
+  opacity: 0.5;
+  padding: 2px;
+  border-radius: 2px;
+  margin: 1px;
+}
+table.species-grid .row-buttons .action-button:hover {
+  opacity: 1;
+  background-color: #ccc;
+}
+table.species-grid tr.selected-row input, table.species-grid tr.selected-row select, table.species-grid tr.selected-row td {
   background-color: lightyellow;
 }
 
@@ -736,7 +766,7 @@ table.es-data-grid tbody tr.zero-abundance, table.es-data-grid tbody tr.zero-t {
 table.es-data-grid tbody tr img {
   max-height: 60px;
   border-radius: 4px;
-  margin: 0 2px;
+  margin: 2px;
   box-shadow: #aaa 0px 2px 4px 0px;
 }
 table.es-data-grid tbody tr img.multi {

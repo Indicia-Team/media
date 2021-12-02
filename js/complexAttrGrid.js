@@ -1,8 +1,8 @@
 var changeComplexGridRowCount;
 
 jQuery(document).ready(function($) {
-  "use strict"; 
-  
+  "use strict";
+
   function updateUniqueSelects(table) {
     var
       attrName=table.id.replace('complex-attr-grid-', '').split('-'),
@@ -27,11 +27,11 @@ jQuery(document).ready(function($) {
             }
           });
         });
-        
+
       }
     });
   }
-  
+
   function addRowToTable(table) {
     var
       attrName=table.id.replace('complex-attr-grid-', '').split('-'),
@@ -40,8 +40,8 @@ jQuery(document).ready(function($) {
       row='<tr'+rowClass+'>',
       gridDef=indiciaData['complexAttrGrid-'+attrTypeTag+'-'+attrId],
       fieldname;
-    
-    gridDef.rowCount++; 
+
+    gridDef.rowCount++;
     $.each(gridDef.cols, function(idx, def) {
       fieldname = attrTypeTag+"Complex:"+attrId+"::"+(gridDef.rowCount-1)+":"+idx;
       row += '<td>';
@@ -74,7 +74,7 @@ jQuery(document).ready(function($) {
     $(table).find('tbody').append(row);
     $(table).find('tbody tr:last-child select').change(function() {updateUniqueSelects(table);});
   }
-  
+
   changeComplexGridRowCount = function(countCtrlId, attrTypeTag, attrId) {
     var rowCount=$('#'+countCtrlId).val();
     if ($('#complex-attr-grid-'+attrTypeTag+'-'+attrId+' tbody tr').length>rowCount) {
@@ -95,14 +95,14 @@ jQuery(document).ready(function($) {
       }
     }
   };
-  
+
   $('table.complex-attr-grid .add-btn').click(function(e) {
     var table=$(e.currentTarget).closest('table')[0];
     addRowToTable(table);
   });
 
   $('table.complex-attr-grid tbody').click(function(e) {
-    var table=this.parentNode; 
+    var table=this.parentNode;
     var row;
     // e.target is the actual thing clicked on inside the tbody
     if ($(e.target).hasClass('ind-delete-icon')) {
@@ -111,8 +111,8 @@ jQuery(document).ready(function($) {
       attrName=table.id.replace('complex-attr-grid-', '').split('-'),
       attrTypeTag=attrName[0], attrId=attrName[1],
       gridDef=indiciaData['complexAttrGrid-'+attrTypeTag+'-'+attrId];
-      if(gridDef['deleteRows']) 
-        $(row).remove(); 
+      if(gridDef['deleteRows'])
+        $(row).remove();
       else {
         $(row).css('opacity', 0.4);
         $(row).addClass('row-deleted');
@@ -120,10 +120,10 @@ jQuery(document).ready(function($) {
         $(row).find('.delete-flag').val('t');
         $(row).find(':input:visible').attr('disabled', true);
       }
-      updateUniqueSelects(newTarget); 
+      updateUniqueSelects(newTarget);
     }
   });
-  
+
   $('table.complex-attr-grid select').change(function(e) {
     updateUniqueSelects($(e.target).closest('table')[0]);
   });

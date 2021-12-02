@@ -268,6 +268,8 @@
       pagerContent = pagerContent.replace('{pagelist}', pagelist);
       if (div.settings.recordCount === 0) {
         pagerContent = pagerContent.replace('{showing}', div.settings.noRecords);
+      } else if (div.settings.offset + 1 > div.settings.recordCount) {
+        pagerContent = pagerContent.replace('{showing}', '');
       } else {
         showing = showing.replace('{1}', div.settings.offset + 1);
         showing = showing.replace('{2}', div.settings.offset + div.settings.currentPageCount);
@@ -276,6 +278,15 @@
       }
 
       pager.append(pagerContent);
+    }
+
+    /**
+     * Stores the current page in a cookie, if being remembered.
+     */
+    function storeCurrentPageCookie(settings) {
+      if (settings.rememberGridPosition  && typeof $.cookie !== 'undefined') {
+        $.cookie('report-page-' + opts.id, Math.round(settings.offset / opts.itemsPerPage));
+      }
     }
 
     /**
@@ -297,6 +308,7 @@
           if (div.settings.offset > lastPageOffset) {
             div.settings.offset = lastPageOffset;
           }
+          storeCurrentPageCookie(div.settings);
           load(div, false);
         });
 
@@ -309,6 +321,7 @@
           if (div.settings.offset < 0) {
             div.settings.offset = 0;
           }
+          storeCurrentPageCookie(div.settings);
           load(div, false);
         });
 
@@ -317,6 +330,7 @@
           if (div.loading) { return; }
           div.loading = true;
           div.settings.offset = 0;
+          storeCurrentPageCookie(div.settings);
           load(div, false);
         });
 
@@ -325,6 +339,7 @@
           if (div.loading) { return; }
           div.loading = true;
           div.settings.offset = lastPageOffset;
+          storeCurrentPageCookie(div.settings);
           load(div, false);
         });
 
@@ -334,6 +349,7 @@
           div.loading = true;
           var page = this.id.replace('page-' + div.settings.id + '-', '');
           div.settings.offset = (page - 1) * div.settings.itemsPerPage;
+          storeCurrentPageCookie(div.settings);
           load(div, false);
         });
       }
@@ -496,13 +512,21 @@
             ' title="' + div.settings.msgRowLinkedToMapHint + '"' : '';
           if (rows.length === 0) {
             var viscols = 0;
+            var msg;
             $.each(div.settings.columns, function(idx, col) {
               if (col.visible !== false && col.visible !== 'false') {
                 viscols++;
               }
             });
-            tbody.append('<tr class="empty-row"><td colcount="' + viscols + '">' + div.settings.msgNoInformation + '</td></tr>');
-            $(div).find('tfoot .pager').hide();
+            if (div.settings.offset === 0) {
+              msg = div.settings.msgNoInformation;
+              $(div).find('tfoot .pager').hide();
+            }
+            else {
+              msg = div.settings.noInfoAsPageTooHigh;
+              $(div).find('tfoot .pager').show();
+            }
+            tbody.append('<tr class="empty-row"><td colspan="' + viscols + '">' + msg + '</td></tr>');
           } else {
             $(div).find('tfoot .pager').show();
           }
@@ -775,6 +799,77 @@
           $(div).find('.run-filter').click();
         });
       }
+    }
+
+    /**
+     * On initial grid load, load settings for this grid ID from cookies.
+     *
+     * E.g. sort, paging and filter info can be remembered between page visits.
+     */
+    function applySettingsFromCookies(opts) {
+      var filterRow;
+      var fieldname;
+      var resetButtonNeeded = false;
+      if (opts.rememberGridPosition && typeof $.cookie !== 'undefined') {
+        opts.originalGridPosition = {
+          orderby: (opts.orderby ? opts.orderby : null),
+          sortdir: (opts.sortdir ? opts.sortdir : null),
+          offset: (opts.offset ? opts.offset : 0),
+        };
+        if ($.cookie('report-orderby-' + opts.id)) {
+          opts.orderby = $.cookie('report-orderby-' + opts.id);
+          resetButtonNeeded = true;
+        }
+        if ($.cookie('report-sortdir-' + opts.id)) {
+          opts.sortdir = $.cookie('report-sortdir-' + opts.id);
+          resetButtonNeeded = true;
+        }
+        if ($.cookie('report-page-' + opts.id)) {
+          opts.offset = $.cookie('report-page-' + opts.id) * opts.itemsPerPage;
+          resetButtonNeeded = true;
+        }
+        if ($.cookie('report-filterrow-' + opts.id)) {
+          filterRow = JSON.parse($.cookie('report-filterrow-' + opts.id));
+          $.each(filterRow, function(id, val) {
+            $('#' + opts.id + ' .col-filter#' + id).val(val);
+            fieldname = id.match(new RegExp('^col-filter-(.*)-' + opts.id + '$'))[1];
+            if ($.trim(val) !== '') {
+              opts.extraParams[fieldname] = val;
+              resetButtonNeeded = true;
+            }
+          });
+        }
+      }
+      // Adds a reset button if any settings loaded from a cookie.
+      if (resetButtonNeeded) {
+        $('#' + opts.id).before('<button type="button" class="' + indiciaData.btnClasses.highlighted + '" id="reset-' + opts.id + '">Reset report</button>');
+        $('#reset-' + opts.id).click(function() {
+          resetSettingsFromCookies($('#' + opts.id)[0]);
+        });
+      }
+    }
+
+    /**
+     * Button handler to reset settings loaded from cookies.
+     */
+    function resetSettingsFromCookies(div) {
+      var fieldname;
+      if (div.settings.originalGridPosition) {
+        div.settings.orderby = div.settings.originalGridPosition.orderby;
+        div.settings.sortdir = div.settings.originalGridPosition.sortdir;
+        div.settings.offset = div.settings.originalGridPosition.offset;
+        $.each($('#' + div.settings.id + ' .col-filter'), function() {
+          $(this).val('');
+          fieldname = $(this).attr('id').match(new RegExp('^col-filter-(.*)-' + div.settings.id + '$'))[1];
+          delete div.settings.extraParams[fieldname];
+        });
+        // Cleanup cookies.
+        $.cookie('report-orderby-' + div.settings.id, null);
+        $.cookie('report-sortdir-' + div.settings.id, null);
+        $.cookie('report-offset-' + div.settings.id, null);
+        $.cookie('report-filterrow-' + div.settings.id, null);
+      }
+      load(div, true);
     }
 
     /**
@@ -1070,6 +1165,7 @@
     };
 
     this.highlightFeatureById = highlightFeatureById;
+    applySettingsFromCookies(opts);
 
     return this.each(function () {
       this.settings = opts;
@@ -1096,11 +1192,10 @@
           div.settings.sortdir = 'ASC';
         }
         div.settings.orderby = colName;
-        // Change sort to this column [DESC?]
-        // reload the data
-        document.cookie='clientReportSort-' + div.settings.id + '=' + div.settings.sortdir + ':' + div.settings.orderby;
-        // cookie expires when browser closed, i.e. when current session ends. Due to way nodes record the path, need to specifiy
-        // grid id in cookie name, otherwise it is shared across nodes if you use a single name.
+        // Change stored sort to this column.
+        $.cookie('report-orderby-' + div.settings.id, div.settings.orderby);
+        $.cookie('report-sortdir-' + div.settings.id, div.settings.sortdir);
+        // Reload the data.
         load(div, false);
       });
 
@@ -1124,6 +1219,19 @@
         window.location=url;
       });
 
+      /**
+       * Saves changed filter to cookie, if rememberGridPosition enabled.
+       */
+      function saveFilterRowToCookie() {
+        if (div.settings.rememberGridPosition) {
+          var values = {};
+          $.each($('#' + div.settings.id + ' th .col-filter'), function() {
+            values[this.id] = $(this).val();
+          });
+          $.cookie('report-filterrow-' + opts.id, JSON.stringify(values));
+        }
+      }
+
       var doFilter = function(e) {
         var fieldname;
         if (e.target.hasChanged) {
@@ -1140,6 +1248,7 @@
             mapRecords(div);
           }
           e.target.hasChanged = false;
+          saveFilterRowToCookie();
         }
       };
       // In column header is optional popup allowing user to filter out data from the grid.

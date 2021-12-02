@@ -251,13 +251,6 @@ li.ui-state-error {
   *display:inline;
 }
 
-.helpText, .helpTextLeft {
-  color:gray;
-  font-size:80%;
-  margin: 0 0 8px 0px;
-  line-height: 1.2em;
-}
-
 .progress {
   width: 100%;
 }

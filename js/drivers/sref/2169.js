@@ -25,10 +25,25 @@ indiciaData.srefHandlers['2169'] = {
 
   srid: 2169,
 
-  returns: ['gridNotation'],
+  returns: ['wkt', 'precisions', 'gridNotation'],
 
   /**
-   * Format an x, y into a LUREF 
+   * Receives a point after a click on the map and converts to a WKT point.
+   */
+   pointToWkt: function(point) {
+    return 'POINT(' + point.x + ' ' + point.y + ')';
+  },
+
+  getPrecisionInfo: function() {
+    return {
+      display: 'Easting/Northing',
+      metres: 1,
+      type: 'coordinate'
+    };
+  },
+
+  /**
+   * Format an x, y into a LUREF
    */
   pointToGridNotation: function(point, digits) {
     var precision = 5 - (digits/2),
