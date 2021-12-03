@@ -446,7 +446,7 @@
         layerState = {};
       }
       layerState[id] = { enabled: true };
-      $.cookie('layerState-' + el.id, JSON.stringify(layerState), { expires: 3650 });
+      indiciaFns.cookie('layerState-' + el.id, JSON.stringify(layerState), { expires: 3650 });
     }
   }
 
@@ -465,7 +465,7 @@
         layerState = {};
       }
       layerState[id] = { enabled: false };
-      $.cookie('layerState-' + el.id, JSON.stringify(layerState), { expires: 3650 });
+      indiciaFns.cookie('layerState-' + el.id, JSON.stringify(layerState), { expires: 3650 });
     }
   }
 
@@ -680,14 +680,14 @@
           this(el);
         });
         if (el.settings.cookies) {
-          $.cookie('initialLat-' + el.id, el.map.getCenter().lat, { expires: 3650 });
-          $.cookie('initialLng-' + el.id, el.map.getCenter().lng, { expires: 3650 });
-          $.cookie('initialZoom-' + el.id, el.map.getZoom(), { expires: 3650 });
+          indiciaFns.cookie('initialLat-' + el.id, el.map.getCenter().lat, { expires: 3650 });
+          indiciaFns.cookie('initialLng-' + el.id, el.map.getCenter().lng, { expires: 3650 });
+          indiciaFns.cookie('initialZoom-' + el.id, el.map.getZoom(), { expires: 3650 });
         }
       });
       if (el.settings.cookies) {
         el.map.on('baselayerchange', function baselayerchange(layer) {
-          $.cookie('baseLayer-' + el.id, layer.name, { expires: 3650 });
+          indiciaFns.cookie('baseLayer-' + el.id, layer.name, { expires: 3650 });
         });
       }
     },

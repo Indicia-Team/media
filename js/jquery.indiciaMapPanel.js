@@ -3123,15 +3123,15 @@ var destroyAllFeatures;
         }
         handleDynamicLayerSwitching(div);
         // setup the map to save the last position
-        if (div.settings.rememberPos && typeof $.cookie !== 'undefined') {
-          $.cookie('mapzoom', div.map.zoom, { expires: 7 });
+        if (div.settings.rememberPos) {
+          indiciaFns.cookie('mapzoom', div.map.zoom, { expires: 7 });
           if (!indiciaData.settingBaseLayer) {
-            $.cookie('maplongitude', div.settings.lastMapCentre.lon, { expires: 7 });
-            $.cookie('maplatitude', div.settings.lastMapCentre.lat, { expires: 7 });
+            indiciaFns.cookie('maplongitude', div.settings.lastMapCentre.lon, { expires: 7 });
+            indiciaFns.cookie('maplatitude', div.settings.lastMapCentre.lat, { expires: 7 });
           }
           // Store the name of the layer or dynamic layer group (the part
           // before the . in layerId).
-          $.cookie('mapbaselayerid', div.map.baseLayer.layerId, { expires: 7 });
+          indiciaFns.cookie('mapbaselayerid', div.map.baseLayer.layerId, { expires: 7 });
         }
       });
 
@@ -3153,7 +3153,7 @@ var destroyAllFeatures;
             }
             return j;
           }, init);
-          $.cookie('mapwmsvisibility', JSON.stringify(json), { expires: 7 });
+          indiciaFns.cookie('mapwmsvisibility', JSON.stringify(json), { expires: 7 });
         }
       });
 

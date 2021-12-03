@@ -284,8 +284,8 @@
      * Stores the current page in a cookie, if being remembered.
      */
     function storeCurrentPageCookie(settings) {
-      if (settings.rememberGridPosition  && typeof $.cookie !== 'undefined') {
-        $.cookie('report-page-' + opts.id, Math.round(settings.offset / opts.itemsPerPage));
+      if (settings.rememberGridPosition) {
+        indiciaFns.cookie('report-page-' + opts.id, Math.round(settings.offset / opts.itemsPerPage));
       }
     }
 
@@ -1193,8 +1193,8 @@
         }
         div.settings.orderby = colName;
         // Change stored sort to this column.
-        $.cookie('report-orderby-' + div.settings.id, div.settings.orderby);
-        $.cookie('report-sortdir-' + div.settings.id, div.settings.sortdir);
+        indiciaFns.cookie('report-orderby-' + div.settings.id, div.settings.orderby);
+        indiciaFns.cookie('report-sortdir-' + div.settings.id, div.settings.sortdir);
         // Reload the data.
         load(div, false);
       });
@@ -1228,7 +1228,7 @@
           $.each($('#' + div.settings.id + ' th .col-filter'), function() {
             values[this.id] = $(this).val();
           });
-          $.cookie('report-filterrow-' + opts.id, JSON.stringify(values));
+          indiciaFns.cookie('report-filterrow-' + opts.id, JSON.stringify(values));
         }
       }
 
@@ -1441,7 +1441,7 @@
           $.each($(div).find('thead tr:first-child th:visible').filter("[class^='col-'],[class*=' col-']"), function () {
             visibleCols.push(getColId(this));
           });
-          $.cookie(div.id + '-visibleCols', visibleCols, { expires: 7 });
+          indiciaFns.cookie(div.id + '-visibleCols', visibleCols, { expires: 7 });
         }
       }
 

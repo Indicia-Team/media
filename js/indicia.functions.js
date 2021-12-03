@@ -728,6 +728,17 @@ if (typeof window.indiciaData === 'undefined') {
     }
   };
 
+  indiciaFns.cookie = function cookie(key, value, options) {
+    if (!$.cookie) {
+      return;
+    }
+    if (indiciaData.cookieCompliance && indiciaData.cookieCompliance === 'eu_cookie_compliance' && ($.cookie('cookie-agreed') === '0' || $.cookie('cookie-agreed') === null)) {
+      return;
+    }
+    options = typeof options === 'undefined' ? {} : options;
+    $.cookie(key, value, options);
+  }
+
 }(jQuery));
 
 jQuery(document).ready(function ($) {

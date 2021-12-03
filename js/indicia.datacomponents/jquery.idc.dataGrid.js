@@ -514,7 +514,7 @@
       applyColumnsList(el, colsList);
       // Save columns in a cookie.
       if (el.settings.cookies) {
-        $.cookie('cols-' + el.id, JSON.stringify(colsList), { expires: 3650 });
+        indiciaFns.cookie('cols-' + el.id, JSON.stringify(colsList), { expires: 3650 });
       }
       $(header).find('*').remove();
       // Output header row for column titles.
