@@ -85,6 +85,6 @@ do need to do something.
 }
 
 /* Reset button size due to interaction with jQuery UI */
-.input-group-btn button {
+.ui-widget .input-group-btn button {
   font-size: 14px;
 }
