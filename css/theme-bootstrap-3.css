@@ -1078,6 +1078,11 @@ do need to do something.
   outline: none;
 }
 
+/* Reset button size due to interaction with jQuery UI */
+.input-group-btn button {
+  font-size: 14px;
+}
+
 .loading-spinner {
   position: absolute;
   z-index: 9999;
