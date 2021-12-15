@@ -430,27 +430,33 @@ var destroyAllFeatures;
     }
 
     /**
-     * Use jQuery selectors to locate any other related controls on the page which need to have events
-     * bound to them to associate them with the map.
+     * Bind spatial reference controls to the map behaviour.
+     *
+     * Use jQuery selectors to locate any other related controls on the
+     * page which need to have events bound to them to associate them with the
+     * map.
      */
     function _bindControls(div) {
       var currentZoom;
-      var spatialRefWhenFieldFocussed;
-
-      $('#' + opts.srefId).focus(function () {
-        spatialRefWhenFieldFocussed = $(this).val();
-      });
-
-      // If the spatial ref input control exists, bind it to the map, so entering a ref updates the map
-      // Note .change event wasn't working in IE
-      // Changed to a .blur that then checks to make sure it is different to previous value before proceeding
-      $('#' + opts.srefId).blur(function () {
-        //We know value has been changed if it is different when the user moves off the field
-        if ($(this).val()!==spatialRefWhenFieldFocussed) {
+      var spatialRefWhenFieldFocused = null;
+      var userChangedSref = function () {
+        // We know value has been changed if it is different when the user
+        // moves off the field.
+        if (spatialRefWhenFieldFocused !== null && $(this).val() !== spatialRefWhenFieldFocused) {
           _handleEnteredSref($(this).val(), div);
           _hideOtherGraticules(div);
         }
+        spatialRefWhenFieldFocused = null;
+      }
+      // Track when the sref input focused, so we know if user made the
+      // change.
+      $('#' + opts.srefId).focus(function () {
+        spatialRefWhenFieldFocused = $(this).val();
       });
+
+      // If the spatial ref input control exists, bind it to the map, so
+      // entering a ref updates the map.
+      $('#' + opts.srefId).change(userChangedSref);
       // If the spatial ref latitude or longitude input control exists, bind it to the map, so entering a ref updates the map
       $('#' + opts.srefLatId).change(function () {
         // Only do something if both the lat and long are populated
