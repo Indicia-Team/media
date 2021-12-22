@@ -177,8 +177,14 @@ input:checked + .slider:before {
   position: relative;
 }
 
-.layer_list ul li label.layer-title {
-  display: initial;
+.layer_list ul li {
+  list-style: none;
+}
+.layer_list ul li * {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0;
+  margin-right: 15px;
 }
 
 #map-footer {
