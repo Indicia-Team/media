@@ -2671,7 +2671,7 @@ var destroyAllFeatures;
       var baseLayer = div.map.baseLayer;
       // A dynamic layer's sub-layer has a layerId set to layerName.index, e.g.
       // dynamicOSLeisureGoogleSat.0.
-      var baseLayerIdParts = baseLayer.layerId.split('.');
+      var baseLayerIdParts = baseLayer.layerId ? baseLayer.layerId.split('.') : [];
       var onLayerIdx;
       var dynamicLayers;
       var bb;
