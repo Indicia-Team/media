@@ -101,6 +101,13 @@ table.species-grid tr.selected-row input, table.species-grid tr.selected-row sel
   font-size: 120%;
 }
 
+.complex-attr-grid {
+  margin-bottom: 15px;
+}
+.complex-attr-grid tfoot {
+  background: none;
+}
+
 /* Toggle/slider switches */
 .switch {
   position: relative;
