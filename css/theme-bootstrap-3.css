@@ -1089,6 +1089,11 @@ do need to do something.
   font-size: 14px;
 }
 
+/* Complex attr grid */
+.complex-attr-grid td {
+  padding: 4px;
+}
+
 .loading-spinner {
   position: absolute;
   z-index: 9999;
