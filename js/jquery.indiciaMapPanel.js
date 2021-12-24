@@ -1611,10 +1611,6 @@ var destroyAllFeatures;
             this[0].settings.extraParams.idlist = ids.join(',');
             this.reload(true);
           });
-          $('table.report-grid tr').removeClass('selected');
-          $.each(ids, function () {
-            $('table.report-grid tr#row' + this).addClass('selected');
-          });
         }
       } else if (div.settings.clickableLayersOutputMode === 'reportHighlight' && typeof indiciaData.reports !== 'undefined') {
         // deselect existing selection in grid as well as on feature layer
