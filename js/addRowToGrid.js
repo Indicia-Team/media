@@ -1067,7 +1067,7 @@ var resetSpeciesTextOnEscape;
         'survey_id=' + $('#survey_id').val() +
         '&taxa_taxon_list_ids=' + taxaTaxonListIds +
         '&type=occurrence' +
-        '&language=' + indiciaData.currentLanguage2 +
+        '&language=' + indiciaData.currentLanguage3 +
         // @todo: Otions may need to be passed through for individual attr controls.
         '&options={}', null,
       function getAttrsReportCallback(data) {
