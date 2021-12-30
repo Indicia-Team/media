@@ -1068,7 +1068,8 @@ var resetSpeciesTextOnEscape;
         '&taxa_taxon_list_ids=' + taxaTaxonListIds +
         '&type=occurrence' +
         '&language=' + indiciaData.currentLanguage3 +
-        // @todo: Otions may need to be passed through for individual attr controls.
+        '&attributeTermlistLanguageFilter=' + indiciaData.attributeTermlistLanguageFilter +
+        // @todo: Options may need to be passed through for individual attr controls.
         '&options={}', null,
       function getAttrsReportCallback(data) {
         var existingData = prepareExistingOccAttrData();
