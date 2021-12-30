@@ -44,8 +44,20 @@ table.species-grid {
   width: 100%;
   /* Inside control button alignment. */
 }
+table.species-grid th button {
+  padding: 0;
+  margin: 0 0.5em;
+}
+table.species-grid td {
+  padding: 0;
+}
 table.species-grid .hidden-by-dynamic-attr {
   display: none;
+}
+table.species-grid .scPresenceCell {
+  text-align: center;
+  padding-left: 1em;
+  padding-right: 1em;
 }
 table.species-grid .scTaxonCell, table.species-grid .scSpatialRefCell {
   position: relative;
@@ -82,6 +94,12 @@ table.species-grid .row-buttons .action-button:hover {
 }
 table.species-grid tr.selected-row input, table.species-grid tr.selected-row select, table.species-grid tr.selected-row td {
   background-color: lightyellow;
+}
+table.species-grid tr td input, table.species-grid tr td select {
+  width: 100%;
+  margin: 0;
+  vertical-align: middle;
+  padding: 3px 0;
 }
 
 #new-taxon-form {

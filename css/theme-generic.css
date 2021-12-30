@@ -1,4 +1,4 @@
-/* Theme extension to the default_site.css file which provides Bootstrap 3 optimised style output */
+/* Theme extension to the default_site.css file which provides the default Indicia style output */
 /* Accessible colour ranges from colorbrewer */
 .input-group-addon > * {
   display: inline-block;
@@ -44,8 +44,20 @@ table.species-grid {
   width: 100%;
   /* Inside control button alignment. */
 }
+table.species-grid th button {
+  padding: 0;
+  margin: 0 0.5em;
+}
+table.species-grid td {
+  padding: 0;
+}
 table.species-grid .hidden-by-dynamic-attr {
   display: none;
+}
+table.species-grid .scPresenceCell {
+  text-align: center;
+  padding-left: 1em;
+  padding-right: 1em;
 }
 table.species-grid .scTaxonCell, table.species-grid .scSpatialRefCell {
   position: relative;
@@ -82,6 +94,12 @@ table.species-grid .row-buttons .action-button:hover {
 }
 table.species-grid tr.selected-row input, table.species-grid tr.selected-row select, table.species-grid tr.selected-row td {
   background-color: lightyellow;
+}
+table.species-grid tr td input, table.species-grid tr td select {
+  width: 100%;
+  margin: 0;
+  vertical-align: middle;
+  padding: 3px 0;
 }
 
 #new-taxon-form {
@@ -1021,84 +1039,121 @@ table.es-data-grid tfoot span {
   fill: #B1E5DB;
 }
 
-.alert {
-  /* Fix AAA accessibility in Bootstrap alerts */
+.page-notice {
+  padding: 0.3em;
+  display: block;
+  margin-bottom: 1em;
 }
-.alert.alert-info {
-  color: #235067;
+.page-notice.ui-state-default {
+  background-color: lightyellow;
 }
-.alert.alert-warning {
-  color: #614D29;
+.page-notice.ui-state-highlight {
+  border-color: #fdae61;
+  background-color: #ffefdf;
+  color: #333;
 }
-.alert span.ui-icon {
+.page-notice p {
+  margin: 0.5em 1.5em 0.5em 1.5em;
+}
+.page-notice span.ui-icon {
   float: left;
 }
-.alert span.fas, .alert span.far {
+.page-notice span.fas, .page-notice span.far {
   font-size: 150%;
 }
 
-/* Reintroduce spacing that is removed from the last control in a list */
-#controls > div {
-  padding-bottom: 15px;
+label, form label {
+  width: 160px;
+  display: -moz-inline-stack;
+  display: inline-block;
+  zoom: 1;
+  *display: inline;
+  vertical-align: top;
+  margin: 8px 0;
+  font-weight: bold;
 }
 
-#entry_form div.form-group, #indicia-entry-form div.form-group {
-  /* Removes last-child reset to zero in default theme overrides. */
-}
-#entry_form div.form-group p.inline-error, #indicia-entry-form div.form-group p.inline-error {
-  margin-left: 0;
-}
-#entry_form div.form-group:last-child, #indicia-entry-form div.form-group:last-child {
-  margin-bottom: 15px;
-}
-#entry_form div.form-group input[type=checkbox], #indicia-entry-form div.form-group input[type=checkbox] {
-  margin-left: 8px;
-  margin-right: 8px;
-  font-size: 150%;
-}
-#entry_form .species-grid div.form-group:last-child, #indicia-entry-form .species-grid div.form-group:last-child {
-  margin-bottom: 0;
-}
-#entry_form .ctrl-wrap.not-full-width-sm .input-group, #indicia-entry-form .ctrl-wrap.not-full-width-sm .input-group {
-  max-width: 200px;
-}
-#entry_form .ctrl-wrap.not-full-width-md .input-group, #indicia-entry-form .ctrl-wrap.not-full-width-md .input-group {
-  max-width: 400px;
-}
-#entry_form .ctrl-wrap.not-full-width-lg .input-group, #indicia-entry-form .ctrl-wrap.not-full-width-lg .input-group {
-  max-width: 600px;
-}
-
-/*
-Although we don't want to allow control-width classes to override Bootstrap
-behaviour, the Edit tab of Indicia pages doesn't load using Bootstrap so we
-do need to do something.
-*/
-#form-params input[type=text], #form-params textarea {
-  width: 100%;
-}
-
-.input-group-addon.ctrl-addons button {
-  background: none;
-  border: none;
-  padding: 0;
-  outline: none;
-}
-.input-group-addon.ctrl-addons button:hover, .input-group-addon.ctrl-addons button:focus, .input-group-addon.ctrl-addons button:active {
-  background: none;
-  border: none;
-  padding: 0;
-  outline: none;
-}
-
-/* Reset button size due to interaction with jQuery UI */
-.ui-widget .input-group-btn button {
-  font-size: 14px;
-}
-
-/* Complex attr grid */
-.complex-attr-grid td {
+form input:not([type=submit]), form select, form textarea, #form-params textarea, .timeEntry_control,
+.inline-control, button.inline-control, input.inline-control {
+  vertical-align: top;
+  margin: 4px 0;
+  display: inline;
   padding: 4px;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+}
+
+.helpText {
+  margin-left: 164px;
+}
+
+/* Required asterisk can be large */
+.deh-required {
+  font-size: 150%;
+}
+
+/* Control box is div class used to group controls with a single label, e.g. hierarchical select. */
+.control-box {
+  display: inline-block;
+  zoom: 1;
+  *display: inline;
+}
+
+/* Some default button spacing. */
+.indicia-button {
+  padding: 0.3em 1.5em;
+  margin: 0.25em;
+  min-height: 23px;
+  width: auto;
+  line-height: 1.5;
+}
+
+/* Find-me icon position inside edge of sref control */
+input.findme {
+  padding-right: 18px;
+}
+
+#findme-icon {
+  margin: 8px 0 0 -18px;
+  vertical-align: top;
+  padding-right: 2px;
+}
+
+/* Control sizing classes */
+.control-width-0 {
+  width: 25px !important;
+  box-sizing: border-box;
+}
+
+.control-width-1 {
+  width: 50px !important;
+  box-sizing: border-box;
+}
+
+.control-width-2 {
+  width: 100px !important;
+  box-sizing: border-box;
+}
+
+.control-width-3 {
+  width: 150px !important;
+  box-sizing: border-box;
+}
+
+.control-width-4 {
+  width: 200px !important;
+  box-sizing: border-box;
+}
+
+.control-width-5 {
+  width: 300px !important;
+  box-sizing: border-box;
+}
+
+.control-width-6 {
+  width: 500px !important;
+  box-sizing: border-box;
 }
 
 .loading-spinner {
@@ -1290,6 +1345,157 @@ label#click-buffer {
   opacity: 0.7;
   z-index: 9999;
   float: left !important;
+}
+
+/* Provide some basic Bootstrap style classes */
+.alert {
+  padding: 4px;
+  margin: 4px;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 4px;
+}
+.alert.alert-info {
+  border-color: #5577ff;
+  background-color: #eef1ff;
+}
+.alert.alert-warning {
+  border-color: #ffc455;
+  background-color: #fff9ee;
+}
+.alert.alert-danger {
+  border-color: #ff7777;
+  background-color: white;
+}
+.alert .fas, .alert .far {
+  margin: 8px;
+}
+
+.panel {
+  margin: 4px;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 4px;
+}
+.panel .panel-heading, .panel .panel-body {
+  padding: 4px;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+}
+.panel.panel-info {
+  border-color: #5577ff;
+}
+.panel.panel-info .panel-heading {
+  background-color: #eef1ff;
+}
+.panel.panel-warning {
+  border-color: #ffc455;
+}
+.panel.panel-warning .panel-heading {
+  background-color: #fff9ee;
+}
+.panel.panel-danger {
+  border-color: #ff7777;
+}
+.panel.panel-danger .panel-heading {
+  background-color: white;
+}
+
+.btn {
+  padding: 6px 12px;
+}
+.btn.btn-primary {
+  color: #fff;
+  background-color: #337ab7;
+  border-color: #2e6da4;
+}
+
+a.btn {
+  border: solid silver 1px;
+  border-radius: 2px;
+}
+
+/* Data value lists */
+@media (min-width: 768px) {
+  .dl-horizontal dt, .dl-horizontal dd {
+    line-height: 1.42;
+  }
+  .dl-horizontal dt {
+    font-weight: bold;
+    float: left;
+    width: 160px;
+    clear: left;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .dl-horizontal dd {
+    margin-left: 180px;
+  }
+}
+.form-group label {
+  width: auto;
+  display: inline-block;
+  max-width: 100%;
+  margin-bottom: 5px;
+  font-weight: 700;
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  border: solid #ccc 1px;
+  border-radius: 4px;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  box-sizing: border-box;
+  margin: 0;
+}
+
+.thumbnail {
+  border: solid silver 1px;
+  border-radius: 3px;
+  padding: 4px;
+  margin: 8px;
+  text-align: center;
+  display: inline-block;
+}
+.thumbnail a {
+  border-bottom: none;
+}
+.thumbnail .caption {
+  margin: 0;
+}
+.thumbnail .caption * {
+  text-align: center;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+}
+
+progress.progress {
+  height: 20px;
+  border: 0px none;
+  background-color: silver;
+  color: #337ab7;
+  border-radius: 4px;
+}
+
+progress.progress::-webkit-progress-bar {
+  background-color: silver;
+  border-radius: 4px;
+}
+
+progress.progress::-webkit-progress-value {
+  background-color: #337ab7;
+  border-radius: 4px;
+}
+
+progress.progress::-moz-progress-bar {
+  background-color: #337ab7;
+  border-radius: 4px;
 }
 
 /*# sourceMappingURL=theme-generic.css.map */
