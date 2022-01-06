@@ -53,9 +53,15 @@ jQuery(document).ready(function($) {
         row += checkboxes.join('</td><td>');
       } else if (def.datatype==='lookup') {
         row += '<select name="'+fieldname+'"><option value="">&lt;'+indiciaData.langPleaseSelect+'&gt;</option>';
-        $.each(indiciaData['tl'+def.termlist_id], function(idx, term) {
-          row += '<option value="'+term[0]+':' + term[1] + '">'+term[1]+'</option>';
-        });
+        if (def.termlist_id) {
+          $.each(indiciaData['tl'+def.termlist_id], function(idx, term) {
+            row += '<option value="'+term[0]+':' + term[1] + '">'+term[1]+'</option>';
+          });
+        } else if (def.lookupValues) {
+          $.each(def.lookupValues, function(val, term) {
+            row += '<option value="'+val+':' + term + '">' + term + '</option>';
+          });
+        }
         row += '</select>';
       } else {
         row += '<input type="text" name="'+fieldname+'" id="'+fieldname+'"/>';
