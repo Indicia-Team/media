@@ -2460,9 +2460,9 @@ var destroyAllFeatures;
         // On initial page load, we may have to re-apply the initial zoom level
         // if the zoom level is not supported by the default sub-layer (OSM),
         // but is supported by Google.
-        if (indiciaData.zoomToAfterFetchingGoogleApiScript) {
-          map.zoomTo(indiciaData.zoomToAfterFetchingGoogleApiScript);
-          delete indiciaData.zoomToAfterFetchingGoogleApiScript;
+        if (indiciaData['zoomToAfterFetchingGoogleApiScript-' + map.id]) {
+          map.zoomTo(indiciaData['zoomToAfterFetchingGoogleApiScript-' + map.id]);
+          delete indiciaData['zoomToAfterFetchingGoogleApiScript-' + map.id];
         }
       } finally {
         indiciaData.settingBaseLayer = false;
@@ -2482,12 +2482,12 @@ var destroyAllFeatures;
       if (layerToReplace.lazyLoadGoogleApiLayerFn) {
         if (typeof google === 'undefined') {
           // If Google API not loaded, load then replace layer.
-          if (!indiciaData.fetchingGoogleApiScript) {
+          if (!indiciaData['fetchingGoogleApiScript-' + baseLayer.map.id]) {
             // Flag to ensure we don't request twice.
-            indiciaData.fetchingGoogleApiScript = true;
+            indiciaData['fetchingGoogleApiScript-' + baseLayer.map.id] = true;
             $.getScript('https://maps.google.com/maps/api/js?v=3' + key, function() {
               replaceGoogleBaseLayer(layerToReplace);
-              delete indiciaData.fetchingGoogleApiScript;
+              delete indiciaData['fetchingGoogleApiScript-' + baseLayer.map.id];
             });
           }
         } else {
@@ -3109,8 +3109,8 @@ var destroyAllFeatures;
       initialMapViewSetup.centre.lonLat.transform(div.map.displayProjection, div.map.projection);
       div.map.setCenter(initialMapViewSetup.centre.lonLat, initialMapViewSetup.zoom);
       handleDynamicLayerSwitching(div);
-      if (indiciaData.fetchingGoogleApiScript) {
-        indiciaData.zoomToAfterFetchingGoogleApiScript = initialMapViewSetup.zoom;
+      if (indiciaData['fetchingGoogleApiScript-' + div.map.id]) {
+        indiciaData['zoomToAfterFetchingGoogleApiScript-' + div.map.id] = initialMapViewSetup.zoom;
       }
 
       // Register moveend must come after panning and zooming the initial map
