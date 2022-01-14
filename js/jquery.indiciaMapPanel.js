@@ -2478,16 +2478,17 @@ var destroyAllFeatures;
     function lazyLoadBaseLayer(baseLayer) {
       var key = indiciaData.googleApiKey ? '&key=' + indiciaData.googleApiKey : '';
       var layerToReplace = baseLayer.map.needToLazyLoadGoogleApiLayer ? baseLayer.map.needToLazyLoadGoogleApiLayer : baseLayer;
+      var fetchFlag = 'fetchingGoogleApiScript-' + baseLayer.map.id;
       delete baseLayer.map.needToLazyLoadGoogleApiLayer;
       if (layerToReplace.lazyLoadGoogleApiLayerFn) {
         if (typeof google === 'undefined') {
           // If Google API not loaded, load then replace layer.
-          if (!indiciaData['fetchingGoogleApiScript-' + baseLayer.map.id]) {
+          if (!indiciaData[fetchFlag]) {
             // Flag to ensure we don't request twice.
-            indiciaData['fetchingGoogleApiScript-' + baseLayer.map.id] = true;
+            indiciaData[fetchFlag] = true;
             $.getScript('https://maps.google.com/maps/api/js?v=3' + key, function() {
               replaceGoogleBaseLayer(layerToReplace);
-              delete indiciaData['fetchingGoogleApiScript-' + baseLayer.map.id];
+              delete indiciaData[fetchFlag];
             });
           }
         } else {
