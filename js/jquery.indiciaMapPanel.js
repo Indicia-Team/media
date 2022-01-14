@@ -2478,18 +2478,27 @@ var destroyAllFeatures;
     function lazyLoadBaseLayer(baseLayer) {
       var key = indiciaData.googleApiKey ? '&key=' + indiciaData.googleApiKey : '';
       var layerToReplace = baseLayer.map.needToLazyLoadGoogleApiLayer ? baseLayer.map.needToLazyLoadGoogleApiLayer : baseLayer;
-      var fetchFlag = 'fetchingGoogleApiScript-' + baseLayer.map.id;
       delete baseLayer.map.needToLazyLoadGoogleApiLayer;
       if (layerToReplace.lazyLoadGoogleApiLayerFn) {
         if (typeof google === 'undefined') {
           // If Google API not loaded, load then replace layer.
-          if (!indiciaData[fetchFlag]) {
+          if (!indiciaData.fetchingGoogleApiScript) {
             // Flag to ensure we don't request twice.
-            indiciaData[fetchFlag] = true;
+            indiciaData.fetchingGoogleApiScript = true;
+            indiciaData.layersToZoomAfterGoogleApiLoaded = [layerToReplace];
             $.getScript('https://maps.google.com/maps/api/js?v=3' + key, function() {
-              replaceGoogleBaseLayer(layerToReplace);
-              delete indiciaData[fetchFlag];
+              indiciaData.layersToZoomAfterGoogleApiLoaded.forEach(function(layer) {
+                replaceGoogleBaseLayer(layer);
+                console.log('layer zoomed');
+              });
+              indiciaData.layersToZoomAfterGoogleApiLoaded = [];
+              delete indiciaData.fetchingGoogleApiScript;
             });
+          }
+          else {
+            // 2 maps on page, both loading Google layer, only 1 needs to get
+            // the script.
+            indiciaData.layersToZoomAfterGoogleApiLoaded.push(layerToReplace);
           }
         } else {
           // Google API already loaded so just replace the layer.
@@ -3110,7 +3119,7 @@ var destroyAllFeatures;
       initialMapViewSetup.centre.lonLat.transform(div.map.displayProjection, div.map.projection);
       div.map.setCenter(initialMapViewSetup.centre.lonLat, initialMapViewSetup.zoom);
       handleDynamicLayerSwitching(div);
-      if (indiciaData['fetchingGoogleApiScript-' + div.map.id]) {
+      if (indiciaData.fetchingGoogleApiScript) {
         indiciaData['zoomToAfterFetchingGoogleApiScript-' + div.map.id] = initialMapViewSetup.zoom;
       }
 
