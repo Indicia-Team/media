@@ -2485,19 +2485,20 @@ var destroyAllFeatures;
           if (!indiciaData.fetchingGoogleApiScript) {
             // Flag to ensure we don't request twice.
             indiciaData.fetchingGoogleApiScript = true;
-            indiciaData.layersToZoomAfterGoogleApiLoaded = [layerToReplace];
+            indiciaData.layersToReplaceAfterGoogleApiLoaded = [layerToReplace];
             $.getScript('https://maps.google.com/maps/api/js?v=3' + key, function() {
-              indiciaData.layersToZoomAfterGoogleApiLoaded.forEach(function(layer) {
+              $.unique(indiciaData.layersToReplaceAfterGoogleApiLoaded);
+              indiciaData.layersToReplaceAfterGoogleApiLoaded.forEach(function(layer) {
                 replaceGoogleBaseLayer(layer);
               });
-              indiciaData.layersToZoomAfterGoogleApiLoaded = [];
+              indiciaData.layersToReplaceAfterGoogleApiLoaded = [];
               delete indiciaData.fetchingGoogleApiScript;
             });
           }
           else {
             // 2 maps on page, both loading Google layer, only 1 needs to get
             // the script.
-            indiciaData.layersToZoomAfterGoogleApiLoaded.push(layerToReplace);
+            indiciaData.layersToReplaceAfterGoogleApiLoaded.push(layerToReplace);
           }
         } else {
           // Google API already loaded so just replace the layer.
