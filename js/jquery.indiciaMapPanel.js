@@ -2489,7 +2489,6 @@ var destroyAllFeatures;
             $.getScript('https://maps.google.com/maps/api/js?v=3' + key, function() {
               indiciaData.layersToZoomAfterGoogleApiLoaded.forEach(function(layer) {
                 replaceGoogleBaseLayer(layer);
-                console.log('layer zoomed');
               });
               indiciaData.layersToZoomAfterGoogleApiLoaded = [];
               delete indiciaData.fetchingGoogleApiScript;
