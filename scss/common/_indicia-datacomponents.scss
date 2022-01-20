@@ -66,14 +66,18 @@ body {
       }
       .image-container {
         display: flex;
+        padding: 4px;
         > * {
           max-width: 98%;
-          flex-basis: 33%;
+          flex-basis: 0;
           flex-grow: 1;
           flex-shrink: 0;
-          margin: 1%;
+          margin-right: 4px;
           img {
             max-width: 100%;
+          }
+          &:first-child {
+            margin-left: 4px;
           }
         }
       }
