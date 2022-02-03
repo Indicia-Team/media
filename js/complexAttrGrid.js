@@ -48,11 +48,11 @@ jQuery(document).ready(function($) {
       if (def.datatype==='lookup' && typeof def.control!=="undefined" && def.control==='checkbox_group') {
         var checkboxes=[];
         $.each(indiciaData['tl'+def.termlist_id], function(idx, term) {
-          checkboxes.push('<input title="'+term+'" type="checkbox" name="'+fieldname+'[]" value="'+term[0]+':' + term[1] + '">');
+          checkboxes.push('<input title="'+term+'" type="checkbox" name="'+fieldname+'[]" class="' + gridDef.controlClass + '" value="'+term[0]+':' + term[1] + '">');
         });
         row += checkboxes.join('</td><td>');
       } else if (def.datatype==='lookup') {
-        row += '<select name="'+fieldname+'"><option value="">&lt;'+indiciaData.langPleaseSelect+'&gt;</option>';
+        row += '<select name="'+fieldname+'" class="' + gridDef.controlClass + '"><option value="">&lt;'+indiciaData.langPleaseSelect+'&gt;</option>';
         if (def.termlist_id) {
           $.each(indiciaData['tl'+def.termlist_id], function(idx, term) {
             row += '<option value="'+term[0]+':' + term[1] + '">'+term[1]+'</option>';
@@ -64,7 +64,7 @@ jQuery(document).ready(function($) {
         }
         row += '</select>';
       } else {
-        row += '<input type="text" name="'+fieldname+'" id="'+fieldname+'"/>';
+        row += '<input type="text" name="'+fieldname+'" id="'+fieldname+'" class="' + gridDef.controlClass + '"/>';
       }
       if (typeof def.unit!=="undefined" && def.unit!=="") {
         row += '<span class="unit">'+def.unit+'</span>';
