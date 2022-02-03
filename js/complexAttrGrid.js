@@ -39,7 +39,9 @@ jQuery(document).ready(function($) {
       rowClass = ($(table).find('tbody tr').length % 2 === 0) ? ' class="odd"' : '',
       row='<tr'+rowClass+'>',
       gridDef=indiciaData['complexAttrGrid-'+attrTypeTag+'-'+attrId],
-      fieldname;
+      fieldname,
+      regex,
+      controlClass;
 
     gridDef.rowCount++;
     $.each(gridDef.cols, function(idx, def) {
@@ -64,7 +66,9 @@ jQuery(document).ready(function($) {
         }
         row += '</select>';
       } else {
-        row += '<input type="text" name="'+fieldname+'" id="'+fieldname+'" class="' + gridDef.controlClass + '"/>';
+        regex = typeof def.regex === "undefined" ? '' : ' {pattern:' + def.regex + '}'
+        controlClass = gridDef.controlClass + regex;
+        row += '<input type="text" name="'+fieldname+'" id="'+fieldname+'" class="' + controlClass + '"/>';
       }
       if (typeof def.unit!=="undefined" && def.unit!=="") {
         row += '<span class="unit">'+def.unit+'</span>';
