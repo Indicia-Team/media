@@ -49,9 +49,18 @@ jQuery(document).ready(function($) {
       row += '<td>';
       if (def.datatype==='lookup' && typeof def.control!=="undefined" && def.control==='checkbox_group') {
         var checkboxes=[];
-        $.each(indiciaData['tl'+def.termlist_id], function(idx, term) {
-          checkboxes.push('<input title="'+term[1]+'" type="checkbox" name="'+fieldname+'[]" class="' + gridDef.controlClass + '" value="'+term[0]+':' + term[1] + '">');
-        });
+        if (def.termlist_id) {
+          $.each(indiciaData['tl'+def.termlist_id], function(idx, term) {
+            checkboxes.push('<input title="'+term[1]+'" type="checkbox" name="'+fieldname+'[]" class="' + gridDef.controlClass + '" value="'+term[0]+':' + term[1] + '">');
+          });
+        } else if (def.lookupValues) {
+          $.each(def.lookupValues, function(val, term) {
+            checkboxes.push(
+              '<input title="' + term + '" type="checkbox" name="' + fieldname +
+              '[]" class="' + gridDef.controlClass + '" value="' + val + ':' + term + '">'
+            );
+          });
+         }
         row += checkboxes.join('</td><td>');
       } else if (def.datatype==='lookup') {
         row += '<select name="'+fieldname+'" class="' + gridDef.controlClass + '"><option value="">&lt;'+indiciaData.langPleaseSelect+'&gt;</option>';
