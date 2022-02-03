@@ -50,7 +50,7 @@ jQuery(document).ready(function($) {
       if (def.datatype==='lookup' && typeof def.control!=="undefined" && def.control==='checkbox_group') {
         var checkboxes=[];
         $.each(indiciaData['tl'+def.termlist_id], function(idx, term) {
-          checkboxes.push('<input title="'+term+'" type="checkbox" name="'+fieldname+'[]" class="' + gridDef.controlClass + '" value="'+term[0]+':' + term[1] + '">');
+          checkboxes.push('<input title="'+term[1]+'" type="checkbox" name="'+fieldname+'[]" class="' + gridDef.controlClass + '" value="'+term[0]+':' + term[1] + '">');
         });
         row += checkboxes.join('</td><td>');
       } else if (def.datatype==='lookup') {
