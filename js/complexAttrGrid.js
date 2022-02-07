@@ -39,7 +39,9 @@ jQuery(document).ready(function($) {
       rowClass = ($(table).find('tbody tr').length % 2 === 0) ? ' class="odd"' : '',
       row='<tr'+rowClass+'>',
       gridDef=indiciaData['complexAttrGrid-'+attrTypeTag+'-'+attrId],
-      fieldname;
+      fieldname,
+      regex,
+      controlClass;
 
     gridDef.rowCount++;
     $.each(gridDef.cols, function(idx, def) {
@@ -47,12 +49,21 @@ jQuery(document).ready(function($) {
       row += '<td>';
       if (def.datatype==='lookup' && typeof def.control!=="undefined" && def.control==='checkbox_group') {
         var checkboxes=[];
-        $.each(indiciaData['tl'+def.termlist_id], function(idx, term) {
-          checkboxes.push('<input title="'+term+'" type="checkbox" name="'+fieldname+'[]" value="'+term[0]+':' + term[1] + '">');
-        });
+        if (def.termlist_id) {
+          $.each(indiciaData['tl'+def.termlist_id], function(idx, term) {
+            checkboxes.push('<input title="'+term[1]+'" type="checkbox" name="'+fieldname+'[]" class="' + gridDef.controlClass + '" value="'+term[0]+':' + term[1] + '">');
+          });
+        } else if (def.lookupValues) {
+          $.each(def.lookupValues, function(val, term) {
+            checkboxes.push(
+              '<input title="' + term + '" type="checkbox" name="' + fieldname +
+              '[]" class="' + gridDef.controlClass + '" value="' + val + ':' + term + '">'
+            );
+          });
+         }
         row += checkboxes.join('</td><td>');
       } else if (def.datatype==='lookup') {
-        row += '<select name="'+fieldname+'"><option value="">&lt;'+indiciaData.langPleaseSelect+'&gt;</option>';
+        row += '<select name="'+fieldname+'" class="' + gridDef.controlClass + '"><option value="">&lt;'+indiciaData.langPleaseSelect+'&gt;</option>';
         if (def.termlist_id) {
           $.each(indiciaData['tl'+def.termlist_id], function(idx, term) {
             row += '<option value="'+term[0]+':' + term[1] + '">'+term[1]+'</option>';
@@ -64,7 +75,9 @@ jQuery(document).ready(function($) {
         }
         row += '</select>';
       } else {
-        row += '<input type="text" name="'+fieldname+'" id="'+fieldname+'"/>';
+        regex = typeof def.regex === "undefined" ? '' : ' {pattern:' + def.regex + '}'
+        controlClass = gridDef.controlClass + regex;
+        row += '<input type="text" name="'+fieldname+'" id="'+fieldname+'" class="' + controlClass + '"/>';
       }
       if (typeof def.unit!=="undefined" && def.unit!=="") {
         row += '<span class="unit">'+def.unit+'</span>';
