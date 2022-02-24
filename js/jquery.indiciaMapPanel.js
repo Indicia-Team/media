@@ -401,7 +401,7 @@ var destroyAllFeatures;
           this.strokeWidth = settings.strokeWidthBoundary;
           this.strokeDashstyle = settings.strokeDashstyleBoundary;
           // pointRadius needed for clickForPlot rotation handle circle size.
-          this.pointRadius = 10;
+          this.pointRadius = settings.pointRadiusBoundary;
           break;
         case 'invisible':
           this.pointRadius = 0;
@@ -3417,12 +3417,14 @@ var destroyAllFeatures;
           }
         }});
       }
-      var hint, pushDrawCtrl = function(c) {
+      var hint;
+      var pushDrawCtrl = function(c) {
         toolbarControls.push(c);
         if (div.settings.editLayer && div.settings.allowPolygonRecording) {
           c.events.register('featureadded', c, recordPolygon);
         }
-      }, drawStyle=new Style('boundary', div.settings);
+      };
+      var drawStyle=new Style('boundary', div.settings);
       var ctrlObj;
       $.each(div.settings.standardControls, function(i, ctrl) {
         ctrlObj=null;
@@ -3818,6 +3820,7 @@ jQuery.fn.indiciaMapPanel.defaults = {
   strokeColorBoundary: '#FF0000',
   strokeWidthBoundary: 2,
   strokeDashstyleBoundary: 'dash',
+  pointRadiusBoundary: 10,
   // hint for the grid ref you are over
   gridRefHint: false,
 
