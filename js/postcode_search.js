@@ -68,7 +68,7 @@
 
             if (indiciaData.mapdiv !== 'undefined') {
               // Use map to convert to preferred projection
-              $srefCtrl.attr('value', indiciaData.mapdiv.pointToSref(indiciaData.mapdiv, wkt, $('#imp-sref-system').attr('value'),
+              $srefCtrl.attr('value', indiciaData.mapdiv.pointToSref(indiciaData.mapdiv, wkt, $('#imp-sref-system').val(),
                 function (data) {
                   $srefCtrl.attr('value', data.sref); // SRID for WGS84 lat long
                   $srefCtrl.change();
