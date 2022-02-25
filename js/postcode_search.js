@@ -61,14 +61,14 @@
       usePointFromPostcode(
           postcode,
           function (place) {
-            var wkt = 'POINT(' + place.geometry.location.lng + ' ' + place.geometry.location.lat + ')';
+            var point = new OpenLayers.Geometry.Point(place.geometry.location.lng, place.geometry.location.lat);
             if (addressField !== '') {
               document.getElementById(addressField).value = place.formatted_address;
             }
 
             if (indiciaData.mapdiv !== 'undefined') {
               // Use map to convert to preferred projection
-              $srefCtrl.attr('value', indiciaData.mapdiv.pointToSref(indiciaData.mapdiv, wkt, $('#imp-sref-system').val(),
+              $srefCtrl.attr('value', indiciaData.mapdiv.pointToSref(indiciaData.mapdiv, point, $('#imp-sref-system').val(),
                 function (data) {
                   $srefCtrl.attr('value', data.sref); // SRID for WGS84 lat long
                   $srefCtrl.change();

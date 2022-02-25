@@ -1953,7 +1953,7 @@ var destroyAllFeatures;
           $.inArray('gridNotation', indiciaData.srefHandlers[system.toLowerCase()].returns) === -1) {
         // next call also generates the wkt in map projection
         $.getJSON(opts.indiciaSvc + 'index.php/services/spatial/wkt_to_sref' +
-          '?wkt=' + point +
+          '?wkt=' + point.toString() +
           '&system=' + system +
           '&wktsystem=' + pointSystem +
           '&mapsystem=' + indiciaFns.projectionToSystem(div.map.projection, false) +
@@ -1963,13 +1963,13 @@ var destroyAllFeatures;
           '&callback=?', callback
         );
       } else {
-        // passing a point in the mapSystem.
+        // Using the srefHandler to create the sref.
         var wkt;
         var r;
         var pt, parser,
           ll = new OpenLayers.LonLat(point.x, point.y),
           proj = new OpenLayers.Projection('EPSG:' + indiciaData.srefHandlers[system.toLowerCase()].srid);
-        ll.transform(div.map.projection, proj);
+        ll.transform(pointSystem || div.map.projection, proj);
         pt = { x: ll.lon, y: ll.lat };
         wkt = indiciaData.srefHandlers[system.toLowerCase()].pointToWkt(pt, precisionInfo);
         if (wkt === 'Out of bounds') {
