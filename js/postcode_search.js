@@ -62,22 +62,29 @@
           postcode,
           function (place) {
             var point = new OpenLayers.Geometry.Point(place.geometry.location.lng, place.geometry.location.lat);
+            // Force sref to update map.
+            indiciaData.spatialRefWhenSrefInputFocused = '';
             if (addressField !== '') {
               document.getElementById(addressField).value = place.formatted_address;
             }
 
             if (indiciaData.mapdiv !== 'undefined') {
-              // Use map to convert to preferred projection
-              $srefCtrl.attr('value', indiciaData.mapdiv.pointToSref(indiciaData.mapdiv, point, $('#imp-sref-system').val(),
+              // Use map to convert to preferred projection.
+              indiciaData.mapdiv.pointToSref(
+                indiciaData.mapdiv,
+                point,
+                $('#imp-sref-system').val(),
                 function (data) {
-                  $srefCtrl.attr('value', data.sref); // SRID for WGS84 lat long
+                  $srefCtrl.val(data.sref); // SRID for WGS84 lat long
                   $srefCtrl.change();
-                }, new OpenLayers.Projection('4326'), 8)
+                },
+                '4326',
+                8
               );
             } else {
               // map not available for conversions, so have to use LatLong as returned projection.
-              $srefCtrl.attr('value', place.lat + ', ' + place.lng);
-              $srefSystemCtrl.attr('value', '4326'); // SRID for WGS84 lat long
+              $srefCtrl.val(place.lat + ', ' + place.lng);
+              $srefSystemCtrl.val('4326'); // SRID for WGS84 lat long
               $srefCtrl.change();
             }
           }

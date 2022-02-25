@@ -438,20 +438,20 @@ var destroyAllFeatures;
      */
     function _bindControls(div) {
       var currentZoom;
-      var spatialRefWhenFieldFocused = null;
+      indiciaData.spatialRefWhenSrefInputFocused = null;
       var userChangedSref = function () {
         // We know value has been changed if it is different when the user
         // moves off the field.
-        if (spatialRefWhenFieldFocused !== null && $(this).val() !== spatialRefWhenFieldFocused) {
+        if (indiciaData.spatialRefWhenSrefInputFocused !== null && $(this).val() !== indiciaData.spatialRefWhenSrefInputFocused) {
           _handleEnteredSref($(this).val(), div);
           _hideOtherGraticules(div);
         }
-        spatialRefWhenFieldFocused = null;
+        indiciaData.spatialRefWhenSrefInputFocused = null;
       }
       // Track when the sref input focused, so we know if user made the
       // change.
       $('#' + opts.srefId).focus(function () {
-        spatialRefWhenFieldFocused = $(this).val();
+        indiciaData.spatialRefWhenSrefInputFocused = $(this).val();
       });
 
       // If the spatial ref input control exists, bind it to the map, so
@@ -1966,10 +1966,12 @@ var destroyAllFeatures;
         // Using the srefHandler to create the sref.
         var wkt;
         var r;
-        var pt, parser,
-          ll = new OpenLayers.LonLat(point.x, point.y),
-          proj = new OpenLayers.Projection('EPSG:' + indiciaData.srefHandlers[system.toLowerCase()].srid);
-        ll.transform(pointSystem || div.map.projection, proj);
+        var pt;
+        var parser;
+        var ll = new OpenLayers.LonLat(point.x, point.y);
+        var proj = new OpenLayers.Projection('EPSG:' + indiciaData.srefHandlers[system.toLowerCase()].srid);
+        var pointProj = pointSystem ? new OpenLayers.Projection('EPSG:' + pointSystem) : div.map.projection;
+        ll.transform(pointProj, proj);
         pt = { x: ll.lon, y: ll.lat };
         wkt = indiciaData.srefHandlers[system.toLowerCase()].pointToWkt(pt, precisionInfo);
         if (wkt === 'Out of bounds') {
