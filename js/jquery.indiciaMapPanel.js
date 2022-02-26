@@ -1953,7 +1953,7 @@ var destroyAllFeatures;
           $.inArray('gridNotation', indiciaData.srefHandlers[system.toLowerCase()].returns) === -1) {
         // next call also generates the wkt in map projection
         $.getJSON(opts.indiciaSvc + 'index.php/services/spatial/wkt_to_sref' +
-          '?wkt=' + point +
+          '?wkt=' + point.toString() +
           '&system=' + system +
           '&wktsystem=' + pointSystem +
           '&mapsystem=' + indiciaFns.projectionToSystem(div.map.projection, false) +
