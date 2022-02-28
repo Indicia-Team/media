@@ -401,7 +401,7 @@ var destroyAllFeatures;
           this.strokeWidth = settings.strokeWidthBoundary;
           this.strokeDashstyle = settings.strokeDashstyleBoundary;
           // pointRadius needed for clickForPlot rotation handle circle size.
-          this.pointRadius = 10;
+          this.pointRadius = settings.pointRadiusBoundary;
           break;
         case 'invisible':
           this.pointRadius = 0;
@@ -438,20 +438,20 @@ var destroyAllFeatures;
      */
     function _bindControls(div) {
       var currentZoom;
-      var spatialRefWhenFieldFocused = null;
+      indiciaData.spatialRefWhenSrefInputFocused = null;
       var userChangedSref = function () {
         // We know value has been changed if it is different when the user
         // moves off the field.
-        if (spatialRefWhenFieldFocused !== null && $(this).val() !== spatialRefWhenFieldFocused) {
+        if (indiciaData.spatialRefWhenSrefInputFocused !== null && $(this).val() !== indiciaData.spatialRefWhenSrefInputFocused) {
           _handleEnteredSref($(this).val(), div);
           _hideOtherGraticules(div);
         }
-        spatialRefWhenFieldFocused = null;
+        indiciaData.spatialRefWhenSrefInputFocused = null;
       }
       // Track when the sref input focused, so we know if user made the
       // change.
       $('#' + opts.srefId).focus(function () {
-        spatialRefWhenFieldFocused = $(this).val();
+        indiciaData.spatialRefWhenSrefInputFocused = $(this).val();
       });
 
       // If the spatial ref input control exists, bind it to the map, so
@@ -1953,7 +1953,7 @@ var destroyAllFeatures;
           $.inArray('gridNotation', indiciaData.srefHandlers[system.toLowerCase()].returns) === -1) {
         // next call also generates the wkt in map projection
         $.getJSON(opts.indiciaSvc + 'index.php/services/spatial/wkt_to_sref' +
-          '?wkt=' + point +
+          '?wkt=' + point.toString() +
           '&system=' + system +
           '&wktsystem=' + pointSystem +
           '&mapsystem=' + indiciaFns.projectionToSystem(div.map.projection, false) +
@@ -1966,10 +1966,12 @@ var destroyAllFeatures;
         // passing a point in the mapSystem.
         var wkt;
         var r;
-        var pt, parser,
-          ll = new OpenLayers.LonLat(point.x, point.y),
-          proj = new OpenLayers.Projection('EPSG:' + indiciaData.srefHandlers[system.toLowerCase()].srid);
-        ll.transform(div.map.projection, proj);
+        var pt;
+        var parser;
+        var ll = new OpenLayers.LonLat(point.x, point.y);
+        var proj = new OpenLayers.Projection('EPSG:' + indiciaData.srefHandlers[system.toLowerCase()].srid);
+        var pointProj = pointSystem ? new OpenLayers.Projection('EPSG:' + pointSystem) : div.map.projection;
+        ll.transform(pointProj, proj);
         pt = { x: ll.lon, y: ll.lat };
         wkt = indiciaData.srefHandlers[system.toLowerCase()].pointToWkt(pt, precisionInfo);
         if (wkt === 'Out of bounds') {
@@ -3417,12 +3419,14 @@ var destroyAllFeatures;
           }
         }});
       }
-      var hint, pushDrawCtrl = function(c) {
+      var hint;
+      var pushDrawCtrl = function(c) {
         toolbarControls.push(c);
         if (div.settings.editLayer && div.settings.allowPolygonRecording) {
           c.events.register('featureadded', c, recordPolygon);
         }
-      }, drawStyle=new Style('boundary', div.settings);
+      };
+      var drawStyle=new Style('boundary', div.settings);
       var ctrlObj;
       $.each(div.settings.standardControls, function(i, ctrl) {
         ctrlObj=null;
@@ -3818,6 +3822,7 @@ jQuery.fn.indiciaMapPanel.defaults = {
   strokeColorBoundary: '#FF0000',
   strokeWidthBoundary: 2,
   strokeDashstyleBoundary: 'dash',
+  pointRadiusBoundary: 10,
   // hint for the grid ref you are over
   gridRefHint: false,
 

@@ -53,7 +53,7 @@
   * geomField - Optional, the id of the control which receives the geometry (WKT).
   * addressField - Optional, the id of the control which receives the address locality information.
   */
-  indiciaFns.decodePostcode = function (addressField) {
+   indiciaFns.decodePostcode = function (addressField) {
     var postcode = $('#imp-postcode').val();
     var $srefCtrl = $('#imp-sref');
     var $srefSystemCtrl = $('#imp-sref-system');
@@ -61,23 +61,30 @@
       usePointFromPostcode(
           postcode,
           function (place) {
-            var wkt = 'POINT(' + place.geometry.location.lng + ' ' + place.geometry.location.lat + ')';
+            var point = new OpenLayers.Geometry.Point(place.geometry.location.lng, place.geometry.location.lat);
+            // Force sref to update map.
+            indiciaData.spatialRefWhenSrefInputFocused = '';
             if (addressField !== '') {
               document.getElementById(addressField).value = place.formatted_address;
             }
 
             if (indiciaData.mapdiv !== 'undefined') {
-              // Use map to convert to preferred projection
-              $srefCtrl.attr('value', indiciaData.mapdiv.pointToSref(indiciaData.mapdiv, wkt, $('#imp-sref-system').attr('value'),
+              // Use map to convert to preferred projection.
+              indiciaData.mapdiv.pointToSref(
+                indiciaData.mapdiv,
+                point,
+                $('#imp-sref-system').val(),
                 function (data) {
-                  $srefCtrl.attr('value', data.sref); // SRID for WGS84 lat long
+                  $srefCtrl.val(data.sref); // SRID for WGS84 lat long
                   $srefCtrl.change();
-                }, new OpenLayers.Projection('4326'), 8)
+                },
+                '4326',
+                8
               );
             } else {
               // map not available for conversions, so have to use LatLong as returned projection.
-              $srefCtrl.attr('value', place.lat + ', ' + place.lng);
-              $srefSystemCtrl.attr('value', '4326'); // SRID for WGS84 lat long
+              $srefCtrl.val(place.lat + ', ' + place.lng);
+              $srefSystemCtrl.val('4326'); // SRID for WGS84 lat long
               $srefCtrl.change();
             }
           }
