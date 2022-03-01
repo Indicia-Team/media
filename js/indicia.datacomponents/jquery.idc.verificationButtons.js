@@ -486,6 +486,10 @@
    * Handle the next chunk of uploaded decisions spreadsheet.
    */
   function nextSpreadsheetTask(metadata) {
+    if ($.fancybox.getInstance() === false) {
+      // Dialog has been closed, so process cancelled.
+      return;
+    }
     if (metadata.state === 'checks failed') {
       $('.upload-output').removeClass('alert-info').addClass('alert-danger');
       $('.upload-output .msg').html(
@@ -517,7 +521,10 @@
         url: indiciaData.esProxyAjaxUrl + '/verifyspreadsheet/' + indiciaData.nid,
         type: 'POST',
         dataType: 'json',
-        data: { fileId: metadata.fileId },
+        data: {
+          fileId: metadata.fileId,
+          id_prefix: indiciaData.idPrefix
+        },
         success: nextSpreadsheetTask,
         error: function(jqXHR, textStatus, errorThrown) {
           var msg = indiciaData.lang.verificationButtons.uploadError;

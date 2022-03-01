@@ -790,6 +790,9 @@ table.es-data-grid.fixed-header .multiselect-cell {
 table.es-data-grid tfoot span {
   margin: 0 1em;
 }
+table.es-data-grid tfoot button span {
+  margin: 0 0 0 8px;
+}
 
 /* idcLeafletMap plugin */
 .idc-output-leafletMap {
