@@ -219,6 +219,10 @@ table.es-data-grid {
     span {
       margin: 0 1em;
     }
+    button span {
+      // Undo margin if span inside a button.
+      margin: 0 0 0 8px;
+    }
   }
 }
 
