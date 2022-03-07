@@ -841,7 +841,9 @@
       if (autoChecks.enabled === 'false') {
         icons.push('<span title="Automatic rule checks will not be applied to records in this dataset." class="' + indiciaData.ruleClasses.checksDisabled + '"></span>');
       } else if (autoChecks.result === 'true') {
-        icons.push('<span title="All automatic rule checks passed." class="' + indiciaData.ruleClasses.pass + '"></span>');
+        if (autoChecks.verification_rule_types_applied) {
+          icons.push('<span title="All automatic rule checks passed." class="' + indiciaData.ruleClasses.pass + '"></span>');
+        }
       } else if (autoChecks.result === 'false') {
         if (autoChecks.output.length > 0) {
           icons = ['<span title="The following automatic rule checks were triggered for this record." class="' + indiciaData.ruleClasses.fail + '"></span>'];

@@ -51,19 +51,19 @@ jQuery(document).ready(function($) {
         var checkboxes=[];
         if (def.termlist_id) {
           $.each(indiciaData['tl'+def.termlist_id], function(idx, term) {
-            checkboxes.push('<input title="'+term[1]+'" type="checkbox" name="'+fieldname+'[]" class="' + gridDef.controlClass + '" value="'+term[0]+':' + term[1] + '">');
+            checkboxes.push('<input title="'+term[1]+'" type="checkbox" name="'+fieldname+'[]" class="' + indiciaData.formControlClass + '" value="'+term[0]+':' + term[1] + '">');
           });
         } else if (def.lookupValues) {
           $.each(def.lookupValues, function(val, term) {
             checkboxes.push(
               '<input title="' + term + '" type="checkbox" name="' + fieldname +
-              '[]" class="' + gridDef.controlClass + '" value="' + val + ':' + term + '">'
+              '[]" class="' + indiciaData.formControlClass + '" value="' + val + ':' + term + '">'
             );
           });
          }
         row += checkboxes.join('</td><td>');
       } else if (def.datatype==='lookup') {
-        row += '<select name="'+fieldname+'" class="' + gridDef.controlClass + '"><option value="">&lt;'+indiciaData.langPleaseSelect+'&gt;</option>';
+        row += '<select name="'+fieldname+'" class="' + indiciaData.formControlClass + '"><option value="">&lt;'+indiciaData.langPleaseSelect+'&gt;</option>';
         if (def.termlist_id) {
           $.each(indiciaData['tl'+def.termlist_id], function(idx, term) {
             row += '<option value="'+term[0]+':' + term[1] + '">'+term[1]+'</option>';
@@ -76,7 +76,7 @@ jQuery(document).ready(function($) {
         row += '</select>';
       } else {
         regex = typeof def.regex === "undefined" ? '' : ' {pattern:' + def.regex + '}'
-        controlClass = gridDef.controlClass + regex;
+        controlClass = indiciaData.formControlClass + regex;
         row += '<input type="text" name="'+fieldname+'" id="'+fieldname+'" class="' + controlClass + '"/>';
       }
       if (typeof def.unit!=="undefined" && def.unit!=="") {
@@ -86,8 +86,8 @@ jQuery(document).ready(function($) {
     });
     fieldname = attrTypeTag+"Complex:"+attrId+"::"+gridDef.rowCount+":deleted";
     row += '<td><input type="hidden" name="'+fieldname+'" value="f" class="delete-flag"/>';
-    if (gridDef.rowCountControl==='') {
-      row += '<span class="ind-delete-icon"/>';
+    if (gridDef.rowCountControl === '') {
+      row += '<span class="fas fa-trash-alt action-delete"/>';
     }
     row += '</td></tr>';
     $(table).find('tbody').append(row);
@@ -124,12 +124,12 @@ jQuery(document).ready(function($) {
     var table=this.parentNode;
     var row;
     // e.target is the actual thing clicked on inside the tbody
-    if ($(e.target).hasClass('ind-delete-icon')) {
-      var row=$(e.target).closest('tr')[0],
-      newTarget=$(e.target).closest('table')[0],// find parent table before deleting row
-      attrName=table.id.replace('complex-attr-grid-', '').split('-'),
-      attrTypeTag=attrName[0], attrId=attrName[1],
-      gridDef=indiciaData['complexAttrGrid-'+attrTypeTag+'-'+attrId];
+    if ($(e.target).hasClass('action-delete')) {
+      var row = $(e.target).closest('tr')[0],
+      newTarget = $(e.target).closest('table')[0],// find parent table before deleting row
+      attrName = table.id.replace('complex-attr-grid-', '').split('-'),
+      attrTypeTag = attrName[0], attrId=attrName[1],
+      gridDef = indiciaData['complexAttrGrid-'+attrTypeTag+'-'+attrId];
       if(gridDef['deleteRows'])
         $(row).remove();
       else {

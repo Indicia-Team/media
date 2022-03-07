@@ -401,7 +401,7 @@ var destroyAllFeatures;
           this.strokeWidth = settings.strokeWidthBoundary;
           this.strokeDashstyle = settings.strokeDashstyleBoundary;
           // pointRadius needed for clickForPlot rotation handle circle size.
-          this.pointRadius = 10;
+          this.pointRadius = settings.pointRadiusBoundary;
           break;
         case 'invisible':
           this.pointRadius = 0;
@@ -438,20 +438,20 @@ var destroyAllFeatures;
      */
     function _bindControls(div) {
       var currentZoom;
-      var spatialRefWhenFieldFocused = null;
+      indiciaData.spatialRefWhenSrefInputFocused = null;
       var userChangedSref = function () {
         // We know value has been changed if it is different when the user
         // moves off the field.
-        if (spatialRefWhenFieldFocused !== null && $(this).val() !== spatialRefWhenFieldFocused) {
+        if (indiciaData.spatialRefWhenSrefInputFocused !== null && $(this).val() !== indiciaData.spatialRefWhenSrefInputFocused) {
           _handleEnteredSref($(this).val(), div);
           _hideOtherGraticules(div);
         }
-        spatialRefWhenFieldFocused = null;
+        indiciaData.spatialRefWhenSrefInputFocused = null;
       }
       // Track when the sref input focused, so we know if user made the
       // change.
       $('#' + opts.srefId).focus(function () {
-        spatialRefWhenFieldFocused = $(this).val();
+        indiciaData.spatialRefWhenSrefInputFocused = $(this).val();
       });
 
       // If the spatial ref input control exists, bind it to the map, so
@@ -1611,10 +1611,6 @@ var destroyAllFeatures;
             this[0].settings.extraParams.idlist = ids.join(',');
             this.reload(true);
           });
-          $('table.report-grid tr').removeClass('selected');
-          $.each(ids, function () {
-            $('table.report-grid tr#row' + this).addClass('selected');
-          });
         }
       } else if (div.settings.clickableLayersOutputMode === 'reportHighlight' && typeof indiciaData.reports !== 'undefined') {
         // deselect existing selection in grid as well as on feature layer
@@ -1957,7 +1953,7 @@ var destroyAllFeatures;
           $.inArray('gridNotation', indiciaData.srefHandlers[system.toLowerCase()].returns) === -1) {
         // next call also generates the wkt in map projection
         $.getJSON(opts.indiciaSvc + 'index.php/services/spatial/wkt_to_sref' +
-          '?wkt=' + point +
+          '?wkt=' + point.toString() +
           '&system=' + system +
           '&wktsystem=' + pointSystem +
           '&mapsystem=' + indiciaFns.projectionToSystem(div.map.projection, false) +
@@ -1970,10 +1966,12 @@ var destroyAllFeatures;
         // passing a point in the mapSystem.
         var wkt;
         var r;
-        var pt, parser,
-          ll = new OpenLayers.LonLat(point.x, point.y),
-          proj = new OpenLayers.Projection('EPSG:' + indiciaData.srefHandlers[system.toLowerCase()].srid);
-        ll.transform(div.map.projection, proj);
+        var pt;
+        var parser;
+        var ll = new OpenLayers.LonLat(point.x, point.y);
+        var proj = new OpenLayers.Projection('EPSG:' + indiciaData.srefHandlers[system.toLowerCase()].srid);
+        var pointProj = pointSystem ? new OpenLayers.Projection('EPSG:' + pointSystem) : div.map.projection;
+        ll.transform(pointProj, proj);
         pt = { x: ll.lon, y: ll.lat };
         wkt = indiciaData.srefHandlers[system.toLowerCase()].pointToWkt(pt, precisionInfo);
         if (wkt === 'Out of bounds') {
@@ -2464,9 +2462,9 @@ var destroyAllFeatures;
         // On initial page load, we may have to re-apply the initial zoom level
         // if the zoom level is not supported by the default sub-layer (OSM),
         // but is supported by Google.
-        if (indiciaData.zoomToAfterFetchingGoogleApiScript) {
-          map.zoomTo(indiciaData.zoomToAfterFetchingGoogleApiScript);
-          delete indiciaData.zoomToAfterFetchingGoogleApiScript;
+        if (indiciaData['zoomToAfterFetchingGoogleApiScript-' + map.id]) {
+          map.zoomTo(indiciaData['zoomToAfterFetchingGoogleApiScript-' + map.id]);
+          delete indiciaData['zoomToAfterFetchingGoogleApiScript-' + map.id];
         }
       } finally {
         indiciaData.settingBaseLayer = false;
@@ -2489,10 +2487,20 @@ var destroyAllFeatures;
           if (!indiciaData.fetchingGoogleApiScript) {
             // Flag to ensure we don't request twice.
             indiciaData.fetchingGoogleApiScript = true;
+            indiciaData.layersToReplaceAfterGoogleApiLoaded = [layerToReplace];
             $.getScript('https://maps.google.com/maps/api/js?v=3' + key, function() {
-              replaceGoogleBaseLayer(layerToReplace);
+              $.unique(indiciaData.layersToReplaceAfterGoogleApiLoaded);
+              indiciaData.layersToReplaceAfterGoogleApiLoaded.forEach(function(layer) {
+                replaceGoogleBaseLayer(layer);
+              });
+              indiciaData.layersToReplaceAfterGoogleApiLoaded = [];
               delete indiciaData.fetchingGoogleApiScript;
             });
+          }
+          else {
+            // 2 maps on page, both loading Google layer, only 1 needs to get
+            // the script.
+            indiciaData.layersToReplaceAfterGoogleApiLoaded.push(layerToReplace);
           }
         } else {
           // Google API already loaded so just replace the layer.
@@ -2671,7 +2679,7 @@ var destroyAllFeatures;
       var baseLayer = div.map.baseLayer;
       // A dynamic layer's sub-layer has a layerId set to layerName.index, e.g.
       // dynamicOSLeisureGoogleSat.0.
-      var baseLayerIdParts = baseLayer.layerId.split('.');
+      var baseLayerIdParts = baseLayer.layerId ? baseLayer.layerId.split('.') : [];
       var onLayerIdx;
       var dynamicLayers;
       var bb;
@@ -3114,7 +3122,7 @@ var destroyAllFeatures;
       div.map.setCenter(initialMapViewSetup.centre.lonLat, initialMapViewSetup.zoom);
       handleDynamicLayerSwitching(div);
       if (indiciaData.fetchingGoogleApiScript) {
-        indiciaData.zoomToAfterFetchingGoogleApiScript = initialMapViewSetup.zoom;
+        indiciaData['zoomToAfterFetchingGoogleApiScript-' + div.map.id] = initialMapViewSetup.zoom;
       }
 
       // Register moveend must come after panning and zooming the initial map
@@ -3129,15 +3137,15 @@ var destroyAllFeatures;
         }
         handleDynamicLayerSwitching(div);
         // setup the map to save the last position
-        if (div.settings.rememberPos && typeof $.cookie !== 'undefined') {
-          $.cookie('mapzoom', div.map.zoom, { expires: 7 });
+        if (div.settings.rememberPos) {
+          indiciaFns.cookie('mapzoom', div.map.zoom, { expires: 7 });
           if (!indiciaData.settingBaseLayer) {
-            $.cookie('maplongitude', div.settings.lastMapCentre.lon, { expires: 7 });
-            $.cookie('maplatitude', div.settings.lastMapCentre.lat, { expires: 7 });
+            indiciaFns.cookie('maplongitude', div.settings.lastMapCentre.lon, { expires: 7 });
+            indiciaFns.cookie('maplatitude', div.settings.lastMapCentre.lat, { expires: 7 });
           }
           // Store the name of the layer or dynamic layer group (the part
           // before the . in layerId).
-          $.cookie('mapbaselayerid', div.map.baseLayer.layerId, { expires: 7 });
+          indiciaFns.cookie('mapbaselayerid', div.map.baseLayer.layerId, { expires: 7 });
         }
       });
 
@@ -3159,7 +3167,7 @@ var destroyAllFeatures;
             }
             return j;
           }, init);
-          $.cookie('mapwmsvisibility', JSON.stringify(json), { expires: 7 });
+          indiciaFns.cookie('mapwmsvisibility', JSON.stringify(json), { expires: 7 });
         }
       });
 
@@ -3411,12 +3419,14 @@ var destroyAllFeatures;
           }
         }});
       }
-      var hint, pushDrawCtrl = function(c) {
+      var hint;
+      var pushDrawCtrl = function(c) {
         toolbarControls.push(c);
         if (div.settings.editLayer && div.settings.allowPolygonRecording) {
           c.events.register('featureadded', c, recordPolygon);
         }
-      }, drawStyle=new Style('boundary', div.settings);
+      };
+      var drawStyle=new Style('boundary', div.settings);
       var ctrlObj;
       $.each(div.settings.standardControls, function(i, ctrl) {
         ctrlObj=null;
@@ -3812,6 +3822,7 @@ jQuery.fn.indiciaMapPanel.defaults = {
   strokeColorBoundary: '#FF0000',
   strokeWidthBoundary: 2,
   strokeDashstyleBoundary: 'dash',
+  pointRadiusBoundary: 10,
   // hint for the grid ref you are over
   gridRefHint: false,
 

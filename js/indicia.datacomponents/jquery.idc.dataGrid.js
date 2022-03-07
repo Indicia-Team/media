@@ -514,16 +514,13 @@
       applyColumnsList(el, colsList);
       // Save columns in a cookie.
       if (el.settings.cookies) {
-        $.cookie('cols-' + el.id, JSON.stringify(colsList), { expires: 3650 });
+        indiciaFns.cookie('cols-' + el.id, JSON.stringify(colsList), { expires: 3650 });
       }
       $(header).find('*').remove();
       // Output header row for column titles.
       if (el.settings.includeColumnHeadings !== false) {
         addColumnHeadings(el, header);
       }
-      // Disable filter row for aggregations.
-      el.settings.includeFilterRow =
-        el.settings.includeFilterRow && !el.settings.sourceObject.settings.mode.match(/aggregation$/);
       // Output header row for filtering.
       if (el.settings.includeFilterRow !== false) {
         addFilterRow(el, header);
@@ -870,8 +867,6 @@
       if (el.settings.scrollY) {
         tableClasses.push('fixed-header');
       }
-      // Disable filter row for aggregations.
-      el.settings.includeFilterRow = el.settings.includeFilterRow && !el.settings.sourceObject.settings.mode.match(/Aggregation$/);
       // Build the elements required for the table.
       table = $('<table class="' + tableClasses.join(' ') + '" data-sort="' + footableSort + '" />').appendTo(el);
       addHeader(el, table);

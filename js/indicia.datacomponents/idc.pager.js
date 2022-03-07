@@ -131,6 +131,12 @@
     } else if (response.aggregations._count) {
       // Aggregation modes use a separate agg to count only when the filter changes.
       total = response.aggregations._count.value;
+      // Safety check in case count's cardinal field makes less unique rows
+      // than the selection in a composite aggregation. Ideally, the count
+      // should work across all fields but that may affect performance.
+      if (response.aggregations._rows) {
+        total = Math.max(total, response.aggregations._rows.buckets.length);
+      }
       el.settings.lastCount = total;
     } else if (el.settings.lastCount) {
       total = el.settings.lastCount;

@@ -53,7 +53,7 @@
     indiciaData['taxonExtraParams-' + gridId] = currentFilter;
     $('.scTaxonCell input').setExtraParams(currentFilter);
     // store in cookie
-    $.cookie('user_selected_taxon_filter', JSON.stringify({
+    indiciaFns.cookie('user_selected_taxon_filter', JSON.stringify({
       type: type,
       group_id: group_id,
       name_filter: nameFilterMode

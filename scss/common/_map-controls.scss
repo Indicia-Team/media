@@ -3,8 +3,12 @@
 }
 .layer_list ul {
   li {
-    label.layer-title {
-      display: initial;
+    list-style: none;
+    * {
+      display: inline-block;
+      vertical-align: middle;
+      margin: 0;
+      margin-right: 15px;
     }
   }
 }

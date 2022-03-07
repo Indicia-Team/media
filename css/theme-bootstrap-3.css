@@ -44,8 +44,20 @@ table.species-grid {
   width: 100%;
   /* Inside control button alignment. */
 }
+table.species-grid th button {
+  padding: 0;
+  margin: 0 0.5em;
+}
+table.species-grid td {
+  padding: 0;
+}
 table.species-grid .hidden-by-dynamic-attr {
   display: none;
+}
+table.species-grid .scPresenceCell {
+  text-align: center;
+  padding-left: 1em;
+  padding-right: 1em;
 }
 table.species-grid .scTaxonCell, table.species-grid .scSpatialRefCell {
   position: relative;
@@ -83,6 +95,12 @@ table.species-grid .row-buttons .action-button:hover {
 table.species-grid tr.selected-row input, table.species-grid tr.selected-row select, table.species-grid tr.selected-row td {
   background-color: lightyellow;
 }
+table.species-grid tr td input, table.species-grid tr td select {
+  width: 100%;
+  margin: 0;
+  vertical-align: middle;
+  padding: 3px 0;
+}
 
 #new-taxon-form {
   max-width: 600px;
@@ -99,6 +117,13 @@ table.species-grid tr.selected-row input, table.species-grid tr.selected-row sel
 }
 .attrs-container .attrs-container legend {
   font-size: 120%;
+}
+
+.complex-attr-grid {
+  margin-bottom: 15px;
+}
+.complex-attr-grid tfoot {
+  background: none;
 }
 
 /* Toggle/slider switches */
@@ -177,8 +202,14 @@ input:checked + .slider:before {
   position: relative;
 }
 
-.layer_list ul li label.layer-title {
-  display: initial;
+.layer_list ul li {
+  list-style: none;
+}
+.layer_list ul li * {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0;
+  margin-right: 15px;
 }
 
 #map-footer {
@@ -626,16 +657,20 @@ body > .loading-spinner {
 }
 .idc-output-cardGallery .es-card-gallery .card .image-container {
   display: flex;
+  padding: 4px;
 }
 .idc-output-cardGallery .es-card-gallery .card .image-container > * {
   max-width: 98%;
-  flex-basis: 33%;
+  flex-basis: 0;
   flex-grow: 1;
   flex-shrink: 0;
-  margin: 1%;
+  margin-right: 4px;
 }
 .idc-output-cardGallery .es-card-gallery .card .image-container > * img {
   max-width: 100%;
+}
+.idc-output-cardGallery .es-card-gallery .card .image-container > *:first-child {
+  margin-left: 4px;
 }
 .idc-output-cardGallery .es-card-gallery .card ul.data-container {
   padding: 8px;
@@ -1086,6 +1121,11 @@ do need to do something.
   font-size: 14px;
 }
 
+/* Complex attr grid */
+.complex-attr-grid td {
+  padding: 4px;
+}
+
 .loading-spinner {
   position: absolute;
   z-index: 9999;
@@ -1275,6 +1315,94 @@ label#click-buffer {
   opacity: 0.7;
   z-index: 9999;
   float: left !important;
+}
+
+.dm-uploader {
+  margin-bottom: 15px;
+  padding: 15px;
+  border: dashed silver 3px;
+}
+.dm-uploader.active {
+  border-color: lightcoral;
+}
+
+#uploaded-files {
+  position: relative;
+}
+#uploaded-files .remove-file {
+  position: absolute;
+  top: 6px;
+  /* x 3 to allow for file icon which is also padded - we want to move inside the edge. */
+  left: 18px;
+  height: 28px;
+  width: 28px;
+  border: solid darkgray 2px;
+  color: darkgrey;
+  border-radius: 14px;
+  background-color: white;
+  padding: 6px;
+  cursor: pointer;
+}
+#uploaded-files .remove-file:hover {
+  border-color: lightcoral;
+  background-color: silver;
+  color: black;
+}
+
+#file-upload-form {
+  margin-bottom: 15px;
+}
+
+#matching-area {
+  margin-bottom: 15px;
+}
+
+.background-processing .panel-heading progress {
+  margin-bottom: 0;
+}
+.background-processing .panel-body {
+  height: 150px;
+  overflow-y: auto;
+}
+.background-processing .panel-body p {
+  margin-bottom: 4px;
+}
+
+#summary-form dl {
+  margin: 15px;
+  max-width: 700px;
+}
+#summary-form dl dt, #summary-form dl dd {
+  margin: 8px 1%;
+  display: inline-block;
+  vertical-align: top;
+}
+#summary-form dl dt table thead th, #summary-form dl dd table thead th {
+  padding-top: 0;
+}
+#summary-form dl dt {
+  width: 38%;
+}
+#summary-form dl dd {
+  width: 58%;
+}
+#summary-form .fa-stop, #summary-form .fa-triangle-exclamation {
+  color: #770000;
+}
+#summary-form .fa-play {
+  color: #007700;
+}
+#summary-form .body-title {
+  background: #e7e7e7;
+}
+
+/* Tidy dialogs */
+div.fancybox-content {
+  padding: 15px;
+}
+div.fancybox-content h2 {
+  margin-top: 0;
+  font-size: 2rem;
 }
 
 /*# sourceMappingURL=theme-bootstrap-3.css.map */

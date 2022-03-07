@@ -26,7 +26,7 @@
  * session.
  */
 
-(function($) {
+jQuery(document).ready(function($) {
   // this function wraps our code so
   // 1) $ is privately defined as jQuery and doesn't conflict with other code
   // 2) we can use var to make our helper functions private. Note these local
@@ -67,14 +67,12 @@
   // boolean variable to tell us if cookies are enabled in this browser. Note,
   // the anonymous function is invoked and cookiesEnabled is set to the result.
   var cookiesEnabled = function() {
-    // returns true if cookies enabled, else false
-    var result = false;
-    $.cookie('indicia_locked_controls_cookie_test', 'test');
+    indiciaFns.cookie('indicia_locked_controls_cookie_test', 'test');
     if ($.cookie('indicia_locked_controls_cookie_test') === 'test') {
-      result = true;
-      $.cookie('indicia_locked_controls_cookie_test', null);
+      indiciaFns.cookie('indicia_locked_controls_cookie_test', null);
+      return true;
     }
-    return result;
+    return false;
   }();
 
   /*
@@ -127,7 +125,7 @@
         }
       }
     }
-    $.cookie(COOKIE_NAME + user, JSON.stringify(lockedArray));
+    indiciaFns.cookie(COOKIE_NAME + user, JSON.stringify(lockedArray));
   };
 
   var getOtherLocks = function(controlId) {
@@ -191,16 +189,16 @@
       }
     }
     lockedArray.push(locked);
-    $.cookie(COOKIE_NAME + user, JSON.stringify(lockedArray));
+    indiciaFns.cookie(COOKIE_NAME + user, JSON.stringify(lockedArray));
   };
 
   var unlockControl = function(controlId) {
     // update or delete lock cookie to reflect removing this control
     var lockedArray = getOtherLocks(controlId);
     if (lockedArray.length > 0) {
-      $.cookie(COOKIE_NAME + user, JSON.stringify(lockedArray));
+      indiciaFns.cookie(COOKIE_NAME + user, JSON.stringify(lockedArray));
     } else {
-      $.cookie(COOKIE_NAME + user, null);
+      indiciaFns.cookie(COOKIE_NAME + user, null);
     }
   };
 
@@ -508,4 +506,4 @@
     }
   };
 
-})(jQuery);
+});

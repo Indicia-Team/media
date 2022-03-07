@@ -55,9 +55,7 @@
       $('#' + rootId).hide();
       $('#' + rootId + '\\:date').show();
     }
-    if (typeof $.cookie !== 'undefined') {
-      $.cookie('vagueDatesEnabled', showVagueDates);
-    }
+    indiciaFns.cookie('vagueDatesEnabled', showVagueDates);
   });
 
   /**

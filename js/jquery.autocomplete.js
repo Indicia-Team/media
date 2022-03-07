@@ -727,10 +727,21 @@ $.Autocompleter.Select = function (options, input, select, config) {
           }
     }).click(function(event) {
       $(target(event)).addClass(CLASSES.ACTIVE);
+      // If in a species grid, selecting an item should move input focus to next input.
+      var sg = $(input).closest('.species-grid');
+      if (sg.length) {
+        // Check input position in grid row must be done before
+        // select() so the input is still in place.
+        var inputs = $(sg).find(':input:visible');
+        var newInput = inputs.eq(inputs.index(input) + 1);
+      }
       select();
-      // TODO provide option to avoid setting focus again after selection? useful for cleanup-on-focus
-      // call input.focus on a timer, since if called immediately IE errors. Use a local copy as input not in scope on the timeout.
-      $(input).focus();
+      if (sg.length && newInput) {
+        newInput.focus();
+      }
+      else {
+        $(input).focus();
+      }
       return false;
     }).mousedown(function() {
       config.mouseDownOnSelect = true;

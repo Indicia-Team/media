@@ -472,12 +472,12 @@ var resetSpeciesTextOnEscape;
       return;
     }
     // get a copy of the new row template
-    var extraParams, newRow = $('tr#'+gridId + '-scClonableRow').clone(true), selectorId, speciesSelector,
+    var newRow = $('tr#'+gridId + '-scClonableRow').clone(true), speciesSelector,
         attrVal, ctrl;
-    // build an auto-complete control for selecting the species to add to the bottom of the grid.
-    // The next line gets a unique id for the autocomplete.
-    selectorId = gridId + '-' + indiciaData['gridCounter-'+gridId];
-    speciesSelector = '<input type="text" id="' + selectorId + '" class="grid-required {speciesMustBeFilled:true}" />';
+    var selectorId = gridId + '-' + indiciaData['gridCounter-'+gridId];
+    var selectorClass = 'grid-required {speciesMustBeFilled:true} ' + indiciaData.formControlClass;
+    // Build an auto-complete control for selecting the species to add to the bottom of the grid.
+    speciesSelector = '<input type="text" id="' + selectorId + '" class="' + selectorClass + '" />';
     // put this inside the new row template in place of the species label.
     $(newRow).html($(newRow.html().replace('{content}', speciesSelector)));
     // Replace the tags in the row template with a unique row ID
@@ -1067,8 +1067,9 @@ var resetSpeciesTextOnEscape;
         'survey_id=' + $('#survey_id').val() +
         '&taxa_taxon_list_ids=' + taxaTaxonListIds +
         '&type=occurrence' +
-        '&language=' + indiciaData.userLang +
-        // @todo: Otions may need to be passed through for individual attr controls.
+        '&language=' + indiciaData.currentLanguage3 +
+        '&attributeTermlistLanguageFilter=' + indiciaData.attributeTermlistLanguageFilter +
+        // @todo: Options may need to be passed through for individual attr controls.
         '&options={}', null,
       function getAttrsReportCallback(data) {
         var existingData = prepareExistingOccAttrData();

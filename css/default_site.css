@@ -17,29 +17,6 @@ table.species-grid .warning, #review-input-content .warning {
   background: url(../images/warning.png) center right no-repeat;
 }
 
-.species-grid th button {
-  padding: 0;
-  margin: 0 0.5em;
-}
-
-.species-grid tr td input, .species-grid tr td select {
-  width: 100%;
-  margin: 0;
-  border: none;
-  vertical-align: middle;
-  padding: 3px 0;
-}
-
-.species-grid td {
-  padding: 0;
-}
-
-.scPresenceCell {
-  text-align: center;
-  padding-left: 1em;
-  padding-right: 1em;
-}
-
 .ui-widget-header th {
   padding: 0.2em;
 }
