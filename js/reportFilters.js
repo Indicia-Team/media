@@ -334,6 +334,13 @@ jQuery(document).ready(function ($) {
         } else if (filterDef.autochecks === 'P') {
           r.push(indiciaData.lang.reportFilterParser.AutochecksPassed);
         }
+        if (filterDef.autocheck_rule) {
+          if (typeof indiciaData.lang.reportFilterParser['Rule_' + filterDef.autocheck_rule] !== 'undefined') {
+            r.push(indiciaData.lang.reportFilterParser['Rule_' + filterDef.autocheck_rule]);
+          } else {
+            r.push(filterDef.autocheck_rule);
+          }
+        }
         if (filterDef.identification_difficulty) {
           op = typeof filterDef.identification_difficulty_op === 'undefined' ?
             '=' : filterDef.identification_difficulty_op.replace(/[<=>]/g, '\\$&');
@@ -792,8 +799,11 @@ jQuery(document).ready(function ($) {
         }
         if (context && context.autochecks) {
           $('#autochecks').prop('disabled', true);
+          // Autocheck context also blocks use of individual rule filters.
+          $('#autocheck_rule').prop('disabled', true);
         } else {
           $('#autochecks').prop('disabled', false);
+          $('#autocheck_rule').prop('disabled', context && context.autocheck_rule);
         }
         if (context && context.identification_difficulty) {
           $('#identification_difficulty').prop('disabled', true);
@@ -808,7 +818,7 @@ jQuery(document).ready(function ($) {
           $('#has_photos').prop('disabled', false);
         }
         if (context && ((context.quality && context.quality !== 'all') ||
-          context.autochecks || context.identification_difficulty || context.has_photos)) {
+          context.autochecks || context.autocheck_rule || context.identification_difficulty || context.has_photos)) {
           $('#controls-filter_quality .context-instruct').show();
         }
       }

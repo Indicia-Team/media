@@ -53,7 +53,7 @@
   * geomField - Optional, the id of the control which receives the geometry (WKT).
   * addressField - Optional, the id of the control which receives the address locality information.
   */
-  indiciaFns.decodePostcode = function (addressField) {
+   indiciaFns.decodePostcode = function (addressField) {
     var postcode = $('#imp-postcode').val();
     var $srefCtrl = $('#imp-sref');
     var $srefSystemCtrl = $('#imp-sref-system');

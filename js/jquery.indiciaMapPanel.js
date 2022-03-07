@@ -1963,7 +1963,7 @@ var destroyAllFeatures;
           '&callback=?', callback
         );
       } else {
-        // Using the srefHandler to create the sref.
+        // passing a point in the mapSystem.
         var wkt;
         var r;
         var pt;
