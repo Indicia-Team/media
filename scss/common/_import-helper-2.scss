@@ -1,9 +1,13 @@
 .dm-uploader {
-  margin-bottom: 15px;
-  padding: 15px;
+  margin-bottom: $spacer;
+  padding: $spacer;
   border: dashed silver 3px;
   &.active {
     border-color: lightcoral;
+  }
+  .btn {
+    float: left;
+    margin-right: $spacer;
   }
 }
 $icon-size: 16px;
@@ -20,7 +24,7 @@ $total-icon-size: $icon-size + $icon-padding * 2;
     width: $total-icon-size;
     border: solid darkgray 2px;
     color: darkgrey;
-    border-radius: $total-icon-size / 2;
+    border-radius: calc($total-icon-size / 2);
     background-color: white;
     padding: $icon-padding;
     cursor: pointer;
@@ -32,10 +36,10 @@ $total-icon-size: $icon-size + $icon-padding * 2;
   }
 }
 #file-upload-form {
-  margin-bottom: 15px;
+  margin-bottom: $spacer;
 }
 #matching-area {
-  margin-bottom: 15px;
+  margin-bottom: $spacer;
 }
 .background-processing {
   .panel-heading {
@@ -53,7 +57,7 @@ $total-icon-size: $icon-size + $icon-padding * 2;
 }
 #summary-form {
   dl {
-    margin: 15px;
+    margin: $spacer;
     max-width: 700px;
     dt, dd {
       margin: 8px 1%;
@@ -84,7 +88,7 @@ $total-icon-size: $icon-size + $icon-padding * 2;
 }
 /* Tidy dialogs */
 div.fancybox-content {
-  padding: 15px;
+  padding: $spacer;
   h2 {
     margin-top: 0;
     font-size: 2rem;

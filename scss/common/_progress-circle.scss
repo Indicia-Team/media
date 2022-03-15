@@ -19,7 +19,7 @@ $progress-font-colour: white;
     text-align: center;
     color: $progress-font-colour;
     font-size: $progress-font-size;
-    top: $diameter / 2 - $progress-font-size / 2;
+    top: calc($diameter / 2) - calc($progress-font-size / 2);
   }
   circle.circle {
     stroke-width: 12px;

@@ -321,8 +321,8 @@ table.es-data-grid {
   margin: auto;
   > div {
     border: dashed silver 1px;
-    margin: $file-box-icon-size / 3;
-    padding: $file-box-icon-size / 3;
+    margin: calc($file-box-icon-size / 3);
+    padding: calc($file-box-icon-size / 3);
     pre {
       background: #f4f4f4;
       border: 1px solid #ddd;
@@ -332,10 +332,10 @@ table.es-data-grid {
       font-family: monospace;
       font-size: 15px;
       line-height: 1.6;
-      margin: $file-box-icon-size / 3 0 0 0;
+      margin: calc($file-box-icon-size / 3) 0 0 0;
       max-width: 100%;
       overflow: auto;
-      padding: $file-box-icon-size / 3;
+      padding: calc($file-box-icon-size / 3);
       display: block;
       word-wrap: break-word;
     }

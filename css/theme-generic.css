@@ -1362,6 +1362,10 @@ label#click-buffer {
 .dm-uploader.active {
   border-color: lightcoral;
 }
+.dm-uploader .btn {
+  float: left;
+  margin-right: 15px;
+}
 
 #uploaded-files {
   position: relative;
