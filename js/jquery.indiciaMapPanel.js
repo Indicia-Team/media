@@ -2459,6 +2459,10 @@ var destroyAllFeatures;
         map.setLayerIndex(newLayer, layerIndex);
         map.setBaseLayer(newLayer);
         map.removeLayer(layerToReplace);
+        if (newLayer.mapObject) {
+          // Cancel Google layer tilt when zoomed in.
+          newLayer.mapObject.setTilt(0);
+        }
         // On initial page load, we may have to re-apply the initial zoom level
         // if the zoom level is not supported by the default sub-layer (OSM),
         // but is supported by Google.
