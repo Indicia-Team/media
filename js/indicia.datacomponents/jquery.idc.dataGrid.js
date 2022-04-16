@@ -935,6 +935,7 @@
       }
       // Cleanup before repopulating.
       $(el).find('tbody tr').remove();
+      lastLoadedRowId = null;
       $(el).find('.multiselect-all').prop('checked', false);
       // In scrollY mode, we have to calculate the column widths ourselves
       // since putting CSS overflow on tbody requires us to lose table layout.
