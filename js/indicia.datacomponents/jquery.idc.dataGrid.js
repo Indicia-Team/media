@@ -76,6 +76,11 @@
   };
 
   /**
+   * Track loaded row ID to avoid duplicate effort.
+   */
+  var lastLoadedRowId = null;
+
+  /**
    * Removes the configuration overlay pane.
    */
   function removeConfigPane(el) {
@@ -281,11 +286,6 @@
    * Register the various user interface event handlers.
    */
   function initHandlers(el) {
-
-    /**
-     * Track loaded row ID to avoid duplicate effort.
-     */
-    var lastLoadedRowId = null;
 
     /**
      * SetTimeout handle so the row load timeout can be cleared when navigating quickly.
