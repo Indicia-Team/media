@@ -603,6 +603,8 @@ if (typeof window.indiciaData === 'undefined') {
   indiciaFns.changeLinkedParentSelect = function changeLinkedParentSelect(el, options) {
     var childSelect = $('#' + options.escapedId);
     var parentSelect = $(el);
+    var controlName;
+    var ctrlLabel;
     if (parentSelect.val()) {
       $.getJSON(options.request + '&' + options.query.replace('%22val%22', parentSelect.val()), function onResponse(data) {
         childSelect.find('option').remove();
@@ -617,6 +619,15 @@ if (typeof window.indiciaData === 'undefined') {
             childSelect.append('<option value="' + this[options.valueField] + selected + '">' + this[options.captionField] + '</option>');
           });
         } else {
+          if (data.error) {
+            ctrlLabel = $(childSelect).closest('.ctrl-wrap').find('label');
+            controlName = ctrlLabel.length > 0 ? ctrlLabel.html().replace(/:$/, '') : 'linked';
+            $.fancyDialog({
+              title: indiciaData.lang.linkedLists.databaseError,
+              message: indiciaData.lang.linkedLists.databaseErrorMsg.replace('{1}', controlName),
+              cancelButton: null
+            });
+          }
           if (options.hideChildrenUntilLoaded) {
             childSelect.hide();
           }

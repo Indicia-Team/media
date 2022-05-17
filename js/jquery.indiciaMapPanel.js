@@ -2459,11 +2459,21 @@ var destroyAllFeatures;
         map.setLayerIndex(newLayer, layerIndex);
         map.setBaseLayer(newLayer);
         map.removeLayer(layerToReplace);
+        if (newLayer.mapObject) {
+          // Cancel Google layer tilt when zoomed in.
+          newLayer.mapObject.setTilt(0);
+        }
         // On initial page load, we may have to re-apply the initial zoom level
         // if the zoom level is not supported by the default sub-layer (OSM),
         // but is supported by Google.
         if (indiciaData['zoomToAfterFetchingGoogleApiScript-' + map.id]) {
-          map.zoomTo(indiciaData['zoomToAfterFetchingGoogleApiScript-' + map.id]);
+          if (typeof indiciaData['zoomToAfterFetchingGoogleApiScript-' + map.id] === 'object') {
+            // Zooming to the bounds of a data layer.
+            map.zoomToExtent(indiciaData['zoomToAfterFetchingGoogleApiScript-' + map.id]);
+          } else {
+            // Zooming to intial zoom level.
+            map.zoomTo(indiciaData['zoomToAfterFetchingGoogleApiScript-' + map.id]);
+          }
           delete indiciaData['zoomToAfterFetchingGoogleApiScript-' + map.id];
         }
       } finally {

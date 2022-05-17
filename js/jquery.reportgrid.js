@@ -1330,7 +1330,7 @@
         popupFilterHtml += '<input type="button" class="clear-popup-filter" value="Clear">';
         popupFilterHtml += '<input type="button" class="select-all-popup-filter" value="Select All"><br>';
         popupFilterHtml += '<input type="button" class="apply-popup-filter" value="Apply">';
-        $.fancybox(popupFilterHtml);
+        $.fancybox.open('<div>' + popupFilterHtml + '</div>');
       });
 
       /**
@@ -1366,7 +1366,7 @@
         });
         colPickerHtml += '</ul></div>';
         colPickerHtml += '<input type="button" class="apply-col-picker" value="Apply">';
-        $.fancybox(colPickerHtml);
+        $.fancybox.open('<div>' + colPickerHtml + '</div>');
       });
 
       /*
