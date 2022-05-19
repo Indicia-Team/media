@@ -22,7 +22,7 @@ jQuery(document).ready(function($) {
       url: indiciaData.uploadFileUrl,
       multiple: false,
       extFilter: ['csv','xls','xlsx','zip'],
-      headers: {'Authorization': 'Bearer ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
+      headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
       onDragEnter: function() {
         // Happens when dragging something over the DnD area
         this.addClass('active');
@@ -95,7 +95,7 @@ jQuery(document).ready(function($) {
     $.ajax({
       url: indiciaData.loadChunkToTempTableUrl + urlSep + 'data-file=' + fileName,
       dataType: 'json',
-      headers: {'Authorization': 'Bearer ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
+      headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
       success: function(transferResult) {
         var msg = indiciaData.lang.import_helper_2[transferResult.msgKey];
         if (transferResult.progress) {
@@ -129,7 +129,7 @@ jQuery(document).ready(function($) {
     $.ajax({
       url: indiciaData.sendFileToWarehouseUrl + urlSep + 'interim-file=' + indiciaData.processUploadedInterimFile,
       dataType: 'json',
-      headers: {'Authorization': 'Bearer ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
+      headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
       success: function(sendFileResult) {
         if (sendFileResult.status === 'ok') {
           var isZip = indiciaData.processUploadedInterimFile.split('.').pop().toLowerCase() === 'zip';
@@ -139,7 +139,7 @@ jQuery(document).ready(function($) {
             $.ajax({
               url: indiciaData.extractFileOnWarehouseUrl + urlSep + 'uploaded-file=' + sendFileResult.uploadedFile,
               dataType: 'json',
-              headers: {'Authorization': 'Bearer ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
+              headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
               success: function(extractResult) {
                 if (extractResult.status === 'ok') {
                   logBackgroundProcessingInfo(indiciaData.lang.import_helper_2.fileExtracted);
@@ -327,7 +327,7 @@ jQuery(document).ready(function($) {
     $.ajax({
       url: indiciaData.processLookupMatchingUrl + urlSep + 'data-file=' + indiciaData.processLookupMatchingForFile + '&index=' + indiciaData.processLookupIndex,
       dataType: 'json',
-      headers: {'Authorization': 'Bearer ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
+      headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
       success: function(result) {
         if (result.status==='error') {
           if (result.msg) {
@@ -413,7 +413,7 @@ jQuery(document).ready(function($) {
       dataType: 'json',
       method: 'POST',
       data: matches,
-      headers: {'Authorization': 'Bearer ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
+      headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
       success: function(result) {
         logBackgroundProcessingInfo(indiciaData.lang.import_helper_2.savedMatches);
         if (result.status === 'ok') {
@@ -453,7 +453,7 @@ jQuery(document).ready(function($) {
       dataType: 'json',
       method: 'POST',
       data: postDescription,
-      headers: {'Authorization': 'Bearer ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
+      headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
       success: function(result) {
         var msg;
         if (result.status === 'error') {
