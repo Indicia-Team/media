@@ -477,6 +477,10 @@ jQuery(document).ready(function($) {
           if (result.status === 'importing') {
             importNextChunk();
           }
+          else if (result.status === 'done') {
+            $('#file-progress').after('<p>' + indiciaData.lang.import_helper_2.completeMessage + '</p>');
+            $('#file-progress').fadeOut();
+          }
         }
       }
     });
