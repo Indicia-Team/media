@@ -362,6 +362,7 @@ jQuery(document).ready(function($) {
             if ($('.save-matches:enabled').length === 0) {
               // Nothing to match.
               $('#next-step').attr('disabled', false);
+              $('#instructions').text(indiciaData.lang.import_helper_2.lookupMatchingFormNothingToDo);
             } else {
               $('lookup-matching-form').validate();
             }
