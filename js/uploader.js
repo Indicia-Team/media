@@ -491,5 +491,38 @@ jQuery(document).ready(function($) {
     importNextChunk();
   }
 
+  // If on the mappings page, auto-match any obvious column/field matches.
+  $.each($('#mappings-table tbody tr'), function() {
+    var row = this;
+    var label = $(row).find('td:first-child').text().toLowerCase().replace(/[^a-z0-9]/g, '');
+    var qualifiedMatches = [];
+    var unqualifiedMatches = [];
+    // First scan for matches qualified with entity name.
+    $.each($(row).find('option'), function() {
+      var option = this;
+      var qualified = $(option).val().toLowerCase().replace(/[^a-z0-9]/g, '');
+      var unqualified = $(option).text().toLowerCase().replace(/[^a-z0-9]/g, '');
+      var altTerms;
+      if (label === qualified) {
+        qualifiedMatches.push(option);
+      }
+      if (label === unqualified) {
+        unqualifiedMatches.push(option);
+      }
+      if ($(option).data('alt')) {
+        altTerms = $(option).data('alt').split(',');
+        $.each(altTerms, function() {
+          if (label === this) {
+            unqualifiedMatches.push(option);
+          }
+        });
+      }
+    });
+    if (qualifiedMatches.length === 1) {
+      $(qualifiedMatches[0]).attr('selected', true);
+    } else if (qualifiedMatches.length === 0 && unqualifiedMatches.length === 1) {
+      $(unqualifiedMatches[0]).attr('selected', true);
+    }
+  });
 
 });
