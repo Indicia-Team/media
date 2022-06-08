@@ -287,7 +287,11 @@ var resetSpeciesTextOnEscape;
 
   function updateRowSpatialRefFeatureLabel(row) {
     var spatialRefInput = $(row).find('.scSpatialRef');
-    var rowUniqueIdx = $(row).find('.scPresence').attr('name').match(/^sc:species-grid-\d+-(\d+)/)[1];
+    var taxonCell = $(row).children('.scTaxonCell');
+    var gridId = $(taxonCell).closest('table').attr('id');
+    // Find numeric index of row from control ID.
+    var idxRegex = '^sc:' + gridId + '-(\\d+)';
+    var rowUniqueIdx = $(row).find('.scPresence').attr('name').match(new RegExp(idxRegex))[1];
     var feature;
     var taxonNameEl = $(row).find('.taxon-name');
     if (spatialRefInput.length) {
@@ -574,8 +578,11 @@ var resetSpeciesTextOnEscape;
     var table = $(e.currentTarget).closest('table.species-grid');
     var row = $(e.currentTarget).closest('tr');
     var proceed = true;
+    var taxonCell = $(row).children('.scTaxonCell');
+    var gridId = $(taxonCell).closest('table').attr('id');
     // Find numeric index of row from control ID.
-    var rowUniqueIdx = $(row).find('.scPresence').attr('name').match(/^sc:species-grid-\d+-(\d+)/)[1];
+    var idxRegex = '^sc:' + gridId + '-(\\d+)';
+    var rowUniqueIdx = $(row).find('.scPresence').attr('name').match(new RegExp(idxRegex))[1];
     var existingFeature = indiciaData.mapdiv.map.editLayer.getFeatureById('subsample-' + rowUniqueIdx);
     e.preventDefault();
     // Clear if this row has a marker on the map.
