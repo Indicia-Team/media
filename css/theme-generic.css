@@ -1437,6 +1437,11 @@ label#click-buffer {
   background: #e7e7e7;
 }
 
+/* Import complete page */
+#error-info a.btn {
+  margin-top: 15px;
+}
+
 /* Tidy dialogs */
 div.fancybox-content {
   padding: 15px;
