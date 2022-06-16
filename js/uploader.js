@@ -101,6 +101,10 @@ jQuery(document).ready(function($) {
         if (transferResult.progress) {
           $('#file-progress').val(transferResult.progress);
           msg += ' (' + Math.round(transferResult.progress) + '%)';
+          if (transferResult.progress >= 100) {
+            $('#file-progress').hide();
+            $('.background-processing .panel-heading span').text(indiciaData.lang.import_helper_2.backgroundProcessingDone);
+          }
         }
         if (transferResult.status === 'ok') {
           logBackgroundProcessingInfo(msg);
@@ -216,8 +220,8 @@ jQuery(document).ready(function($) {
    */
   function formatTaxonName(item) {
     var r;
-    var synText;
     var nameTest;
+    var synText;
 
     if (item.language_iso !== null && item.language_iso.toLowerCase() === 'lat') {
       r = '<em class="taxon-name">' + item.taxon + '</em>';
@@ -312,10 +316,15 @@ jQuery(document).ready(function($) {
     // Enable species search autocomplete for the matching inputs.
     $('.taxon-search').autocomplete(indiciaData.warehouseUrl+'index.php/services/data/taxa_search', getTaxonAutocompleteSettings(result.unmatchedInfo.taxonFilters));
     $('.taxon-search').change(function() {
-      $('[name="match-taxon-' + $(this).data('index') + '"]').val('');
+      // Clear when changed, unless value is correct for the current search string.
+      if ($('[name="match-taxon-' + $(this).data('index') + '"]').data('set-for') !== $(this).val()) {
+        $('[name="match-taxon-' + $(this).data('index') + '"]').val('');
+      }
     });
     $('.taxon-search').result(function(e, data) {
-      $('input[name="match-taxon-' + $(e.currentTarget).data('index') + '"]').attr('value', data.taxa_taxon_list_id);
+      $('input[name="match-taxon-' + $(e.currentTarget).data('index') + '"]').val(data.taxa_taxon_list_id);
+      // Remember the string it was set for to prevent it being cleared.
+      $('input[name="match-taxon-' + $(e.currentTarget).data('index')).data('set-for', $(e.currentTarget).val());
     });
   }
 
@@ -359,6 +368,7 @@ jQuery(document).ready(function($) {
             nextLookupProcessingStep();
           }
           else if (result.msgKey === 'findLookupFieldsDone') {
+            $('.background-processing .panel-heading span').text(indiciaData.lang.import_helper_2.backgroundProcessingDone);
             if ($('.save-matches:enabled').length === 0) {
               // Nothing to match.
               $('#next-step').attr('disabled', false);
@@ -441,14 +451,42 @@ jQuery(document).ready(function($) {
     });
   });
 
-  function importNextChunk() {
+  /**
+   * When an import or precheck has validation errors, warn the user.
+   *
+   * @param obj result
+   *   Result of warehouse service call
+   * @param string state
+   *   Current state variable, e.g. precheck.
+   */
+  function showErrorInfo(result, state) {
+    var msg = result.errorsCount === 1 ? indiciaData.lang.import_helper_2.errorInImportFile : indiciaData.lang.import_helper_2.errorsInImportFile;
+    msg = msg.replace('{1}', result.errorsCount);
+    if (state === 'precheck') {
+      msg += ' ' + indiciaData.lang.import_helper_2.precheckFoundErrors;
+    } else {
+      msg += ' ' + indiciaData.lang.import_helper_2.importingFoundErrors;
+    }
+    $('#error-info').append(msg);
+    $('#error-info').append('<div><a class="btn btn-info" href="' + indiciaData.getErrorFileUrl + urlSep + 'data-file=' + indiciaData.dataFile + '">' + indiciaData.lang.import_helper_2.downloadErrors + '</a></div>');
+    $('#error-info').fadeIn();
+  }
+
+  function importNextChunk(state) {
     var postDescription = {};
     // Post the description of the import to save on the first chunk only.
     if (!indiciaData.importDescriptionDone) {
       postDescription.description = indiciaData.importDescription;
       indiciaData.importDescriptionDone = true;
     }
+    if (state === 'precheck') {
+      postDescription.precheck = 't';
+    } else if (state === 'restart') {
+      postDescription.restart = 't';
+      state = 'doimport';
+    }
     urlSep = indiciaData.importChunkUrl.indexOf('?') === -1 ? '?' : '&';
+    console.log(postDescription);
     $.ajax({
       url: indiciaData.importChunkUrl + urlSep + 'data-file=' + indiciaData.dataFile,
       dataType: 'json',
@@ -456,6 +494,11 @@ jQuery(document).ready(function($) {
       data: postDescription,
       headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
       success: function(result) {
+        console.log(result);
+      }
+    }).done(
+      function(result) {
+        console.log(result);
         var msg;
         if (result.status === 'error') {
           // @todo standardise this way of doing the message.
@@ -470,20 +513,64 @@ jQuery(document).ready(function($) {
           if (result.progress) {
             $('.progress').val(result.progress);
           }
-          if (result.errorsCount) {
-            $('#error-info').find('.error-count').html(result.errorsCount);
-            $('#error-info').fadeIn();
-          }
-          if (result.status === 'importing') {
-            importNextChunk();
-          }
-          else if (result.status === 'done') {
-            $('#file-progress').after('<p>' + indiciaData.lang.import_helper_2.completeMessage + '</p>');
-            $('#file-progress').fadeOut();
+
+          if (state === 'precheck') {
+            $('#import-details-precheck-title').show();
+            $('#import-details-precheck-details')
+              .text(indiciaData.lang.import_helper_2.precheckDetails
+                .replace('{rowsProcessed}', result.rowsProcessed)
+                .replace('{totalRows}', result.totalRows)
+                .replace('{errorsCount}', result.errorsCount))
+              .show();
+            if (result.status !== 'done') {
+              importNextChunk(state);
+            }
+            else {
+              // Checks are complete.
+              $('#import-details-precheck-done').show();
+              if (result.errorsCount) {
+                showErrorInfo(result, state);
+              }
+              else {
+                // Update page title to importing.
+                $('#current-task').text(indiciaData.lang.import_helper_2.importingData);
+                // Start again for real.
+                $('.progress').val(0);
+                importNextChunk('restart');
+              }
+            }
+          } else {
+            $('#import-details-importing-title').show();
+            $('#import-details-importing-details')
+              .text(indiciaData.lang.import_helper_2.importingDetails
+                .replace('{rowsProcessed}', result.rowsProcessed)
+                .replace('{totalRows}', result.totalRows)
+                .replace('{errorsCount}', result.errorsCount))
+              .show();
+            if (result.status !== 'done') {
+              importNextChunk(state);
+            } else {
+              // Import is complete.
+              $('#import-details-importing-done').show();
+              // Update page title to import complete.
+              $('#current-task').text(indiciaData.lang.import_helper_2.completeMessage);
+              if (result.errorsCount) {
+                showErrorInfo(result, state);
+              }
+            }
           }
         }
+      },
+    ).fail(
+      function(jqXHR, textStatus, errorThrown) {
+        $.fancyDialog({
+          // @todo i18n
+          title: 'Import error',
+          message: 'An error occurred on the server whilst importing your data:<br/>' + errorThrown,
+          cancelButton: null
+        });
       }
-    });
+    );
   }
 
   if (indiciaData.processLookupMatchingForFile) {
@@ -493,7 +580,7 @@ jQuery(document).ready(function($) {
     indiciaData.processLookupIndex = 0;
     nextLookupProcessingStep();
   } else if (indiciaData.readyToImport) {
-    importNextChunk();
+    importNextChunk('precheck');
   }
 
   // If on the mappings page, auto-match any obvious column/field matches.

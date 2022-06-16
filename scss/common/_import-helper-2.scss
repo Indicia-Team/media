@@ -86,6 +86,12 @@ $total-icon-size: $icon-size + $icon-padding * 2;
     background: #e7e7e7;
   }
 }
+/* Import complete page */
+#error-info {
+  a.btn {
+    margin-top: 15px;
+  }
+}
 /* Tidy dialogs */
 div.fancybox-content {
   padding: $spacer;
