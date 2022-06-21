@@ -1397,6 +1397,16 @@ label#click-buffer {
 #matching-area {
   margin-bottom: 15px;
 }
+#matching-area tr.unmatched {
+  background-color: #ffdddd;
+}
+
+#required-fields li {
+  list-style-type: none;
+}
+#required-fields .required-checkbox.far.fa-check-square {
+  color: green;
+}
 
 .background-processing .panel-heading progress {
   margin-bottom: 0;

@@ -40,6 +40,17 @@ $total-icon-size: $icon-size + $icon-padding * 2;
 }
 #matching-area {
   margin-bottom: $spacer;
+  tr.unmatched {
+    background-color: #ffdddd;
+  }
+}
+#required-fields {
+  li {
+    list-style-type: none;
+  }
+  .required-checkbox.far.fa-check-square {
+    color: green;
+  }
 }
 .background-processing {
   .panel-heading {
