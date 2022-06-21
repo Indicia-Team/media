@@ -95,33 +95,32 @@ jQuery(document).ready(function($) {
     $.ajax({
       url: indiciaData.loadChunkToTempTableUrl + urlSep + 'data-file=' + fileName,
       dataType: 'json',
-      headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
-      success: function(transferResult) {
-        var msg = indiciaData.lang.import_helper_2[transferResult.msgKey];
-        if (transferResult.progress) {
-          $('#file-progress').val(transferResult.progress);
-          msg += ' (' + Math.round(transferResult.progress) + '%)';
-          if (transferResult.progress >= 100) {
-            $('#file-progress').hide();
-            $('.background-processing .panel-heading span').text(indiciaData.lang.import_helper_2.backgroundProcessingDone);
-          }
+      headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce}
+    }).done(function(transferResult) {
+      var msg = indiciaData.lang.import_helper_2[transferResult.msgKey];
+      if (transferResult.progress) {
+        $('#file-progress').val(transferResult.progress);
+        msg += ' (' + Math.round(transferResult.progress) + '%)';
+        if (transferResult.progress >= 100) {
+          $('#file-progress').hide();
+          $('.background-processing .panel-heading span').text(indiciaData.lang.import_helper_2.backgroundProcessingDone);
         }
-        if (transferResult.status === 'ok') {
-          logBackgroundProcessingInfo(msg);
-          if (transferResult.msgKey === 'loadingRecords') {
-            transferDataToTempTable(fileName);
-          }
-          else {
-            $('input[type="submit"]').attr('disabled', false);
-          }
-        } else {
-          if (transferResult.msg) {
-            $.fancyDialog({
-              title: indiciaData.lang.import_helper_2.uploadError,
-              message: transferResult.msg,
-              cancelButton: null
-            });
-          }
+      }
+      if (transferResult.status === 'ok') {
+        logBackgroundProcessingInfo(msg);
+        if (transferResult.msgKey === 'loadingRecords') {
+          transferDataToTempTable(fileName);
+        }
+        else {
+          $('input[type="submit"]').attr('disabled', false);
+        }
+      } else {
+        if (transferResult.msg) {
+          $.fancyDialog({
+            title: indiciaData.lang.import_helper_2.uploadError,
+            message: transferResult.msg,
+            cancelButton: null
+          });
         }
       }
     });
@@ -204,7 +203,7 @@ jQuery(document).ready(function($) {
     $.each(result.unmatchedInfo.values, function(idx) {
       var controlName;
       controlName = 'match-' + result.unmatchedInfo.attrType + '-' + result.unmatchedInfo.attrId + '-' + idx;
-      $('<tr><th scope="row">' + this + '</th>' +
+      $('<tr><th scope="row" data-value="' + this + '">' + this + '</th>' +
         '<td><select class="form-control" required data-value="' + this.replace('"', '&quot;') + '" name="' + controlName + '">' + options + '</select></td></tr>')
         .appendTo(tbody);
     });
@@ -302,7 +301,7 @@ jQuery(document).ready(function($) {
       var searchControl = '<input type="text" class="taxon-search form-control" data-index="' + idx + '" placeholder="' + indiciaData.lang.import_helper_2.typeSpeciesNameToSearch + '" />';
       // Hidden input for the ID.
       searchControl += '<input type="hidden" name="' + controlName + '" class="taxon-id" data-value="' + taxon.replace('"', '&quot;') + '"/>';
-      $('<tr><th scope="row">' + taxon + '</th>' +
+      $('<tr><th scope="row" data-value="' + taxon + '">' + taxon + '</th>' +
         '<td>' + searchControl + '</td></tr>')
         .appendTo(tbody);
       idx++;
@@ -427,6 +426,7 @@ jQuery(document).ready(function($) {
       headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
       success: function(result) {
         logBackgroundProcessingInfo(indiciaData.lang.import_helper_2.savedMatches);
+        $('#matching-area tr.unmatched').removeClass('unmatched');
         if (result.status === 'ok') {
           $(button).attr('disabled', true)
             .addClass('btn-success').removeClass('btn-primary')
@@ -441,6 +441,16 @@ jQuery(document).ready(function($) {
           $(button).closest('.panel').find('select,.ac_input').attr('disabled', true);
         }
         else if (result.status === 'incomplete') {
+          $.each(result.unmatched, function() {
+            var unmatchedTerm = this;
+            $('#matching-area').find('th[scope="row"]')
+              .filter(function() {
+                return $(this).data('value') === unmatchedTerm;
+              })
+              .closest('tr')
+              .addClass('unmatched');
+          });
+
           $.fancyDialog({
             title:'Matching',
             message: indiciaData.lang.import_helper_2.pleaseMatchAllValues.replace('{1}', $(button).data('source-field')),
@@ -461,6 +471,7 @@ jQuery(document).ready(function($) {
    */
   function showErrorInfo(result, state) {
     var msg = result.errorsCount === 1 ? indiciaData.lang.import_helper_2.errorInImportFile : indiciaData.lang.import_helper_2.errorsInImportFile;
+    var urlSep = indiciaData.getErrorFileUrl.indexOf('?') === -1 ? '?' : '&';
     msg = msg.replace('{1}', result.errorsCount);
     if (state === 'precheck') {
       msg += ' ' + indiciaData.lang.import_helper_2.precheckFoundErrors;
@@ -486,19 +497,14 @@ jQuery(document).ready(function($) {
       state = 'doimport';
     }
     urlSep = indiciaData.importChunkUrl.indexOf('?') === -1 ? '?' : '&';
-    console.log(postDescription);
     $.ajax({
       url: indiciaData.importChunkUrl + urlSep + 'data-file=' + indiciaData.dataFile,
       dataType: 'json',
       method: 'POST',
       data: postDescription,
-      headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
-      success: function(result) {
-        console.log(result);
-      }
+      headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce}
     }).done(
       function(result) {
-        console.log(result);
         var msg;
         if (result.status === 'error') {
           // @todo standardise this way of doing the message.
@@ -583,38 +589,105 @@ jQuery(document).ready(function($) {
     importNextChunk('precheck');
   }
 
-  // If on the mappings page, auto-match any obvious column/field matches.
-  $.each($('#mappings-table tbody tr'), function() {
-    var row = this;
-    var label = $(row).find('td:first-child').text().toLowerCase().replace(/[^a-z0-9]/g, '');
-    var qualifiedMatches = [];
-    var unqualifiedMatches = [];
-    // First scan for matches qualified with entity name.
-    $.each($(row).find('option'), function() {
-      var option = this;
-      var qualified = $(option).val().toLowerCase().replace(/[^a-z0-9]/g, '');
-      var unqualified = $(option).text().toLowerCase().replace(/[^a-z0-9]/g, '');
-      var altTerms;
-      if (label === qualified) {
-        qualifiedMatches.push(option);
-      }
-      if (label === unqualified) {
-        unqualifiedMatches.push(option);
-      }
-      if ($(option).data('alt')) {
-        altTerms = $(option).data('alt').split(',');
-        $.each(altTerms, function() {
-          if (label === this) {
-            unqualifiedMatches.push(option);
-          }
-        });
+  if (indiciaData.step === 'mappingsForm') {
+    var urlSep = indiciaData.getRequiredFieldsUrl.indexOf('?') === -1 ? '?' : '&';
+    // On the mappings page.
+    // Prepare the list of required fields.
+    $('#required-fields').show();
+    $.each(indiciaData.requiredFields, function(key, caption) {
+       $('#required-fields ul').append($('<li><i class="far fa-square required-checkbox" data-key="' + key + '"></i>' + caption + '</li>'));
+    });
+    // Auto-match any obvious column/field matches.
+    $.each($('#mappings-table tbody tr'), function() {
+      var row = this;
+      var label = $(row).find('td:first-child').text().toLowerCase().replace(/[^a-z0-9]/g, '');
+      var qualifiedMatches = [];
+      var unqualifiedMatches = [];
+      // First scan for matches qualified with entity name.
+      $.each($(row).find('option'), function() {
+        var option = this;
+        var qualified = $(option).val().toLowerCase().replace(/[^a-z0-9]/g, '');
+        var unqualified = $(option).text().toLowerCase().replace(/[^a-z0-9]/g, '');
+        var altTerms;
+        if (label === qualified) {
+          qualifiedMatches.push(option);
+        }
+        if (label === unqualified) {
+          unqualifiedMatches.push(option);
+        }
+        if ($(option).data('alt')) {
+          altTerms = $(option).data('alt').split(',');
+          $.each(altTerms, function() {
+            if (label === this) {
+              unqualifiedMatches.push(option);
+            }
+          });
+        }
+      });
+      if (qualifiedMatches.length === 1) {
+        $(qualifiedMatches[0]).attr('selected', true);
+      } else if (qualifiedMatches.length === 0 && unqualifiedMatches.length === 1) {
+        $(unqualifiedMatches[0]).attr('selected', true);
       }
     });
-    if (qualifiedMatches.length === 1) {
-      $(qualifiedMatches[0]).attr('selected', true);
-    } else if (qualifiedMatches.length === 0 && unqualifiedMatches.length === 1) {
-      $(unqualifiedMatches[0]).attr('selected', true);
+
+    /**
+     * Tests if a required field key is covered by one of the global values.
+     *
+     * @param string
+     *   Key to check.
+     */
+    function inGlobalValues(key) {
+      // If there are several options of how to search a single lookup then they
+      // are identified by a 3rd token, e.g. occurrence:fk_taxa_taxon_list:search_code.
+      // These cases fulfil the needs of a required field so we can remove them.
+      var fieldTokens = key.split(':');
+      var found;
+      var parts;
+      if (fieldTokens.length > 2) {
+        fieldTokens.pop();
+        key = fieldTokens.join(':');
+      }
+      found = typeof indiciaData.globalValues[key] !== 'undefined';
+      // Global values also works if not entity specific.
+      parts = key.split(':');
+      if (parts.length > 1) {
+        found = found || typeof indiciaData.globalValues[parts[1]] !== 'undefined';
+      }
+      return found;
     }
-  });
+
+    /**
+     * Check that required fields are mapped. Set checkbox ticked state in UI.
+     */
+    function checkRequiredFields() {
+      $.each($('.required-checkbox'), function() {
+        // Field can be populated from global values.
+        var found = inGlobalValues($(this).data('key'));
+        // *_id global values fill in FK fields.
+        if ($(this).data('key').match(/\bfk_/)) {
+          found = found || inGlobalValues($(this).data('key').replace(/\bfk_/, '') + '_id');
+        }
+        // No need to show required fields that are filled in by global values
+        // at this point.
+        if (found) {
+          $(this).closest('li').hide();
+        }
+        // Or field can be populated by a mapping.
+        found = found || $('.mapped-field option:selected[value="' + $(this).data('key') + '"]').length > 0;
+        if (found) {
+          $(this).removeClass('fa-square');
+          $(this).addClass('fa-check-square');
+        } else {
+          $(this).removeClass('fa-check-square');
+          $(this).addClass('fa-square');
+        }
+      });
+      $('input[type="submit"]').attr('disabled', $('.required-checkbox.fa-square').length > 0);
+    }
+
+    indiciaFns.on('change', '.mapped-field', {}, checkRequiredFields);
+    checkRequiredFields();
+  }
 
 });
