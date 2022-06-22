@@ -560,6 +560,7 @@ jQuery(document).ready(function($) {
               $('#import-details-importing-done').show();
               // Update page title to import complete.
               $('#current-task').text(indiciaData.lang.import_helper_2.completeMessage);
+              $('#file-progress').slideUp();
               if (result.errorsCount) {
                 showErrorInfo(result, state);
               }
