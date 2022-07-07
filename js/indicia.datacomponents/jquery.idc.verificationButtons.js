@@ -523,10 +523,11 @@
         dataType: 'json',
         data: {
           fileId: metadata.fileId,
-          id_prefix: indiciaData.idPrefix
+          id_prefix: indiciaData.idPrefix,
+          warehouse_name: indiciaData.warehouseName
         },
         success: nextSpreadsheetTask,
-        error: function(jqXHR, textStatus, errorThrown) {
+        error: function(jqXHR) {
           var msg = indiciaData.lang.verificationButtons.uploadError;
           if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
             msg += '<br/>' + jqXHR.responseJSON.message;
@@ -587,6 +588,7 @@
       formdata.append('filter_id', $('.user-filter.defines-permissions').val());
       formdata.append('es_endpoint', indiciaData.esEndpoint);
       formdata.append('id_prefix', indiciaData.idPrefix);
+      formdata.append('warehouse_name', indiciaData.warehouseName);
       $.ajax({
         url: indiciaData.esProxyAjaxUrl + '/verifyspreadsheet/' + indiciaData.nid,
         type: 'POST',
@@ -596,7 +598,7 @@
         success: function (metadata) {
           nextSpreadsheetTask(metadata);
         },
-        error: function(jqXHR, textStatus, errorThrown) {
+        error: function(jqXHR) {
           var msg = indiciaData.lang.verificationButtons.uploadError;
           if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
             msg += '<br/>' + jqXHR.responseJSON.message;
