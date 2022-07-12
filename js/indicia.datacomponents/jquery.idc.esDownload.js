@@ -121,6 +121,17 @@
       // Aggregations default to no columns template.
       data.columnsTemplate = '';
     }
+    // Set columnsSurveyId to survey ID if appropriate.
+    if (typeof(el.settings.columnsSurveyId) !== "undefined") {
+      if (el.settings.columnsSurveyId) {
+        data.columnsSurveyId = el.settings.columnsSurveyId;
+      } else if ($('.survey-filter').val() !== 'all') {
+        // @columnsSurveyId attribute specified but without a value.
+        // This indicates that survey ID should be taken from the
+        // [surveyFilter] control value if one is on the page.
+        data.columnsSurveyId = $('.survey-filter').val();
+      }
+    }
     if (el.settings.addColumns && el.settings.addColumns.length !== 0) {
       data.addColumns = el.settings.addColumns;
       if (isAggregation) {
@@ -148,10 +159,6 @@
           caption: key.asReadableKeyName()
         });
       });
-
-
-      // Ensure dates are formatted correctly.
-
     }
     if (el.settings.removeColumns) {
       data.removeColumns = el.settings.removeColumns;
@@ -305,25 +312,6 @@
       $.extend(currentRequestData, columnSettings);
       // Reset.
       rowsToDownload = null;
-      // If there is an associated download template select control,
-      // set the download template option from its value.
-      if ($('#' + el.id + '-template').val()) {
-        currentRequestData['columnsTemplate'] = $('#' + el.id + '-template').val();
-      }
-      // Set columnsSurveyId to survey ID if appropriate.
-      if (typeof(el.settings.columnsSurveyId) !== "undefined") {
-        if (el.settings.columnsSurveyId) {
-          var surveyID = el.settings.columnsSurveyId;
-        } else {
-          // @columnsSurveyId attribute specified but without a value.
-          // This indicates that survey ID should be taken from the
-          // [surveyFilter] control value if one is on the page.
-          var surveyID = $('.survey-filter').val();
-        }
-        if (surveyID && surveyID !== 'all'){
-          currentRequestData['columnsSurveyId'] = surveyID;
-        }
-      }
       // Post to the ES proxy.
       $.ajax({
         url: indiciaData.esProxyAjaxUrl + '/download/' + indiciaData.nid + query,
