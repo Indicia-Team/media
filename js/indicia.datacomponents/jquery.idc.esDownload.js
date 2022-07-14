@@ -125,7 +125,7 @@
     if (typeof(el.settings.columnsSurveyId) !== "undefined") {
       if (el.settings.columnsSurveyId) {
         data.columnsSurveyId = el.settings.columnsSurveyId;
-      } else if ($('.survey-filter').val() !== 'all') {
+      } else if ($('.survey-filter').val() && $('.survey-filter').val() !== 'all') {
         // @columnsSurveyId attribute specified but without a value.
         // This indicates that survey ID should be taken from the
         // [surveyFilter] control value if one is on the page.
