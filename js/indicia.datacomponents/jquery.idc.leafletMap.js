@@ -148,7 +148,7 @@
         type: typeof layerConfig.type === 'undefined' ? 'marker' : layerConfig.type,
         options: {}
       };
-      if (sourceSettings.showGeomsAsTooClose) {
+      if (geom && sourceSettings.showGeomsAsTooClose) {
         config.type = 'geom';
       }
       if (typeof layerConfig.style !== 'undefined') {

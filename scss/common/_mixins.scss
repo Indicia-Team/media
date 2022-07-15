@@ -6,7 +6,10 @@
   &:nth-child(odd), &:nth-child(odd) td {
     background-color: $colour-odd-row;
   }
-  &:hover, &:hover td {
+  &.disabled td:not(.footable-toggle-col) {
+    opacity: 0.3;
+  }
+  &:hover:not(.disabled), &:hover:not(.disabled) td {
     color: $colour-hover-row;
     background-color: $colour-hover-row-bg;
   }
@@ -14,7 +17,7 @@
   &.empty-row, &.empty-row:hover, &.empty-row td, &.empty-row:hover td {
     background-color: $colour-even-row;
   }
-  &.selected, &.selected td {
+  &.selected:not(.disabled), &.selected:not(.disabled) td {
     color: $colour-select-row;
     background-color: $colour-select-row-bg;
   }

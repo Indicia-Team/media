@@ -277,14 +277,17 @@ table.report-grid tbody tr:nth-child(even), table.report-grid tbody tr:nth-child
 table.report-grid tbody tr:nth-child(odd), table.report-grid tbody tr:nth-child(odd) td {
   background-color: #ffffff;
 }
-table.report-grid tbody tr:hover, table.report-grid tbody tr:hover td {
+table.report-grid tbody tr.disabled td:not(.footable-toggle-col) {
+  opacity: 0.3;
+}
+table.report-grid tbody tr:hover:not(.disabled), table.report-grid tbody tr:hover:not(.disabled) td {
   color: #333333;
   background-color: #fffbcc;
 }
 table.report-grid tbody tr.empty-row, table.report-grid tbody tr.empty-row:hover, table.report-grid tbody tr.empty-row td, table.report-grid tbody tr.empty-row:hover td {
   background-color: #f7f7f7;
 }
-table.report-grid tbody tr.selected, table.report-grid tbody tr.selected td {
+table.report-grid tbody tr.selected:not(.disabled), table.report-grid tbody tr.selected:not(.disabled) td {
   color: #ffffff;
   background-color: #2c7bb6;
 }
@@ -646,11 +649,11 @@ body > .loading-spinner {
 .idc-output-cardGallery .es-card-gallery .card:last-of-type {
   flex-grow: 0;
 }
-.idc-output-cardGallery .es-card-gallery .card:hover {
+.idc-output-cardGallery .es-card-gallery .card:hover:not(.disabled) {
   color: #333333;
   background-color: #fffbcc;
 }
-.idc-output-cardGallery .es-card-gallery .card.selected {
+.idc-output-cardGallery .es-card-gallery .card.selected:not(.disabled) {
   color: #ffffff;
   background-color: #2c7bb6;
   border: 1px solid grey;
@@ -784,14 +787,17 @@ table.es-data-grid tbody tr:nth-child(even), table.es-data-grid tbody tr:nth-chi
 table.es-data-grid tbody tr:nth-child(odd), table.es-data-grid tbody tr:nth-child(odd) td {
   background-color: #ffffff;
 }
-table.es-data-grid tbody tr:hover, table.es-data-grid tbody tr:hover td {
+table.es-data-grid tbody tr.disabled td:not(.footable-toggle-col) {
+  opacity: 0.3;
+}
+table.es-data-grid tbody tr:hover:not(.disabled), table.es-data-grid tbody tr:hover:not(.disabled) td {
   color: #333333;
   background-color: #fffbcc;
 }
 table.es-data-grid tbody tr.empty-row, table.es-data-grid tbody tr.empty-row:hover, table.es-data-grid tbody tr.empty-row td, table.es-data-grid tbody tr.empty-row:hover td {
   background-color: #f7f7f7;
 }
-table.es-data-grid tbody tr.selected, table.es-data-grid tbody tr.selected td {
+table.es-data-grid tbody tr.selected:not(.disabled), table.es-data-grid tbody tr.selected:not(.disabled) td {
   color: #ffffff;
   background-color: #2c7bb6;
 }

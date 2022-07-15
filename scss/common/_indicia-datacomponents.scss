@@ -55,11 +55,11 @@ body {
       &:last-of-type {
         flex-grow: 0;
       }
-      &:hover {
+      &:hover:not(.disabled) {
         color: $colour-hover-row;
         background-color: $colour-hover-row-bg;
       }
-      &.selected {
+      &.selected:not(.disabled) {
         color: $colour-select-row;
         background-color: $colour-select-row-bg;
         border: 1px solid grey;
