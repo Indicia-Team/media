@@ -296,11 +296,18 @@
      * Fire callbacks when a row has been selected
      * */
     function loadSelectedRow() {
-      var tr = $('#' + el.id + ' .es-data-grid tbody tr.selected');
+      var tr = $('#' + el.id + ' .es-data-grid tbody tr.selected').not('.disabled');
       if (tr.length && tr.data('row-id') !== lastLoadedRowId) {
         lastLoadedRowId = tr.data('row-id');
         $.each(el.settings.callbacks.itemSelect, function eachCallback() {
           this(tr);
+        });
+      }
+      else if (!tr.length) {
+        // No row selected - still inform callbacks.
+        lastLoadedRowId = null;
+        $.each(el.settings.callbacks.itemSelect, function eachCallback() {
+          this(null);
         });
       }
     }
