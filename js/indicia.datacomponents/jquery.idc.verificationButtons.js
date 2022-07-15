@@ -68,28 +68,42 @@
   var doingQueryPopup = false;
 
   /**
-   * Saves the comment associated with a verification or query event.
+   * Fetch the PG record updates required for a verification event.
    */
-  function saveVerifyComment(occurrenceIds, status, comment, email) {
-    var commentToSave;
-    var allTableMode = $(listOutputControl).find('.multi-mode-table.active').length > 0;
-    var data = {
+  function getVerifyPgUpdates(status, comment, email) {
+    var pgUpdates = {
       website_id: indiciaData.website_id,
       user_id: indiciaData.user_id
     };
-    var docUpdates = {
-      identification: {}
-    };
-    var indiciaPostUrl;
-    var requests = 0;
-    var currentDoc;
+    var commentToSave;
+    if (status.status) {
+      commentToSave = comment.trim() === ''
+        ? indiciaData.statusMsgs[status.status]
+        : comment.trim();
+      $.extend(pgUpdates, {
+        'occurrence:record_decision_source': 'H',
+        'occurrence:record_status': status.status[0],
+        'occurrence_comment:comment': commentToSave
+      });
+      if (status.status.length > 1) {
+        pgUpdates['occurrence:record_substatus'] = status.status[1];
+      }
+    } else if (status.query) {
+      commentToSave = comment.trim() === ''
+        ? 'This record has been queried.'
+        : comment.trim();
+      $.extend(pgUpdates, {
+        'occurrence_comment:query': 't',
+        'occurrence_comment:comment': commentToSave
+      });
+    }
     if (email && indiciaData.workflowEnabled) {
       // This will only be the case when querying a single record. If the
       // species requires fully logged comms, add the email body to the
       // comment.
       currentDoc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
       if (indiciaData.workflowTaxonMeaningIDsLogAllComms.indexOf(currentDoc.taxon.taxon_meaning_id) !== -1) {
-        data['occurrence_comment:correspondence_data'] = JSON.stringify({
+        pgUpdates['occurrence_comment:correspondence_data'] = JSON.stringify({
           email: [{
             from: indiciaData.siteEmail,
             to: email.to,
@@ -99,92 +113,206 @@
         });
       }
     }
+    return pgUpdates;
+  }
+
+  /**
+   * Fetch the ES document updates required for a verification event.
+   */
+  function getVerifyEsUpdates(status) {
+    var esUpdates = {
+      identification: {}
+    };
+    if (status.status) {
+      esUpdates.identification.verification_status = status.status[0];
+      if (status.status.length > 1) {
+        esUpdates.identification.verification_substatus = status.status[1];
+      }
+    } else if (status.query) {
+      esUpdates.identification.query = status.query;
+    }
+    return esUpdates;
+  }
+
+  /**
+   * Disables the rows for a selection of IDs to indicate they are being processed.
+   *
+   * @param array occurrenceIds
+   *   Integer array of IDs.
+   *
+   * @return array
+   *   Array of elements that were disabled.
+   */
+  function disableRowsForIds(occurrenceIds) {
+    var rows = [];
+    $.each(occurrenceIds, function() {
+      var thisRow = $(listOutputControl).find('[data-row-id="' + indiciaData.idPrefix + this + '"]');
+      thisRow
+        .addClass('disabled processing')
+        .find('.footable-toggle-col').append('<i class="fas fa-spinner fa-spin"></i>');
+      // Remember for later.
+      rows.push(thisRow);
+    });
+    return rows;
+  }
+
+  /**
+   * List output control will be empty after verification so re-populate.
+   *
+   * @param array occurrenceIds
+   *   List of IDs being verified. Ensures that these don't reappear.
+   */
+  function doRepopulateAfterVerify(occurrenceIds) {
+    var sourceSettings = $(listOutputControl)[0].settings.sourceObject.settings;
+    var docIds = [];
+
+    $.each(occurrenceIds, function() {
+      docIds.push(indiciaData.idPrefix + this);
+    })
+    // As ES updates are not instant, we need a temporary must_not match
+    // filter to prevent the verified records reappearing.
+    if (!sourceSettings.filterBoolClauses) {
+      sourceSettings.filterBoolClauses = {};
+    }
+    if (!sourceSettings.filterBoolClauses.must_not) {
+      sourceSettings.filterBoolClauses.must_not = [];
+    }
+    sourceSettings.filterBoolClauses.must_not.push({
+      query_type: 'terms',
+      field: '_id',
+      value: JSON.stringify(docIds)
+    });
+    // Reload the page.
+    $(listOutputControl)[0].settings.sourceObject.populate(true);
+    // Clean up the temporary exclusion filter.
+    sourceSettings.filterBoolClauses.must_not.pop();
+    if (!sourceSettings.filterBoolClauses.must_not.length) {
+      delete sourceSettings.filterBoolClauses.must_not;
+    }
+  }
+
+  /**
+   * When verifying rows, move the selected row to the next enabled one.
+   */
+  function moveToNextEnabledRow() {
+    var currentRow = $(listOutputControl).find('.selected');
+    $(currentRow).removeClass('selected');
+    while (currentRow.length > 0 && $(currentRow).hasClass('disabled')) {
+      currentRow = $(currentRow).next('[data-row-id]');
+    }
+    if (currentRow) {
+      $(currentRow).addClass('selected').focus();
+    }
+    // Fire callbacks for selected row, or if no round found to select.
+    $.each($(listOutputControl)[0].settings.callbacks.itemSelect, function eachCallback() {
+      this(currentRow.length === 0 ? null : currentRow);
+    });
+  }
+
+  /**
+   * Saves a verification comment that should apply to the whole table dataset.
+   */
+  function saveVerifyCommentForWholeTable(status, comment, email) {
+    var pgUpdates = getVerifyPgUpdates(status, comment, email);
+    if (!status.status) {
+      throw new Exception('saveVerifyCommentForWholeTable only works for verification status changes');
+    }
     // Since this might be slow.
     $('body').append('<div class="loading-spinner"><div>Loading...</div></div>');
-    if (status.status) {
-      commentToSave = comment.trim() === ''
-        ? indiciaData.statusMsgs[status.status]
-        : comment.trim();
-      $.extend(data, {
-        'occurrence:record_decision_source': 'H',
-        'occurrence:record_status': status.status[0],
-        'occurrence_comment:comment': commentToSave
+    // Loop sources and apply the filter data, only 1 will apply.
+    $.each($(listOutputControl)[0].settings.source, function eachSource(sourceId) {
+      $.extend(pgUpdates, {
+        'occurrence:idsFromElasticFilter': indiciaFns.getFormQueryData(indiciaData.esSourceObjects[sourceId])
       });
-      if (allTableMode) {
-        indiciaPostUrl = indiciaData.esProxyAjaxUrl + '/verifyall/' + indiciaData.nid;
-        // Loop sources, only 1 will apply.
-        $.each($(listOutputControl)[0].settings.source, function eachSource(sourceId) {
-          $.extend(data, {
-            'occurrence:idsFromElasticFilter': indiciaFns.getFormQueryData(indiciaData.esSourceObjects[sourceId])
-          });
-          return false;
+      return false;
+    });
+    $.post(
+      indiciaData.esProxyAjaxUrl + '/verifyall/' + indiciaData.nid,
+      pgUpdates,
+      function success(response) {
+        // Unset all table mode as this is a "dangerous" state that should be explicitly chosen each time.
+        $(listOutputControl).find('.multi-mode-table.active').removeClass('active');
+        $(listOutputControl).find('.multi-mode-selected').addClass('active');
+        // Table can be emptied.
+        $(listOutputControl).find('[data-row-id').remove();
+        $(listOutputControl).find('.showing').html('No hits');
+      }
+    ).always(function cleanup() {
+      $('body > .loading-spinner').remove();
+    });
+    // In all table mode, everything handled by the ES proxy so nothing else to do.
+  }
+
+  /**
+   * Saves a verification comment for a selection of occurrences.
+   *
+   * Might be the verification of a single occurrence or list of occurrences.
+   */
+  function saveVerifyCommentForSelection(occurrenceIds, status, comment, email) {
+    var pgUpdates = getVerifyPgUpdates(status, comment, email);
+    var esUpdates = getVerifyEsUpdates(status);
+    var data;
+    var rowsToRemove = [];
+    var requests = 0;
+    var listWillBeEmptied = $(listOutputControl).find('[data-row-id]').length - occurrenceIds.length <= 0;
+
+    var cleanup = function() {
+      var pagerLabel = $(listOutputControl).find('.showing');
+      var total;
+      var match;
+      requests--;
+      if (requests <= 0 && !listWillBeEmptied) {
+        $.each(rowsToRemove, function() {
+          $(this).remove();
         });
-      } else {
-        indiciaPostUrl = indiciaData.ajaxFormPostSingleVerify;
-        data['occurrence:ids'] = occurrenceIds.join(',');
+        // Update the pager to reflect the removed rows.
+        if (pagerLabel.length) {
+          match = pagerLabel.html().match(/\d+$/);
+          if (match) {
+            total = match[0] - rowsToRemove.length;
+            pagerLabel.html($(listOutputControl).find('[data-row-id]').length + ' of ' + total);
+          }
+        }
       }
-      docUpdates.identification.verification_status = status.status[0];
-      if (status.status.length > 1) {
-        data['occurrence:record_substatus'] = status.status[1];
-        docUpdates.identification.verification_substatus = status.status[1];
-      }
+    }
+
+    pgUpdates['occurrence:ids'] = occurrenceIds.join(',');
+    // Disable rows that are being processed.
+    rowsToRemove = disableRowsForIds(occurrenceIds);
+    moveToNextEnabledRow();
+    if (listWillBeEmptied) {
+      doRepopulateAfterVerify(occurrenceIds);
+    }
+    if (status.status) {
       // Post update to Indicia.
       requests++;
       $.post(
-        indiciaPostUrl,
-        data,
+        indiciaData.ajaxFormPostSingleVerify,
+        pgUpdates,
         function success(response) {
-          if (allTableMode) {
-            $('body > .loading-spinner').remove();
-            // Unset all table mode as this is a "dangerous" state that should be explicitly chosen each time.
-            $(listOutputControl).find('.multi-mode-table.active').removeClass('active');
-            $(listOutputControl).find('.multi-mode-selected').addClass('active');
-            indiciaFns.populateDataSources();
-          } else if (response !== 'OK') {
+          if (response !== 'OK') {
             alert('Indicia records update failed');
           }
         }
-      ).always(function cleanup() {
-        requests--;
-        if (requests <= 0) {
-          $('body > .loading-spinner').remove();
-        }
-      });
-      // In all table mode, everything handled by the ES proxy so nothing else to do.
-      if (allTableMode) {
-        return;
-      }
+      ).always(cleanup);
     } else if (status.query) {
       // No bulk API for query updates at the moment, so process one at a time.
-      indiciaPostUrl = indiciaData.ajaxFormPostComment;
-      docUpdates.identification.query = status.query;
-      commentToSave = comment.trim() === ''
-        ? 'This record has been queried.'
-        : comment.trim();
       $.each(occurrenceIds, function eachOccurrence() {
-        $.extend(data, {
-          'occurrence_comment:query': 't',
-          'occurrence_comment:occurrence_id': this,
-          'occurrence_comment:comment': commentToSave
-        });
+        pgUpdates['occurrence_comment:occurrence_id'] = this;
         // Post update to Indicia.
+        requests++;
         $.post(
-          indiciaPostUrl,
-          data
-        ).always(function cleanup() {
-          requests--;
-          if (requests <= 0) {
-            $('body > .loading-spinner').remove();
-          }
-        });
+          indiciaData.ajaxFormPostComment,
+          pgUpdates
+        ).always(cleanup);
       });
     }
-
     // Now post update to Elasticsearch.
     data = {
       ids: occurrenceIds,
-      doc: docUpdates
+      doc: esUpdates
     };
+    requests++;
     $.ajax({
       url: indiciaData.esProxyAjaxUrl + '/verifyids/' + indiciaData.nid,
       type: 'post',
@@ -197,26 +325,27 @@
           if (response.updated < occurrenceIds.length) {
             alert(indiciaData.lang.verificationButtons.elasticsearchUpdateError);
           }
-          // Refresh and cleanup.
-          $('body > .loading-spinner').remove();
-          if (occurrenceIds.length > 1) {
-            indiciaFns.populateDataSources();
-          } else if (occurrenceIds.length === 1) {
-            indiciaFns.hideItemAndMoveNext(listOutputControl[0]);
-          }
-          $(listOutputControl).find('.multiselect-all').prop('checked', false);
         }
       },
       error: function error() {
         alert(indiciaData.lang.verificationButtons.elasticsearchUpdateError);
       },
       dataType: 'json'
-    }).always(function cleanup() {
-      requests--;
-      if (requests <= 0) {
-        $('body > .loading-spinner').remove();
-      }
-    });
+    }).always(cleanup);
+  }
+
+  /**
+   * Instigates a verification event.
+   */
+  function saveVerifyComment(occurrenceIds, status, comment, email) {
+    if ($(listOutputControl).find('.multi-mode-table.active').length > 0) {
+      // Verifying the whole table.
+      saveVerifyCommentForWholeTable(status, comment, email);
+    }
+    else {
+      // Verifying a single record or selection.
+      saveVerifyCommentForSelection(occurrenceIds, status, comment, email);
+    }
   }
 
   /**
