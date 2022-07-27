@@ -160,7 +160,17 @@ jQuery(document).ready(function($) {
                   }
                 }
               }
-            });
+            })
+            .fail(
+              function(jqXHR, textStatus, errorThrown) {
+                $.fancyDialog({
+                  // @todo i18n
+                  title: 'Import error',
+                  message: indiciaData.lang.import_helper_2.errorExtractingZip + ':<br/>' + errorThrown,
+                  cancelButton: null
+                });
+              }
+            );
           }
           else {
             logBackgroundProcessingInfo(indiciaData.lang.import_helper_2.preparingToLoadRecords);
@@ -178,7 +188,17 @@ jQuery(document).ready(function($) {
           }
         }
       }
-    });
+    })
+    .fail(
+      function(jqXHR, textStatus, errorThrown) {
+        $.fancyDialog({
+          // @todo i18n
+          title: 'Import error',
+          message: indiciaData.lang.import_helper_2.errorUploadingFile + ':<br/>' + errorThrown,
+          cancelButton: null
+        });
+      }
+    );
   }
 
   function addTermlistMatchingTableToForm(result) {
