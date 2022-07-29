@@ -503,17 +503,22 @@ jQuery(document).ready(function($) {
     $('#error-info').fadeIn();
   }
 
-  function importNextChunk(state) {
-    var postDescription = {};
-    // Post the description of the import to save on the first chunk only.
-    if (!indiciaData.importDescriptionDone) {
-      postDescription.description = indiciaData.importDescription;
-      indiciaData.importDescriptionDone = true;
+  function importNextChunk(state, forceTemplateOverwrite) {
+    var postData = {};
+    // Post the description and template title of the import to save on the first chunk only.
+    if (!indiciaData.importOneOffFieldsToSaveDone) {
+      postData.description = indiciaData.importDescription;
+      postData.importTemplateTitle = indiciaData.importTemplateTitle;
+      // If user has confirmed overwrite OK.
+      if (forceTemplateOverwrite) {
+        postData.forceTemplateOverwrite = true;
+      }
+      indiciaData.importOneOffFieldsToSaveDone = true;
     }
     if (state === 'precheck') {
-      postDescription.precheck = 't';
+      postData.precheck = true;
     } else if (state === 'restart') {
-      postDescription.restart = 't';
+      postData.restart = true;
       state = 'doimport';
     }
     urlSep = indiciaData.importChunkUrl.indexOf('?') === -1 ? '?' : '&';
@@ -521,7 +526,7 @@ jQuery(document).ready(function($) {
       url: indiciaData.importChunkUrl + urlSep + 'data-file=' + indiciaData.dataFile,
       dataType: 'json',
       method: 'POST',
-      data: postDescription,
+      data: postData,
       headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce}
     }).done(
       function(result) {
@@ -534,6 +539,35 @@ jQuery(document).ready(function($) {
             title: 'Import error',
             message: msg,
             cancelButton: null
+          });
+        } else if (result.status === 'conflict') {
+          $.fancyDialog({
+            message: indiciaData.lang.import_helper_2.confirmTemplateOverwrite,
+            okButton: indiciaData.lang.import_helper_2.overwriteTemplate,
+            cancelButton: indiciaData.lang.import_helper_2.cancel,
+            callbackOk: function () {
+              indiciaData.importOneOffFieldsToSaveDone = false;
+              // Re-trigger save with flag set to force overwrite.
+              importNextChunk(state, true);
+            },
+            callbackCancel: function () {
+              $('#import-template-title').val(indiciaData.importTemplateTitle);
+              $.fancyDialog({
+                contentElement: '#template-title-form',
+                okButton: indiciaData.lang.import_helper_2.saveTemplate,
+                cancelButton: indiciaData.lang.import_helper_2.skipSavingTemplate,
+                callbackOk: function () {
+                  indiciaData.importTemplateTitle = $('#import-template-title').val();
+                  indiciaData.importOneOffFieldsToSaveDone = false;
+                  // Re-trigger save with updated title.
+                  importNextChunk(state);
+                },
+                callbackCancel: function () {
+                  // Continue without template save.
+                  importNextChunk(state);
+                }
+              });
+            }
           });
         } else {
           if (result.progress) {
