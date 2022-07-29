@@ -90,6 +90,28 @@ jQuery(document).ready(function($) {
     $('.background-processing .panel-body')[0].scrollTop = $('.background-processing .panel-body')[0].scrollHeight;
   }
 
+  /**
+   * Creates the config JSON file on the server, then proceeds with next step.
+   *
+   * @param string fileName
+   *   Import file name.
+   */
+  function initServerConfig(fileName) {
+    var url;
+    urlSep = indiciaData.initServerConfigUrl.indexOf('?') === -1 ? '?' : '&';
+    url = indiciaData.initServerConfigUrl + urlSep + 'data-file=' + fileName;
+    if (indiciaData.import_template_id) {
+      url += '&import_template_id=' + indiciaData.import_template_id;
+    }
+    $.ajax({
+      url: url,
+      dataType: 'json',
+      headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce}
+    }).done(function() {
+      transferDataToTempTable(fileName);
+    });
+  }
+
   function transferDataToTempTable(fileName) {
     urlSep = indiciaData.loadChunkToTempTableUrl.indexOf('?') === -1 ? '?' : '&';
     $.ajax({
@@ -148,7 +170,7 @@ jQuery(document).ready(function($) {
                   logBackgroundProcessingInfo(indiciaData.lang.import_helper_2.fileExtracted);
                   logBackgroundProcessingInfo(indiciaData.lang.import_helper_2.preparingToLoadRecords);
                   $('#data-file').val(extractResult.dataFile);
-                  transferDataToTempTable(extractResult.dataFile);
+                  initServerConfig(extractResult.dataFile);
                 }
                 else {
                   if (extractResult.msg) {
@@ -175,7 +197,7 @@ jQuery(document).ready(function($) {
           else {
             logBackgroundProcessingInfo(indiciaData.lang.import_helper_2.preparingToLoadRecords);
             $('#data-file').val(sendFileResult.uploadedFile);
-            transferDataToTempTable(sendFileResult.uploadedFile);
+            initServerConfig(sendFileResult.uploadedFile);
           }
         }
         else {
@@ -658,31 +680,35 @@ jQuery(document).ready(function($) {
       var label = $(row).find('td:first-child').text().toLowerCase().replace(/[^a-z0-9]/g, '');
       var qualifiedMatches = [];
       var unqualifiedMatches = [];
-      // First scan for matches qualified with entity name.
-      $.each($(row).find('option'), function() {
-        var option = this;
-        var qualified = $(option).val().toLowerCase().replace(/[^a-z0-9]/g, '');
-        var unqualified = $(option).text().toLowerCase().replace(/[^a-z0-9]/g, '');
-        var altTerms;
-        if (label === qualified) {
-          qualifiedMatches.push(option);
+      if (indiciaData.mappings && indiciaData.mappings[$(row).find('td:first-child').text()]) {
+        $(row).find('option[value="' + indiciaData.mappings[$(row).find('td:first-child').text()] + '"]').attr('selected', true);
+      } else {
+        // First scan for matches qualified with entity name.
+        $.each($(row).find('option'), function() {
+          var option = this;
+          var qualified = $(option).val().toLowerCase().replace(/[^a-z0-9]/g, '');
+          var unqualified = $(option).text().toLowerCase().replace(/[^a-z0-9]/g, '');
+          var altTerms;
+          if (label === qualified) {
+            qualifiedMatches.push(option);
+          }
+          if (label === unqualified) {
+            unqualifiedMatches.push(option);
+          }
+          if ($(option).data('alt')) {
+            altTerms = $(option).data('alt').split(',');
+            $.each(altTerms, function() {
+              if (label === this) {
+                unqualifiedMatches.push(option);
+              }
+            });
+          }
+        });
+        if (qualifiedMatches.length === 1) {
+          $(qualifiedMatches[0]).attr('selected', true);
+        } else if (qualifiedMatches.length === 0 && unqualifiedMatches.length === 1) {
+          $(unqualifiedMatches[0]).attr('selected', true);
         }
-        if (label === unqualified) {
-          unqualifiedMatches.push(option);
-        }
-        if ($(option).data('alt')) {
-          altTerms = $(option).data('alt').split(',');
-          $.each(altTerms, function() {
-            if (label === this) {
-              unqualifiedMatches.push(option);
-            }
-          });
-        }
-      });
-      if (qualifiedMatches.length === 1) {
-        $(qualifiedMatches[0]).attr('selected', true);
-      } else if (qualifiedMatches.length === 0 && unqualifiedMatches.length === 1) {
-        $(unqualifiedMatches[0]).attr('selected', true);
       }
     });
 
