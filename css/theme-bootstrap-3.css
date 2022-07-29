@@ -1430,4 +1430,8 @@ div.fancybox-content h2 {
   font-size: 2rem;
 }
 
+.fancy-dialog-button {
+  margin: 8px 15px 0 0;
+}
+
 /*# sourceMappingURL=theme-bootstrap-3.css.map */
