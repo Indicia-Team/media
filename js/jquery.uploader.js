@@ -511,16 +511,17 @@ var checkSubmitInProgress = function () {
 
       this.uploader.init();
 
-      if (this.settings.useFancybox) {
+      if (this.settings.useFancybox && !indiciaData.fileListFancyBoxDone) {
         // Hack to get fancybox working as a jQuery live, because some of our images load from AJAX calls.
         // So we temporarily create a dummy link to our image and click it.
-        indiciaFns.on('click', 'a.fancybox', null, function() {
+        indiciaFns.on('click', '.filelist a.fancybox', null, function() {
           jQuery("body").after('<a id="link_fancybox" style="display: hidden;" href="'+jQuery(this).attr('href')+'"></a>');
           jQuery('#link_fancybox').fancybox();
           jQuery('#link_fancybox').click();
           jQuery('#link_fancybox').remove();
           return false;
         });
+        indiciaData.fileListFancyBoxDone = true;
       }
 
       indiciaFns.on('click', '.delete-file', null, function(evt) {
