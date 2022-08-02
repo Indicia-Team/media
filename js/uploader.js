@@ -187,7 +187,7 @@ jQuery(document).ready(function($) {
               function(jqXHR, textStatus, errorThrown) {
                 $.fancyDialog({
                   // @todo i18n
-                  title: 'Import error',
+                  title: indiciaData.lang.import_helper_2.uploadError,
                   message: indiciaData.lang.import_helper_2.errorExtractingZip + ':<br/>' + errorThrown,
                   cancelButton: null
                 });
@@ -215,7 +215,7 @@ jQuery(document).ready(function($) {
       function(jqXHR, textStatus, errorThrown) {
         $.fancyDialog({
           // @todo i18n
-          title: 'Import error',
+          title: indiciaData.lang.import_helper_2.uploadError,
           message: indiciaData.lang.import_helper_2.errorUploadingFile + ':<br/>' + errorThrown,
           cancelButton: null
         });
