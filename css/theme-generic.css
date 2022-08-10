@@ -1467,6 +1467,10 @@ div.fancybox-content h2 {
   font-size: 2rem;
 }
 
+.fancy-dialog-button {
+  margin: 8px 15px 0 0;
+}
+
 /* Provide some basic Bootstrap style classes */
 .alert {
   padding: 4px;

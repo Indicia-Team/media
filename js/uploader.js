@@ -90,6 +90,28 @@ jQuery(document).ready(function($) {
     $('.background-processing .panel-body')[0].scrollTop = $('.background-processing .panel-body')[0].scrollHeight;
   }
 
+  /**
+   * Creates the config JSON file on the server, then proceeds with next step.
+   *
+   * @param string fileName
+   *   Import file name.
+   */
+  function initServerConfig(fileName) {
+    var url;
+    urlSep = indiciaData.initServerConfigUrl.indexOf('?') === -1 ? '?' : '&';
+    url = indiciaData.initServerConfigUrl + urlSep + 'data-file=' + fileName;
+    if (indiciaData.import_template_id) {
+      url += '&import_template_id=' + indiciaData.import_template_id;
+    }
+    $.ajax({
+      url: url,
+      dataType: 'json',
+      headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce}
+    }).done(function() {
+      transferDataToTempTable(fileName);
+    });
+  }
+
   function transferDataToTempTable(fileName) {
     urlSep = indiciaData.loadChunkToTempTableUrl.indexOf('?') === -1 ? '?' : '&';
     $.ajax({
@@ -148,7 +170,7 @@ jQuery(document).ready(function($) {
                   logBackgroundProcessingInfo(indiciaData.lang.import_helper_2.fileExtracted);
                   logBackgroundProcessingInfo(indiciaData.lang.import_helper_2.preparingToLoadRecords);
                   $('#data-file').val(extractResult.dataFile);
-                  transferDataToTempTable(extractResult.dataFile);
+                  initServerConfig(extractResult.dataFile);
                 }
                 else {
                   if (extractResult.msg) {
@@ -160,12 +182,22 @@ jQuery(document).ready(function($) {
                   }
                 }
               }
-            });
+            })
+            .fail(
+              function(jqXHR, textStatus, errorThrown) {
+                $.fancyDialog({
+                  // @todo i18n
+                  title: indiciaData.lang.import_helper_2.uploadError,
+                  message: indiciaData.lang.import_helper_2.errorExtractingZip + ':<br/>' + errorThrown,
+                  cancelButton: null
+                });
+              }
+            );
           }
           else {
             logBackgroundProcessingInfo(indiciaData.lang.import_helper_2.preparingToLoadRecords);
             $('#data-file').val(sendFileResult.uploadedFile);
-            transferDataToTempTable(sendFileResult.uploadedFile);
+            initServerConfig(sendFileResult.uploadedFile);
           }
         }
         else {
@@ -178,7 +210,17 @@ jQuery(document).ready(function($) {
           }
         }
       }
-    });
+    })
+    .fail(
+      function(jqXHR, textStatus, errorThrown) {
+        $.fancyDialog({
+          // @todo i18n
+          title: indiciaData.lang.import_helper_2.uploadError,
+          message: indiciaData.lang.import_helper_2.errorUploadingFile + ':<br/>' + errorThrown,
+          cancelButton: null
+        });
+      }
+    );
   }
 
   function addTermlistMatchingTableToForm(result) {
@@ -483,17 +525,22 @@ jQuery(document).ready(function($) {
     $('#error-info').fadeIn();
   }
 
-  function importNextChunk(state) {
-    var postDescription = {};
-    // Post the description of the import to save on the first chunk only.
-    if (!indiciaData.importDescriptionDone) {
-      postDescription.description = indiciaData.importDescription;
-      indiciaData.importDescriptionDone = true;
+  function importNextChunk(state, forceTemplateOverwrite) {
+    var postData = {};
+    // Post the description and template title of the import to save on the first chunk only.
+    if (!indiciaData.importOneOffFieldsToSaveDone) {
+      postData.description = indiciaData.importDescription;
+      postData.importTemplateTitle = indiciaData.importTemplateTitle;
+      // If user has confirmed overwrite OK.
+      if (forceTemplateOverwrite) {
+        postData.forceTemplateOverwrite = true;
+      }
+      indiciaData.importOneOffFieldsToSaveDone = true;
     }
     if (state === 'precheck') {
-      postDescription.precheck = 't';
+      postData.precheck = true;
     } else if (state === 'restart') {
-      postDescription.restart = 't';
+      postData.restart = true;
       state = 'doimport';
     }
     urlSep = indiciaData.importChunkUrl.indexOf('?') === -1 ? '?' : '&';
@@ -501,7 +548,7 @@ jQuery(document).ready(function($) {
       url: indiciaData.importChunkUrl + urlSep + 'data-file=' + indiciaData.dataFile,
       dataType: 'json',
       method: 'POST',
-      data: postDescription,
+      data: postData,
       headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce}
     }).done(
       function(result) {
@@ -514,6 +561,35 @@ jQuery(document).ready(function($) {
             title: 'Import error',
             message: msg,
             cancelButton: null
+          });
+        } else if (result.status === 'conflict') {
+          $.fancyDialog({
+            message: indiciaData.lang.import_helper_2.confirmTemplateOverwrite,
+            okButton: indiciaData.lang.import_helper_2.overwriteTemplate,
+            cancelButton: indiciaData.lang.import_helper_2.cancel,
+            callbackOk: function () {
+              indiciaData.importOneOffFieldsToSaveDone = false;
+              // Re-trigger save with flag set to force overwrite.
+              importNextChunk(state, true);
+            },
+            callbackCancel: function () {
+              $('#import-template-title').val(indiciaData.importTemplateTitle);
+              $.fancyDialog({
+                contentElement: '#template-title-form',
+                okButton: indiciaData.lang.import_helper_2.saveTemplate,
+                cancelButton: indiciaData.lang.import_helper_2.skipSavingTemplate,
+                callbackOk: function () {
+                  indiciaData.importTemplateTitle = $('#import-template-title').val();
+                  indiciaData.importOneOffFieldsToSaveDone = false;
+                  // Re-trigger save with updated title.
+                  importNextChunk(state);
+                },
+                callbackCancel: function () {
+                  // Continue without template save.
+                  importNextChunk(state);
+                }
+              });
+            }
           });
         } else {
           if (result.progress) {
@@ -604,31 +680,35 @@ jQuery(document).ready(function($) {
       var label = $(row).find('td:first-child').text().toLowerCase().replace(/[^a-z0-9]/g, '');
       var qualifiedMatches = [];
       var unqualifiedMatches = [];
-      // First scan for matches qualified with entity name.
-      $.each($(row).find('option'), function() {
-        var option = this;
-        var qualified = $(option).val().toLowerCase().replace(/[^a-z0-9]/g, '');
-        var unqualified = $(option).text().toLowerCase().replace(/[^a-z0-9]/g, '');
-        var altTerms;
-        if (label === qualified) {
-          qualifiedMatches.push(option);
+      if (indiciaData.mappings && indiciaData.mappings[$(row).find('td:first-child').text()]) {
+        $(row).find('option[value="' + indiciaData.mappings[$(row).find('td:first-child').text()] + '"]').attr('selected', true);
+      } else {
+        // First scan for matches qualified with entity name.
+        $.each($(row).find('option'), function() {
+          var option = this;
+          var qualified = $(option).val().toLowerCase().replace(/[^a-z0-9]/g, '');
+          var unqualified = $(option).text().toLowerCase().replace(/[^a-z0-9]/g, '');
+          var altTerms;
+          if (label === qualified) {
+            qualifiedMatches.push(option);
+          }
+          if (label === unqualified) {
+            unqualifiedMatches.push(option);
+          }
+          if ($(option).data('alt')) {
+            altTerms = $(option).data('alt').split(',');
+            $.each(altTerms, function() {
+              if (label === this) {
+                unqualifiedMatches.push(option);
+              }
+            });
+          }
+        });
+        if (qualifiedMatches.length === 1) {
+          $(qualifiedMatches[0]).attr('selected', true);
+        } else if (qualifiedMatches.length === 0 && unqualifiedMatches.length === 1) {
+          $(unqualifiedMatches[0]).attr('selected', true);
         }
-        if (label === unqualified) {
-          unqualifiedMatches.push(option);
-        }
-        if ($(option).data('alt')) {
-          altTerms = $(option).data('alt').split(',');
-          $.each(altTerms, function() {
-            if (label === this) {
-              unqualifiedMatches.push(option);
-            }
-          });
-        }
-      });
-      if (qualifiedMatches.length === 1) {
-        $(qualifiedMatches[0]).attr('selected', true);
-      } else if (qualifiedMatches.length === 0 && unqualifiedMatches.length === 1) {
-        $(unqualifiedMatches[0]).attr('selected', true);
       }
     });
 
