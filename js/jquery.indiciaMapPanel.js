@@ -697,6 +697,10 @@ var destroyAllFeatures;
         if (typeof feature !== 'undefined') {
           div.map.plotModifier.selectFeature(feature);
         }
+        // Optional switch to satellite layer
+        if (div.settings.helpToPickPrecisionSwitchAt && data.sref.length >= div.settings.helpToPickPrecisionSwitchAt) {
+          switchToSatelliteBaseLayer(div.map);
+        }
       }
     }
 
@@ -3307,6 +3311,15 @@ var destroyAllFeatures;
             // clear ghost hover markers when mouse leaves the map
             removeAllFeatures(div.map.editLayer, 'ghost');
           });
+        }
+        // Optional switch to satellite layer
+        if (indiciaData.srefHandlers) {
+          var handler = indiciaData.srefHandlers[_getSystem().toLowerCase()];
+          info = handler.getPrecisionInfo(handler.valueToAccuracy($('#' + div.settings.srefId).val()));
+          if (div.settings.helpToPickPrecisionSwitchAt && info.metres <= div.settings.helpToPickPrecisionSwitchAt
+              && !div.map.baseLayer.dynamicLayerIndex) {
+            switchToSatelliteBaseLayer(div.map);
+          }
         }
       }
       if (this.settings.searchLayer) {

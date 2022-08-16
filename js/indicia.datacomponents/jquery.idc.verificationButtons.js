@@ -71,6 +71,7 @@
    * Fetch the PG record updates required for a verification event.
    */
   function getVerifyPgUpdates(status, comment, email) {
+    var currentDoc;
     var pgUpdates = {
       website_id: indiciaData.website_id,
       user_id: indiciaData.user_id
