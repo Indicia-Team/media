@@ -223,16 +223,25 @@ jQuery(document).ready(function($) {
     );
   }
 
-  function addTermlistMatchingTableToForm(result) {
+  /**
+   * Adds a table for matching lookup values for a field.
+   *
+   * Returns a table with a row for each unmatched value, with a control for
+   * allowing the user to select what to import.
+   *
+   * @param object result
+   *   Data returned from the warehouse with the unmatched value info.
+   */
+  function addFkMatchingTableToForm(result) {
     if (result.unmatchedInfo.values.length === 0) {
       // Nothing to match.
       return;
     }
     var matchingPanelBody = $('<div class="panel-body">')
       .appendTo($('<div class="panel panel-default"><div class="panel-heading">' +
-        indiciaData.lang.import_helper_2.matchingPanelFor.replace('{1}', result.columnTitle) + '</div></div>')
+        indiciaData.lang.import_helper_2.matchingPanelFor.replace('{1}', result.columnLabel) + '</div></div>')
         .appendTo($('#matching-area')));
-    var matchingTable = $('<table class="table" id="matches-' + result.unmatchedInfo.attrType + '-' + result.unmatchedInfo.attrId + '"><thead><tr>' +
+    var matchingTable = $('<table class="table" id="matches-' + result.sourceField + '"><thead><tr>' +
       '<th>' + indiciaData.lang.import_helper_2.dataValue + '</th>' +
       '<th>' + indiciaData.lang.import_helper_2.matchesToTerm + '</th></tr></table>')
       .appendTo(matchingPanelBody);
@@ -250,9 +259,8 @@ jQuery(document).ready(function($) {
         .appendTo(tbody);
     });
     $('<button type="button" class="btn btn-primary save-matches" ' +
-      'data-attr="' + result.unmatchedInfo.attrType + '-' + result.unmatchedInfo.attrId + '" ' +
       'data-source-field="' + result.sourceField + '"' +
-      '>Save matches for ' + result.columnTitle + ' <i class="far fa-check"></i></button>')
+      '>Save matches for ' + result.columnLabel + ' <i class="far fa-check"></i></button>')
       .appendTo($('<div class="panel-body">').appendTo(matchingPanelBody));
   }
 
@@ -329,9 +337,9 @@ jQuery(document).ready(function($) {
   function addTaxonMatchingTableToForm(result) {
     var matchingPanelBody = $('<div class="panel-body">')
       .appendTo($('<div class="panel panel-default"><div class="panel-heading">' +
-        indiciaData.lang.import_helper_2.matchingPanelFor.replace('{1}', result.columnTitle) + '</div></div>')
+        indiciaData.lang.import_helper_2.matchingPanelFor.replace('{1}', result.columnLabel) + '</div></div>')
         .appendTo($('#matching-area')));
-    var matchingTable = $('<table class="table" id="matches-taxon"><thead><tr>' +
+    var matchingTable = $('<table class="table" id="matches-' + result.sourceField + '"><thead><tr>' +
       '<th>' + indiciaData.lang.import_helper_2.dataValue + '</th>' +
       '<th>' + indiciaData.lang.import_helper_2.matchesToTaxon + '</th></tr></table>')
       .appendTo(matchingPanelBody);
@@ -350,9 +358,8 @@ jQuery(document).ready(function($) {
     });
     // Save button
     $('<button type="button" class="btn btn-primary save-matches" ' +
-      'data-attr="' + result.unmatchedInfo.type + '" ' +
       'data-source-field="' + result.sourceField + '"' +
-      '>Save matches for ' + result.columnTitle + ' <i class="far fa-check"></i></button>')
+      '>Save matches for ' + result.columnLabel + ' <i class="far fa-check"></i></button>')
       .appendTo($('<div class="panel-body">').appendTo(matchingPanelBody));
     // Enable species search autocomplete for the matching inputs.
     $('.taxon-search').autocomplete(indiciaData.warehouseUrl+'index.php/services/data/taxa_search', getTaxonAutocompleteSettings(result.unmatchedInfo.taxonFilters));
@@ -377,8 +384,9 @@ jQuery(document).ready(function($) {
     $.ajax({
       url: indiciaData.processLookupMatchingUrl + urlSep + 'data-file=' + indiciaData.processLookupMatchingForFile + '&index=' + indiciaData.processLookupIndex,
       dataType: 'json',
-      headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
-      success: function(result) {
+      headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce}
+    })
+    .done(function(result) {
         if (result.status==='error') {
           if (result.msg) {
             $.fancyDialog({
@@ -389,12 +397,12 @@ jQuery(document).ready(function($) {
           }
         }
         else {
-          logBackgroundProcessingInfo(indiciaData.lang.import_helper_2[result.msgKey].replace('{1}', result.columnTitle));
+          logBackgroundProcessingInfo(indiciaData.lang.import_helper_2[result.msgKey].replace('{1}', result.columnLabel));
           if (result.unmatchedInfo) {
             // Prevent next step till matching done.
             $('#next-step').attr('disabled', true);
-            if (result.unmatchedInfo.type === 'customAttribute') {
-              addTermlistMatchingTableToForm(result);
+            if (result.unmatchedInfo.type === 'customAttribute' || result.unmatchedInfo.type === 'otherFk') {
+              addFkMatchingTableToForm(result);
             }
             else if (result.unmatchedInfo.type === 'taxon') {
               addTaxonMatchingTableToForm(result);
@@ -420,17 +428,36 @@ jQuery(document).ready(function($) {
           }
         }
       }
-    });
+    )
+    .fail(
+      function(jqXHR, textStatus, errorThrown) {
+        $.fancyDialog({
+          // @todo i18n
+          title: 'Import error',
+          message: 'An error occurred on the server whilst finding fields to metch terms for:<br/>' + errorThrown,
+          cancelButton: null
+        });
+      }
+    );
   }
 
-  function getProposedMatchesToSave(attr, sourceField) {
+  /**
+   * Retrieve data about the proposed term matches for a lookup attribute.
+   *
+   * Retrieves the user's chosen matches for terms, species or other lookups in
+   * the import file that  did not automatically match entries on the warehouse,
+   * ready to save.
+   *
+   * @param string sourceField
+   *   The name of the column in the temp DB that contains the terms being matched.
+   */
+  function getProposedMatchesToSave(sourceField) {
     var matches = {
-      attr: attr,
       'source-field': sourceField,
       values: {}
     };
     var anythingToSave = false;
-    $.each($('#matches-' + attr + ' select, #matches-' + attr + ' .taxon-id'), function() {
+    $.each($('#matches-' + sourceField).find('select, .taxon-id'), function() {
       var select = this;
       if ($(select).val() !== '') {
         matches.values[$(select).data('value')] = $(select).val();
@@ -454,7 +481,7 @@ jQuery(document).ready(function($) {
   indiciaFns.on('click', '.save-matches', {}, function() {
     var button = this;
     var matches;
-    matches = getProposedMatchesToSave($(button).data('attr'), $(button).data('source-field'));
+    matches = getProposedMatchesToSave($(button).data('source-field'));
     if (!matches) {
       return;
     }
@@ -536,6 +563,10 @@ jQuery(document).ready(function($) {
         postData.forceTemplateOverwrite = true;
       }
       indiciaData.importOneOffFieldsToSaveDone = true;
+    }
+    if (state === 'startPrecheck') {
+      postData.restart = true;
+      state = 'precheck';
     }
     if (state === 'precheck') {
       postData.precheck = true;
@@ -663,7 +694,7 @@ jQuery(document).ready(function($) {
     indiciaData.processLookupIndex = 0;
     nextLookupProcessingStep();
   } else if (indiciaData.readyToImport) {
-    importNextChunk('precheck');
+    importNextChunk('startPrecheck');
   }
 
   if (indiciaData.step === 'mappingsForm') {
@@ -680,15 +711,25 @@ jQuery(document).ready(function($) {
       var label = $(row).find('td:first-child').text().toLowerCase().replace(/[^a-z0-9]/g, '');
       var qualifiedMatches = [];
       var unqualifiedMatches = [];
-      if (indiciaData.mappings && indiciaData.mappings[$(row).find('td:first-child').text()]) {
-        $(row).find('option[value="' + indiciaData.mappings[$(row).find('td:first-child').text()] + '"]').attr('selected', true);
+      var suggestions = [];
+      var allMatches = [];
+      if (indiciaData.columns && indiciaData.columns[$(row).find('td:first-child').text()] && indiciaData.columns[$(row).find('td:first-child').text()]['warehouseField']) {
+        // Mapping is already in the columns info, e.g. when loaded from a template.
+        $(row).find('option[value="' + indiciaData.columns[$(row).find('td:first-child').text()]['warehouseField'] + '"]').attr('selected', true);
       } else {
-        // First scan for matches qualified with entity name.
+        // Scan for matches by field name.
         $.each($(row).find('option'), function() {
           var option = this;
-          var qualified = $(option).val().toLowerCase().replace(/[^a-z0-9]/g, '');
-          var unqualified = $(option).text().toLowerCase().replace(/[^a-z0-9]/g, '');
+          var unqualified = $(option).text().toLowerCase().replace(/\(.+\)/, '').replace(/[^a-z0-9]/g, '');
+          var optGroupLabel
+          var qualified;
           var altTerms;
+          if (!$(option).val()) {
+            // Skip the not-imported option.
+            return true;
+          }
+          optGroupLabel = $(option).parent().attr('label').toLowerCase().replace(/[^a-z0-9]/g, '');
+          qualified = optGroupLabel + unqualified;
           if (label === qualified) {
             qualifiedMatches.push(option);
           }
@@ -708,6 +749,12 @@ jQuery(document).ready(function($) {
           $(qualifiedMatches[0]).attr('selected', true);
         } else if (qualifiedMatches.length === 0 && unqualifiedMatches.length === 1) {
           $(unqualifiedMatches[0]).attr('selected', true);
+        } else if (qualifiedMatches.length + unqualifiedMatches.length > 1) {
+          $.extend(allMatches, qualifiedMatches, unqualifiedMatches)
+          $.each(allMatches, function() {
+            suggestions.push('<a class="apply-suggestion" data-value="' + this.value + '">' + this.text + '</a>');
+          });
+          $(row).find('select.mapped-field').after('<p class="helpText">' +  indiciaData.lang.import_helper_2.suggestions + ': ' + suggestions.join('; ') + '</p>');
         }
       }
     });
@@ -767,7 +814,15 @@ jQuery(document).ready(function($) {
       $('input[type="submit"]').attr('disabled', $('.required-checkbox.fa-square').length > 0);
     }
 
+    /**
+     * Click a link on the suggested column mappings auto-selects the option.
+     */
+    function applySuggestion(e) {
+      $(e.currentTarget).closest('td').find('option[value="' + $(e.currentTarget).data('value') + '"]').prop('selected', true);
+    }
+
     indiciaFns.on('change', '.mapped-field', {}, checkRequiredFields);
+    indiciaFns.on('click', '.apply-suggestion', {}, applySuggestion);
     checkRequiredFields();
   }
 
