@@ -772,22 +772,30 @@
 
   // Use an AJAX call to get the server to send the email
   function sendEmail(email) {
-    $.post(
-      indiciaData.esProxyAjaxUrl + '/verificationQueryEmail/' + indiciaData.nid,
-      email,
-      function (response) {
-        if (response === 'OK') {
-          $.fancybox.close();
-          alert(indiciaData.lang.verificationButtons.emailSent);
-        } else {
-          $.fancybox.open('<div class="manual-email">' + indiciaData.lang.verificationButtons.requestManualEmail +
-            '<div class="ui-helper-clearfix"><span class="left">To:</span><div class="right">' + email.to + '</div></div>' +
-            '<div class="ui-helper-clearfix"><span class="left">Subject:</span><div class="right">' + email.subject + '</div></div>' +
-            '<div class="ui-helper-clearfix"><span class="left">Content:</span><div class="right">' + email.body.replace(/\n/g, '<br/>') + '</div></div>' +
-            '</div>');
-        }
+    var notifyFailSend = function() {
+      $.fancybox.open('<div class="manual-email">' + indiciaData.lang.verificationButtons.requestManualEmail +
+          '<div class="ui-helper-clearfix"><span>To:</span> <span>' + email.to + '</span></div>' +
+          '<div class="ui-helper-clearfix"><span>Subject:</span> <span>' + email.subject + '</span></div>' +
+          '<div class="ui-helper-clearfix"><span>Content:</span><div>' + email.body.replace(/\n/g, '<br/>') + '</div></div>' +
+          '</div>');
+    }
+    $.ajax({
+      url: indiciaData.esProxyAjaxUrl + '/verificationQueryEmail/' + indiciaData.nid,
+      method: 'POST',
+      data: email
+    })
+    .done(function (response) {
+      $.fancybox.close();
+      if (response.status && response.status === 'OK') {
+        alert(indiciaData.lang.verificationButtons.emailSent);
+      } else {
+        notifyFailSend();
       }
-    );
+    })
+    .fail(function() {
+      $.fancybox.close();
+      notifyFailSend();
+    });
   }
 
   /*
@@ -841,8 +849,9 @@
       $.ajax({
         url: indiciaData.esProxyAjaxUrl + '/mediaAndComments/' + indiciaData.nid + urlSep +
         'occurrence_id=' + occurrenceId + '&sample_id=' + sampleId,
-        dataType: 'json',
-        success: function handleResponse(response) {
+        dataType: 'json'
+      })
+      .done(function handleResponse(response) {
           email.body = email.body.replace('\n', '<br/>');
           email.body = email.body.replace(/\{{ photos }}/g, response.media);
           email.body = email.body.replace(/\{{ comments }}/g, response.comments);
@@ -850,8 +859,13 @@
           saveVerifyComment([occurrenceId], { query: 'Q' }, indiciaData.lang.verificationButtons.emailLoggedAsComment, email);
           sendEmail(email);
         }
+      )
+      .fail(function () {
+        alert('Request for media and comments to include in email failed.');
       });
     }
+    // Block form submission otherwise page reloads.
+    return false;
   }
 
   /**
