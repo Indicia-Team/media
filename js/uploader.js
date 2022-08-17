@@ -752,7 +752,8 @@ jQuery(document).ready(function($) {
         } else if (qualifiedMatches.length + unqualifiedMatches.length > 1) {
           $.extend(allMatches, qualifiedMatches, unqualifiedMatches)
           $.each(allMatches, function() {
-            suggestions.push('<a class="apply-suggestion" data-value="' + this.value + '">' + this.text + '</a>');
+            var label = $(this).parent().data('short-label') + ' - ' + this.text;
+            suggestions.push('<a class="apply-suggestion" data-value="' + this.value + '">' + label + '</a>');
           });
           $(row).find('select.mapped-field').after('<p class="helpText">' +  indiciaData.lang.import_helper_2.suggestions + ': ' + suggestions.join('; ') + '</p>');
         }
