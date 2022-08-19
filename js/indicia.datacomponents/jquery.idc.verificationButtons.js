@@ -509,6 +509,25 @@
   }
 
   /**
+   * Add the HTML inputs for a record query or expert email to a form.
+   */
+  function appendRecordEmailControls(form, emailTo, emailSubject, emailBody, recordData) {
+    $('<div class="form-group">' +
+        '<label for="email-to">Send email to:</label>' +
+        '<input id="email-to" class="form-control email required" placeholder="' + indiciaData.lang.verificationButtons.enterEmailAddress + '" value="' + emailTo + '" />' +
+      '</div>').appendTo(form);
+    $('<div class="form-group">' +
+        '<label for="email-subject">Email subject:</label>' +
+        '<input id="email-subject" class="form-control required" value="' + emailSubject + '" />' +
+      '</div>').appendTo(form);
+    $('<div class="form-group">' +
+        '<label for="email-body">Email body:</label>' +
+        '<textarea id="email-body" class="form-control required" rows="12">' + emailBody + '\n\n' + recordData + '</textarea>' +
+      '</div>').appendTo(form);
+    $('<input type="submit" class="btn btn-primary" value="Send email" />').appendTo(form);
+  }
+
+  /**
    * Get HTML for the query by email tab's form.
    */
   function getQueryEmailTab(doc, emailTo, emailInstruct, warning) {
@@ -525,19 +544,7 @@
     $('<p class="alert ' + (warning ? 'alert-danger' : 'alert-info') + '">' +
       emailInstruct + '</p>')
       .appendTo(form);
-    $('<div class="form-group">' +
-        '<label for="email-to">Send email to:</label>' +
-        '<input id="email-to" class="form-control email required" value="' + emailTo + '" />' +
-      '</div>').appendTo(form);
-    $('<div class="form-group">' +
-        '<label for="email-subject">Email subject:</label>' +
-        '<input id="email-subject" class="form-control required" value="' + emailSubject + '" />' +
-      '</div>').appendTo(form);
-    $('<div class="form-group">' +
-        '<label for="email-body">Email body:</label>' +
-        '<textarea id="email-body" class="form-control required" rows="12">' + emailBody + '\n\n' + recordData + '</textarea>' +
-      '</div>').appendTo(form);
-    $('<input type="submit" class="btn btn-primary" value="Send email" />').appendTo(form);
+    appendRecordEmailControls(form, emailTo, emailSubject, emailBody, recordData);
     emailFormvalidator = $(form).validate({});
     $(form).submit(processEmail);
     return emailTab;
@@ -583,7 +590,6 @@
       doc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
       getCurrentRecordEmail(doc, function callback(emailTo) {
         var t = indiciaData.lang.verificationButtons;
-        doc.metadata.created_by_id = 2;
         if (doc.metadata.created_by_id == 1 && emailTo === '' || !emailTo.match(/@/)) {
           // Anonymous record with no valid email.
           tabbedQueryPopup(doc, true, t.queryCommentTabAnonWithoutEmail, t.queryEmailTabAnonWithoutEmail, emailTo);
@@ -610,6 +616,32 @@
         }
       });
     }
+  }
+
+  /**
+   * Get HTML for the query by email tab's form.
+   */
+   function getEmailExpertForm(doc) {
+    var container = $('<div class="query-popup" data-id="' + doc.id + '" data-sample-id="' + doc.event.event_id + '" />');
+    var emailSubject = replaceDocFields(indiciaData.lang.verificationButtons.emailExpertSubject, doc);
+    var emailBody = replaceDocFields(indiciaData.lang.verificationButtons.emailExpertBodyHeader, doc);
+    var recordData = getRecordDataForEmail(doc);
+    var form;
+    $('<legend><span class="fas fa-question-circle fa-2x"></span>' +
+      indiciaData.lang.verificationButtons.emailTabTitle + '</legend>')
+      .appendTo(container);
+    form = $('<form />').appendTo(container);
+    $('<p class="alert alert-info">' + indiciaData.lang.verificationButtons.emailExpertInstruct + '</p>')
+      .appendTo(form);
+    appendRecordEmailControls(form, '', emailSubject, emailBody, recordData);
+    emailFormvalidator = $(form).validate({});
+    $(form).submit(processEmail);
+    return container;
+  }
+
+  function emailExpertPopup() {
+    var doc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
+    $.fancybox.open(getEmailExpertForm(doc));
   }
 
   /**
@@ -946,6 +978,7 @@
         $('[data-status="' + code +'"]').attr('data-keycode', key[1]);
       });
       $('[data-query="Q"]').attr('title', $('[data-query="Q"]').attr('title') + ' (Q)');
+      $('.email-expert').attr('title', $('.email-expert').attr('title') + ' (X)');
       $('button.redet').attr('title', $('button.redet').attr('title') + ' (R)');
       // Keystroke handler for verification action shortcuts.
       $(document).keypress(function onKeypress(e) {
@@ -954,14 +987,19 @@
         if ($(':input:focus').length || $.fancybox.getInstance()) {
           return true;
         }
-        // Only interested in keys 1-5, q and d.
-        if ($('[data-keycode="' + e.which +'"]:visible').length || e.which === 113 || e.which === 114) {
+        // Only interested in keys 1-5, q, r and x.
+        if ($('[data-keycode="' + e.which +'"]:visible').length || e.which === 113 || e.which === 114 || e.which === 120) {
           if ($('[data-keycode="' + e.which +'"]:visible').length) {
             commentPopup({ status: $('[data-keycode="' + e.which +'"]:visible').attr('data-status') });
           } else if (e.which === 113) {
+            // q
             queryPopup();
           } else if (e.which === 114) {
+            // r
             $.fancybox.open($('#redet-form'));
+          } else if (e.which === 120) {
+            // x
+            emailExpertPopup();
           }
           e.preventDefault;
           return false;
@@ -1068,6 +1106,9 @@
       });
       $(el).find('button.query').click(function buttonClick() {
         queryPopup();
+      });
+      $(el).find('button.email-expert').click(function buttonClick() {
+        emailExpertPopup();
       });
       // If we have an upload decisions spreadsheet button, set it up.
       if ($(el).find('button.upload-decisions').length) {
