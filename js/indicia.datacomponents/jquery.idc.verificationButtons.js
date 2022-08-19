@@ -622,7 +622,7 @@
    * Get HTML for the query by email tab's form.
    */
    function getEmailExpertForm(doc) {
-    var container = $('<div class="query-popup" data-id="' + doc.id + '" data-sample-id="' + doc.event.event_id + '" />');
+    var container = $('<div class="query-popup email-expert-popup" data-id="' + doc.id + '" data-sample-id="' + doc.event.event_id + '" data-query="Q" />');
     var emailSubject = replaceDocFields(indiciaData.lang.verificationButtons.emailExpertSubject, doc);
     var emailBody = replaceDocFields(indiciaData.lang.verificationButtons.emailExpertBodyHeader, doc);
     var recordData = getRecordDataForEmail(doc);
@@ -855,8 +855,9 @@
       body: $('#email-body').val()
     };
     var popup = $(e.currentTarget).closest('.query-popup');
-    var occurrenceId = $(popup).attr('data-id');
-    var sampleId = $(popup).attr('data-sample-id');
+    var occurrenceId = $(popup).data('id');
+    var sampleId = $(popup).data('sample-id');
+    var emailType = $(popup).data('email-type');
     var urlSep = indiciaData.esProxyAjaxUrl.indexOf('?') === -1 ? '?' : '&';
     // Setup the quick reply page link and get an authorisation number.
     // Note: The quick reply page does actually support supplying a user_id parameter to it, however we don't do that in practice here as
@@ -888,7 +889,12 @@
           email.body = email.body.replace(/\{{ photos }}/g, response.media);
           email.body = email.body.replace(/\{{ comments }}/g, response.comments);
           // save a comment to indicate that the mail was sent
-          saveVerifyComment([occurrenceId], { query: 'Q' }, indiciaData.lang.verificationButtons.emailLoggedAsComment, email);
+          saveVerifyComment(
+            [occurrenceId],
+            { query: 'Q' },
+            $(popup).hasClass('email-expert-popup') ? indiciaData.lang.verificationButtons.emailExpertLoggedAsComment : indiciaData.lang.verificationButtons.emailQueryLoggedAsComment,
+            email
+          );
           sendEmail(email);
         }
       )
