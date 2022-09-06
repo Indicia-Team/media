@@ -147,7 +147,8 @@
   function disableRowsForIds(occurrenceIds) {
     var rows = [];
     $.each(occurrenceIds, function() {
-      var thisRow = $(listOutputControl).find('[data-row-id="' + indiciaData.idPrefix + this + '"]');
+      // Find row using normal or sensitive version of data-row-id.
+      var thisRow = $(listOutputControl).find('[data-row-id="' + indiciaData.idPrefix + this + '"],[data-row-id="' + indiciaData.idPrefix + this + '!"]');
       thisRow
         .addClass('disabled processing')
         .find('.footable-toggle-col').append('<i class="fas fa-spinner fa-spin"></i>');
