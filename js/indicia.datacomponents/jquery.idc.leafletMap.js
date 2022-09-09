@@ -861,6 +861,15 @@
       });
       return needsPopulation;
       // @todo Disable layer if source linked to grid and no row selected.
+    },
+
+    /**
+     * Exposes the leaflet invalidateSize method which can be used to force
+     * a map repaint - especially valuable if the map is initialised when
+     * not visible. In that case, call the method once the map is made visible.
+     */
+    invalidateSize: function invalidateSize() {
+      this.map.invalidateSize();
     }
   };
 
