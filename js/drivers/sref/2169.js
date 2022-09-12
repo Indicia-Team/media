@@ -30,7 +30,7 @@ indiciaData.srefHandlers['2169'] = {
   /**
    * Receives a point after a click on the map and converts to a WKT point.
    */
-   pointToWkt: function(point) {
+  pointToWkt: function(point) {
     return 'POINT(' + point.x + ' ' + point.y + ')';
   },
 
@@ -40,6 +40,11 @@ indiciaData.srefHandlers['2169'] = {
       metres: 1,
       type: 'coordinate'
     };
+  },
+
+  valueToAccuracy: function() {
+    // accuracy value 10 corresponds to 1m.
+    return 10;
   },
 
   /**
