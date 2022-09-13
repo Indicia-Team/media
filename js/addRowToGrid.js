@@ -71,7 +71,7 @@ var resetSpeciesTextOnEscape;
         var gridId = this.id;
         var rows = [];
         var taxaTaxonListIds = [];
-        $.each($(this).find('tbody tr'), function() {
+        $.each($(this).find('tbody tr:not(.supplementary-row)'), function() {
           var scCtrl = $(this).find('.scPresence[name]');
           if (!indiciaData['limitDynamicAttrsTaxonGroupIds-' + gridId] ||
               $.inArray(parseInt($(this).find('.scTaxonGroupId').val()), indiciaData['limitDynamicAttrsTaxonGroupIds-' + gridId]) !== -1) {
