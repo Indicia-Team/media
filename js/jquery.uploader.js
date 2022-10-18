@@ -122,7 +122,7 @@ var checkSubmitInProgress = function () {
       regex: /^http(s)?:\/\/twitter.com\//
     },
     "Video:Youtube" : {
-      regex: /^http:\/\/(www.youtube.com|youtu.be)\//
+      regex: /^http(s)?:\/\/(www.youtube.com|youtu.be)\//
     },
     "Video:Vimeo" : {
       regex: /^http:\/\/vimeo.com\//
