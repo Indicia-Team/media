@@ -1728,14 +1728,34 @@ jQuery(document).ready(function docReady() {
       }
     }
   }));
-  $('.es-higher-geography-select').change(function higherGeoSelectChange() {
+
+  // Hook up unindexed location controls.
+  $('.es-location-select-geom').attr('data-es-query', JSON.stringify({
+    geo_shape: {
+      "location.geom": {
+        shape: '#value#',
+        relation: 'intersects',
+      },
+    },
+  }));
+
+  /**
+   * A generic change handler for higher geography and normal location selects.
+   *
+   * @param DOM select
+   *   Select control.
+   * @param function callback
+   *   Will be called with polygon data loaded from warehouse, or empty array
+   *   if nothing selected.
+   */
+  function onLocationSelectChange(select, callback) {
     var baseId;
     var idx = 0;
     var thisSelect;
     var locIdToLoad;
-    // Fimd the most precise specified boundary in the list of linked selects.
-    if ($(this).hasClass('linked-select')) {
-      baseId = this.id.replace(/\-\d+$/, '');
+    // Find the most precise specified boundary in the list of linked selects.
+    if ($(select).hasClass('linked-select')) {
+      baseId = select.id.replace(/\-\d+$/, '');
       thisSelect = $('#' + baseId + '-' + idx);
       while (thisSelect.length) {
         if ($(thisSelect).val() && $(thisSelect).val().match(/^\d+$/)) {
@@ -1745,25 +1765,57 @@ jQuery(document).ready(function docReady() {
         thisSelect = $('#' + baseId + '-' + idx);
       }
     } else {
-      locIdToLoad = $(this).val();
+      locIdToLoad = $(select).val();
     }
     if (locIdToLoad && locIdToLoad.match(/^\d+$/)) {
       $.getJSON(indiciaData.warehouseUrl + 'index.php/services/report/requestReport?' +
           'report=library/locations/location_boundary_projected.xml' +
           '&reportSource=local&srid=4326&location_id=' + locIdToLoad +
           '&nonce=' + indiciaData.read.nonce + '&auth_token=' + indiciaData.read.auth_token +
-          '&mode=json&callback=?', function getLoc(data) {
+          '&mode=json&callback=?', function(data) {
+        if (callback) {
+          callback(data);
+        }
+        // Draw the polygon.
         $.each($('.idc-output-leafletMap'), function eachMap() {
-          $(this).idcLeafletMap('showFeature', data[0].boundary_geom, true);
+          var map = this;
+          $.each(data, function() {
+            $(map).idcLeafletMap('showFeature', this.boundary_geom, true);
+          });
         });
       });
     } else {
-      // Unless a disabled (loading message etc), clear the current selection.
+      // Not selected, so clear the current selection.
+      if (callback) {
+        callback([]);
+      }
       $.each($('.idc-output-leafletMap.leaflet-container'), function eachMap() {
         $(this).idcLeafletMap('clearFeature');
         $(this).idcLeafletMap('resetViewport');
       });
     }
+  }
+
+  // Hook up event handler to location select controls.
+  $('.es-higher-geography-select').change(function selectChange() {
+    onLocationSelectChange(this, null);
+  });
+
+  $('.es-location-select').change(function selectChange() {
+    var changedSelect = this;
+    // Callback needs to handle the geometry filters.
+    onLocationSelectChange(this, function callback(data) {
+      if (data.length === 0) {
+        $('.es-location-select-geom').val('');
+      }
+      else {
+        // Empty the location select geom controls, then set the one at the
+        // correct level for the selected location type.
+        $('#' + changedSelect.id + '-geom').val(data[0].boundary_geom);
+      }
+      // Update the sources.
+      $('#' + changedSelect.id + '-geom').change();
+    });
   });
 
   /**

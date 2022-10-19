@@ -71,7 +71,7 @@ var resetSpeciesTextOnEscape;
         var gridId = this.id;
         var rows = [];
         var taxaTaxonListIds = [];
-        $.each($(this).find('tbody tr'), function() {
+        $.each($(this).find('tbody tr:not(.supplementary-row)'), function() {
           var scCtrl = $(this).find('.scPresence[name]');
           if (!indiciaData['limitDynamicAttrsTaxonGroupIds-' + gridId] ||
               $.inArray(parseInt($(this).find('.scTaxonGroupId').val()), indiciaData['limitDynamicAttrsTaxonGroupIds-' + gridId]) !== -1) {
@@ -476,9 +476,9 @@ var resetSpeciesTextOnEscape;
       return;
     }
     // get a copy of the new row template
-    var newRow = $('tr#'+gridId + '-scClonableRow').clone(true), speciesSelector,
+    var newRow = $('tr#' + gridId + '-scClonableRow').clone(true), speciesSelector,
         attrVal, ctrl;
-    var selectorId = gridId + '-' + indiciaData['gridCounter-'+gridId];
+    var selectorId = gridId + '-' + indiciaData['gridCounter-' + gridId];
     var selectorClass = 'grid-required {speciesMustBeFilled:true} ' + indiciaData.formControlClass;
     // Build an auto-complete control for selecting the species to add to the bottom of the grid.
     speciesSelector = '<input type="text" id="' + selectorId + '" class="' + selectorClass + '" />';
@@ -489,11 +489,11 @@ var resetSpeciesTextOnEscape;
       $.each($(cell).find('*'), function(idx, child) {
         attrVal = $(child).attr('name');
         if (typeof attrVal !== 'undefined' && attrVal.indexOf('-idx-') !== -1) {
-          $(child).attr('name', $(child).attr('name').replace(/-idx-/g, indiciaData['gridCounter-'+gridId]));
+          $(child).attr('name', $(child).attr('name').replace(/-idx-/g, indiciaData['gridCounter-' + gridId]));
         }
         attrVal = $(child).attr('id');
         if (typeof attrVal !== 'undefined' && attrVal.indexOf('-idx-') !== -1) {
-          $(child).attr('id', $(child).attr('id').replace(/-idx-/g, indiciaData['gridCounter-'+gridId]));
+          $(child).attr('id', $(child).attr('id').replace(/-idx-/g, indiciaData['gridCounter-' + gridId]));
         }
         attrVal = $(child).attr('for');
         if (typeof attrVal !== 'undefined' && attrVal.indexOf('-idx-') !== -1) {
@@ -1083,8 +1083,8 @@ var resetSpeciesTextOnEscape;
         var replacedNonMappableSysFuncCols = [];
         var msg;
         var columnsToCopyFromPrevRow = [];
-        if (typeof indiciaData['previousRowColumnsToInclude-'+gridId] !== 'undefined') {
-          columnsToCopyFromPrevRow = indiciaData['previousRowColumnsToInclude-'+gridId].split(",");
+        if (typeof indiciaData['previousRowColumnsToInclude-' + gridId] !== 'undefined') {
+          columnsToCopyFromPrevRow = indiciaData['previousRowColumnsToInclude-' + gridId].split(",");
           columnsToCopyFromPrevRow.forEach(function(value, index) {
             columnsToCopyFromPrevRow[index] = 'sc' + value.replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
           });
@@ -1145,7 +1145,7 @@ var resetSpeciesTextOnEscape;
                     // If this column copied from previous, apply value.
                     classToUse = getScClassForColumnCellInput(ctrl);
                     if (classToUse && (jQuery.inArray(classToUse.toLowerCase(), columnsToCopyFromPrevRow)>-1)) {
-                      ctrl.val(prevRow.find('.'+classToUse).filter(':visible').val());
+                      ctrl.val(prevRow.find('.' + classToUse).filter(':visible').val());
                     }
                   }
                   // Hide the non-dynamic attr for this cell, so we don't lose it
@@ -1290,20 +1290,20 @@ function getScClassForColumnCellInput(input) {
 function changeIn2ndToLastRow(input) {
   //get user specified columns to include in the copy
   var gridId = jQuery(input).closest('table').attr('id'),
-    columnsToCopyFromPrevRow = indiciaData['previousRowColumnsToInclude-'+gridId].split(",");
+    columnsToCopyFromPrevRow = indiciaData['previousRowColumnsToInclude-' + gridId].split(",");
   //get rid of all of the spacing and capital letters
   for (i = 0; i < columnsToCopyFromPrevRow.length; i++) {
-    columnsToCopyFromPrevRow[i] = 'sc'+columnsToCopyFromPrevRow[i].replace(/ /g,'').toLowerCase();
+    columnsToCopyFromPrevRow[i] = 'sc' + columnsToCopyFromPrevRow[i].replace(/ /g,'').toLowerCase();
   }
   var classToUse = getScClassForColumnCellInput(input),
-      $newRow = jQuery('table#'+gridId + ' tr.scClonableRow'),
+      $newRow = jQuery('table#' + gridId + ' tr.scClonableRow'),
       //The '.added-row:first' check is there
       //as the user might of added an image-row which we need to ignore
       $previousRow = $newRow.prevAll(".added-row:first");
   //Copy data from the 2nd last row into the new row only if the column
   //is in the user's options
   if (classToUse && (jQuery.inArray(classToUse.toLowerCase(), columnsToCopyFromPrevRow)>-1)) {
-    $newRow.find('.'+classToUse).val($previousRow.find('.'+classToUse).filter(':visible').val());
+    $newRow.find('.' + classToUse).val($previousRow.find('.' + classToUse).filter(':visible').val());
   }
 }
 
@@ -1316,13 +1316,13 @@ function changeIn2ndToLastRowProxy() {
 //function to copy the values for a new row from the previous row as the new row is added.
 function species_checklist_add_another_row(gridId) {
   //get user specified columns to include in the copy
-  var columnsToCopyFromPrevRow = indiciaData['previousRowColumnsToInclude-'+gridId].split(",");
+  var columnsToCopyFromPrevRow = indiciaData['previousRowColumnsToInclude-' + gridId].split(",");
   //get rid of all of the spacing and capital letters
   for (i=0; i<columnsToCopyFromPrevRow.length;i++) {
-    columnsToCopyFromPrevRow[i] = 'sc'+columnsToCopyFromPrevRow[i].replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
+    columnsToCopyFromPrevRow[i] = 'sc' + columnsToCopyFromPrevRow[i].replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
   }
 
-  var $newRow = jQuery('table#'+gridId + ' tr.scClonableRow');
+  var $newRow = jQuery('table#' + gridId + ' tr.scClonableRow');
   //Get the previous row to the new row
   $previousRow = $newRow.prevAll(".added-row:first");
 
@@ -1333,14 +1333,14 @@ function species_checklist_add_another_row(gridId) {
     //Only continue if the column is part of the user's options.
     if (classToUse  && (jQuery.inArray(classToUse.toLowerCase(), columnsToCopyFromPrevRow)>-1)) {
       //Bind the cell in the previous cell so that when it is changed the new row will update
-      $previousRow.find('.'+classToUse).bind('change', changeIn2ndToLastRowProxy);
+      $previousRow.find('.' + classToUse).bind('change', changeIn2ndToLastRowProxy);
       //We set the value for the new row from the previous row if there is a value set on the previous row cell
       //and the user has included that column in their options. (inArray reurns -1 for items not found)
-      if ($previousRow.find('.'+classToUse).val() && (jQuery.inArray(classToUse.toLowerCase(), columnsToCopyFromPrevRow)>-1)) {
-        jQuery(this).val($previousRow.find('.'+classToUse).filter(':visible').val());
+      if ($previousRow.find('.' + classToUse).val() && (jQuery.inArray(classToUse.toLowerCase(), columnsToCopyFromPrevRow)>-1)) {
+        jQuery(this).val($previousRow.find('.' + classToUse).filter(':visible').val());
       }
       //We need to unbind the 3rd last row as we no longer what changes for that cell to affect the last row.
-      $previousRow.prevAll(".added-row:first").find('.'+classToUse).unbind('change', changeIn2ndToLastRowProxy);
+      $previousRow.prevAll(".added-row:first").find('.' + classToUse).unbind('change', changeIn2ndToLastRowProxy);
     }
 
   });
