@@ -111,3 +111,17 @@ div.fancybox-content {
     font-size: 2rem;
   }
 }
+div.taxon-card {
+  border: solid silver 1px;
+  border-radius: 4px;
+  padding: 8px;
+  margin: 8px;
+  display: inline-block;
+  vertical-align: top;
+  &.active {
+    background: lighten(lightcoral, 20%);
+  }
+  .taxon-name {
+    font-weight: bold;
+  }
+}
