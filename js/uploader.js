@@ -145,6 +145,12 @@ jQuery(document).ready(function($) {
           });
         }
       }
+    }).fail(function(qXHR, textStatus, errorThrown) {
+      $.fancyDialog({
+        title: indiciaData.lang.import_helper_2.uploadError,
+        message: qXHR.responseText,
+        cancelButton: null
+      });
     });
   }
 
@@ -292,6 +298,9 @@ jQuery(document).ready(function($) {
       r += ']';
     }
     r += '<br/><strong>' + item.taxon_group + '</strong>';
+    if (item.taxon_rank) {
+      r += ' | <span class="taxon-rank">' + item.taxon_rank + '</span>';
+    }
     return r;
   }
 
@@ -331,6 +340,28 @@ jQuery(document).ready(function($) {
     };
   }
 
+  function getTaxonCard(info) {
+    var rows = [];
+    var prefix = '';
+    if (info.taxon_rank_sort_order >= 300 && info.language_iso === 'lat') {
+      rows.push('<div class="taxon-name"><em>' + info.taxon + '</em>' + (info.authority ? ' ' + info.authority : '') + '</div>');
+    } else {
+      rows.push('<div class="taxon-name">' + info.taxon + (info.authority ? ' ' + info.authority : '') + '</div>');
+    }
+    if (info.taxon !== info.preferred_taxon || info.authority !== info.preferred_authority) {
+      if (info.language_iso === 'lat') {
+        prefix = indiciaData.lang.import_helper_2.synOf + ' ';
+      }
+      if (info.taxon_rank_sort_order >= 300 && info.preferred_language_iso === 'lat') {
+        rows.push('<div>[' + prefix + '<em>' + info.preferred_taxon + '</em>' + (info.preferred_authority ? ' ' + info.preferred_authority : '') + ']</div>');
+      } else {
+        rows.push('<div>[' + prefix + info.preferred_taxon + (info.preferred_authority ? ' ' + info.preferred_authority : '') + ']</div>');
+      }
+    }
+    rows.push('<div>' + info.taxon_group + (info.taxon_rank ? ' | ' + info.taxon_rank : '') + '</div>');
+    return rows.join('');
+  }
+
   /**
    * Where there are species names that need matching, adds a matching table.
    */
@@ -346,14 +377,23 @@ jQuery(document).ready(function($) {
     var tbody = $('<tbody />')
       .appendTo(matchingTable);
     var idx = 0;
-    $.each(result.unmatchedInfo.values, function(taxon, options) {
+    $.each(result.unmatchedInfo.values, function(taxon, choiceInfo) {
       var controlName = 'match-taxon-' + idx;
       var searchControl = '<input type="text" class="taxon-search form-control" data-index="' + idx + '" placeholder="' + indiciaData.lang.import_helper_2.typeSpeciesNameToSearch + '" />';
+      var choiceCards = [];
+      var choicesObj = JSON.parse(choiceInfo);
+      $.each(choicesObj, function() {
+        choiceCards.push('<div class="taxon-card" data-taxon="' + this.taxon + '" data-id="' + this.id + '">' + getTaxonCard(this) + '</div>');
+      })
       // Hidden input for the ID.
       searchControl += '<input type="hidden" name="' + controlName + '" class="taxon-id" data-value="' + taxon.replace('"', '&quot;') + '"/>';
       $('<tr><th scope="row" data-value="' + taxon + '">' + taxon + '</th>' +
         '<td>' + searchControl + '</td></tr>')
         .appendTo(tbody);
+      if (choiceCards.length > 0) {
+        $('<tr class="taxon-suggestions"><td colspan="2"><p>' + indiciaData.lang.import_helper_2.severalMatches.replace('{1}', result.columnLabel) + '</p>' + choiceCards.join('') + '</td></tr>')
+        .appendTo(tbody);
+      }
       idx++;
     });
     // Save button
@@ -373,6 +413,18 @@ jQuery(document).ready(function($) {
       $('input[name="match-taxon-' + $(e.currentTarget).data('index') + '"]').val(data.taxa_taxon_list_id);
       // Remember the string it was set for to prevent it being cleared.
       $('input[name="match-taxon-' + $(e.currentTarget).data('index')).data('set-for', $(e.currentTarget).val());
+    });
+    $('.taxon-card').click(function(e) {
+      var id = $(e.currentTarget).data('id');
+      var taxon = $(e.currentTarget).data('taxon');
+      var tr = $(e.currentTarget).closest('tr');
+      var trPrev = $(tr).prev();
+      $(tr).find('.taxon-card.active').removeClass('active');
+      $(e.currentTarget).addClass('active');
+      $(trPrev).find('.taxon-id').val(id);
+      $(trPrev).find('.taxon-search').val(taxon);
+      console.log(id);
+
     });
   }
 
@@ -508,6 +560,8 @@ jQuery(document).ready(function($) {
           }
           // Make it clear these inputs are no longer in action.
           $(button).closest('.panel').find('select,.ac_input').attr('disabled', true);
+          // Remove any duplicate taxon name suggestion cards.
+          $(button).closest('.panel').find('tr.taxon-suggestions').slideUp();
         }
         else if (result.status === 'incomplete') {
           $.each(result.unmatched, function() {
