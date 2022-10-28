@@ -377,7 +377,7 @@
           $.each(subBuckets, function eachSubBucket() {
             var coords;
             var metric;
-            if (this.key && this.key.match(/\-?\d+\.\d+ \d+\.\d+/)) {
+            if (this.key && this.key.match(/\-?\d+\.\d+ \-?\d+\.\d+/)) {
               coords = this.key.split(' ');
               metric = Math.round((Math.sqrt(this.doc_count) / maxMetric) * 20000);
               if (typeof location !== 'undefined') {
