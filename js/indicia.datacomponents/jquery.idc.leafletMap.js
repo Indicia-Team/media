@@ -748,7 +748,7 @@
       if (sourceSettings.initialMapBounds && !el.settings.initialBoundsSet && layers.length > 0 && layers[0].getBounds) {
         bounds = layers[0].getBounds();
         if (bounds.isValid()) {
-          el.map.fitBounds(layers[0].getBounds());
+          el.map.fitBounds(layers[0].getBounds().pad(0.25));
           el.settings.initialBoundsSet = true;
         }
       }
