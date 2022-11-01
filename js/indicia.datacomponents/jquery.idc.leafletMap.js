@@ -132,18 +132,20 @@
    *   Optional field for filter to apply if this feature selected.
    * @param string filterValue
    *   Optional value for filter to apply if this feature selected.
+   * @param string label
+   *   Optional label for a tooltip to be added to the feature.
    */
-  function addFeature(el, sourceId, location, geom, metric, fillOpacity, filterField, filterValue) {
+  function addFeature(el, sourceId, location, geom, metric, fillOpacity, filterField, filterValue, label) {
     var layerIds = getLayerIdsForSource(el, sourceId);
     var circle;
     var config;
     var wkt;
-    var obj;
     var sourceSettings = indiciaData.esSourceObjects[sourceId].settings;
     var size = {};
     fillOpacity = fillOpacity === null || typeof fillOpacity === "undefined" ? 0.5 : fillOpacity;
     $.each(layerIds, function eachLayer() {
       var layerConfig = el.settings.layerConfig[this];
+      var mapObject;
       config = {
         type: typeof layerConfig.type === 'undefined' ? 'marker' : layerConfig.type,
         options: {}
@@ -201,9 +203,9 @@
       switch (config.type) {
         // Circle markers on layer.
         case 'circle':
-          el.outputLayers[this].addLayer(L.circle(location, config.options));
+          mapObject = L.circle(location, config.options);
           break;
-        // Leaflet.heat powered heat maps.
+        // Leaflet.heat powered heat maps. Note these can't be labelled.
         case 'heat':
           el.outputLayers[this].addLatLng([location.lat, location.lon, metric]);
           break;
@@ -211,22 +213,27 @@
           // @todo - properly projected squares. These are just the bounding box of circles.
           // Use a temporary circle to get correct size.
           circle = L.circle(location, config.options).addTo(el.map);
-          el.outputLayers[this].addLayer(L.rectangle(circle.getBounds(), config.options));
+          mapObject = L.rectangle(circle.getBounds(), config.options);
           circle.removeFrom(el.map);
           break;
         case 'geom':
           wkt = new Wkt.Wkt();
           wkt.read(geom);
-          obj = wkt.toObject(config.options);
-          size.x = obj.getBounds().getEast() - obj.getBounds().getWest();
-          size.y = obj.getBounds().getNorth() - obj.getBounds().getSouth();
+          mapObject = wkt.toObject(config.options);
+          size.x = mapObject.getBounds().getEast() - mapObject.getBounds().getWest();
+          size.y = mapObject.getBounds().getNorth() - mapObject.getBounds().getSouth();
           size.relativeVisual = Math.min(size.x, size.y) * Math.pow(10, el.map.getZoom());
-          obj.options.weight = Math.max(1, 13 - Math.round(Math.log10(size.relativeVisual)));
-          obj.addTo(el.outputLayers[this]);
+          mapObject.options.weight = Math.max(1, 13 - Math.round(Math.log10(size.relativeVisual)));
           break;
         // Default layer type is markers.
         default:
-          el.outputLayers[this].addLayer(L.marker(location, config.options));
+          mapObject = L.marker(location, config.options);
+      }
+      if (typeof mapObject !== 'undefined') {
+        el.outputLayers[this].addLayer(mapObject);
+        if (layerConfig.labels && label) {
+          layerConfig.labels === 'permanent' ? mapObject.bindTooltip(label, {permanent: true}) : mapObject.bindTooltip(label);
+        }
       }
     });
   }
@@ -718,6 +725,9 @@
       // Are there document hits to map?
       $.each(response.hits.hits, function eachHit(i) {
         var latlon = this._source.location.point.split(',');
+        var label = indiciaFns.fieldConvertors.taxon_label(this._source) + '<br/>' +
+          this._source.event.recorded_by + '<br/>' +
+          indiciaFns.fieldConvertors.event_date(this._source);
         // Repeat records on same grid square should be progressively more
         // transparent so they don't block the background out.
         if (typeof geomCounts[this._source.location.point] === 'undefined') {
@@ -725,7 +735,7 @@
         }
         geomCounts[this._source.location.point]++;
         fillOpacity = 0.3 / Math.pow(geomCounts[this._source.location.point], 2.5);
-        addFeature(el, sourceSettings.id, latlon, this._source.location.geom, this._source.location.coordinate_uncertainty_in_meters, fillOpacity, '_id', this._id);
+        addFeature(el, sourceSettings.id, latlon, this._source.location.geom, this._source.location.coordinate_uncertainty_in_meters, fillOpacity, '_id', this._id, label);
       });
       // Are there aggregations to map?
       if (typeof response.aggregations !== 'undefined') {

@@ -838,6 +838,11 @@ table.es-data-grid tfoot button span {
 /* idcLeafletMap plugin */
 .idc-output-leafletMap {
   height: 500px;
+  /* Map tooltips */
+}
+.idc-output-leafletMap .leaflet-tooltip h3 {
+  margin: 0;
+  font-size: 14px;
 }
 
 /* idcVerificationButtons plugin */

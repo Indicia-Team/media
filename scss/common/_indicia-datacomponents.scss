@@ -230,10 +230,16 @@ table.es-data-grid {
   }
 }
 
-
 /* idcLeafletMap plugin */
 .idc-output-leafletMap {
   height: 500px;
+  /* Map tooltips */
+  .leaflet-tooltip {
+    h3 {
+      margin: 0;
+      font-size: 14px;
+    }
+  }
 }
 
 /* idcVerificationButtons plugin */
