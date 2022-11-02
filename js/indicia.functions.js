@@ -793,12 +793,12 @@ jQuery(document).ready(function ($) {
         content.append($(opts.contentElement));
       }
       if (opts.cancelButton) {
-        content.append('<button data-value="0" data-fancybox-close class="fancy-dialog-button ' + indiciaData.btnClasses.default + '">' +
+        content.append('<button data-value="0" data-fancybox-close class="fancy-dialog-button ' + indiciaData.templates.buttonDefaultClass + '">' +
           opts.cancelButton +
           '</button>');
       }
       if (opts.okButton) {
-        content.append('<button data-value="1" data-fancybox-close class="fancy-dialog-button ' + indiciaData.btnClasses.highlighted + '">' +
+        content.append('<button data-value="1" data-fancybox-close class="fancy-dialog-button ' + indiciaData.templates.buttonHighlightedClass + '">' +
           opts.okButton +
           '</button>');
       }

@@ -842,7 +842,7 @@
       }
       // Adds a reset button if any settings loaded from a cookie.
       if (resetButtonNeeded) {
-        $('#' + opts.id).before('<button type="button" class="' + indiciaData.btnClasses.highlighted + '" id="reset-' + opts.id + '">Reset report</button>');
+        $('#' + opts.id).before('<button type="button" class="' + indiciaData.templates.buttonHighlightedClass + '" id="reset-' + opts.id + '">Reset report</button>');
         $('#reset-' + opts.id).click(function() {
           resetSettingsFromCookies($('#' + opts.id)[0]);
         });
