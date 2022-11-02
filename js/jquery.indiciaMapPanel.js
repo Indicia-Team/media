@@ -794,6 +794,7 @@ var destroyAllFeatures;
       // data holds the sref in _getSystem format, wkt in indiciaProjection, optional mapwkt in mapProjection
       var feature;
       var parser = new OpenLayers.Format.WKT();
+      var intersectFound = false;
 
       if ($('.scSpatialRefFromMap.active').length > 0) {
         returnClickPointToSpeciesGrid(data);
@@ -842,6 +843,25 @@ var destroyAllFeatures;
       feature.attributes = { type: 'clickPoint' };
       feature.style = new Style('default', div.settings);
       div.map.editLayer.addFeatures([feature]);
+
+      if (indiciaData.outsideBoundsBehaviour && div.map.boundaryLayer) {
+        $.each(div.map.boundaryLayer.features, function() {
+          if (this.geometry.intersects(feature.geometry)) {
+            intersectFound = true;
+          }
+        });
+        if (intersectFound) {
+          $('#boundary-warning').remove();
+          $('#save-button').removeAttr('disabled');
+        } else if ($('#boundary-warning').length === 0) {
+          $('#' + div.settings.srefId).closest('.ctrl-wrap').after(
+            '<div id="boundary-warning">' + indiciaData.templates.warningBox.replace('{message}', indiciaData.lang.sref_textbox.outsideBoundsWarning) + '</div>'
+          );
+          if (indiciaData.outsideBoundsBehaviour === 'block') {
+            $('#save-button').attr('disabled', true);
+          }
+        }
+      }
 
       // Call any code which handles a click to set the spatial reference, e.g. zoom the map in, or set help hints.
       $.each(mapClickForSpatialRefHooks, function() {
