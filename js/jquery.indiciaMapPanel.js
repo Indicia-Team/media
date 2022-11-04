@@ -1593,7 +1593,7 @@ var destroyAllFeatures;
       var clickableVectorLayers = [];
       // Store the geom in case we reload the layer after a zoom.
       div.settings.rememberSelectionGeom = geom;
-      // build an array of all previuosly selected features in one
+      // build an array of all previously selected features in one
       $.each(clickableLayers, function eachLayer() {
         if (this.CLASS_NAME === 'OpenLayers.Layer.Vector') {
           clickableVectorLayers.push(this);
