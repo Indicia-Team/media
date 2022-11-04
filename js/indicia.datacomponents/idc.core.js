@@ -526,6 +526,8 @@
     };
     var mediaAttr = 'data-media-info="' + indiciaFns.escapeHtml(JSON.stringify(mediaInfo)) + '"';
     var iNatThumbnail;
+    var path;
+    var thumbPath;
     // Default image size to thumb.
     imgSize = typeof imgSize === 'undefined' ? 'thumb' : imgSize;
     if (file.caption) {
@@ -536,11 +538,13 @@
     }
     captionAttr = captionItems.length ? ' title="' + captionItems.join(' | ').replace('"', '&quot;') + '"' : '';
     if (file.type === 'Image:Local') {
+      path = file.path.match(/^http/) ? file.path : indiciaData.warehouseUrl + 'upload/' + file.path;
+      thumbPath = file.path.match(/^http/) ? file.path : indiciaData.warehouseUrl + 'upload/' + (imgSize === '' ? '' : imgSize + '-') + file.path;
       // Standard link to Indicia image.
       return '<a ' + mediaAttr + captionAttr +
-        'href="' + indiciaData.warehouseUrl + 'upload/' + file.path + '" ' +
+        'href="' + path + '" ' +
         'data-fancybox="group-' + id + '">' +
-        '<img class="' + imgClass + '" src="' + indiciaData.warehouseUrl + 'upload/' + (imgSize === '' ? '' : imgSize + '-') + file.path + '" />' +
+        '<img class="' + imgClass + '" src="' + thumbPath + '" />' +
         '</a>';
     }
     if (file.type === 'Audio:Local') {
