@@ -725,7 +725,9 @@
       // Are there document hits to map?
       $.each(response.hits.hits, function eachHit(i) {
         var latlon = this._source.location.point.split(',');
-        var label = indiciaFns.fieldConvertors.taxon_label(this._source) + '<br/>' +
+        var label = typeof this.taxon === 'undefined' || typeof this.event === 'undefined'
+          ? null
+          : indiciaFns.fieldConvertors.taxon_label(this._source) + '<br/>' +
           this._source.event.recorded_by + '<br/>' +
           indiciaFns.fieldConvertors.event_date(this._source);
         // Repeat records on same grid square should be progressively more
