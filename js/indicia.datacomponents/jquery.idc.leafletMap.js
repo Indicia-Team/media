@@ -725,7 +725,7 @@
       // Are there document hits to map?
       $.each(response.hits.hits, function eachHit(i) {
         var latlon = this._source.location.point.split(',');
-        var label = typeof this.taxon === 'undefined' || typeof this.event === 'undefined'
+        var label = typeof this._source.taxon === 'undefined' || typeof this._source.event === 'undefined'
           ? null
           : indiciaFns.fieldConvertors.taxon_label(this._source) + '<br/>' +
           this._source.event.recorded_by + '<br/>' +
