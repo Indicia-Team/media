@@ -285,6 +285,27 @@ var resetSpeciesTextOnEscape;
     return ctrl;
   }
 
+  /**
+   * After a taxon name adjustment is made, we need to indicate the verification information may be
+   * out of date by setting the text as strikethrough text.
+   *
+   * @param object row
+   *   HTMLTableRowElement for the table row.
+   * @param object taxonCell
+   *   HTMLTableRowElement for the taxon cell.
+   */
+    function strikeThroughVerificationInfoLabels(row, taxonCell) {
+      var gridId = $(taxonCell).closest('table').attr('id');
+      var rowIdMatch = $(row).find('.scPresence').last().attr('id').match(/(sc:[a-z0-9\-]+):(\d+)?/);
+      var occurrenceId = rowIdMatch.length >= 3 ? rowIdMatch[2] : null;
+      // Selector contains a number that can vary, so match start and end separately, and ignore middle.
+      var startSelectorForVerifiedBy = 'sc\\:' + gridId + '-';
+      var endSelectorForVerifiedBy = '\\:' + occurrenceId + '\\:occurrence\\:verified_by';
+      $('[id^="' + startSelectorForVerifiedBy + '"][id$="' + endSelectorForVerifiedBy + '"]').wrapInner("<strike>");
+      var endSelectorForVerifiedOn = '\\:' + occurrenceId + '\\:occurrence\\:verified_on';
+      $('[id^="' + startSelectorForVerifiedBy + '"][id$="' + endSelectorForVerifiedOn + '"]').wrapInner("<strike>");
+    }
+
   function updateRowSpatialRefFeatureLabel(row) {
     var spatialRefInput = $(row).find('.scSpatialRef');
     var taxonCell = $(row).children('.scTaxonCell');
@@ -421,6 +442,7 @@ var resetSpeciesTextOnEscape;
       if (indiciaData['copyDataFromPreviousRow-' + gridId]) {
         species_checklist_add_another_row(gridId);
       }
+      strikeThroughVerificationInfoLabels(row, taxonCell);
       updateRowSpatialRefFeatureLabel(row);
       // Allow forms to hook into the event of a new row being added
       $.each(hook_species_checklist_new_row, function (idx, fn) {
