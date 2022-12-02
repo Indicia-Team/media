@@ -90,26 +90,34 @@
     $(el).css('min-height', '');
   }
 
+  /**
+   * Gets the <li> element for a single column in the config list.
+   */
+  function getColInfoItem(el, field, checked) {
+    var colInfo = el.settings.availableColumnInfo[field];
+    var caption = colInfo.caption ? colInfo.caption : '<em>no heading</em>';
+    var description = colInfo.description ? '<p>' + colInfo.description + '</p>' : '';
+    var checkedAttr = checked ? ' checked="checked"' : '';
+    return '<li>' +
+      '<div class="checkbox">' +
+      '<label><input type="checkbox"' + checkedAttr + ' value="' + field + '">' + caption + '</label>' +
+      '</div>' + description +
+      '</li>';
+  }
+
+  /**
+   * Populate the UI for the list of available columns to select from.
+   */
   function appendColumnsToConfigList(el, columns) {
     var done = [];
     var ol = $(el).find('.data-grid-settings ol');
     $.each(columns, function eachColumn() {
-      var colInfo = el.settings.availableColumnInfo[this.field];
-      var caption = colInfo.caption ? colInfo.caption : '<em>no heading</em>';
-      var description = colInfo.description ? colInfo.description : '';
       done.push(this.field);
-      $('<li>' +
-        '<div class="checkbox">' +
-        '<label><input type="checkbox" checked="checked" value="' + this.field + '">' + caption + '</label>' +
-        '</div>' + description +
-        '</li>').appendTo(ol);
+      $(getColInfoItem(el, this.field, true)).appendTo(ol);
     });
-    $.each(el.settings.availableColumnInfo, function eachField(key, info) {
+    $.each(el.settings.availableColumnInfo, function eachField(key, colInfo) {
       if ($.inArray(key, done) === -1) {
-        $('<li>' +
-          '<div class="checkbox"><label><input type="checkbox" value="' + key + '">' + info.caption + '</label></div>' +
-          (info.description ? info.description : '') +
-          '</li>').appendTo(ol);
+        $(getColInfoItem(el, key, false)).appendTo(ol);
       }
     });
   }
@@ -499,8 +507,8 @@
         '<button class="btn btn-primary save">Save</button></div>').appendTo($panel);
       ol = $('<ol/>').appendTo($panel);
       $panel.fadeIn('fast');
-      maxHeight = $(el).find('table.es-data-grid').height() - ($(ol).offset().top - $panel.offset().top);
-      $(ol).css('max-height', Math.max(400, maxHeight) + 'px');
+      maxHeight = $(el).find('table.es-data-grid').height() - ($(ol).offset().top - $panel.offset().top) - 15;
+      $(ol).css('max-height', maxHeight + 'px');
       appendColumnsToConfigList(el, el.settings.columns);
       Sortable.create($panel.find('ol')[0]);
     });
