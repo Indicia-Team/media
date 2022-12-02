@@ -143,17 +143,28 @@ body {
     background-color: #f0f0f0;
     min-height: 500px;
     border: solid silver 1px;
+    z-index: 1;
     ol {
       overflow: auto;
       li {
         background: #e7e7e7;
         border: solid #777 1px;
         padding: 4px;
-        margin: 4px;
+        margin: 2px 4px;
         list-style-position: inside;
-        input[type="checkbox"] {
-          margin-right: 8px;
-          font-size: 200%;
+        .checkbox {
+          display: inline-block;
+          vertical-align: middle;
+          label {
+            margin: 0;
+            width: auto;
+          }
+          input[type="checkbox"] {
+            margin-right: 8px;
+          }
+        }
+        p {
+          margin: 0;
         }
       }
     }

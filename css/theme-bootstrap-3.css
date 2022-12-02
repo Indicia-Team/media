@@ -733,6 +733,7 @@ body > .loading-spinner {
   background-color: #f0f0f0;
   min-height: 500px;
   border: solid silver 1px;
+  z-index: 1;
 }
 .idc-output-dataGrid .data-grid-settings ol {
   overflow: auto;
@@ -741,12 +742,22 @@ body > .loading-spinner {
   background: #e7e7e7;
   border: solid #777 1px;
   padding: 4px;
-  margin: 4px;
+  margin: 2px 4px;
   list-style-position: inside;
 }
-.idc-output-dataGrid .data-grid-settings ol li input[type=checkbox] {
+.idc-output-dataGrid .data-grid-settings ol li .checkbox {
+  display: inline-block;
+  vertical-align: middle;
+}
+.idc-output-dataGrid .data-grid-settings ol li .checkbox label {
+  margin: 0;
+  width: auto;
+}
+.idc-output-dataGrid .data-grid-settings ol li .checkbox input[type=checkbox] {
   margin-right: 8px;
-  font-size: 200%;
+}
+.idc-output-dataGrid .data-grid-settings ol li p {
+  margin: 0;
 }
 
 table.es-data-grid {
