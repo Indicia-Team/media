@@ -898,4 +898,23 @@ jQuery(document).ready(function ($) {
       $('#' + this.parentControlId).trigger('change');
     }
   });
+
+  // Handle controls with enableIf option - enabled only when another control
+  // has a set value.
+  if (typeof indiciaData.enableControlIf !== 'undefined') {
+    $.each(indiciaData.enableControlIf, function(ctrlId, otherControls) {
+      $('#' + ctrlId.replace(':', '\\:')).attr('disabled', true);
+      $.each(otherControls, function(otherCtrlId, otherControlValues) {
+        $('#' + otherCtrlId.replace(':', '\\:')).change(function(e) {
+          var ctrl = $(e.currentTarget);
+          var val = !$(ctrl).is(':checkbox') || $(ctrl).is(':checked') ? $(ctrl).val() : '';
+          if (otherControlValues.indexOf(val) === -1) {
+            $('#' + ctrlId.replace(':', '\\:')).attr('disabled', true);
+          } else {
+            $('#' + ctrlId.replace(':', '\\:')).attr('disabled', false);
+          }
+        });
+      });
+    });
+  }
 });
