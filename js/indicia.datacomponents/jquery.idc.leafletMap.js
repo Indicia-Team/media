@@ -118,6 +118,54 @@
   }
 
   /**
+   * Convert an ES geohash to a WKT polygon.
+   */
+  function geohashToWkt(geohash) {
+    var minLat =  -90;
+    var maxLat =  90;
+    var minLon = -180;
+    var maxLon = 180;
+    var shift;
+    var isForMin;
+    var isForLon = true;
+    var centreLon;
+    var centreLat;
+    var mask;
+    // The geohash alphabet.
+    const ghs32 = '0123456789bcdefghjkmnpqrstuvwxyz';
+    for (var i = 0; i < geohash.length; i++) {
+      const chr = geohash.charAt(i);
+      const idx = ghs32.indexOf(chr);
+      if (idx === -1) {
+        throw new Error('Invalid character in geohash');
+      }
+      for (shift = 4; shift >= 0; shift--) {
+        // Test bit at position shift. If 1, then for min, else for max.
+        mask = 1 << shift;
+        isForMin = idx & mask;
+        // Bits extracted from characters toggle between x & y.
+        if (isForLon) {
+          centreLon = (minLon + maxLon) / 2;
+          if (isForMin) {
+            minLon = centreLon;
+          } else {
+            maxLon = centreLon;
+          }
+        } else {
+          centreLat = (minLat + maxLat) / 2;
+          if (isForMin) {
+            minLat = centreLat;
+          } else {
+            maxLat = centreLat;
+          }
+        }
+        isForLon = !isForLon;
+      }
+    }
+    return 'POLYGON((' + minLon + ' ' + minLat + ',' + maxLon + ' ' + minLat + ', ' + maxLon + ' ' + maxLat + ', ' + minLon + ' ' + maxLat + ', ' + minLon + ' ' + minLat + '))';
+  }
+
+  /**
    * Add a feature to the map (marker, circle etc).
    *
    * @param string geom
@@ -135,7 +183,7 @@
    * @param string label
    *   Optional label for a tooltip to be added to the feature.
    */
-  function addFeature(el, sourceId, location, geom, metric, fillOpacity, filterField, filterValue, label) {
+  function addFeature(el, sourceId, location, geom, metric, fillOpacity, filterField, filterValue, label, geohash) {
     var layerIds = getLayerIdsForSource(el, sourceId);
     var circle;
     var config;
@@ -165,7 +213,12 @@
             config.options.size = $(el).idcLeafletMap('getAutoSquareSize');
           }
         }
-        // If size is auto, override it.
+        // If outputting a geohash as geometry (not heat), calculate the geohash rectangle.
+        if (sourceSettings.mode === 'mapGeoHash' && (config.type === 'geom' || config.type === 'square') && geohash) {
+          geom = geohashToWkt(geohash.toLowerCase());
+          config.type = 'geom';
+        }
+         // If size is auto, override it.
         indiciaFns.findAndSetValue(config.options, 'size', $(el).idcLeafletMap('getAutoSquareSize'), 'autoGridSquareSize');
         // Apply metric to any options that are supposed to use it.
         $.each(config.options, function eachOption(key, value) {
@@ -220,10 +273,15 @@
           wkt = new Wkt.Wkt();
           wkt.read(geom);
           mapObject = wkt.toObject(config.options);
-          size.x = mapObject.getBounds().getEast() - mapObject.getBounds().getWest();
-          size.y = mapObject.getBounds().getNorth() - mapObject.getBounds().getSouth();
-          size.relativeVisual = Math.min(size.x, size.y) * Math.pow(10, el.map.getZoom());
-          mapObject.options.weight = Math.max(1, 13 - Math.round(Math.log10(size.relativeVisual)));
+          if (!config.options.weight) {
+            // Default weight used to "thicken" small objects when zoomed out.
+            size.x = mapObject.getBounds().getEast() - mapObject.getBounds().getWest();
+            size.y = mapObject.getBounds().getNorth() - mapObject.getBounds().getSouth();
+            size.viewportX = el.map.getBounds().getEast() - el.map.getBounds().getWest();
+            size.viewportY = el.map.getBounds().getNorth() - el.map.getBounds().getSouth();
+            // Weight at least 1, calculated based on ratio of map viewport area to object area.
+            mapObject.options.weight = Math.max(1, Math.round(Math.log10((size.viewportX * size.viewportY) / (size.x * size.y * 100))));
+          }
           break;
         // Default layer type is markers.
         default:
@@ -352,7 +410,7 @@
         var count = indiciaFns.findValue(this, 'count');
         var metric = Math.round((Math.sqrt(count) / maxMetric) * 20000);
         if (typeof location !== 'undefined') {
-          addFeature(el, sourceSettings.id, location, null, metric);
+          addFeature(el, sourceSettings.id, location, null, metric, null, null, null, null, this.key);
         }
       });
     }
