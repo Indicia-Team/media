@@ -1599,11 +1599,10 @@
       user_filters: [],
       refresh_user_filters: false
     };
-    var mapToFilterTo;
+    var mapToFilterTo = null;
     var bounds;
     var agg = {};
     var filterRows;
-    var group;
     if (typeof source.settings.size !== 'undefined') {
       data.size = source.settings.size;
     }
@@ -1659,12 +1658,12 @@
       applyGroupFilter(data);
     }
     // Find the map bounds if limited to the viewport of a map and not counting total.
-    if (!doingCount && source.settings.filterBoundsUsingMap) {
+    if (source.settings.filterBoundsUsingMap) {
       mapToFilterTo = $('#' + source.settings.filterBoundsUsingMap);
+      bounds = mapToFilterTo[0].map.getBounds();
       if (mapToFilterTo.length === 0 || !mapToFilterTo[0].map) {
         alert('Data source incorrectly configured. @filterBoundsUsingMap does not point to a valid map.');
-      } else if (!source.settings.initialMapBounds || mapToFilterTo[0].settings.initialBoundsSet) {
-        bounds = mapToFilterTo[0].map.getBounds();
+      } else if (!doingCount && !source.settings.initialMapBounds || mapToFilterTo[0].settings.initialBoundsSet) {
         if (bounds.getNorth() !== bounds.getSouth() && bounds.getEast() !== bounds.getWest()) {
           data.bool_queries.push({
             bool_clause: 'must',
@@ -1685,9 +1684,9 @@
           });
         }
       }
+      source.settings.showGeomsAsTooClose = source.settings.mode === 'mapGridSquare' && source.settings.switchToGeomsAt
+        && mapToFilterTo[0].map.getZoom() >= source.settings.switchToGeomsAt;
     }
-    source.settings.showGeomsAsTooClose = source.settings.mode === 'mapGridSquare' && source.settings.switchToGeomsAt
-      && mapToFilterTo[0].map.getZoom() >= source.settings.switchToGeomsAt;
     if (source.settings.showGeomsAsTooClose) {
       // Maximum
       data.size = 10000;
@@ -1698,14 +1697,24 @@
       if (doingCount && source.settings.mode === 'termAggregation' && agg._idfield) {
         delete agg._idfield.terms.order;
       }
-      if (source.settings.mode === 'mapGridSquare') {
+      if (source.settings.mode === 'mapGridSquare' && mapToFilterTo) {
         // Set grid square size if auto.
         indiciaFns.findAndSetValue(agg, 'field', $(mapToFilterTo).idcLeafletMap('getAutoSquareField'), 'autoGridSquareField');
         // Don't display unsuitably imprecise data.
         data.numericFilters['location.coordinate_uncertainty_in_meters'] = '0-' + $(mapToFilterTo).idcLeafletMap('getAutoSquareSize');
-      } else if (source.settings.mode === 'mapGeoHash') {
+      } else if (source.settings.mode === 'mapGeoHash' && mapToFilterTo) {
         // Set geohash_grid precision.
-        indiciaFns.findAndSetValue(agg, 'precision', Math.min(Math.max(mapToFilterTo[0].map.getZoom() - 3, 4), 10));
+        // See https://gis.stackexchange.com/questions/231719/calculating-optimal-geohash-precision-from-bounding-box
+        var viewportAreaSqDegrees = (bounds.getEast() - bounds.getWest()) * (bounds.getNorth() - bounds.getSouth());
+        var hashPrecisionAreas = [2025, 63.281, 1.97754, 0.061799, 0.0019311904, 0.0000603497028, 0.000001885928, 0.0000000589352567];
+        var precision = 1;
+        for (var i = 8; i >= 1; i--) {
+          if (viewportAreaSqDegrees / hashPrecisionAreas[i - 1] < 10000) {
+            precision = i;
+            break;
+          }
+        }
+        indiciaFns.findAndSetValue(agg, 'precision', precision);
       }
       data.aggs = agg;
     }
