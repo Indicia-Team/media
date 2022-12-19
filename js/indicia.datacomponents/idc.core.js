@@ -536,9 +536,17 @@
     }
     captionAttr = captionItems.length ? ' title="' + captionItems.join(' | ').replace('"', '&quot;') + '"' : '';
     if (file.type === 'Image:Local') {
+      // Handle case where image path imported as a link to file somewhere on internet.
+      if (file.path.match(/^http/)) {
+        return '<a ' + mediaAttr + captionAttr +
+          ' href="' + file.path + '" ' +
+          'data-fancybox="group-' + id + '">' +
+          '<img class="' + imgClass + '" src="' + file.path + '" />' +
+          '</a>';
+      }
       // Standard link to Indicia image.
       return '<a ' + mediaAttr + captionAttr +
-        'href="' + indiciaData.warehouseUrl + 'upload/' + file.path + '" ' +
+        ' href="' + indiciaData.warehouseUrl + 'upload/' + file.path + '" ' +
         'data-fancybox="group-' + id + '">' +
         '<img class="' + imgClass + '" src="' + indiciaData.warehouseUrl + 'upload/' + (imgSize === '' ? '' : imgSize + '-') + file.path + '" />' +
         '</a>';
