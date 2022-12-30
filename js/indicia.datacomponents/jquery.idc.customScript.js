@@ -32,9 +32,9 @@
   /**
    * Declare default settings.
    */
-  var defaults = {
+  var defaults = {};
 
-  };
+  var callbacks = {};
 
   /**
    * Declare public methods.
@@ -49,6 +49,7 @@
       var el = this;
       indiciaFns.registerOutputPluginClass('idcCustomScript');
       el.settings = $.extend({}, defaults);
+      el.callbacks = callbacks;
       // Apply settings passed in the HTML data-* attribute.
       if (typeof $(el).attr('data-idc-config') !== 'undefined') {
         $.extend(el.settings, JSON.parse($(el).attr('data-idc-config')));

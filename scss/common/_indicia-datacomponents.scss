@@ -8,6 +8,25 @@ $file-box-icon-size: 30px;
   word-wrap: break-word;
 }
 
+@mixin verification-button {
+  font-size: 120%;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  box-shadow: none;
+  color: black;
+  text-shadow: none;
+  min-height: 22px;
+  margin: 4px;
+  padding: 6px;
+  &:hover {
+    background: silver;
+  }
+  &:link, &:visited {
+    color: black;
+  }
+}
+
 /* So we can absolute position the loading spinner */
 body {
   position: relative;
@@ -16,8 +35,8 @@ body {
   }
 }
 
-.idc-output {
-  .idc-output-tools {
+.idc-control {
+  .idc-tools {
     position: absolute;
     top: 0;
     right: 0;
@@ -37,11 +56,17 @@ body {
 }
 
 /* idcCardGallery plugin */
-.idc-output-cardGallery {
+.idc-cardGallery {
   position: relative;
   /* Ensure height enough for spinner. */
   min-height: 140px;
+  &.max-size-mode {
+    .card:not(.show-max-size) {
+      opacity: 0.3;
+    }
+  }
   .es-card-gallery {
+    position: relative;
     display: flex;
     flex-wrap: wrap;
     margin: 0 auto;
@@ -52,6 +77,7 @@ body {
       margin: 1%;
       width: 90%;
       box-sizing: border-box;
+      background-color: $colour-even-row;
       &:last-of-type {
         flex-grow: 0;
       }
@@ -63,6 +89,14 @@ body {
         color: $colour-select-row;
         background-color: $colour-select-row-bg;
         border: 1px solid grey;
+      }
+      &.show-max-size {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: auto;
+        width: 100%;
+        z-index: 1000;
       }
       .image-container {
         display: flex;
@@ -94,6 +128,16 @@ body {
         font-weight: bold;
         margin: 0;
       }
+      /* If verification buttons moved to card in max size mode */
+      .verification-buttons-cntr {
+        padding: 8px;
+        margin: 8px;
+        background: #ccc;
+        border-radius: 4px;
+        button {
+          @include verification-button;
+        }
+      }
     }
     @media (min-width: 801px) {
       .card {
@@ -124,11 +168,14 @@ body {
     background-color: #eee;
     padding: 8px;
   }
+  #card-nav-buttons {
+    float: right;
+  }
 }
 
 
 /* idcDataGrid plugin */
-.idc-output-dataGrid {
+.idc-dataGrid {
   position: relative;
   /* Ensure height enough for spinner. */
   min-height: 140px;
@@ -242,7 +289,7 @@ table.es-data-grid {
 }
 
 /* idcLeafletMap plugin */
-.idc-output-leafletMap {
+.idc-leafletMap {
   height: 500px;
   /* Map tooltips */
   .leaflet-tooltip {
@@ -254,31 +301,16 @@ table.es-data-grid {
 }
 
 /* idcVerificationButtons plugin */
-.idc-verification-buttons, .idc-verification-buttons-row {
+.verification-buttons-cntr, .idc-verificationButtons-row {
   * {
     display: inline-block;
     vertical-align: middle;
   }
 }
 
-.idc-verification-buttons-row {
+.idc-verificationButtons-row {
   button, a {
-    font-size: 120%;
-    border: none;
-    border-radius: 4px;
-    background: none;
-    box-shadow: none;
-    color: black;
-    text-shadow: none;
-    min-height: 22px;
-    margin: 4px;
-    padding: 6px;
-    &:hover {
-      background: silver;
-    }
-    &:link, &:visited {
-      color: black;
-    }
+    @include verification-button;
   }
   .multi-only {
     display: none;
@@ -360,7 +392,7 @@ table.es-data-grid {
 }
 
 /* idcRecordDetailsPane */
-.record-details-container {
+.idc-recordDetails {
   .ui-tabs-nav {
     border-bottom: solid silver 1px;
   }

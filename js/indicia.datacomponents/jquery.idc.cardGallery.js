@@ -36,6 +36,11 @@
   var methods;
 
   /**
+   * Prevent nav arrow key clicks bubbling to re-select card.
+   */
+  var changingSelection = false;
+
+  /**
    * Declare default settings.
    */
   var defaults = {
@@ -43,15 +48,16 @@
     includeFieldCaptions: false,
     includeFullScreenTool: true,
     includePager: true,
-    keyboardNavigation: false,
-    /**
-     * Registered callbacks for different events.
-     */
-    callbacks: {
-      itemSelect: [],
-      itemDblClick: [],
-      populate: []
-    }
+    keyboardNavigation: false
+  };
+
+  /**
+   * Registered callbacks for different events.
+   */
+  var callbacks = {
+    itemSelect: [],
+    itemDblClick: [],
+    populate: []
   };
 
   /**
@@ -70,14 +76,88 @@
     var loadRowTimeout;
 
     /**
-     * Fire callbacks when a card has been selected
-     **/
+     * Max size mode handling.
+     *
+     * @param bool on
+     *   If true, then sets max size mode on. If false, then turns it off. If
+     *   not provided, then just returns the current state.
+     *
+     * @returns bool
+     *   True if in max size mode, else false.
+     */
+    function inMaxSizeMode(on) {
+      if (typeof on !== 'undefined') {
+        on ? $(el).addClass('max-size-mode') : $(el).removeClass('max-size-mode');
+        if (!on && $('.idc-verificationButtons').length > 0) {
+          // Move verification buttons back to original location.
+          $('.idc-verificationButtons').append($('.verification-buttons-cntr'));
+        }
+        if (!on) {
+          // Hide the nav buttons.
+          $('#card-nav-buttons-cntr').append($('#card-nav-buttons'));
+        }
+      }
+      return $(el).hasClass('max-size-mode');
+    }
+
+    /**
+     * Zooms a card in to use the full width of the control, as an overlay.
+     *
+     * @param DOM card
+     *   Card to zoom.
+     */
+    function setCardToMaxSize(card) {
+      $(card).addClass('show-max-size');
+      // Load the full size images.
+      $.each($(card).find('img'), function() {
+        var anchor = $(this).closest('a');
+        if ($(anchor).attr('href') !== $(this).attr('src')) {
+          $(this).data('thumb-src', $(this).attr('src'));
+          $(this).attr('src', $(anchor).attr('href'));
+        }
+      });
+      // Move verification buttons onto the card.
+      if ($('.idc-verificationButtons').length > 0) {
+        $(card).find('.data-container').after($('.verification-buttons-cntr'));
+      }
+      // Show the navigation buttons.
+      $(card).find('.verification-buttons-cntr').append($('#card-nav-buttons'));
+    }
+
+    /**
+     * Undoes the max size of a card.
+     *
+     * @param DOM card
+     *   Card to unzoom.
+     */
+    function setCardToNormalSize(card) {
+      $(card).removeClass('show-max-size');
+      // Load the medium size images.
+      $.each($(card).find('img'), function() {
+        if ($(this).data('thumb-src')) {
+          $(this).attr('src', $(this).data('thumb-src'));
+        }
+      });
+    }
+
+    /**
+     * Fire callbacks when a card has been selected.
+     */
     function loadSelectedCard() {
       var card = $(el).find('.card.selected');
       if (card.length && card.data('row-id') !== lastLoadedCardId) {
         lastLoadedCardId = card.data('row-id');
-        $.each(el.settings.callbacks.itemSelect, function eachCallback() {
+        $.each(el.callbacks.itemSelect, function eachCallback() {
           this(card);
+        });
+      }
+      if (inMaxSizeMode()) {
+        if (!$(el).find('.card.selected').hasClass('show-max-size')) {
+          setCardToMaxSize($(el).find('.card.selected'));
+        }
+        // Minimise cards that were max size but are no longer selected.
+        $.each($(el).find('.card.show-max-size:not(.selected)'), function() {
+          setCardToNormalSize(this);
         });
       }
     }
@@ -89,9 +169,12 @@
      */
     indiciaFns.on('click', '#' + el.id + ' .es-card-gallery .card', {}, function onCardGalleryCardClick() {
       var card = this;
-      $(card).closest('.es-card-gallery').find('.card.selected').removeClass('selected');
-      $(card).addClass('selected');
-      loadSelectedCard();
+      if (!changingSelection && !$(card).hasClass('selected')) {
+        $(card).closest('.es-card-gallery').find('.card.selected').removeClass('selected');
+        $(card).addClass('selected');
+        console.log('selecting ' + $(card).data('row-id'));
+        loadSelectedCard();
+      }
     });
 
     /**
@@ -101,11 +184,11 @@
      */
     indiciaFns.on('dblclick', '#' + el.id + ' .es-card-gallery .card', {}, function onCardGalleryitemDblClick() {
       var card = this;
-      if (!$(card).hasClass('selected')) {
+      if (!changingSelection && !$(card).hasClass('selected')) {
         $(card).closest('.es-card-gallery').find('.card.selected').removeClass('selected');
         $(card).addClass('selected');
       }
-      $.each(el.settings.callbacks.itemDblClick, function eachCallback() {
+      $.each(el.callbacks.itemDblClick, function eachCallback() {
         this(card);
       });
     });
@@ -118,19 +201,19 @@
       /**
        * Navigate when arrow key pressed.
        */
-      function handleArrowKeyNavigation(keyCode, oldSelected) {
+      function handleArrowKeyNavigation(key, oldSelected) {
         var newSelected;
         var oldCardBounds;
         var nextRowTop;
         var nextRowContents = [];
         var navFn;
         var closestVerticalDistance = null;
-        if (keyCode === 37) {
+        if (key === 'ArrowLeft') {
           newSelected = $(oldSelected).prev('.card');
-        } else if (keyCode === 39) {
+        } else if (key === 'ArrowRight') {
           newSelected = $(oldSelected).next('.card');
         } else {
-          navFn = keyCode === 38 ? 'prev' : 'next';
+          navFn = key === 'ArrowUp' ? 'prev' : 'next';
           oldCardBounds = oldSelected[0].getBoundingClientRect();
           newSelected = $(oldSelected)[navFn]('.card');
           // Since we are going up or down, find the whole contents of the
@@ -158,6 +241,7 @@
           });
         }
         if (newSelected.length) {
+          changingSelection = true;
           $(newSelected).addClass('selected');
           $(newSelected).focus();
           $(oldSelected).removeClass('selected');
@@ -168,23 +252,30 @@
         }
         loadRowTimeout = setTimeout(function() {
           loadSelectedCard();
-        }, 500);
+          changingSelection = false;
+        }, 200);
       }
 
+      /**
+       * Keyboard handler for the gallery.
+       */
       indiciaFns.on('keydown', 'body', {}, function onDataGridKeydown(e) {
         var oldSelected = $(el).find('.card.selected');
         if ($(':input:focus').length) {
           // Input focused, so the only keystroke we are interested in is
           // escape to close a Fancbox dialog.
-          if (e.which === 27 && $.fancybox.getInstance()) {
+          if (e.key === 'Escape' && $.fancybox.getInstance()) {
             indiciaFns.closeFancyboxForSelectedItem();
           }
-        } else if (e.which >= 37 && e.which <= 40 && !$('.fancybox-image').length) {
+        } else if (e.key.match(/^Arrow/) && !$('.fancybox-image').length) {
           // Arrow key pressed when image popup not shown.
-          handleArrowKeyNavigation(e.which, oldSelected);
+          // Only allow left/right when showing a card in max size mode.
+          if (!inMaxSizeMode() || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            handleArrowKeyNavigation(e.key, oldSelected);
+          }
           e.preventDefault();
           return false;
-        } else if (e.which === 73) {
+        } else if (e.key.toLowerCase() === 'i') {
           // i key opens and closes image popups.
           if ($('.fancybox-image').length) {
             indiciaFns.closeFancyboxForSelectedItem();
@@ -196,7 +287,36 @@
             }
           }
         }
+        else if (e.key.toLowerCase() === 'c' || e.key === '+') {
+          // c or + key toggles the current card zooming to full size of the control.
+          if (inMaxSizeMode()) {
+            setCardToNormalSize(oldSelected);
+            inMaxSizeMode(false);
+          } else {
+            setCardToMaxSize(oldSelected);
+            inMaxSizeMode(true);
+          }
+        }
       });
+
+      /**
+       * Handler for the in-card nav Next button.
+       */
+      indiciaFns.on('click', '.nav-next', {}, function() {
+        var oldSelected = $(el).find('.card.selected');
+        handleArrowKeyNavigation('ArrowRight', oldSelected);
+      });
+
+      /**
+       * Handler for the in-card nav Prev button.
+       */
+      indiciaFns.on('click', '.nav-prev', {}, function() {
+        var oldSelected = $(el).find('.card.selected');
+        handleArrowKeyNavigation('ArrowLeft', oldSelected);
+      });
+
+      // Public function so it can be called from bindControls event handlers.
+      el.loadSelectedCard = loadSelectedCard;
     }
 
     /**
@@ -220,6 +340,9 @@
       indiciaFns.rowsPerPageChange(el);
     });
 
+    /**
+     * Fullscreen tool.
+     */
     $(el).find('.fullscreen-tool').click(function settingsIconClick() {
       indiciaFns.goFullscreen(el);
     });
@@ -233,11 +356,11 @@
    */
   function fireAfterPopulationCallbacks(el) {
     // Fire any population callbacks.
-    $.each(el.settings.callbacks.populate, function eachCallback() {
+    $.each(el.callbacks.populate, function eachCallback() {
       this(el);
     });
     // Fire callbacks for selected card if any.
-    $.each(el.settings.callbacks.itemSelect, function eachCallback() {
+    $.each(el.callbacks.itemSelect, function eachCallback() {
       this($(el).find('.card.selected').length === 0 ? null : $(el).find('.card.selected')[0]);
     });
   }
@@ -257,6 +380,7 @@
 
       indiciaFns.registerOutputPluginClass('idcCardGallery');
       el.settings = $.extend(true, {}, defaults);
+      el.callbacks = callbacks;
       // Apply settings passed in the HTML data-* attribute.
       if (typeof $(el).attr('data-idc-config') !== 'undefined') {
         $.extend(el.settings, JSON.parse($(el).attr('data-idc-config')));
@@ -298,7 +422,7 @@
         (document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled)) {
         tools.push('<span class="far fa-window-maximize fullscreen-tool" title="Click to view grid in full screen mode"></span>');
       }
-      $('<div class="idc-output-tools">' + tools.join('<br/>') + '</div>').appendTo(el);
+      $('<div class="idc-tools">' + tools.join('<br/>') + '</div>').appendTo(el);
       // Add overlay for loading.
       $('<div class="loading-spinner" style="display: none"><div>Loading...</div></div>').appendTo(el);
       initHandlers(el);
@@ -383,6 +507,32 @@
     },
 
     /**
+     * Bind control to other control event callbacks.
+     *
+     * Call after init of all controls. Finds other controls that update items
+     * and binds to the event handler. E.g. picks up changes caused by
+     * verification buttons.
+     */
+    bindControls: function() {
+      var el = this;
+      $.each($('.idc-control'), function() {
+        var controlClass = $(this).data('idc-class');
+        if (typeof this.callbacks.itemUpdate !== 'undefined') {
+          $(this)[controlClass]('on', 'itemUpdate', (item) => {
+            $(item).removeClass('selected');
+            while (item.length > 0 && $(item).hasClass('disabled')) {
+              item = $(item).next('[data-row-id]');
+            }
+            if (item) {
+              $(item).addClass('selected').focus();
+            }
+            el.loadSelectedCard();
+          });
+        }
+      })
+    },
+
+    /**
      * Register an event handler.
      *
      * @param string event
@@ -391,10 +541,10 @@
      *   Callback function called on this event.
      */
     on: function on(event, handler) {
-      if (typeof this.settings.callbacks[event] === 'undefined') {
+      if (typeof this.callbacks[event] === 'undefined') {
         indiciaFns.controlFail(this, 'Invalid event handler requested for ' + event);
       }
-      this.settings.callbacks[event].push(handler);
+      this.callbacks[event].push(handler);
     },
 
     /**
@@ -402,7 +552,8 @@
      */
     getNeedsPopulation: function getNeedsPopulation() {
       return true;
-    },
+    }
+
   };
 
   /**

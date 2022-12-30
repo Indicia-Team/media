@@ -59,20 +59,21 @@
       }
     },
     autoResponsiveCols: false,
-    /**
-     * Registered callbacks for different events.
-     */
-    callbacks: {
-      itemSelect: [],
-      itemDblClick: [],
-      populate: []
-    },
     // Page tracking for composite aggregations
     compositeInfo: {
       page: 0,
       pageAfterKeys: {}
     },
     totalRowCount: null
+  };
+
+  /**
+   * Registered callbacks for different events.
+   */
+  var callbacks = {
+    itemSelect: [],
+    itemDblClick: [],
+    populate: []
   };
 
   /**
@@ -307,14 +308,14 @@
       var tr = $('#' + el.id + ' .es-data-grid tbody tr.selected').not('.disabled');
       if (tr.length && tr.data('row-id') !== lastLoadedRowId) {
         lastLoadedRowId = tr.data('row-id');
-        $.each(el.settings.callbacks.itemSelect, function eachCallback() {
+        $.each(el.callbacks.itemSelect, function eachCallback() {
           this(tr);
         });
       }
       else if (!tr.length) {
         // No row selected - still inform callbacks.
         lastLoadedRowId = null;
-        $.each(el.settings.callbacks.itemSelect, function eachCallback() {
+        $.each(el.callbacks.itemSelect, function eachCallback() {
           this(null);
         });
       }
@@ -343,7 +344,7 @@
         $(tr).closest('tbody').find('tr.selected').removeClass('selected');
         $(tr).addClass('selected');
       }
-      $.each(el.settings.callbacks.itemDblClick, function eachCallback() {
+      $.each(el.callbacks.itemDblClick, function eachCallback() {
         this(tr);
       });
     });
@@ -681,11 +682,11 @@
    */
   function fireAfterPopulationCallbacks(el) {
     // Fire any population callbacks.
-    $.each(el.settings.callbacks.populate, function eachCallback() {
+    $.each(el.callbacks.populate, function eachCallback() {
       this(el);
     });
     // Fire callbacks for selected row if any.
-    $.each(el.settings.callbacks.itemSelect, function eachCallback() {
+    $.each(el.callbacks.itemSelect, function eachCallback() {
       this($(el).find('tr.selected').length === 0 ? null : $(el).find('tr.selected')[0]);
     });
   }
@@ -848,6 +849,7 @@
 
       indiciaFns.registerOutputPluginClass('idcDataGrid');
       el.settings = $.extend(true, {}, defaults);
+      el.callbacks = callbacks;
       // Apply settings passed in the HTML data-* attribute.
       if (typeof $(el).attr('data-idc-config') !== 'undefined') {
         $.extend(el.settings, JSON.parse($(el).attr('data-idc-config')));
@@ -906,7 +908,7 @@
           (document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled)) {
         tools.push('<span class="far fa-window-maximize fullscreen-tool" title="Click to view grid in full screen mode"></span>');
       }
-      $('<div class="idc-output-tools">' + tools.join('<br/>') + '</div>').appendTo(el);
+      $('<div class="idc-tools">' + tools.join('<br/>') + '</div>').appendTo(el);
       // Add overlay for settings etc.
       $('<div class="data-grid-settings" style="display: none"></div>').appendTo(el);
       $('<div class="loading-spinner" style="display: none"><div>Loading...</div></div>').appendTo(el);
@@ -1016,6 +1018,18 @@
       setColWidths(el, maxCharsPerCol);
     },
 
+    bindControls: function() {
+      var el = this;
+      $.each($('.idc-control'), () => {
+        var controlClass = $(this).data('idc-class');
+        if (typeof this.callbacks.itemUpdate !== 'undefined') {
+          $(this)[controlClass]('on', 'itemUpdate', (item) => {
+            alert('in item update');
+          });
+        }
+      })
+    },
+
     /**
      * Register an event handler.
      *
@@ -1025,10 +1039,10 @@
      *   Callback function called on this event.
      */
     on: function on(event, handler) {
-      if (typeof this.settings.callbacks[event] === 'undefined') {
+      if (typeof this.callbacks[event] === 'undefined') {
         indiciaFns.controlFail(this, 'Invalid event handler requested for ' + event);
       }
-      this.settings.callbacks[event].push(handler);
+      this.callbacks[event].push(handler);
     },
 
     /**

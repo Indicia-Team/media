@@ -34,7 +34,7 @@
       filterDef = indiciaData.filter.def;
       selector = '#filterSummary-standard-params';
     }
-    
+
     var r = [];
     indiciaData.filterParser.what.loadFilter(filterDef);
     r.push(indiciaData.filterParser.what.getDescription(filterDef, '</li><li>'));
@@ -55,7 +55,7 @@
       if (selector === '#filterSummary-standard-params') {
         $('#filterSummary-standard-params-header').hide();
       }
-      
+
     }
   }
 
@@ -71,9 +71,12 @@
   /**
    * Declare default settings.
    */
-  var defaults = {
+  var defaults = {};
 
-  };
+  /**
+   * Registered callbacks for events.
+   */
+  var callbacks = {};
 
   /**
    * Declare public methods.
@@ -88,6 +91,7 @@
       var el = this;
       indiciaFns.registerOutputPluginClass('idcFilterSummary');
       el.settings = $.extend({}, defaults);
+      el.callbacks = callbacks;
       // Apply settings passed in the HTML data-* attribute.
       if (typeof $(el).attr('data-idc-config') !== 'undefined') {
         $.extend(el.settings, JSON.parse($(el).attr('data-idc-config')));
@@ -178,9 +182,9 @@
             setTimeout(function() {
               var title=$('#active-filter-label').text()
               if (title) {
-                $('#filterSummary-standard-params-header').html('<b>Standard filter (' + title + '):</b>') 
+                $('#filterSummary-standard-params-header').html('<b>Standard filter (' + title + '):</b>')
               } else {
-                $('#filterSummary-standard-params-header').html('<b>Standard filter:</b>') 
+                $('#filterSummary-standard-params-header').html('<b>Standard filter:</b>')
               }
             }, 100);
             indiciaFns.setFilterSummary();
@@ -211,7 +215,7 @@
           if ($(this).is(':checkbox') && !$(this).is(':checked')) {
             return;
           }
-    
+
           var esBoolClause = indiciaFns.getDataValueFromInput(this, 'data-es-bool-clause');
           var esField = indiciaFns.getDataValueFromInput(this, 'data-es-field');
           var esQueryType = indiciaFns.getDataValueFromInput(this, 'data-es-query-type');
@@ -237,7 +241,7 @@
             if (esQuery) {
                 html = addHtml(html, esQuery.replace('#value#', '<strong>' + val + '</strong>'));
             } else {
-                html = addHtml(html, '<strong>' + val + '</strong>');  
+                html = addHtml(html, '<strong>' + val + '</strong>');
             }
           }
           html = addHtml(html, '</div>');

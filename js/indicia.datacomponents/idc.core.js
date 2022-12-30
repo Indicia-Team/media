@@ -236,7 +236,7 @@
         $(el).find('[data-row-id="' + newSelectedId + '"]').addClass('selected').focus();
       }
       // Fire callbacks for selected row.
-      $.each(el.settings.callbacks.itemSelect, function eachCallback() {
+      $.each(el.callbacks.itemSelect, function eachCallback() {
         this($(el).find('.selected').length === 0 ? null : $(el).find('.selected')[0]);
       });
     }
@@ -1374,7 +1374,7 @@
       });
     }
     // Find additional grids that choose to apply their filter to this source.
-    $.each($('.idc-output-dataGrid'), function eachGrid() {
+    $.each($('.idc-dataGrid'), function eachGrid() {
       var grid = this;
       if (grid.settings.applyFilterRowToSources) {
         $.each(this.settings.applyFilterRowToSources, function eachSource() {
@@ -1790,7 +1790,7 @@ jQuery(document).ready(function docReady() {
           callback(data);
         }
         // Draw the polygon.
-        $.each($('.idc-output-leafletMap'), function eachMap() {
+        $.each($('.idc-leafletMap'), function eachMap() {
           var map = this;
           $.each(data, function() {
             $(map).idcLeafletMap('showFeature', this.boundary_geom, true);
@@ -1802,7 +1802,7 @@ jQuery(document).ready(function docReady() {
       if (callback) {
         callback([]);
       }
-      $.each($('.idc-output-leafletMap.leaflet-container'), function eachMap() {
+      $.each($('.idc-leafletMap.leaflet-container'), function eachMap() {
         $(this).idcLeafletMap('clearFeature');
         $(this).idcLeafletMap('resetViewport');
       });
@@ -1836,7 +1836,7 @@ jQuery(document).ready(function docReady() {
    */
   $('.es-filter-param, .user-filter, .permissions-filter').change(function eachFilter() {
     // Force map to update viewport for new data.
-    $.each($('.idc-output-idcLeafletMap'), function eachMap() {
+    $.each($('.idc-leafletMap'), function eachMap() {
       this.settings.initialBoundsSet = false;
     });
     // Reload all sources.

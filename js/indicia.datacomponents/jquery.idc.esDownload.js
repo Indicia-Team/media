@@ -42,8 +42,12 @@
   /**
    * Declare default settings.
    */
-  var defaults = {
-  };
+  var defaults = {};
+
+  /**
+   * Registered callbacks for events.
+   */
+  var callbacks = {};
 
   /**
    * Save rebuilding request data for each page
@@ -351,6 +355,7 @@
 
       indiciaFns.registerOutputPluginClass('idcEsDownload');
       el.settings = $.extend({}, defaults);
+      el.callbacks = callbacks;
       // Apply settings passed in the HTML data-* attribute.
       if (typeof $(el).attr('data-idc-config') !== 'undefined') {
         $.extend(el.settings, JSON.parse($(el).attr('data-idc-config')));

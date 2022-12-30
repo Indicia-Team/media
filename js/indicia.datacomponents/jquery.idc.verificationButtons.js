@@ -40,6 +40,7 @@
    * Registered callbacks for events.
    */
   var callbacks = {
+    itemUpdate: []
   };
 
   /**
@@ -194,20 +195,11 @@
   }
 
   /**
-   * When verifying rows, move the selected row to the next enabled one.
+   * Fire item update callbacks after a verification change.
    */
-  function moveToNextEnabledRow() {
-    var currentRow = $(listOutputControl).find('.selected');
-    $(currentRow).removeClass('selected');
-    while (currentRow.length > 0 && $(currentRow).hasClass('disabled')) {
-      currentRow = $(currentRow).next('[data-row-id]');
-    }
-    if (currentRow) {
-      $(currentRow).addClass('selected').focus();
-    }
-    // Fire callbacks for selected row, or if no round found to select.
-    $.each($(listOutputControl)[0].settings.callbacks.itemSelect, function eachCallback() {
-      this(currentRow.length === 0 ? null : currentRow);
+  function fireItemUpdate(el) {
+    $.each(el.callbacks.itemUpdate, function() {
+      this($(listOutputControl).find('.selected'));
     });
   }
 
@@ -231,7 +223,7 @@
     $.post(
       indiciaData.esProxyAjaxUrl + '/verifyall/' + indiciaData.nid,
       pgUpdates,
-      function success(response) {
+      function success() {
         // Unset all table mode as this is a "dangerous" state that should be explicitly chosen each time.
         $(listOutputControl).find('.multi-mode-table.active').removeClass('active');
         $(listOutputControl).find('.multi-mode-selected').addClass('active');
@@ -250,7 +242,7 @@
    *
    * Might be the verification of a single occurrence or list of occurrences.
    */
-  function saveVerifyCommentForSelection(occurrenceIds, status, comment, email) {
+  function saveVerifyCommentForSelection(el, occurrenceIds, status, comment, email) {
     var pgUpdates = getVerifyPgUpdates(status, comment, email);
     var esUpdates = getVerifyEsUpdates(status);
     var data;
@@ -281,7 +273,8 @@
     pgUpdates['occurrence:ids'] = occurrenceIds.join(',');
     // Disable rows that are being processed.
     rowsToRemove = disableRowsForIds(occurrenceIds);
-    moveToNextEnabledRow();
+    fireItemUpdate(el);
+    // @todo should repopulateAfterVerify be handled inside the list output control?
     if (listWillBeEmptied) {
       doRepopulateAfterVerify(occurrenceIds);
     }
@@ -339,14 +332,14 @@
   /**
    * Instigates a verification event.
    */
-  function saveVerifyComment(occurrenceIds, status, comment, email) {
+  function saveVerifyComment(el, occurrenceIds, status, comment, email) {
     if ($(listOutputControl).find('.multi-mode-table.active').length > 0) {
       // Verifying the whole table.
       saveVerifyCommentForWholeTable(status, comment, email);
     }
     else {
       // Verifying a single record or selection.
-      saveVerifyCommentForSelection(occurrenceIds, status, comment, email);
+      saveVerifyCommentForSelection(el, occurrenceIds, status, comment, email);
     }
   }
 
@@ -858,7 +851,6 @@
     var popup = $(e.currentTarget).closest('.query-popup');
     var occurrenceId = $(popup).data('id');
     var sampleId = $(popup).data('sample-id');
-    var emailType = $(popup).data('email-type');
     var urlSep = indiciaData.esProxyAjaxUrl.indexOf('?') === -1 ? '?' : '&';
     // Setup the quick reply page link and get an authorisation number.
     // Note: The quick reply page does actually support supplying a user_id parameter to it, however we don't do that in practice here as
@@ -891,6 +883,7 @@
           email.body = email.body.replace(/\{{ comments }}/g, response.comments);
           // save a comment to indicate that the mail was sent
           saveVerifyComment(
+            el,
             [occurrenceId],
             { query: 'Q' },
             $(popup).hasClass('email-expert-popup') ? indiciaData.lang.verificationButtons.emailExpertLoggedAsComment : indiciaData.lang.verificationButtons.emailQueryLoggedAsComment,
@@ -1028,6 +1021,7 @@
       var el = this;
 
       el.settings = $.extend({}, defaults);
+      el.callbacks = callbacks;
       // Apply settings passed in the HTML data-* attribute.
       if (typeof $(el).attr('data-idc-config') !== 'undefined') {
         $.extend(el.settings, JSON.parse($(el).attr('data-idc-config')));
@@ -1041,7 +1035,7 @@
         indiciaFns.controlFail(el, 'Missing showSelectedRow config for table.');
       }
       listOutputControl = $('#' + el.settings.showSelectedRow);
-      listOutputControlClass = $(listOutputControl).hasClass('idc-output-cardGallery') ? 'idcCardGallery' : 'idcDataGrid';
+      listOutputControlClass = $(listOutputControl).data('idc-class');
       // Form validation for redetermination
       redetFormValidator = $('#redet-form').validate();
       // Plus setup redet form texts.
@@ -1064,7 +1058,7 @@
           // button.
           doc = JSON.parse($(tr).attr('data-doc-source'));
           occurrenceId = doc.id;
-          $('.idc-verification-buttons').show();
+          $('.idc-verificationButtons').show();
           sep = el.settings.viewPath.indexOf('?') === -1 ? '?' : '&';
           $(el).find('.view').attr('href', el.settings.viewPath + sep + 'occurrence_id=' + doc.id);
           $(el).find('.edit').attr('href', el.settings.editPath + sep + 'occurrence_id=' + doc.id);
@@ -1093,11 +1087,11 @@
             indiciaData.selectedRecordTaxonListId = doc.taxon.taxon_list.id;
           }
         } else {
-          $('.idc-verification-buttons').hide();
+          $('.idc-verificationButtons').hide();
         }
       });
       $(listOutputControl)[listOutputControlClass]('on', 'populate', function populate() {
-        $('.idc-verification-buttons').hide();
+        $('.idc-verificationButtons').hide();
       });
       // Redet form use main taxon list checkbox.
       $('#redet-from-full-list').change(function(e) {
@@ -1146,12 +1140,12 @@
         if ($(popup).attr('data-query')) {
           statusData.query = $(popup).attr('data-query');
         }
-        saveVerifyComment(ids, statusData, $(popup).find('textarea').val());
+        saveVerifyComment(el, ids, statusData, $(popup).find('textarea').val());
         $.fancybox.close();
       });
       $(el).find('.l1').hide();
       $(el).find('.toggle').click(function toggleClick(e) {
-        var div = $(e.currentTarget).closest('.idc-verification-buttons-row');
+        var div = $(e.currentTarget).closest('.idc-verificationButtons-row');
         if ($(e.currentTarget).hasClass('fa-toggle-on')) {
           $(e.currentTarget).removeClass('fa-toggle-on');
           $(e.currentTarget).addClass('fa-toggle-off');
@@ -1166,7 +1160,7 @@
       });
       // Toggle the apply to selected|table mode buttons.
       $(el).find('.apply-to button').click(function modeClick(e) {
-        var div = $(e.currentTarget).closest('.idc-verification-buttons-row');
+        var div = $(e.currentTarget).closest('.idc-verificationButtons-row');
         div.find('.apply-to button').not(e.currentTarget).removeClass('active');
         $(e.currentTarget).addClass('active');
       });

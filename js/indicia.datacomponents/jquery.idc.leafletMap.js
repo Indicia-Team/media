@@ -594,6 +594,7 @@
 
       indiciaFns.registerOutputPluginClass('idcLeafletMap');
       el.settings = $.extend({}, defaults);
+      el.callbacks = callbacks;
       // Apply settings passed in the HTML data-* attribute.
       if (typeof $(el).attr('data-idc-config') !== 'undefined') {
         $.extend(el.settings, JSON.parse($(el).attr('data-idc-config')));
@@ -820,23 +821,19 @@
      * Binds to event handlers for row click (to select feature) and row double
      * click (to also zoom in).
      */
-    bindRecordListControls: function bindRecordListControls() {
+    bindControls: function bindControls() {
       var el = this;
       var settings = $(el)[0].settings;
-      var controlFn;
+      var controlClass;
       if (typeof settings.showSelectedRow !== 'undefined') {
         if ($('#' + settings.showSelectedRow).length === 0) {
           indiciaFns.controlFail(el, 'Invalid grid ID in @showSelectedRow parameter');
         }
-        if ($('#' + settings.showSelectedRow).hasClass('idc-output-dataGrid')) {
-          controlFn = 'idcDataGrid';
-        } else if ($('#' + settings.showSelectedRow).hasClass('idc-output-cardGallery')) {
-          controlFn = 'idcCardGallery';
-        }
-        $('#' + settings.showSelectedRow)[controlFn]('on', 'itemSelect', function onItemSelect(tr) {
+        controlClass = $('#' + settings.showSelectedRow).data('idc-class');
+        $('#' + settings.showSelectedRow)[controlClass]('on', 'itemSelect', function onItemSelect(tr) {
           rowSelected(el, tr, false);
         });
-        $('#' + settings.showSelectedRow)[controlFn]('on', 'itemDblClick', function onItemDblClick(tr) {
+        $('#' + settings.showSelectedRow)[controlClass]('on', 'itemDblClick', function onItemDblClick(tr) {
           rowSelected(el, tr, true);
         });
       }
@@ -974,7 +971,7 @@
    */
   indiciaFns.loadReportBoundaries = function() {
     if (indiciaData.reportBoundaries) {
-      $.each($('.idc-output-leafletMap'), function eachMap() {
+      $.each($('.idc-leafletMap'), function eachMap() {
         var map = this;
         if (!map.settings.initialBoundsSet) {
           $(map).idcLeafletMap('addBoundaryGroup', indiciaData.reportBoundaries, {
