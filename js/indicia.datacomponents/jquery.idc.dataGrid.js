@@ -96,7 +96,7 @@
    */
   function getColInfoItem(el, field, checked) {
     var colInfo = el.settings.availableColumnInfo[field];
-    var caption = colInfo.caption ? colInfo.caption : '<em>no heading</em>';
+    var caption = colInfo.caption ? colInfo.caption : '<em>' + indiciaData.lang.dataGrid.noHeading + '</em>';
     var description = colInfo.description ? '<p>' + colInfo.description + '</p>' : '';
     var checkedAttr = checked ? ' checked="checked"' : '';
     return '<li>' +
@@ -902,11 +902,11 @@
         tools.push('<span title="Enable multiple selection mode" class="fas fa-list multiselect-switch"></span>');
       }
       if (el.settings.includeColumnSettingsTool) {
-        tools.push('<span class="fas fa-wrench data-grid-show-settings" title="Click to show grid column settings"></span>');
+        tools.push('<span class="fas fa-wrench data-grid-show-settings" title="' + indiciaData.lang.dataGrid.columnSettingsToolHint + '"></span>');
       }
       if (el.settings.includeFullScreenTool &&
           (document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled)) {
-        tools.push('<span class="far fa-window-maximize fullscreen-tool" title="Click to view grid in full screen mode"></span>');
+        tools.push('<span class="far fa-window-maximize fullscreen-tool" title="' + indiciaData.lang.dataGrid.fullScreenToolHint + '"></span>');
       }
       $('<div class="idc-tools">' + tools.join('<br/>') + '</div>').appendTo(el);
       // Add overlay for settings etc.
