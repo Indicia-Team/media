@@ -27,6 +27,19 @@ $file-box-icon-size: 30px;
   }
 }
 
+@mixin control-settings-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 1em;
+  opacity: 0.95;
+  background-color: #f0f0f0;
+  border: solid silver 1px;
+  z-index: 1;
+  border-radius: 4px;
+}
+
 /* So we can absolute position the loading spinner */
 body {
   position: relative;
@@ -168,11 +181,35 @@ body {
     background-color: #eee;
     padding: 8px;
   }
+  .sort-dropdown {
+    @include control-settings-overlay;
+    li {
+      list-style-type: none;
+      background: #e7e7e7;
+      border: solid #777 1px;
+      padding: 4px;
+      margin: 2px 4px;
+      position: relative;
+      h4 {
+        margin: 0;
+        font-size: 1.1rem;
+      }
+      p {
+        margin: 0;
+        font-size: 1rem;
+      }
+      /* Sort icon */
+      span {
+        position: absolute;
+        right: 4px;
+        top: 4px;
+      }
+    }
+  }
   #card-nav-buttons {
     float: right;
   }
 }
-
 
 /* idcDataGrid plugin */
 .idc-dataGrid {
@@ -180,17 +217,9 @@ body {
   /* Ensure height enough for spinner. */
   min-height: 140px;
   .data-grid-settings {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
+    @include control-settings-overlay;
     bottom: 0;
-    padding: 1em;
-    opacity: 0.95;
-    background-color: #f0f0f0;
     min-height: 500px;
-    border: solid silver 1px;
-    z-index: 1;
     ol {
       overflow: auto;
       li {

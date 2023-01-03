@@ -48,6 +48,7 @@
     includeFieldCaptions: false,
     includeFullScreenTool: true,
     includePager: true,
+    includeSortTool: true,
     keyboardNavigation: false
   };
 
@@ -191,6 +192,27 @@
       $.each(el.callbacks.itemDblClick, function eachCallback() {
         this(card);
       });
+    });
+
+    /**
+     * Toggle sort on a data value item in the sort tool popup.
+     */
+    indiciaFns.on('click', '#' + el.id + ' .sort-dropdown li', {}, function onSortItemClick() {
+      var fieldName = $(this).data('field');
+      var sortSpan = $(this).find('span');
+      var sortDesc = sortSpan.hasClass('fa-sort-alpha-up');
+      var sourceObj = el.settings.sourceObject;
+      // Clear sort arrows.
+      $('#' + el.id + ' .sort-dropdown li span').hide();
+      if (fieldName) {
+        // Set arrow class and show.
+        $(sortSpan).removeClass(sortDesc ? 'fa-sort-alpha-up' : 'fa-sort-alpha-down-alt');
+        $(sortSpan).addClass(sortDesc ? 'fa-sort-alpha-down-alt' : 'fa-sort-alpha-up');
+        $(sortSpan).show();
+        sourceObj.settings.sort = {};
+        sourceObj.settings.sort[fieldName] = sortDesc ? 'desc' : 'asc';
+        sourceObj.populate();
+      }
     });
 
     /**
@@ -346,6 +368,18 @@
     $(el).find('.fullscreen-tool').click(function settingsIconClick() {
       indiciaFns.goFullscreen(el);
     });
+
+    /**
+     * Sort tool.
+     */
+    $(el).find('.sort-tool').click(function settingsIconClick() {
+      $('.sort-dropdown').fadeIn();
+    });
+
+    /* Sort tool close icon. */
+    $(el).find('.sort-close').click(function closeIconClick() {
+      $('.sort-dropdown').fadeOut();
+    });
   }
 
   /**
@@ -420,7 +454,19 @@
 
       if (el.settings.includeFullScreenTool &&
         (document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled)) {
-        tools.push('<span class="far fa-window-maximize fullscreen-tool" title="Click to view grid in full screen mode"></span>');
+        tools.push('<span class="far fa-window-maximize fullscreen-tool" title="' + indiciaData.lang.cardGallery.fullScreenToolHint + '"></span>');
+      }
+      if (el.settings.includeSortTool) {
+        tools.push('<span class="fas fa-sort-alpha-down sort-tool" title="' + indiciaData.lang.cardGallery.sortToolHint + '"></span>');
+        $('<div class="sort-dropdown" style="display: none"><h3>' + indiciaData.lang.cardGallery.sortConfiguration + '</h3>' +
+          '<p>' + indiciaData.lang.cardGallery.clickToSort + '<ul></ul>' +
+          '<button class="sort-close ' + indiciaData.btnClasses.highlighted + '">Close</button></div>').appendTo(el);
+        $.each(el.settings.columns, function() {
+          var caption = this.caption ? this.caption : '<em>' + indiciaData.lang.cardGallery.noHeading + '</em>';
+          $('.sort-dropdown ul').append('<li data-field="' + this.field + '"><h4>' + caption + '</h4>' +
+            '<span class="fas fa-2x" display="none"></span>' +
+            '<p>' + indiciaData.gridMappingFields[this.field].description + '</p></li>');
+        });
       }
       $('<div class="idc-tools">' + tools.join('<br/>') + '</div>').appendTo(el);
       // Add overlay for loading.

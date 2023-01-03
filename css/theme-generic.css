@@ -753,6 +753,40 @@ body > .loading-spinner {
   background-color: #eee;
   padding: 8px;
 }
+.idc-cardGallery .sort-dropdown {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 1em;
+  opacity: 0.95;
+  background-color: #f0f0f0;
+  border: solid silver 1px;
+  z-index: 1;
+  border-radius: 4px;
+}
+.idc-cardGallery .sort-dropdown li {
+  list-style-type: none;
+  background: #e7e7e7;
+  border: solid #777 1px;
+  padding: 4px;
+  margin: 2px 4px;
+  position: relative;
+  /* Sort icon */
+}
+.idc-cardGallery .sort-dropdown li h4 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.idc-cardGallery .sort-dropdown li p {
+  margin: 0;
+  font-size: 1rem;
+}
+.idc-cardGallery .sort-dropdown li span {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+}
 .idc-cardGallery #card-nav-buttons {
   float: right;
 }
@@ -768,13 +802,14 @@ body > .loading-spinner {
   top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
   padding: 1em;
   opacity: 0.95;
   background-color: #f0f0f0;
-  min-height: 500px;
   border: solid silver 1px;
   z-index: 1;
+  border-radius: 4px;
+  bottom: 0;
+  min-height: 500px;
 }
 .idc-dataGrid .data-grid-settings ol {
   overflow: auto;
