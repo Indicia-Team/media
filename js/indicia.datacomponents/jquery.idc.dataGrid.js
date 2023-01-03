@@ -568,6 +568,9 @@
       var anyUnchecked = $(el).find('.data-grid-settings ol li :checkbox:not(:checked)').length > 0;
       $(el).find('.data-grid-settings ol li :checkbox').prop('checked', anyUnchecked);
     });
+
+    // Public function so it can be called from bindControls event handlers.
+    el.loadSelectedRow = loadSelectedRow;
   }
 
   /**
@@ -1018,16 +1021,30 @@
       setColWidths(el, maxCharsPerCol);
     },
 
+    /**
+     * Bind control to other control event callbacks.
+     *
+     * Call after init of all controls. Finds other controls that update items
+     * and binds to the event handler. E.g. picks up changes caused by
+     * verification buttons.
+     */
     bindControls: function() {
       var el = this;
-      $.each($('.idc-control'), () => {
+      $.each($('.idc-control'), function() {
         var controlClass = $(this).data('idc-class');
         if (typeof this.callbacks.itemUpdate !== 'undefined') {
           $(this)[controlClass]('on', 'itemUpdate', (item) => {
-            alert('in item update');
+            $(item).removeClass('selected');
+            while (item.length > 0 && $(item).hasClass('disabled')) {
+              item = $(item).next('[data-row-id]');
+            }
+            if (item) {
+              $(item).addClass('selected').focus();
+            }
+            el.loadSelectedRow();
           });
         }
-      })
+      });
     },
 
     /**
