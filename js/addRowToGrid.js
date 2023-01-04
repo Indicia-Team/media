@@ -1117,6 +1117,7 @@ var resetSpeciesTextOnEscape;
                 var ctrl;
                 var container;
                 var classToUse;
+                var existingVal;
                 // If a row already verified, don't handle as dynamic unless
                 // there is already a dynamic value in the database. Otherwise
                 // attempts to map old non-dynamic values to new dynamic
@@ -1153,14 +1154,33 @@ var resetSpeciesTextOnEscape;
                   cell.find('*')
                     .addClass('hidden-by-dynamic-attr')
                     .removeClass('ui-state-error');
+                  if (occurrenceId) {
+                    // Attach existing attrs to the correct occurrence ID.
+                    ctrl.prop('name', ctrl.prop('name').replace('::', ':' + occurrenceId + ':'));
+                    // For existing records, we don't want to lose the existing
+                    // value which could happen if they were added before
+                    // dynamic attributes added to the form.
+                    existingVal = cell.find(':input').is('select') ? cell.find(':input option:selected').text() : cell.find(':input').val();
+                  }
                   // Clear the value so it get's replaced when saved.
                   cell.find(':input').val('');
-                  // Attach existing attrs to the correct occurrence ID.
-                  if (occurrenceId) {
-                    ctrl.prop('name', ctrl.prop('name').replace('::', ':' + occurrenceId + ':'));
-                  }
                   // Add the new dynamic attr control container to the grid cell.
                   cell.append(container);
+                  // Reset existing data.
+                  if (occurrenceId && existingVal) {
+                    if (ctrl.is('select')) {
+                      // Replacing a generic select with a dynamic select. Try and select a matching term.
+                      $.each(ctrl.find('option'), function() {
+                        if ($(this).text().toLowerCase() === existingVal.toLowerCase()) {
+                          $(this).attr('selected', true);
+                        }
+                      });
+                    }
+                    else {
+                      // A text control, so copy the old value over.
+                      ctrl.val(existingVal);
+                    }
+                  }
                 } else {
                   // 2nd or later column for same sysfunction, so hide the control.
                   cell.html('');
