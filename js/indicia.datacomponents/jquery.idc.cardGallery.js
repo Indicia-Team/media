@@ -173,7 +173,6 @@
       if (!changingSelection && !$(card).hasClass('selected')) {
         $(card).closest('.es-card-gallery').find('.card.selected').removeClass('selected');
         $(card).addClass('selected');
-        console.log('selecting ' + $(card).data('row-id'));
         loadSelectedCard();
       }
     });
@@ -575,7 +574,7 @@
             el.loadSelectedCard();
           });
         }
-      })
+      });
     },
 
     /**
