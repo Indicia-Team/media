@@ -69,6 +69,110 @@
   var doingQueryPopup = false;
 
   /**
+   * Capture the chosen taxon when redetermining, for token replacements.
+   */
+  var redetToTaxon = null;
+
+  /**
+   * Track if templates loaded to save unnecessary hits.
+   */
+  var redeterminationTemplatesLoaded = false;
+
+  function uploadDecisionsFile() {
+    var formdata = new FormData();
+    var file;
+    if($('#decisions-file').prop('files').length > 0) {
+      $('#upload-decisions-form .upload-output').show();
+      $('#upload-decisions-form .instruct').hide();
+      $('#upload-decisions-file').val('').prop('disabled', true);
+      file = $('#decisions-file').prop('files')[0];
+      formdata.append('decisions', file);
+      formdata.append('filter_id', $('.user-filter.defines-permissions').val());
+      formdata.append('es_endpoint', indiciaData.esEndpoint);
+      formdata.append('id_prefix', indiciaData.idPrefix);
+      formdata.append('warehouse_name', indiciaData.warehouseName);
+      $.ajax({
+        url: indiciaData.esProxyAjaxUrl + '/verifyspreadsheet/' + indiciaData.nid,
+        type: 'POST',
+        data: formdata,
+        processData: false,
+        contentType: false,
+        success: function (metadata) {
+          nextSpreadsheetTask(metadata);
+        },
+        error: function(jqXHR) {
+          var msg = indiciaData.lang.verificationButtons.uploadError;
+          if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
+            msg += '<br/>' + jqXHR.responseJSON.message;
+          }
+          $('.upload-output').removeClass('alert-info').addClass('alert-danger');
+          $('.upload-output .msg').html('<p>' + msg + '</p>');
+          $('.upload-output progress').hide();
+        }
+      });
+    }
+  }
+
+  /**
+   * Display the redetermination form.
+   */
+  function showRedetForm(el) {
+    redetToTaxon = null;
+    $('#redet-comment').val('Redetermined from {{ rank }} {{ taxon full name }} to {{ new rank }} {{ new taxon full name }}.');
+    $('.comment-edit').hide();
+    $('.comment-show-preview').show();
+    if (el.settings.verificationTemplates) {
+      loadVerificationTemplates('DT', '#redet-template');
+    }
+    $.fancybox.open($('#redet-form'));
+  }
+
+  /**
+   * If a redetermination template is selected, load the template into the comment.
+   */
+  function onSelectRedetTemplate() {
+    var templateID = $('#redet-template').val();
+    var data = $('#redet-template').data('data');
+    $.each(data, function eachData() {
+      if (this.id === templateID) {
+        $('#redet-comment').val(this.template);
+      }
+    });
+  }
+
+  /**
+   * Register the various user interface event handlers.
+   */
+  function initHandlers(el) {
+
+    /**
+     * Click handler for the button which starts the upload decisions process off.
+     */
+    $('#upload-decisions-file').click(uploadDecisionsFile);
+
+    /**
+     * Redetermination button click handler.
+     */
+    $(el).find('button.redet').click(() => {
+      showRedetForm(el);
+    });
+
+    /**
+     * Redetermination dialog select template change handler.
+     */
+    $('#redet-template').change(onSelectRedetTemplate);
+
+    /**
+     * Redetermination dialog cancel button click handler.
+     */
+    $('#cancel-redet').click(() => {
+      $.fancybox.close();
+    });
+
+
+  }
+
+  /**
    * Fetch the PG record updates required for a verification event.
    */
   function getVerifyPgUpdates(status, comment, email) {
@@ -729,44 +833,6 @@
     });
   }
 
-  /**
-   * Click handler for the button which starts the upload decisions process off.
-   */
-  $('#upload-decisions-file').click(function() {
-    var formdata = new FormData();
-    var file;
-    if($('#decisions-file').prop('files').length > 0) {
-      $('#upload-decisions-form .upload-output').show();
-      $('#upload-decisions-form .instruct').hide();
-      $('#upload-decisions-file').val('').prop('disabled', true);
-      file = $('#decisions-file').prop('files')[0];
-      formdata.append('decisions', file);
-      formdata.append('filter_id', $('.user-filter.defines-permissions').val());
-      formdata.append('es_endpoint', indiciaData.esEndpoint);
-      formdata.append('id_prefix', indiciaData.idPrefix);
-      formdata.append('warehouse_name', indiciaData.warehouseName);
-      $.ajax({
-        url: indiciaData.esProxyAjaxUrl + '/verifyspreadsheet/' + indiciaData.nid,
-        type: 'POST',
-        data: formdata,
-        processData: false,
-        contentType: false,
-        success: function (metadata) {
-          nextSpreadsheetTask(metadata);
-        },
-        error: function(jqXHR) {
-          var msg = indiciaData.lang.verificationButtons.uploadError;
-          if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
-            msg += '<br/>' + jqXHR.responseJSON.message;
-          }
-          $('.upload-output').removeClass('alert-info').addClass('alert-danger');
-          $('.upload-output .msg').html('<p>' + msg + '</p>');
-          $('.upload-output progress').hide();
-        }
-      });
-    }
-  });
-
   /*
    * Saves the authorisation token for the Record Comment Quick Reply.
    *
@@ -917,7 +983,7 @@
         user_id: indiciaData.user_id
       };
       if ($('#redet-comment').val()) {
-        data['occurrence_comment:comment'] = $('#redet-comment').val();
+        data['occurrence_comment:comment'] = redetTemplateReplacements($('#redet-comment').val());
       }
       if ($('#no-update-determiner') && $('#no-update-determiner').prop('checked')) {
         // Determiner_id=-1 is special value that keeps the original
@@ -952,6 +1018,38 @@
           indiciaFns.hideItemAndMoveNext(listOutputControl[0]);
         }
       });
+    }
+  }
+
+  function loadVerificationTemplates(status, select) {
+    var getTemplatesReport = indiciaData.read.url + '/index.php/services/report/requestReport?report=library/verification_templates/verification_templates.xml&mode=json&mode=json&callback=?';
+    var getTemplatesReportParameters = {
+      auth_token: indiciaData.read.auth_token,
+      nonce: indiciaData.read.nonce,
+      reportSource: 'local',
+      template_status: status,
+      created_by_id: indiciaData.user_id,
+      website_id: indiciaData.website_id
+    };
+    if (!redeterminationTemplatesLoaded) {
+      redeterminationTemplatesLoaded = true;
+      $.getJSON(
+        getTemplatesReport,
+        getTemplatesReportParameters,
+        function (data) {
+          // Remove all but the empty "please select" option.
+          $(select).find('option[value!=""]').remove();
+          if (data.length > 0) {
+            $.each(data, function() {
+              $(select).append('<option value="' + this.id + '">' + this.title + '</option>');
+            });
+            $(select).data('data', data);
+            $(select).closest('.ctrl-wrap').show();
+          } else {
+            $(select).closest('.ctrl-wrap').hide();x
+          }
+        }
+      );
     }
   }
 
@@ -996,7 +1094,7 @@
             queryPopup();
           } else if (e.which === 114) {
             // r
-            $.fancybox.open($('#redet-form'));
+            showRedetForm(el);
           } else if (e.which === 120) {
             // x
             emailExpertPopup();
@@ -1006,6 +1104,44 @@
         }
       });
     }
+  }
+
+  function getTaxonNameLabel(doc) {
+    var scientific = doc.taxon.accepted_name ? doc.taxon.taxon_name : doc.taxon.accepted_name;
+    var vernacular;
+    if (doc.taxon.vernacular_name) {
+      vernacular = doc.taxon.vernacular_name;
+      return vernacular === scientific ? scientific : scientific + ' (' + vernacular + ')';
+    }
+    return scientific;
+  }
+
+  function redetTemplateReplacements(text) {
+    var currentDoc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
+    var conversions = {
+      date: indiciaFns.fieldConvertors.event_date(currentDoc),
+      'entered sref': currentDoc.location.input_sref,
+      species: currentDoc.taxon.taxon_name,
+      'common name': [currentDoc.taxon.vernacular_name, currentDoc.taxon.accepted_name, currentDoc.taxon.taxon_name],
+      'preferred name': [currentDoc.taxon.accepted_name, currentDoc.taxon.taxon_name],
+      'taxon full name': getTaxonNameLabel(currentDoc),
+      'rank': currentDoc.taxon.taxon_rank.charAt(0).toLowerCase() +  currentDoc.taxon.taxon_rank.slice(1),
+      action: indiciaData.lang.verificationButtons.DT,
+      'location name': currentDoc.location.verbatim_locality
+    };
+    if (redetToTaxon) {
+      conversions['new taxon full name'] = getTaxonNameLabel({
+        taxon: {
+          taxon_name: redetToTaxon.taxon,
+          accepted_name: redetToTaxon.preferred_taxon,
+          vernacular_name: redetToTaxon.default_common_name
+        }
+      });
+      conversions['new species'] = redetToTaxon.taxon;
+      conversions['new common name'] = [redetToTaxon.default_common_name, redetToTaxon.preferred_taxon];
+      conversions['new rank'] = redetToTaxon.taxon_rank.charAt(0).toLowerCase() + redetToTaxon.taxon_rank.slice(1);
+    }
+    return indiciaFns.applyVerificationTemplateSubsitutions(text, conversions);
   }
 
   /**
@@ -1122,12 +1258,7 @@
           $(el.settings.uploadButtonContainerElement).append($(el).find('button.upload-decisions'));
         }
       }
-      $(el).find('button.redet').click(function expandRedet() {
-        $.fancybox.open($('#redet-form'));
-      });
-      indiciaFns.on('click', '#cancel-redet', {}, function expandRedet() {
-        $.fancybox.close();
-      });
+
       enableKeyboardNavigation(el);
       $('#redet-form').submit(redetFormSubmit);
       indiciaFns.on('click', '.comment-popup button', {}, function onClickSave(e) {
@@ -1164,6 +1295,40 @@
         div.find('.apply-to button').not(e.currentTarget).removeClass('active');
         $(e.currentTarget).addClass('active');
       });
+
+      /**
+       * Toggle on the redetermination comment preview.
+       */
+      $('.comment-show-preview').click(function buttonClick() {
+        var ctrlWrap = $(this).closest('.comment-cntr');
+        var textarea = ctrlWrap.find('textarea');
+        var previewBox = ctrlWrap.find('.comment-preview');
+        previewBox.text(redetTemplateReplacements(textarea.val()));
+        // Hide whilst leaving in place to occupy space.
+        textarea.css('opacity', 0);
+        previewBox.show();
+        $('.comment-show-preview').hide();
+        $('.comment-edit').show();
+      });
+
+      /**
+       * Toggle off the redetermination comment preview.
+       */
+      $('.comment-edit').click(function buttonClick() {
+        var ctrlWrap = $(this).closest('.comment-cntr');
+        var textarea = ctrlWrap.find('textarea');
+        var previewBox = ctrlWrap.find('.comment-preview');
+        textarea.css('opacity', 100);
+        previewBox.hide();
+        $('.comment-edit').hide();
+        $('.comment-show-preview').show();
+      });
+
+      $('#redet-species\\:taxon').result(function(event, data) {
+        console.log(data);
+        redetToTaxon = data;
+      });
+      initHandlers(el);
     },
 
     on: function on(event, handler) {

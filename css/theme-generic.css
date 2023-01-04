@@ -966,6 +966,32 @@ table.es-data-grid tfoot button span {
   margin: 0 8px;
 }
 
+#redet-form .comment-cntr {
+  position: relative;
+}
+#redet-form .comment-cntr .comment-tools {
+  position: absolute;
+  right: 0;
+  top: 0;
+  font-size: 0.9rem;
+}
+#redet-form .comment-cntr .comment-tools span {
+  cursor: pointer;
+  padding: 4px 0;
+}
+#redet-form .comment-cntr .comment-tools span:hover {
+  color: #2c7bb6;
+}
+#redet-form .comment-cntr .comment-preview {
+  position: absolute;
+  right: 0;
+  left: 0;
+  top: 20px;
+  bottom: 0;
+  background: #e7e7e7;
+  padding: 8px;
+}
+
 #upload-decisions-form {
   min-width: 600px;
   max-width: 900px;
@@ -1639,6 +1665,10 @@ div.taxon-card .taxon-name {
   color: #fff;
   background-color: #337ab7;
   border-color: #2e6da4;
+}
+.btn.btn-xs {
+  padding: 3px 6px;
+  font-size: 90%;
 }
 
 a.btn {
