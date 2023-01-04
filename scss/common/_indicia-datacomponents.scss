@@ -464,6 +464,10 @@ table.es-data-grid {
     }
     td {
       padding: 0 0.5em;
+      span {
+        /* Ensure long words in data don't break flow. */
+        word-break: break-word;
+      }
     }
     .fas, .far {
       font-size: 130%;

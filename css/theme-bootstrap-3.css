@@ -1074,6 +1074,10 @@ table.es-data-grid tfoot button span {
 .idc-recordDetails .record-details td {
   padding: 0 0.5em;
 }
+.idc-recordDetails .record-details td span {
+  /* Ensure long words in data don't break flow. */
+  word-break: break-word;
+}
 .idc-recordDetails .record-details .fas, .idc-recordDetails .record-details .far {
   font-size: 130%;
 }
