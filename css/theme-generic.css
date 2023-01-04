@@ -967,6 +967,10 @@ table.es-data-grid tfoot button span {
 .record-details-container .record-details td {
   padding: 0 0.5em;
 }
+.record-details-container .record-details td span {
+  /* Ensure long words in data don't break flow. */
+  word-break: break-word;
+}
 .record-details-container .record-details .fas, .record-details-container .record-details .far {
   font-size: 130%;
 }
