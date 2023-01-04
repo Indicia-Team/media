@@ -141,6 +141,100 @@
   }
 
   /**
+   * Submit handler for the redetermination popup form.
+   */
+  function redetFormSubmit(e) {
+    var data;
+    e.preventDefault();
+    if ($('#redet-species').val() === '') {
+      redetFormValidator.showErrors({ 'redet-species:taxon': 'Please type a few characters then choose a name from the list of suggestions' });
+    } else if (redetFormValidator.numberOfInvalids() === 0) {
+      $.fancybox.close();
+      data = {
+        website_id: indiciaData.website_id,
+        'occurrence:id': occurrenceId,
+        'occurrence:taxa_taxon_list_id': $('#redet-species').val(),
+        user_id: indiciaData.user_id
+      };
+      if ($('#redet-comment').val()) {
+        data['occurrence_comment:comment'] = redetTemplateReplacements($('#redet-comment').val());
+      }
+      if ($('#no-update-determiner') && $('#no-update-determiner').prop('checked')) {
+        // Determiner_id=-1 is special value that keeps the original
+        // determiner info.
+        data['occurrence:determiner_id'] = -1;
+      }
+      $.post(
+        indiciaData.ajaxFormPostRedet,
+        data,
+        function onResponse(response) {
+          if (typeof response.error !== 'undefined') {
+            alert(response.error);
+          }
+        }
+      );
+      // Now post update to Elasticsearch. Remove the website ID to temporarily
+      // disable the record until it is refreshed with the correct new taxonomy
+      // info.
+      data = {
+        ids: [occurrenceId],
+        doc: {
+          metadata: {
+            website: {
+              id: 0
+            }
+          }
+        }
+      };
+      $.ajax({
+        url: indiciaData.esProxyAjaxUrl + '/verifyids/' + indiciaData.nid,
+        type: 'post',
+        data: data,
+        success: function success() {
+          indiciaFns.hideItemAndMoveNext(listOutputControl[0]);
+        }
+      });
+    }
+  }
+
+  /**
+   * Click handler for the status buttons level toggle.
+   *
+   * Changes from showing just level one options to level 2 options and back.
+   */
+  function toggleStatusButtonLevelMode(e) {
+    var div = $(e.currentTarget).closest('.idc-verificationButtons-row');
+    if ($(e.currentTarget).hasClass('fa-toggle-on')) {
+      $(e.currentTarget).removeClass('fa-toggle-on');
+      $(e.currentTarget).addClass('fa-toggle-off');
+      div.find('.l2').hide();
+      div.find('.l1').show();
+    } else {
+      $(e.currentTarget).removeClass('fa-toggle-off');
+      $(e.currentTarget).addClass('fa-toggle-on');
+      div.find('.l1').hide();
+      div.find('.l2').show();
+    }
+  }
+
+  /**
+   * Click handler for the save comment form which saves a comment.
+   */
+  function saveCommentPopup(e) {
+    var popup = $(e.currentTarget).closest('.comment-popup');
+    var ids = JSON.parse($(popup).attr('data-ids'));
+    var statusData = {};
+    if ($(popup).attr('data-status')) {
+      statusData.status = $(popup).attr('data-status');
+    }
+    if ($(popup).attr('data-query')) {
+      statusData.query = $(popup).attr('data-query');
+    }
+    saveVerifyComment(el, ids, statusData, $(popup).find('textarea').val());
+    $.fancybox.close();
+  }
+
+  /**
    * Register the various user interface event handlers.
    */
   function initHandlers(el) {
@@ -158,6 +252,43 @@
     });
 
     /**
+     * Show on the redetermination comment preview.
+     */
+    $('.comment-show-preview').click(function buttonClick() {
+      var ctrlWrap = $(this).closest('.comment-cntr');
+      var textarea = ctrlWrap.find('textarea');
+      var previewBox = ctrlWrap.find('.comment-preview');
+      previewBox.text(redetTemplateReplacements(textarea.val()));
+      // Hide whilst leaving in place to occupy space.
+      textarea.css('opacity', 0);
+      previewBox.show();
+      $('.comment-show-preview').hide();
+      $('.comment-edit').show();
+    });
+
+    /**
+     * Toggle off the redetermination comment preview.
+     */
+    $('.comment-edit').click(function buttonClick() {
+      var ctrlWrap = $(this).closest('.comment-cntr');
+      var textarea = ctrlWrap.find('textarea');
+      var previewBox = ctrlWrap.find('.comment-preview');
+      textarea.css('opacity', 100);
+      previewBox.hide();
+      $('.comment-edit').hide();
+      $('.comment-show-preview').show();
+    });
+
+    /**
+     * Result handler for the taxon redetermination autocomplete.
+     *
+     * Captures the taxon so it can be used in template token replacements.
+     */
+    $('#redet-species\\:taxon').result(function(event, data) {
+      redetToTaxon = data;
+    });
+
+    /**
      * Redetermination dialog select template change handler.
      */
     $('#redet-template').change(onSelectRedetTemplate);
@@ -169,6 +300,29 @@
       $.fancybox.close();
     });
 
+    /**
+     * Redetermination dialog submit form handler.
+     */
+    $('#redet-form').submit(redetFormSubmit);
+
+    /**
+     * Status buttons level mode toggle click handler.
+     */
+    $(el).find('.toggle').click(toggleStatusButtonLevelMode);
+
+    /**
+     * Verification comment popup save button click handler.
+     */
+    indiciaFns.on('click', '.comment-popup button', {}, saveCommentPopup);
+
+    /**
+     * Toggle the apply to selected|table mode buttons.
+     */
+    $(el).find('.apply-to button').click(function modeClick(e) {
+      var div = $(e.currentTarget).closest('.idc-verificationButtons-row');
+      div.find('.apply-to button').not(e.currentTarget).removeClass('active');
+      $(e.currentTarget).addClass('active');
+    });
 
   }
 
@@ -966,61 +1120,6 @@
     return false;
   }
 
-  /**
-   * Submit handler for the redetermination popup form.
-   */
-  function redetFormSubmit(e) {
-    var data;
-    e.preventDefault();
-    if ($('#redet-species').val() === '') {
-      redetFormValidator.showErrors({ 'redet-species:taxon': 'Please type a few characters then choose a name from the list of suggestions' });
-    } else if (redetFormValidator.numberOfInvalids() === 0) {
-      $.fancybox.close();
-      data = {
-        website_id: indiciaData.website_id,
-        'occurrence:id': occurrenceId,
-        'occurrence:taxa_taxon_list_id': $('#redet-species').val(),
-        user_id: indiciaData.user_id
-      };
-      if ($('#redet-comment').val()) {
-        data['occurrence_comment:comment'] = redetTemplateReplacements($('#redet-comment').val());
-      }
-      if ($('#no-update-determiner') && $('#no-update-determiner').prop('checked')) {
-        // Determiner_id=-1 is special value that keeps the original
-        // determiner info.
-        data['occurrence:determiner_id'] = -1;
-      }
-      $.post(
-        indiciaData.ajaxFormPostRedet,
-        data,
-        function onResponse(response) {
-          if (typeof response.error !== 'undefined') {
-            alert(response.error);
-          }
-        }
-      );
-      // Now post update to Elasticsearch. Remove the website ID to temporarily disable the record.
-      data = {
-        ids: [occurrenceId],
-        doc: {
-          metadata: {
-            website: {
-              id: 0
-            }
-          }
-        }
-      };
-      $.ajax({
-        url: indiciaData.esProxyAjaxUrl + '/verifyids/' + indiciaData.nid,
-        type: 'post',
-        data: data,
-        success: function success() {
-          indiciaFns.hideItemAndMoveNext(listOutputControl[0]);
-        }
-      });
-    }
-  }
-
   function loadVerificationTemplates(status, select) {
     var getTemplatesReport = indiciaData.read.url + '/index.php/services/report/requestReport?report=library/verification_templates/verification_templates.xml&mode=json&mode=json&callback=?';
     var getTemplatesReportParameters = {
@@ -1258,76 +1357,10 @@
           $(el.settings.uploadButtonContainerElement).append($(el).find('button.upload-decisions'));
         }
       }
-
       enableKeyboardNavigation(el);
-      $('#redet-form').submit(redetFormSubmit);
-      indiciaFns.on('click', '.comment-popup button', {}, function onClickSave(e) {
-        var popup = $(e.currentTarget).closest('.comment-popup');
-        var ids = JSON.parse($(popup).attr('data-ids'));
-        var statusData = {};
-        if ($(popup).attr('data-status')) {
-          statusData.status = $(popup).attr('data-status');
-        }
-        if ($(popup).attr('data-query')) {
-          statusData.query = $(popup).attr('data-query');
-        }
-        saveVerifyComment(el, ids, statusData, $(popup).find('textarea').val());
-        $.fancybox.close();
-      });
+      // Default state is to show the l2 verification status buttons.
       $(el).find('.l1').hide();
-      $(el).find('.toggle').click(function toggleClick(e) {
-        var div = $(e.currentTarget).closest('.idc-verificationButtons-row');
-        if ($(e.currentTarget).hasClass('fa-toggle-on')) {
-          $(e.currentTarget).removeClass('fa-toggle-on');
-          $(e.currentTarget).addClass('fa-toggle-off');
-          div.find('.l2').hide();
-          div.find('.l1').show();
-        } else {
-          $(e.currentTarget).removeClass('fa-toggle-off');
-          $(e.currentTarget).addClass('fa-toggle-on');
-          div.find('.l1').hide();
-          div.find('.l2').show();
-        }
-      });
-      // Toggle the apply to selected|table mode buttons.
-      $(el).find('.apply-to button').click(function modeClick(e) {
-        var div = $(e.currentTarget).closest('.idc-verificationButtons-row');
-        div.find('.apply-to button').not(e.currentTarget).removeClass('active');
-        $(e.currentTarget).addClass('active');
-      });
-
-      /**
-       * Toggle on the redetermination comment preview.
-       */
-      $('.comment-show-preview').click(function buttonClick() {
-        var ctrlWrap = $(this).closest('.comment-cntr');
-        var textarea = ctrlWrap.find('textarea');
-        var previewBox = ctrlWrap.find('.comment-preview');
-        previewBox.text(redetTemplateReplacements(textarea.val()));
-        // Hide whilst leaving in place to occupy space.
-        textarea.css('opacity', 0);
-        previewBox.show();
-        $('.comment-show-preview').hide();
-        $('.comment-edit').show();
-      });
-
-      /**
-       * Toggle off the redetermination comment preview.
-       */
-      $('.comment-edit').click(function buttonClick() {
-        var ctrlWrap = $(this).closest('.comment-cntr');
-        var textarea = ctrlWrap.find('textarea');
-        var previewBox = ctrlWrap.find('.comment-preview');
-        textarea.css('opacity', 100);
-        previewBox.hide();
-        $('.comment-edit').hide();
-        $('.comment-show-preview').show();
-      });
-
-      $('#redet-species\\:taxon').result(function(event, data) {
-        console.log(data);
-        redetToTaxon = data;
-      });
+      // Hook up event handlers.
       initHandlers(el);
     },
 
