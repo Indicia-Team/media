@@ -153,6 +153,29 @@ if (typeof window.indiciaData === 'undefined') {
     }
   };
 
+  indiciaFns.applyVerificationTemplateSubsitutions = (item, conversions) => {
+    var convs = Object.keys(conversions);
+    var replacement;
+    var i;
+    var j;
+    for (i = 0; i < convs.length; i++) {
+      if (typeof conversions[convs[i]] === 'object') {
+        for (j = 0; j < conversions[convs[i]].length; j++) {
+          replacement = conversions[convs[i]][j];
+          if (typeof replacement !== 'undefined' && replacement !== null  && replacement !== '') {
+            break;
+          }
+        }
+      } else {
+        replacement = conversions[convs[i]];
+      }
+      if (typeof replacement !== 'undefined' && replacement !== null) {
+        item = item.replace(new RegExp('{{\\s*' + convs[i].replace(/ /g, '[\\s|_]') + "\\s*}}", 'gi'), replacement);
+      }
+    }
+    return item;
+  };
+
   /**
    * Select a jQuery tab or return the index of the current selected one.
    * jQuery UI 1.10 replaced option.selected with option.active. Use this function to allow non-version specific
