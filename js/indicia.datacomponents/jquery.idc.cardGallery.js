@@ -459,7 +459,7 @@
         tools.push('<span class="fas fa-sort-alpha-down sort-tool" title="' + indiciaData.lang.cardGallery.sortToolHint + '"></span>');
         $('<div class="sort-dropdown" style="display: none"><h3>' + indiciaData.lang.cardGallery.sortConfiguration + '</h3>' +
           '<p>' + indiciaData.lang.cardGallery.clickToSort + '<ul></ul>' +
-          '<button class="sort-close ' + indiciaData.btnClasses.highlighted + '">Close</button></div>').appendTo(el);
+          '<button class="sort-close ' + indiciaData.templates.buttonHighlightedClass + '">Close</button></div>').appendTo(el);
         $.each(el.settings.columns, function() {
           var caption = this.caption ? this.caption : '<em>' + indiciaData.lang.cardGallery.noHeading + '</em>';
           $('.sort-dropdown ul').append('<li data-field="' + this.field + '"><h4>' + caption + '</h4>' +
