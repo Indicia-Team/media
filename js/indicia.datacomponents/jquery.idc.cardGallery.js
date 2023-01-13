@@ -336,6 +336,24 @@
         handleArrowKeyNavigation('ArrowLeft', oldSelected);
       });
 
+      /**
+       * Handler for the in-card expand card button.
+       */
+      indiciaFns.on('click', '.expand-card', {}, function() {
+        const card = $(this).closest('.card');
+        setCardToMaxSize(card);
+        inMaxSizeMode(true);
+      });
+
+      /**
+       * Handler for the in-card expand collapse button.
+       */
+      indiciaFns.on('click', '.collapse-card', {}, function() {
+        const card = $(this).closest('.card');
+        setCardToNormalSize(card);
+        inMaxSizeMode(false);
+      });
+
       // Public function so it can be called from bindControls event handlers.
       el.loadSelectedCard = loadSelectedCard;
     }
@@ -546,6 +564,12 @@
             $('<li>' + value + '</li>').appendTo(dataContainer);
           }
         }
+        $('<button type="button" title="' + indiciaData.lang.cardGallery.expandCard + '" class="expand-card ' + indiciaData.templates.buttonDefaultClass + ' ' + indiciaData.templates.buttonSmallClass + '">' +
+          '<i class="fas fa-expand-arrows-alt"></i></i></button>')
+          .appendTo(card);
+        $('<button type="button" title="' + indiciaData.lang.cardGallery.collapseCard + '" class="collapse-card ' + indiciaData.templates.buttonDefaultClass + ' ' + indiciaData.templates.buttonSmallClass + '">' +
+          '<i class="fas fa-compress-arrows-alt"></i></button>')
+          .appendTo(card);
       });
       indiciaFns.drawPagingFooter(el, response, data, '.card');
       fireAfterPopulationCallbacks(el);
