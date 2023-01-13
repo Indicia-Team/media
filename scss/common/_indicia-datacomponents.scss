@@ -352,7 +352,7 @@ table.es-data-grid {
   }
 }
 
-#redet-form {
+.verification-popup {
   .comment-cntr {
     position: relative;
     .comment-tools {
@@ -376,6 +376,37 @@ table.es-data-grid {
       bottom: 0;
       background: #e7e7e7;
       padding: 8px;
+    }
+    .save-template {
+      cursor: pointer;
+      margin: 0;
+    }
+  }
+  #template-help-cntr {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    bottom: 4px;
+    left: 4px;
+    background: white;
+    z-index: 1000;
+    article {
+      border: solid silver 1px;
+      border-radius: 4px;
+      padding: 8px;
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 30px;
+      left: 0;
+      overflow-y: scroll;
+      cursor: text;
+      user-select: text;
+
+    }
+    button {
+      position: absolute;
+      bottom: 4px;
     }
   }
 }

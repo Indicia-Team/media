@@ -74,9 +74,9 @@
   var redetToTaxon = null;
 
   /**
-   * Track if templates loaded to save unnecessary hits.
+   * Track templates loaded for each status to save unnecessary hits.
    */
-  var redeterminationTemplatesLoaded = false;
+  var commentTemplatesLoaded = {};
 
   function uploadDecisionsFile() {
     var formdata = new FormData();
@@ -114,13 +114,29 @@
   }
 
   /**
+   * Reset the form when a verification or redet popup first shown.
+   *
+   * @param string formId
+   *   Form element ID.
+   * @param text text
+   *   Default comment text.
+   */
+  function resetCommentForm(formId, text) {
+    $('#' + formId + ' textarea').val(text);
+    $('#' + formId + ' input[type="text"]').val('');
+    $('#' + formId + '.template-save-cntr').hide();
+    $('#template-help-cntr').hide();
+    $('#' + formId + ' .comment-edit').click();
+    $('#' + formId + ' .comment-tools button').removeAttr('disabled');
+    $('#' + formId + ' .form-buttons button').removeAttr('disabled');
+  }
+
+  /**
    * Display the redetermination form.
    */
   function showRedetForm(el) {
     redetToTaxon = null;
-    $('#redet-comment').val('Redetermined from {{ rank }} {{ taxon full name }} to {{ new rank }} {{ new taxon full name }}.');
-    $('.comment-edit').hide();
-    $('.comment-show-preview').show();
+    resetCommentForm('redet-form', 'Redetermined from {{ rank }} {{ taxon full name }} to {{ new rank }} {{ new taxon full name }}.');
     if (el.settings.verificationTemplates) {
       loadVerificationTemplates('DT', '#redet-template');
     }
@@ -128,14 +144,15 @@
   }
 
   /**
-   * If a redetermination template is selected, load the template into the comment.
+   * If a template is selected, load the template into the comment.
    */
-  function onSelectRedetTemplate() {
-    var templateID = $('#redet-template').val();
-    var data = $('#redet-template').data('data');
+  function onSelectCommentTemplate(e) {
+    const templateId = $(e.currentTarget).val();
+    const data = $(e.currentTarget).data('data');
+    const textarea = $(e.currentTarget).closest('.verification-popup').find('textarea')
     $.each(data, function eachData() {
-      if (this.id === templateID) {
-        $('#redet-comment').val(this.template);
+      if (this.id === templateId) {
+        $(textarea).val(this.template);
       }
     });
   }
@@ -143,9 +160,8 @@
   /**
    * Submit handler for the redetermination popup form.
    */
-  function redetFormSubmit(e) {
+  function redetFormSubmit() {
     var data;
-    e.preventDefault();
     if ($('#redet-species').val() === '') {
       redetFormValidator.showErrors({ 'redet-species:taxon': 'Please type a few characters then choose a name from the list of suggestions' });
     } else if (redetFormValidator.numberOfInvalids() === 0) {
@@ -156,8 +172,8 @@
         'occurrence:taxa_taxon_list_id': $('#redet-species').val(),
         user_id: indiciaData.user_id
       };
-      if ($('#redet-comment').val()) {
-        data['occurrence_comment:comment'] = redetTemplateReplacements($('#redet-comment').val());
+      if ($('#redet-comment-textarea').val()) {
+        data['occurrence_comment:comment'] = commentTemplateReplacements($('#redet-comment-textarea').val());
       }
       if ($('#no-update-determiner') && $('#no-update-determiner').prop('checked')) {
         // Determiner_id=-1 is special value that keeps the original
@@ -220,18 +236,73 @@
   /**
    * Click handler for the save comment form which saves a comment.
    */
-  function saveCommentPopup(e) {
-    var popup = $(e.currentTarget).closest('.comment-popup');
-    var ids = JSON.parse($(popup).attr('data-ids'));
+  function saveCommentPopup(el, popup) {
+    var ids = JSON.parse($(popup).data('ids'));
     var statusData = {};
-    if ($(popup).attr('data-status')) {
-      statusData.status = $(popup).attr('data-status');
+    if ($(popup).data('status')) {
+      statusData.status = $(popup).data('status');
     }
-    if ($(popup).attr('data-query')) {
-      statusData.query = $(popup).attr('data-query');
+    if ($(popup).data('query')) {
+      statusData.query = $(popup).data('query');
     }
     saveVerifyComment(el, ids, statusData, $(popup).find('textarea').val());
     $.fancybox.close();
+  }
+
+  /**
+     * Save a template to the database for future use.
+     */
+  function saveTemplate(popupEl, data) {
+    let duplicateFound = false;
+    // Don't check duplicates if already selected to overwrite one.
+    if (typeof data.id === 'undefined') {
+      $.each(($(popupEl).find('.comment-template option')), function() {
+        if (this.textContent === data.title) {
+          duplicateFound = true;
+          $.fancyDialog({
+            title: indiciaData.lang.verificationButtons.saveTemplateError,
+            message: indiciaData.lang.verificationButtons.duplicateTemplateMsg,
+            okButton: indiciaData.lang.verificationButtons.overwrite,
+            cancelButton: indiciaData.lang.verificationButtons.close,
+            callbackOk: () => {
+              data.id = $(this).val();
+              saveTemplate(popupEl, data);
+            }
+          });
+        }
+      });
+    }
+    if (!duplicateFound) {
+      $.post(
+        indiciaData.ajaxFormPostVerificationTemplate,
+        data,
+        null,
+        'json'
+      ).done((response) => {
+        const status = $(popupEl).data('status');
+        if (typeof response.error !== 'undefined') {
+          $.fancyDialog({
+            title: indiciaData.lang.verificationButtons.saveTemplateError,
+            message: response.error,
+            cancelButton: null
+          });
+        } else {
+          commentTemplatesLoaded[mapToLevel1Status(status)].push({
+            id: response.outer_id,
+            title: data.title,
+            template: data.template,
+          });
+          loadVerificationTemplates(mapToLevel1Status(status), '#' + $(popupEl).find('.comment-template').attr('id'));
+          closeSaveTemplateControl(popupEl);
+        }
+      }).fail((qXHR) => {
+        $.fancyDialog({
+          title: indiciaData.lang.verificationButtons.saveTemplateError,
+          message: indiciaData.lang.verificationButtons.saveTemplateErrorMsg,
+          cancelButton: null
+        });
+      });
+    }
   }
 
   /**
@@ -258,9 +329,10 @@
       var ctrlWrap = $(this).closest('.comment-cntr');
       var textarea = ctrlWrap.find('textarea');
       var previewBox = ctrlWrap.find('.comment-preview');
-      previewBox.text(redetTemplateReplacements(textarea.val()));
+      previewBox.text(commentTemplateReplacements(textarea.val()));
       // Hide whilst leaving in place to occupy space.
       textarea.css('opacity', 0);
+      $(previewBox).css('top', $(textarea).position().top + 'px');
       previewBox.show();
       $('.comment-show-preview').hide();
       $('.comment-edit').show();
@@ -280,6 +352,83 @@
     });
 
     /**
+     * After saving a template or canceling, hide the template name and associated controls.
+     */
+    function closeSaveTemplateControl(popupEl) {
+      $(popupEl).find('.template-save-cntr').slideUp();
+      // Re-enable tool, save and cancel buttons.
+      $(popupEl).find('.comment-tools button').removeAttr('disabled');
+      $(popupEl).find('.form-buttons button').removeAttr('disabled');
+    }
+
+    /**
+     * Save template button click handler.
+     *
+     * Displays the input controls for naming and saving the current comment as
+     * a template.
+     */
+    $('.comment-save-template').click(function() {
+      const popupEl = $(this).closest('.verification-popup');
+      // Revert to edit mode so you can see the template you are editing.
+      $(popupEl).find('.comment-edit').click();
+      $(popupEl).find('.template-save-cntr input[type="text"]').val('');
+      $(popupEl).find('.template-save-cntr').slideDown();
+      $(popupEl).find('.comment-tools button').attr('disabled', true);
+      $(popupEl).find('.form-buttons button').attr('disabled', true);
+    });
+
+    /**
+     * Click handler for the button which saves the template.
+     */
+    $('.save-template').click(function() {
+      const ctrlWrap = $(this).closest('.comment-cntr');
+      const popupEl = $(ctrlWrap).closest('.verification-popup');
+      const status = $(popupEl).data('status');
+      const templateName = $(ctrlWrap).find('[name="template-name"]').val().trim();
+      const templateText = $(ctrlWrap).find('.comment-textarea').val().trim();
+      const data = {
+        website_id: indiciaData.website_id,
+        restrict_to_website_id: 't',
+        title: templateName,
+        template: templateText,
+        template_statuses: [mapToLevel1Status(status)],
+      }
+      if (!templateName || !templateText) {
+        $.fancyDialog({
+          title: indiciaData.lang.verificationButtons.templateNameTextRequired,
+          message: indiciaData.lang.verificationButtons.pleaseSupplyATemplateNameAndText,
+          cancelButton: null
+        });
+        return;
+      }
+      saveTemplate(popupEl, data);
+    });
+
+    /**
+     * Save template cancel button click handler.
+     */
+    $('.cancel-save-template').click(function() {
+      const popupEl = $(this).closest('.verification-popup');
+      closeSaveTemplateControl(popupEl);
+    });
+
+    /**
+     * Click handler for the template help button.
+     */
+    $('.comment-help').click(function () {
+      const popupEl = $(this).closest('.verification-popup');
+      $('#template-help-cntr').appendTo(popupEl);
+      $('#template-help-cntr').show();
+    });
+
+    /**
+     * Click handler for the help close button.
+     */
+    $('.help-close').click(function() {
+      $('#template-help-cntr').fadeOut();
+    })
+
+    /**
      * Result handler for the taxon redetermination autocomplete.
      *
      * Captures the taxon so it can be used in template token replacements.
@@ -291,29 +440,31 @@
     /**
      * Redetermination dialog select template change handler.
      */
-    $('#redet-template').change(onSelectRedetTemplate);
-
-    /**
-     * Redetermination dialog cancel button click handler.
-     */
-    $('#cancel-redet').click(() => {
-      $.fancybox.close();
-    });
+    $('.comment-template').change(onSelectCommentTemplate);
 
     /**
      * Redetermination dialog submit form handler.
      */
-    $('#redet-form').submit(redetFormSubmit);
+    $('#apply-redet').click(redetFormSubmit);
+
+    /**
+     * Verification dialog submit form handler.
+     */
+    $('#apply-verification').click((e) => {
+      saveCommentPopup(el, $(e.currentTarget).closest('.comment-popup'));
+    });
+
+    /**
+     * Redetermination and verification dialog cancel button click handler.
+     */
+     $('#cancel-verification,#cancel-redet').click(() => {
+      $.fancybox.close();
+    });
 
     /**
      * Status buttons level mode toggle click handler.
      */
     $(el).find('.toggle').click(toggleStatusButtonLevelMode);
-
-    /**
-     * Verification comment popup save button click handler.
-     */
-    indiciaFns.on('click', '.comment-popup button', {}, saveCommentPopup);
 
     /**
      * Toggle the apply to selected|table mode buttons.
@@ -602,17 +753,41 @@
   }
 
   /**
+   * Simplifies a status code to V or R for accept/reject.
+   *
+   * Other statuses returned as is, with C3 for plausible.
+   *
+   * @param string status
+   *   Status code.
+   *
+   * @return string
+   *   Simplified code.
+   */
+  function mapToLevel1Status(status) {
+    if (status[0] === 'V') {
+      return 'V';
+    }
+    if (status[0] === 'R') {
+      return 'R';
+    }
+    return status;
+  }
+
+  /**
    * Displays a popup dialog for capturing a verification or query comment.
    */
-  function commentPopup(status, commentInstruction) {
+  function commentPopup(el, status, commentInstruction) {
     var doc;
-    var fs;
     var heading;
-    var statusData = [];
     var overallStatus = status.status ? status.status : status.query;
     var ids = [];
     var todoCount;
     var selectedItems;
+    // Form reset.
+    resetCommentForm('verification-form', '');
+    if (el.settings.verificationTemplates) {
+      loadVerificationTemplates(mapToLevel1Status(status.status ? status.status : status.query), '#verify-template');
+    }
     if ($(listOutputControl).find('.multi-mode-table.active').length > 0) {
       todoCount = $(listOutputControl)[0].settings.totalRowCount;
     } else {
@@ -629,34 +804,35 @@
       });
       todoCount = ids.length;
     }
-    if (status.status) {
-      statusData.push('data-status="' + status.status + '"');
-    }
-    if (status.query) {
-      statusData.push('data-query="' + status.query + '"');
-    }
-    fs = $('<fieldset class="comment-popup verification-popup" data-ids="' + JSON.stringify(ids) + '" ' + statusData.join('') + '>');
     if (todoCount > 1) {
       heading = status.status
         ? 'Set status to ' + indiciaData.statusMsgs[overallStatus] + ' for ' + todoCount + ' records'
         : 'Query ' + todoCount + ' records';
-      $('<div class="alert alert-info">You are updating multiple records!</alert>').appendTo(fs);
+      $('#verification-form .multiple-warning').show();
     } else {
       heading = status.status
         ? 'Set status to ' + indiciaData.statusMsgs[overallStatus]
         : 'Query this record';
+      $('#verification-form .multiple-warning').hide();
     }
-    $('<legend><span class="' + indiciaData.statusClasses[overallStatus] + ' fa-2x"></span>' + heading + '</legend>')
-      .appendTo(fs);
+
+    $('#verification-form').data('ids', JSON.stringify(ids));
+    status.status ? $('#verification-form').data('status', status.status) : $('#verification-form').removeData('status');
+    status.query ? $('#verification-form').data('query', status.query) : $('#verification-form').removeData('query');
+    $('#verification-form legend span:first-child')
+      .removeClass()
+      .addClass(indiciaData.statusClasses[overallStatus])
+      .addClass('fa-2x');
+    $('#verification-form legend span:last-child').text(heading);
+
     if (commentInstruction) {
-      $('<p class="alert alert-info">' + commentInstruction + '</p>').appendTo(fs);
+      $('#verification-form p.alert')
+        .text(commentInstruction)
+        .show();
+    } else {
+      $('#verification-form p.alert').hide();
     }
-    $('<div class="form-group">' +
-        '<label for="comment-textarea">Add the following comment:</label>' +
-        '<textarea id="comment-textarea" class="form-control" rows="6"></textarea>' +
-      '</div>').appendTo(fs);
-    $('<button class="btn btn-primary">Save</button>').appendTo(fs);
-    $.fancybox.open(fs);
+    $.fancybox.open($('#verification-form'));
   }
 
   /**
@@ -829,7 +1005,7 @@
   /**
    * Display the popup dialog for querying a record.
    */
-  function queryPopup() {
+  function queryPopup(el) {
     var doc;
     if (doingQueryPopup) {
       return;
@@ -837,7 +1013,7 @@
     if ($(listOutputControl).hasClass('multiselect-mode')) {
       // As there are multiple records possibly selected, sending an email
       // option not available.
-      commentPopup({ query: 'Q' }, indiciaData.lang.verificationButtons.queryInMultiselectMode);
+      commentPopup(el, { query: 'Q' }, indiciaData.lang.verificationButtons.queryInMultiselectMode);
     } else {
       doc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
       getCurrentRecordEmail(doc, function callback(emailTo) {
@@ -1120,35 +1296,49 @@
     return false;
   }
 
-  function loadVerificationTemplates(status, select) {
+  /**
+   * Populates a select with the list of available verification templates.
+   *
+   * @param string select
+   *   Selector for the select control.
+   * @param array data
+   *   Database data for the templates.
+   */
+  function populateVerificationTemplates(select, data) {
+    // Remove all but the empty "please select" option.
+    $(select).find('option[value!=""]').remove();
+    if (data.length > 0) {
+      $.each(data, function() {
+        $(select).append('<option value="' + this.id + '">' + this.title + '</option>');
+      });
+      $(select).data('data', data);
+      $(select).closest('.ctrl-wrap').show();
+    } else {
+      $(select).closest('.ctrl-wrap').hide();
+    }
+  }
+
+  function loadVerificationTemplates(statusCode, select) {
     var getTemplatesReport = indiciaData.read.url + '/index.php/services/report/requestReport?report=library/verification_templates/verification_templates.xml&mode=json&mode=json&callback=?';
     var getTemplatesReportParameters = {
       auth_token: indiciaData.read.auth_token,
       nonce: indiciaData.read.nonce,
       reportSource: 'local',
-      template_status: status,
+      template_status: statusCode,
       created_by_id: indiciaData.user_id,
       website_id: indiciaData.website_id
     };
-    if (!redeterminationTemplatesLoaded) {
-      redeterminationTemplatesLoaded = true;
+    if (typeof commentTemplatesLoaded[statusCode] === 'undefined') {
       $.getJSON(
         getTemplatesReport,
         getTemplatesReportParameters,
         function (data) {
-          // Remove all but the empty "please select" option.
-          $(select).find('option[value!=""]').remove();
-          if (data.length > 0) {
-            $.each(data, function() {
-              $(select).append('<option value="' + this.id + '">' + this.title + '</option>');
-            });
-            $(select).data('data', data);
-            $(select).closest('.ctrl-wrap').show();
-          } else {
-            $(select).closest('.ctrl-wrap').hide();x
-          }
+          commentTemplatesLoaded[statusCode] = data;
+          populateVerificationTemplates(select, commentTemplatesLoaded[statusCode]);
         }
       );
+    } else {
+      populateVerificationTemplates(select, commentTemplatesLoaded[statusCode]);
     }
   }
 
@@ -1187,10 +1377,10 @@
         // Only interested in keys 1-5, q, r and x.
         if ($('[data-keycode="' + e.which +'"]:visible').length || e.which === 113 || e.which === 114 || e.which === 120) {
           if ($('[data-keycode="' + e.which +'"]:visible').length) {
-            commentPopup({ status: $('[data-keycode="' + e.which +'"]:visible').attr('data-status') });
+            commentPopup(el, { status: $('[data-keycode="' + e.which +'"]:visible').attr('data-status') });
           } else if (e.which === 113) {
             // q
-            queryPopup();
+            queryPopup(el);
           } else if (e.which === 114) {
             // r
             showRedetForm(el);
@@ -1215,12 +1405,12 @@
     return scientific;
   }
 
-  function redetTemplateReplacements(text) {
+  function commentTemplateReplacements(text) {
     var currentDoc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
     var conversions = {
       date: indiciaFns.fieldConvertors.event_date(currentDoc),
-      'entered sref': currentDoc.location.input_sref,
-      species: currentDoc.taxon.taxon_name,
+      sref: currentDoc.location.output_sref,
+      taxon: currentDoc.taxon.taxon_name,
       'common name': [currentDoc.taxon.vernacular_name, currentDoc.taxon.accepted_name, currentDoc.taxon.taxon_name],
       'preferred name': [currentDoc.taxon.accepted_name, currentDoc.taxon.taxon_name],
       'taxon full name': getTaxonNameLabel(currentDoc),
@@ -1236,7 +1426,7 @@
           vernacular_name: redetToTaxon.default_common_name
         }
       });
-      conversions['new species'] = redetToTaxon.taxon;
+      conversions['new taxon'] = redetToTaxon.taxon;
       conversions['new common name'] = [redetToTaxon.default_common_name, redetToTaxon.preferred_taxon];
       conversions['new rank'] = redetToTaxon.taxon_rank.charAt(0).toLowerCase() + redetToTaxon.taxon_rank.slice(1);
     }
@@ -1247,6 +1437,7 @@
    * Declare public methods.
    */
   var methods = {
+
     /**
      * Initialise the idcVerificationButtons plugin.
      *
@@ -1338,10 +1529,10 @@
       });
       $(el).find('button.verify').click(function buttonClick(e) {
         var status = $(e.currentTarget).attr('data-status');
-        commentPopup({ status: status });
+        commentPopup(el, { status: status });
       });
       $(el).find('button.query').click(function buttonClick() {
-        queryPopup();
+        queryPopup(el);
       });
       $(el).find('button.email-expert').click(function buttonClick() {
         emailExpertPopup();

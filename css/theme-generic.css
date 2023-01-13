@@ -966,23 +966,23 @@ table.es-data-grid tfoot button span {
   margin: 0 8px;
 }
 
-#redet-form .comment-cntr {
+.verification-popup .comment-cntr {
   position: relative;
 }
-#redet-form .comment-cntr .comment-tools {
+.verification-popup .comment-cntr .comment-tools {
   position: absolute;
   right: 0;
   top: 0;
   font-size: 0.9rem;
 }
-#redet-form .comment-cntr .comment-tools span {
+.verification-popup .comment-cntr .comment-tools span {
   cursor: pointer;
   padding: 4px 0;
 }
-#redet-form .comment-cntr .comment-tools span:hover {
+.verification-popup .comment-cntr .comment-tools span:hover {
   color: #2c7bb6;
 }
-#redet-form .comment-cntr .comment-preview {
+.verification-popup .comment-cntr .comment-preview {
   position: absolute;
   right: 0;
   left: 0;
@@ -990,6 +990,36 @@ table.es-data-grid tfoot button span {
   bottom: 0;
   background: #e7e7e7;
   padding: 8px;
+}
+.verification-popup .comment-cntr .save-template {
+  cursor: pointer;
+  margin: 0;
+}
+.verification-popup #template-help-cntr {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  bottom: 4px;
+  left: 4px;
+  background: white;
+  z-index: 1000;
+}
+.verification-popup #template-help-cntr article {
+  border: solid silver 1px;
+  border-radius: 4px;
+  padding: 8px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 30px;
+  left: 0;
+  overflow-y: scroll;
+  cursor: text;
+  user-select: text;
+}
+.verification-popup #template-help-cntr button {
+  position: absolute;
+  bottom: 4px;
 }
 
 #upload-decisions-form {
