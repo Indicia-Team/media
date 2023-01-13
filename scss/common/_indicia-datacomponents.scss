@@ -91,6 +91,7 @@ body {
       width: 90%;
       box-sizing: border-box;
       background-color: $colour-even-row;
+      position: relative;
       &:last-of-type {
         flex-grow: 0;
       }
@@ -103,6 +104,21 @@ body {
         background-color: $colour-select-row-bg;
         border: 1px solid grey;
       }
+      .expand-card {
+        position: absolute;
+        bottom: 4px;
+        right: 4px;
+        border: none;
+        padding: 0;
+      }
+      .collapse-card {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        display: none;
+        border: none;
+        padding: 0;
+      }
       &.show-max-size {
         position: absolute;
         top: 0;
@@ -110,6 +126,12 @@ body {
         height: auto;
         width: 100%;
         z-index: 1000;
+        .expand-card {
+          display: none;
+        }
+        .collapse-card {
+          display: initial;
+        }
       }
       .image-container {
         display: flex;
