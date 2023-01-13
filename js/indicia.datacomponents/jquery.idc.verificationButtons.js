@@ -78,6 +78,9 @@
    */
   var commentTemplatesLoaded = {};
 
+  /**
+   * Uploads a spreadsheet of verification decisions to the warehouse.
+   */
   function uploadDecisionsFile() {
     var formdata = new FormData();
     var file;
@@ -275,8 +278,8 @@
   }
 
   /**
-     * Save a template to the database for future use.
-     */
+   * Save a template to the database for future use.
+   */
   function saveTemplate(popupEl, data) {
     let duplicateFound = false;
     // Don't check duplicates if already selected to overwrite one.
@@ -1343,6 +1346,14 @@
     }
   }
 
+  /**
+   * Loads a user's templates from the database for a status.
+   *
+   * @param string status
+   *   Status code to load templates for.
+   * @param string select
+   *   Selector for the <select> element to add them to.
+   */
   function loadVerificationTemplates(statusCode, select) {
     var getTemplatesReport = indiciaData.read.url + '/index.php/services/report/requestReport?report=library/verification_templates/verification_templates.xml&mode=json&mode=json&callback=?';
     var getTemplatesReportParameters = {

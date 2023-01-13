@@ -153,6 +153,9 @@ if (typeof window.indiciaData === 'undefined') {
     }
   };
 
+  /**
+   * Apply template substitutions to a verification comment.
+   */
   indiciaFns.applyVerificationTemplateSubsitutions = (item, conversions) => {
     var convs = Object.keys(conversions);
     var replacement;

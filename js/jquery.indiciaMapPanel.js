@@ -2350,6 +2350,9 @@ var destroyAllFeatures;
     }
 
     /**
+     * Check if data entry bing attempted outside a boundary loaded on the map.
+     *
+     * Warns or blocks data entry depending on settings.
      *
      * @param DOM div
      *   Map div.
