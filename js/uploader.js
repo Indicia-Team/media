@@ -17,7 +17,7 @@ jQuery(document).ready(function($) {
     clearExistingUploadedFileInfo();
   });
 
-  if (indiciaData.importerDropArea) {
+  function initFileUploadControl() {
     $(indiciaData.importerDropArea).dmUploader({
       url: indiciaData.uploadFileUrl,
       multiple: false,
@@ -230,6 +230,10 @@ jQuery(document).ready(function($) {
   }
 
   /**
+   * Lookup matching page code.
+   */
+
+  /**
    * Adds a table for matching lookup values for a field.
    *
    * Returns a table with a row for each unmatched value, with a control for
@@ -434,7 +438,7 @@ jQuery(document).ready(function($) {
   function nextLookupProcessingStep() {
     urlSep = indiciaData.processLookupMatchingUrl.indexOf('?') === -1 ? '?' : '&';
     $.ajax({
-      url: indiciaData.processLookupMatchingUrl + urlSep + 'data-file=' + indiciaData.processLookupMatchingForFile + '&index=' + indiciaData.processLookupIndex,
+      url: indiciaData.processLookupMatchingUrl + urlSep + 'data-file=' + indiciaData.dataFile + '&index=' + indiciaData.processLookupIndex,
       dataType: 'json',
       headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce}
     })
@@ -540,7 +544,7 @@ jQuery(document).ready(function($) {
     logBackgroundProcessingInfo(indiciaData.lang.import_helper_2.savingMatchesFor.replace('{1}', $(button).data('source-field')));
     urlSep = indiciaData.saveLookupMatchesGroupUrl.indexOf('?') === -1 ? '?' : '&';
     $.ajax({
-      url: indiciaData.saveLookupMatchesGroupUrl + urlSep + 'data-file=' + indiciaData.processLookupMatchingForFile,
+      url: indiciaData.saveLookupMatchesGroupUrl + urlSep + 'data-file=' + indiciaData.dataFile,
       dataType: 'json',
       method: 'POST',
       data: matches,
@@ -583,6 +587,127 @@ jQuery(document).ready(function($) {
       }
     });
   });
+
+  /**
+   * Tests if a required field key is covered by one of the global values.
+   *
+   * @param string
+   *   Key to check.
+   */
+  function inGlobalValues(key) {
+    // If there are several options of how to search a single lookup then they
+    // are identified by a 3rd token, e.g. occurrence:fk_taxa_taxon_list:search_code.
+    // These cases fulfil the needs of a required field so we can remove them.
+    var fieldTokens = key.split(':');
+    var found;
+    var parts;
+    if (fieldTokens.length > 2) {
+      fieldTokens.pop();
+      key = fieldTokens.join(':');
+    }
+    found = typeof indiciaData.globalValues[key] !== 'undefined';
+    // Global values also works if not entity specific.
+    parts = key.split(':');
+    if (parts.length > 1) {
+      found = found || typeof indiciaData.globalValues[parts[1]] !== 'undefined';
+    }
+    return found;
+  }
+
+  /**
+   * Check that required fields are mapped. Set checkbox ticked state in UI.
+   */
+  function checkRequiredFields() {
+    $.each($('.required-checkbox'), function() {
+      var checkbox = $(this);
+      var checkboxKeyList = checkbox.data('key');
+      var foundInMapping = false;
+      // When there is a choice of one of several, keys are separated by '|'.
+      var keys = checkboxKeyList.split('|');
+      $.each(keys, function() {
+        // Field can be populated from global values.
+        var foundInGlobalValues = inGlobalValues(this);
+        // *_id global values fill in FK fields.
+        if (this.match(/\bfk_/)) {
+          foundInGlobalValues = foundInGlobalValues || inGlobalValues(this.replace(/\bfk_/, '') + '_id');
+        }
+        // No need to show required fields that are filled in by global values
+        // at this point.
+        if (foundInGlobalValues) {
+          $(checkbox).closest('li').hide();
+        }
+        // Or field can be populated by a mapping.
+        foundInMapping = foundInMapping || $('.mapped-field option:selected[value="' + this + '"]').length > 0;
+      });
+      if (foundInMapping) {
+        $(checkbox).removeClass('fa-square');
+        $(checkbox).addClass('fa-check-square');
+      } else {
+        $(checkbox).removeClass('fa-check-square');
+        $(checkbox).addClass('fa-square');
+      }
+    });
+    $('input[type="submit"]').attr('disabled', $('.required-checkbox.fa-square:visible').length > 0);
+  }
+
+  /**
+   * Click a link on the suggested column mappings auto-selects the option.
+   */
+  function applySuggestion(e) {
+    $(e.currentTarget).closest('td').find('option[value="' + $(e.currentTarget).data('value') + '"]').prop('selected', true);
+    checkRequiredFields();
+  }
+
+  /**
+   * Preprocessing page code.
+   */
+
+  function nextPreprocessingStep() {
+    urlSep = indiciaData.preprocessUrl.indexOf('?') === -1 ? '?' : '&';
+    $.ajax({
+      url: indiciaData.preprocessUrl + urlSep + 'data-file=' + indiciaData.dataFile + '&index=' + indiciaData.preprocessIndex,
+      dataType: 'json',
+      headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce}
+    })
+    .done(function(result) {
+      console.log(result);
+      if (indiciaData.preprocessIndex === 0 && result.description) {
+        logBackgroundProcessingInfo(result.description);
+      }
+      if (result.message) {
+        // @todo All possible messages need to go in i18n.
+        logBackgroundProcessingInfo(result.message[0].replace('{1}', result.message[1]).replace('{2}', result.message[2]));
+      }
+      if (result.error) {
+        // Abort process.
+        logBackgroundProcessingInfo(result.error);
+        $.fancyDialog({
+          title: 'Upload error',
+          message: indiciaData.lang.import_helper_2.importCannotProceed + '<br/><ul><li>' + result.error + '</li></ul>',
+          cancelButton: null
+        });
+      }
+      else if (result.nextStep) {
+        logBackgroundProcessingInfo(result.nextDescription);
+        indiciaData.preprocessIndex++;
+        nextPreprocessingStep();
+      }
+      else {
+        $('#next-step').click();
+      }
+    })
+    .fail(function(jqXHR, textStatus, errorThrown) {
+      $.fancyDialog({
+        title: indiciaData.lang.import_helper_2.lang.preprocessingError,
+        message: indiciaData.lang.import_helper_2.lang.preprocessingErrorInfo + '<br/>' + errorThrown,
+        cancelButton: null
+      });
+    });
+  }
+
+  /**
+   * Import progress page code.
+   */
 
   /**
    * When an import or precheck has validation errors, warn the user.
@@ -741,17 +866,11 @@ jQuery(document).ready(function($) {
     );
   }
 
-  if (indiciaData.processLookupMatchingForFile) {
-    // If on the lookup matching page, then trigger the process.
-    logBackgroundProcessingInfo(indiciaData.lang.import_helper_2.findingLookupFieldsThatNeedMatching);
-    // Requesting one lookup column at a time, so track which we are asking for.
-    indiciaData.processLookupIndex = 0;
-    nextLookupProcessingStep();
-  } else if (indiciaData.readyToImport) {
-    importNextChunk('startPrecheck');
+  // Trigger the functionality for the appropriate page.
+  if (indiciaData.step === 'fileSelectForm') {
+    initFileUploadControl();
   }
-
-  if (indiciaData.step === 'mappingsForm') {
+  else if (indiciaData.step === 'mappingsForm') {
     var urlSep = indiciaData.getRequiredFieldsUrl.indexOf('?') === -1 ? '?' : '&';
     // On the mappings page.
     // Prepare the list of required fields.
@@ -770,8 +889,8 @@ jQuery(document).ready(function($) {
       if (indiciaData.columns && indiciaData.columns[$(row).find('td:first-child').text()] && indiciaData.columns[$(row).find('td:first-child').text()]['warehouseField']) {
         // Mapping is already in the columns info, e.g. when loaded from a template.
         $(row).find('option[value="' + indiciaData.columns[$(row).find('td:first-child').text()]['warehouseField'] + '"]').attr('selected', true);
-      } else {
-        // Scan for matches by field name.
+      } else if (!indiciaData.import_template_id) {
+        // Scan for matches by field name, but only if not using a template.
         $.each($(row).find('option'), function() {
           var option = this;
           var unqualified = $(option).text().toLowerCase().replace(/\(.+\)/, '').replace(/[^a-z0-9]/g, '');
@@ -813,72 +932,24 @@ jQuery(document).ready(function($) {
         }
       }
     });
-
-    /**
-     * Tests if a required field key is covered by one of the global values.
-     *
-     * @param string
-     *   Key to check.
-     */
-    function inGlobalValues(key) {
-      // If there are several options of how to search a single lookup then they
-      // are identified by a 3rd token, e.g. occurrence:fk_taxa_taxon_list:search_code.
-      // These cases fulfil the needs of a required field so we can remove them.
-      var fieldTokens = key.split(':');
-      var found;
-      var parts;
-      if (fieldTokens.length > 2) {
-        fieldTokens.pop();
-        key = fieldTokens.join(':');
-      }
-      found = typeof indiciaData.globalValues[key] !== 'undefined';
-      // Global values also works if not entity specific.
-      parts = key.split(':');
-      if (parts.length > 1) {
-        found = found || typeof indiciaData.globalValues[parts[1]] !== 'undefined';
-      }
-      return found;
-    }
-
-    /**
-     * Check that required fields are mapped. Set checkbox ticked state in UI.
-     */
-    function checkRequiredFields() {
-      $.each($('.required-checkbox'), function() {
-        // Field can be populated from global values.
-        var found = inGlobalValues($(this).data('key'));
-        // *_id global values fill in FK fields.
-        if ($(this).data('key').match(/\bfk_/)) {
-          found = found || inGlobalValues($(this).data('key').replace(/\bfk_/, '') + '_id');
-        }
-        // No need to show required fields that are filled in by global values
-        // at this point.
-        if (found) {
-          $(this).closest('li').hide();
-        }
-        // Or field can be populated by a mapping.
-        found = found || $('.mapped-field option:selected[value="' + $(this).data('key') + '"]').length > 0;
-        if (found) {
-          $(this).removeClass('fa-square');
-          $(this).addClass('fa-check-square');
-        } else {
-          $(this).removeClass('fa-check-square');
-          $(this).addClass('fa-square');
-        }
-      });
-      $('input[type="submit"]').attr('disabled', $('.required-checkbox.fa-square').length > 0);
-    }
-
-    /**
-     * Click a link on the suggested column mappings auto-selects the option.
-     */
-    function applySuggestion(e) {
-      $(e.currentTarget).closest('td').find('option[value="' + $(e.currentTarget).data('value') + '"]').prop('selected', true);
-    }
-
     indiciaFns.on('change', '.mapped-field', {}, checkRequiredFields);
     indiciaFns.on('click', '.apply-suggestion', {}, applySuggestion);
     checkRequiredFields();
+  } else if (indiciaData.step === 'lookupMatchingForm') {
+    // If on the lookup matching page, then trigger the process.
+    logBackgroundProcessingInfo(indiciaData.lang.import_helper_2.findingLookupFieldsThatNeedMatching);
+    // Requesting one lookup column at a time, so track which we are asking for.
+    indiciaData.processLookupIndex = 0;
+    nextLookupProcessingStep();
+  } else if (indiciaData.step === 'preprocessPage') {
+    // If on the lookup matching page, then trigger the process.
+    logBackgroundProcessingInfo(indiciaData.lang.import_helper_2.preprocessingImport);
+    // Requesting one lookup column at a time, so track which we are asking for.
+    indiciaData.preprocessIndex = 0;
+    nextPreprocessingStep();
+  } else if (indiciaData.step === 'doImportPage') {
+    importNextChunk('startPrecheck');
   }
+
 
 });

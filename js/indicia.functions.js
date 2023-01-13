@@ -154,6 +154,32 @@ if (typeof window.indiciaData === 'undefined') {
   };
 
   /**
+   * Apply template substitutions to a verification comment.
+   */
+  indiciaFns.applyVerificationTemplateSubsitutions = (item, conversions) => {
+    var convs = Object.keys(conversions);
+    var replacement;
+    var i;
+    var j;
+    for (i = 0; i < convs.length; i++) {
+      if (typeof conversions[convs[i]] === 'object') {
+        for (j = 0; j < conversions[convs[i]].length; j++) {
+          replacement = conversions[convs[i]][j];
+          if (typeof replacement !== 'undefined' && replacement !== null  && replacement !== '') {
+            break;
+          }
+        }
+      } else {
+        replacement = conversions[convs[i]];
+      }
+      if (typeof replacement !== 'undefined' && replacement !== null) {
+        item = item.replace(new RegExp('{{\\s*' + convs[i].replace(/ /g, '[\\s|_]') + "\\s*}}", 'gi'), replacement);
+      }
+    }
+    return item;
+  };
+
+  /**
    * Select a jQuery tab or return the index of the current selected one.
    * jQuery UI 1.10 replaced option.selected with option.active. Use this function to allow non-version specific
    * code.
@@ -793,12 +819,12 @@ jQuery(document).ready(function ($) {
         content.append($(opts.contentElement));
       }
       if (opts.cancelButton) {
-        content.append('<button data-value="0" data-fancybox-close class="fancy-dialog-button ' + indiciaData.btnClasses.default + '">' +
+        content.append('<button data-value="0" data-fancybox-close class="fancy-dialog-button ' + indiciaData.templates.buttonDefaultClass + '">' +
           opts.cancelButton +
           '</button>');
       }
       if (opts.okButton) {
-        content.append('<button data-value="1" data-fancybox-close class="fancy-dialog-button ' + indiciaData.btnClasses.highlighted + '">' +
+        content.append('<button data-value="1" data-fancybox-close class="fancy-dialog-button ' + indiciaData.templates.buttonHighlightedClass + '">' +
           opts.okButton +
           '</button>');
       }
@@ -898,4 +924,23 @@ jQuery(document).ready(function ($) {
       $('#' + this.parentControlId).trigger('change');
     }
   });
+
+  // Handle controls with enableIf option - enabled only when another control
+  // has a set value.
+  if (typeof indiciaData.enableControlIf !== 'undefined') {
+    $.each(indiciaData.enableControlIf, function(ctrlId, otherControls) {
+      $('#' + ctrlId.replace(':', '\\:')).attr('disabled', true);
+      $.each(otherControls, function(otherCtrlId, otherControlValues) {
+        $('#' + otherCtrlId.replace(':', '\\:')).change(function(e) {
+          var ctrl = $(e.currentTarget);
+          var val = !$(ctrl).is(':checkbox') || $(ctrl).is(':checked') ? $(ctrl).val() : '';
+          if (otherControlValues.indexOf(val) === -1) {
+            $('#' + ctrlId.replace(':', '\\:')).attr('disabled', true);
+          } else {
+            $('#' + ctrlId.replace(':', '\\:')).attr('disabled', false);
+          }
+        });
+      });
+    });
+  }
 });

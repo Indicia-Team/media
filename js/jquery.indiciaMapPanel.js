@@ -616,6 +616,7 @@ var destroyAllFeatures;
             '&system=' + _getSystem() +
             '&mapsystem=' + indiciaFns.projectionToSystem(div.map.projection, false),
           success: function(data) {
+            var feature;
             // JSONP can't handle http status code errors. So error check in success response.
             if (typeof data.error !== 'undefined')
               if (data.code === 4001) {
@@ -671,7 +672,10 @@ var destroyAllFeatures;
                   // Run code that handles when a user has selected a position on the map (either a click or changing sref)
                   processLonLatPositionOnMap(openlayersLatlong, div);
                 } else {
-                  _showWktFeature(div, data.mapwkt, div.map.editLayer, null, false, 'clickPoint');
+                  feature = _showWktFeature(div, data.mapwkt, div.map.editLayer, null, false, 'clickPoint');
+                  if (feature) {
+                    checkIfOutsideBounds(div, feature.geometry);
+                  }
                 }
               }
               $('#' + opts.geomId).val(data.wkt).change();
@@ -842,6 +846,8 @@ var destroyAllFeatures;
       feature.attributes = { type: 'clickPoint' };
       feature.style = new Style('default', div.settings);
       div.map.editLayer.addFeatures([feature]);
+
+      checkIfOutsideBounds(div, feature.geometry);
 
       // Call any code which handles a click to set the spatial reference, e.g. zoom the map in, or set help hints.
       $.each(mapClickForSpatialRefHooks, function() {
@@ -1573,7 +1579,7 @@ var destroyAllFeatures;
       var clickableVectorLayers = [];
       // Store the geom in case we reload the layer after a zoom.
       div.settings.rememberSelectionGeom = geom;
-      // build an array of all previuosly selected features in one
+      // build an array of all previously selected features in one
       $.each(clickableLayers, function eachLayer() {
         if (this.CLASS_NAME === 'OpenLayers.Layer.Vector') {
           clickableVectorLayers.push(this);
@@ -2343,6 +2349,37 @@ var destroyAllFeatures;
       }
     }
 
+    /**
+     * Check if data entry bing attempted outside a boundary loaded on the map.
+     *
+     * Warns or blocks data entry depending on settings.
+     *
+     * @param DOM div
+     *   Map div.
+     * @param OpenLayers.Geometry geometry
+     *   Geometry to check.
+     */
+    function checkIfOutsideBounds(div, geometry) {
+      var intersectFound = false;
+      if (indiciaData.outsideBoundsBehaviour && div.map.boundaryLayer) {
+        $.each(div.map.boundaryLayer.features, function() {
+          if (geometry.intersects(this.geometry)) {
+            intersectFound = true;
+          }
+        });
+        if (intersectFound) {
+          $('#boundary-warning').remove();
+          $('#save-button').removeAttr('disabled');
+        } else if ($('#boundary-warning').length === 0) {
+          $('#' + div.settings.srefId).closest('.ctrl-wrap').after(
+            '<div id="boundary-warning">' + indiciaData.templates.warningBox.replace('{message}', indiciaData.lang.sref_textbox.outsideBoundsWarning) + '</div>'
+          );
+          if (indiciaData.outsideBoundsBehaviour === 'block') {
+            $('#save-button').attr('disabled', true);
+          }
+        }
+      }
+    }
 
     function showGridRefHints(div) {
       if (overMap && div.settings.gridRefHint && typeof indiciaData.srefHandlers !== 'undefined' &&

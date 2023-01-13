@@ -413,14 +413,14 @@ var IdcEsDataSource;
       $.each(indiciaData.outputPluginClasses, function eachPluginClass() {
         ds.outputs[this] = [];
       });
-      // Make a collection of the output controls linked to this data source.
-      $.each($('.idc-output'), function eachOutput() {
+      // Make a collection of the controls linked to this data source.
+      $.each($('.idc-control'), function eachOutput() {
         var el = this;
         if (el.settings.source && Object.prototype.hasOwnProperty.call(el.settings.source, ds.settings.id)) {
           $.each(indiciaData.outputPluginClasses, function eachPluginClass(i, pluginClass) {
             var controlName = pluginClass.replace(/^idc/, '');
             controlName = controlName.charAt(0).toLowerCase() + controlName.substr(1);
-            if ($(el).hasClass('idc-output-' + controlName)) {
+            if ($(el).hasClass('idc-' + controlName)) {
               ds.outputs[pluginClass].push(el);
             }
           });

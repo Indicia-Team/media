@@ -118,6 +118,54 @@
   }
 
   /**
+   * Convert an ES geohash to a WKT polygon.
+   */
+  function geohashToWkt(geohash) {
+    var minLat =  -90;
+    var maxLat =  90;
+    var minLon = -180;
+    var maxLon = 180;
+    var shift;
+    var isForMin;
+    var isForLon = true;
+    var centreLon;
+    var centreLat;
+    var mask;
+    // The geohash alphabet.
+    const ghs32 = '0123456789bcdefghjkmnpqrstuvwxyz';
+    for (var i = 0; i < geohash.length; i++) {
+      const chr = geohash.charAt(i);
+      const idx = ghs32.indexOf(chr);
+      if (idx === -1) {
+        throw new Error('Invalid character in geohash');
+      }
+      for (shift = 4; shift >= 0; shift--) {
+        // Test bit at position shift. If 1, then for min, else for max.
+        mask = 1 << shift;
+        isForMin = idx & mask;
+        // Bits extracted from characters toggle between x & y.
+        if (isForLon) {
+          centreLon = (minLon + maxLon) / 2;
+          if (isForMin) {
+            minLon = centreLon;
+          } else {
+            maxLon = centreLon;
+          }
+        } else {
+          centreLat = (minLat + maxLat) / 2;
+          if (isForMin) {
+            minLat = centreLat;
+          } else {
+            maxLat = centreLat;
+          }
+        }
+        isForLon = !isForLon;
+      }
+    }
+    return 'POLYGON((' + minLon + ' ' + minLat + ',' + maxLon + ' ' + minLat + ', ' + maxLon + ' ' + maxLat + ', ' + minLon + ' ' + maxLat + ', ' + minLon + ' ' + minLat + '))';
+  }
+
+  /**
    * Add a feature to the map (marker, circle etc).
    *
    * @param string geom
@@ -132,18 +180,20 @@
    *   Optional field for filter to apply if this feature selected.
    * @param string filterValue
    *   Optional value for filter to apply if this feature selected.
+   * @param string label
+   *   Optional label for a tooltip to be added to the feature.
    */
-  function addFeature(el, sourceId, location, geom, metric, fillOpacity, filterField, filterValue) {
+  function addFeature(el, sourceId, location, geom, metric, fillOpacity, filterField, filterValue, label, geohash) {
     var layerIds = getLayerIdsForSource(el, sourceId);
     var circle;
     var config;
     var wkt;
-    var obj;
     var sourceSettings = indiciaData.esSourceObjects[sourceId].settings;
     var size = {};
     fillOpacity = fillOpacity === null || typeof fillOpacity === "undefined" ? 0.5 : fillOpacity;
     $.each(layerIds, function eachLayer() {
       var layerConfig = el.settings.layerConfig[this];
+      var mapObject;
       config = {
         type: typeof layerConfig.type === 'undefined' ? 'marker' : layerConfig.type,
         options: {}
@@ -163,7 +213,12 @@
             config.options.size = $(el).idcLeafletMap('getAutoSquareSize');
           }
         }
-        // If size is auto, override it.
+        // If outputting a geohash as geometry (not heat), calculate the geohash rectangle.
+        if (sourceSettings.mode === 'mapGeoHash' && (config.type === 'geom' || config.type === 'square') && geohash) {
+          geom = geohashToWkt(geohash.toLowerCase());
+          config.type = 'geom';
+        }
+         // If size is auto, override it.
         indiciaFns.findAndSetValue(config.options, 'size', $(el).idcLeafletMap('getAutoSquareSize'), 'autoGridSquareSize');
         // Apply metric to any options that are supposed to use it.
         $.each(config.options, function eachOption(key, value) {
@@ -201,9 +256,9 @@
       switch (config.type) {
         // Circle markers on layer.
         case 'circle':
-          el.outputLayers[this].addLayer(L.circle(location, config.options));
+          mapObject = L.circle(location, config.options);
           break;
-        // Leaflet.heat powered heat maps.
+        // Leaflet.heat powered heat maps. Note these can't be labelled.
         case 'heat':
           el.outputLayers[this].addLatLng([location.lat, location.lon, metric]);
           break;
@@ -211,22 +266,32 @@
           // @todo - properly projected squares. These are just the bounding box of circles.
           // Use a temporary circle to get correct size.
           circle = L.circle(location, config.options).addTo(el.map);
-          el.outputLayers[this].addLayer(L.rectangle(circle.getBounds(), config.options));
+          mapObject = L.rectangle(circle.getBounds(), config.options);
           circle.removeFrom(el.map);
           break;
         case 'geom':
           wkt = new Wkt.Wkt();
           wkt.read(geom);
-          obj = wkt.toObject(config.options);
-          size.x = obj.getBounds().getEast() - obj.getBounds().getWest();
-          size.y = obj.getBounds().getNorth() - obj.getBounds().getSouth();
-          size.relativeVisual = Math.min(size.x, size.y) * Math.pow(10, el.map.getZoom());
-          obj.options.weight = Math.max(1, 13 - Math.round(Math.log10(size.relativeVisual)));
-          obj.addTo(el.outputLayers[this]);
+          mapObject = wkt.toObject(config.options);
+          if (!config.options.weight) {
+            // Default weight used to "thicken" small objects when zoomed out.
+            size.x = mapObject.getBounds().getEast() - mapObject.getBounds().getWest();
+            size.y = mapObject.getBounds().getNorth() - mapObject.getBounds().getSouth();
+            size.viewportX = el.map.getBounds().getEast() - el.map.getBounds().getWest();
+            size.viewportY = el.map.getBounds().getNorth() - el.map.getBounds().getSouth();
+            // Weight at least 1, calculated based on ratio of map viewport area to object area.
+            mapObject.options.weight = Math.max(1, Math.round(Math.log10((size.viewportX * size.viewportY) / (size.x * size.y * 100))));
+          }
           break;
         // Default layer type is markers.
         default:
-          el.outputLayers[this].addLayer(L.marker(location, config.options));
+          mapObject = L.marker(location, config.options);
+      }
+      if (typeof mapObject !== 'undefined') {
+        el.outputLayers[this].addLayer(mapObject);
+        if (layerConfig.labels && label) {
+          layerConfig.labels === 'permanent' ? mapObject.bindTooltip(label, {permanent: true}) : mapObject.bindTooltip(label);
+        }
       }
     });
   }
@@ -345,7 +410,7 @@
         var count = indiciaFns.findValue(this, 'count');
         var metric = Math.round((Math.sqrt(count) / maxMetric) * 20000);
         if (typeof location !== 'undefined') {
-          addFeature(el, sourceSettings.id, location, null, metric);
+          addFeature(el, sourceSettings.id, location, null, metric, null, null, null, null, this.key);
         }
       });
     }
@@ -377,7 +442,7 @@
           $.each(subBuckets, function eachSubBucket() {
             var coords;
             var metric;
-            if (this.key && this.key.match(/\-?\d+\.\d+ \d+\.\d+/)) {
+            if (this.key && this.key.match(/\-?\d+\.\d+ \-?\d+\.\d+/)) {
               coords = this.key.split(' ');
               metric = Math.round((Math.sqrt(this.doc_count) / maxMetric) * 20000);
               if (typeof location !== 'undefined') {
@@ -529,6 +594,7 @@
 
       indiciaFns.registerOutputPluginClass('idcLeafletMap');
       el.settings = $.extend({}, defaults);
+      el.callbacks = callbacks;
       // Apply settings passed in the HTML data-* attribute.
       if (typeof $(el).attr('data-idc-config') !== 'undefined') {
         $.extend(el.settings, JSON.parse($(el).attr('data-idc-config')));
@@ -718,6 +784,11 @@
       // Are there document hits to map?
       $.each(response.hits.hits, function eachHit(i) {
         var latlon = this._source.location.point.split(',');
+        var label = typeof this._source.taxon === 'undefined' || typeof this._source.event === 'undefined'
+          ? null
+          : indiciaFns.fieldConvertors.taxon_label(this._source) + '<br/>' +
+          this._source.event.recorded_by + '<br/>' +
+          indiciaFns.fieldConvertors.event_date(this._source);
         // Repeat records on same grid square should be progressively more
         // transparent so they don't block the background out.
         if (typeof geomCounts[this._source.location.point] === 'undefined') {
@@ -725,7 +796,7 @@
         }
         geomCounts[this._source.location.point]++;
         fillOpacity = 0.3 / Math.pow(geomCounts[this._source.location.point], 2.5);
-        addFeature(el, sourceSettings.id, latlon, this._source.location.geom, this._source.location.coordinate_uncertainty_in_meters, fillOpacity, '_id', this._id);
+        addFeature(el, sourceSettings.id, latlon, this._source.location.geom, this._source.location.coordinate_uncertainty_in_meters, fillOpacity, '_id', this._id, label);
       });
       // Are there aggregations to map?
       if (typeof response.aggregations !== 'undefined') {
@@ -738,7 +809,7 @@
       if (sourceSettings.initialMapBounds && !el.settings.initialBoundsSet && layers.length > 0 && layers[0].getBounds) {
         bounds = layers[0].getBounds();
         if (bounds.isValid()) {
-          el.map.fitBounds(layers[0].getBounds());
+          el.map.fitBounds(layers[0].getBounds().pad(0.25));
           el.settings.initialBoundsSet = true;
         }
       }
@@ -750,23 +821,19 @@
      * Binds to event handlers for row click (to select feature) and row double
      * click (to also zoom in).
      */
-    bindRecordListControls: function bindRecordListControls() {
+    bindControls: function bindControls() {
       var el = this;
       var settings = $(el)[0].settings;
-      var controlFn;
+      var controlClass;
       if (typeof settings.showSelectedRow !== 'undefined') {
         if ($('#' + settings.showSelectedRow).length === 0) {
           indiciaFns.controlFail(el, 'Invalid grid ID in @showSelectedRow parameter');
         }
-        if ($('#' + settings.showSelectedRow).hasClass('idc-output-dataGrid')) {
-          controlFn = 'idcDataGrid';
-        } else if ($('#' + settings.showSelectedRow).hasClass('idc-output-cardGallery')) {
-          controlFn = 'idcCardGallery';
-        }
-        $('#' + settings.showSelectedRow)[controlFn]('on', 'itemSelect', function onItemSelect(tr) {
+        controlClass = $('#' + settings.showSelectedRow).data('idc-class');
+        $('#' + settings.showSelectedRow)[controlClass]('on', 'itemSelect', function onItemSelect(tr) {
           rowSelected(el, tr, false);
         });
-        $('#' + settings.showSelectedRow)[controlFn]('on', 'itemDblClick', function onItemDblClick(tr) {
+        $('#' + settings.showSelectedRow)[controlClass]('on', 'itemDblClick', function onItemDblClick(tr) {
           rowSelected(el, tr, true);
         });
       }
@@ -904,7 +971,7 @@
    */
   indiciaFns.loadReportBoundaries = function() {
     if (indiciaData.reportBoundaries) {
-      $.each($('.idc-output-leafletMap'), function eachMap() {
+      $.each($('.idc-leafletMap'), function eachMap() {
         var map = this;
         if (!map.settings.initialBoundsSet) {
           $(map).idcLeafletMap('addBoundaryGroup', indiciaData.reportBoundaries, {

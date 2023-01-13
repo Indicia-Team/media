@@ -285,6 +285,20 @@ var resetSpeciesTextOnEscape;
     return ctrl;
   }
 
+  /**
+   * Strike out verification info.
+   *
+   * If using the verification information columns option, after a taxon name
+   * adjustment is made, we need to indicate the verification information may
+   * be out of date by setting the text as strikethrough text.
+   *
+   * @param object row
+   *   HTMLTableRowElement for the table row.
+   */
+    function strikeThroughVerificationInfoLabels(row) {
+      $(row).find('.scVerificationInfoCell').css('text-decoration', 'line-through');
+    }
+
   function updateRowSpatialRefFeatureLabel(row) {
     var spatialRefInput = $(row).find('.scSpatialRef');
     var taxonCell = $(row).children('.scTaxonCell');
@@ -307,22 +321,24 @@ var resetSpeciesTextOnEscape;
     }
   }
 
-  // Create an inner function for adding blank rows to the bottom of the grid
+  // Create an inner function for adding blank rows to the bottom of the grid.
   var makeSpareRow = function(gridId, lookupListId, scroll, force) {
 
     /**
-     * Function fired when return pressed in the species selector - adds a new row and focuses it. Must be enclosed so that
-     * it can refer to things like the gridId if there are multiple grids.
+     * Function fired when return pressed in the species selector.
+     *
+     * Adds a new row and focuses it. Must be enclosed so that it can refer to
+     * things like the gridId if there are multiple grids.
      */
     returnPressedInAutocomplete = function (e) {
       var rows = $(e.currentTarget).parents('tbody').children();
       var rowIndex = rows.index($(e.currentTarget).parents('tr')[0]);
       if (rowIndex === rows.length - 1) {
         var ctrl = makeSpareRow(gridId, lookupListId, true, true);
-        // is return key pressed, if so focus next row
+        // Is return key pressed? If so focus next row.
         setTimeout(function () { $(ctrl).focus(); });
       } else {
-        // focus the next row
+        // Focus the next row.
         $(rows[rowIndex + 1]).find('td.scTaxonCell input').focus();
         e.preventDefault();
       }
@@ -421,6 +437,7 @@ var resetSpeciesTextOnEscape;
       if (indiciaData['copyDataFromPreviousRow-' + gridId]) {
         species_checklist_add_another_row(gridId);
       }
+      strikeThroughVerificationInfoLabels(row, taxonCell);
       updateRowSpatialRefFeatureLabel(row);
       // Allow forms to hook into the event of a new row being added
       $.each(hook_species_checklist_new_row, function (idx, fn) {

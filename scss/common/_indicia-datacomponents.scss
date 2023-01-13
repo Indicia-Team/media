@@ -8,6 +8,38 @@ $file-box-icon-size: 30px;
   word-wrap: break-word;
 }
 
+@mixin verification-button {
+  font-size: 120%;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  box-shadow: none;
+  color: black;
+  text-shadow: none;
+  min-height: 22px;
+  margin: 4px;
+  padding: 6px;
+  &:hover {
+    background: silver;
+  }
+  &:link, &:visited {
+    color: black;
+  }
+}
+
+@mixin control-settings-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 1em;
+  opacity: 0.95;
+  background-color: #f0f0f0;
+  border: solid silver 1px;
+  z-index: 1;
+  border-radius: 4px;
+}
+
 /* So we can absolute position the loading spinner */
 body {
   position: relative;
@@ -16,8 +48,8 @@ body {
   }
 }
 
-.idc-output {
-  .idc-output-tools {
+.idc-control {
+  .idc-tools {
     position: absolute;
     top: 0;
     right: 0;
@@ -37,11 +69,17 @@ body {
 }
 
 /* idcCardGallery plugin */
-.idc-output-cardGallery {
+.idc-cardGallery {
   position: relative;
   /* Ensure height enough for spinner. */
   min-height: 140px;
+  &.max-size-mode {
+    .card:not(.show-max-size) {
+      opacity: 0.3;
+    }
+  }
   .es-card-gallery {
+    position: relative;
     display: flex;
     flex-wrap: wrap;
     margin: 0 auto;
@@ -52,6 +90,8 @@ body {
       margin: 1%;
       width: 90%;
       box-sizing: border-box;
+      background-color: $colour-even-row;
+      position: relative;
       &:last-of-type {
         flex-grow: 0;
       }
@@ -63,6 +103,35 @@ body {
         color: $colour-select-row;
         background-color: $colour-select-row-bg;
         border: 1px solid grey;
+      }
+      .expand-card {
+        position: absolute;
+        bottom: 4px;
+        right: 4px;
+        border: none;
+        padding: 0;
+      }
+      .collapse-card {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        display: none;
+        border: none;
+        padding: 0;
+      }
+      &.show-max-size {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: auto;
+        width: 100%;
+        z-index: 1000;
+        .expand-card {
+          display: none;
+        }
+        .collapse-card {
+          display: initial;
+        }
       }
       .image-container {
         display: flex;
@@ -94,6 +163,16 @@ body {
         font-weight: bold;
         margin: 0;
       }
+      /* If verification buttons moved to card in max size mode */
+      .verification-buttons-cntr {
+        padding: 8px;
+        margin: 8px;
+        background: #ccc;
+        border-radius: 4px;
+        button {
+          @include verification-button;
+        }
+      }
     }
     @media (min-width: 801px) {
       .card {
@@ -124,26 +203,45 @@ body {
     background-color: #eee;
     padding: 8px;
   }
+  .sort-dropdown {
+    @include control-settings-overlay;
+    li {
+      list-style-type: none;
+      background: #e7e7e7;
+      border: solid #777 1px;
+      padding: 4px;
+      margin: 2px 4px;
+      position: relative;
+      h4 {
+        margin: 0;
+        font-size: 1.1rem;
+      }
+      p {
+        margin: 0;
+        font-size: 1rem;
+      }
+      /* Sort icon */
+      span {
+        position: absolute;
+        right: 4px;
+        top: 4px;
+      }
+    }
+  }
+  #card-nav-buttons {
+    float: right;
+  }
 }
 
-
 /* idcDataGrid plugin */
-.idc-output-dataGrid {
+.idc-dataGrid {
   position: relative;
   /* Ensure height enough for spinner. */
   min-height: 140px;
   .data-grid-settings {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
+    @include control-settings-overlay;
     bottom: 0;
-    padding: 1em;
-    opacity: 0.95;
-    background-color: #f0f0f0;
     min-height: 500px;
-    border: solid silver 1px;
-    z-index: 1;
     ol {
       overflow: auto;
       li {
@@ -241,38 +339,29 @@ table.es-data-grid {
   }
 }
 
-
 /* idcLeafletMap plugin */
-.idc-output-leafletMap {
+.idc-leafletMap {
   height: 500px;
+  /* Map tooltips */
+  .leaflet-tooltip {
+    h3 {
+      margin: 0;
+      font-size: 14px;
+    }
+  }
 }
 
 /* idcVerificationButtons plugin */
-.idc-verification-buttons, .idc-verification-buttons-row {
+.verification-buttons-cntr, .idc-verificationButtons-row {
   * {
     display: inline-block;
     vertical-align: middle;
   }
 }
 
-.idc-verification-buttons-row {
+.idc-verificationButtons-row {
   button, a {
-    font-size: 120%;
-    border: none;
-    border-radius: 4px;
-    background: none;
-    box-shadow: none;
-    color: black;
-    text-shadow: none;
-    min-height: 22px;
-    margin: 4px;
-    padding: 6px;
-    &:hover {
-      background: silver;
-    }
-    &:link, &:visited {
-      color: black;
-    }
+    @include verification-button;
   }
   .multi-only {
     display: none;
@@ -282,6 +371,65 @@ table.es-data-grid {
     width: 1px;
     background-color: silver;
     margin: 0 8px;
+  }
+}
+
+.verification-popup {
+  .comment-cntr {
+    position: relative;
+    .comment-tools {
+      position: absolute;
+      right: 0;
+      top: 0;
+      font-size: 0.9rem;
+      span {
+        cursor: pointer;
+        padding: 4px 0;
+        &:hover {
+          color: $colour-select-row-bg;
+        }
+      }
+    }
+    .comment-preview {
+      position: absolute;
+      right: 0;
+      left: 0;
+      top: 20px;
+      bottom: 0;
+      background: #e7e7e7;
+      padding: 8px;
+    }
+    .save-template {
+      cursor: pointer;
+      margin: 0;
+    }
+  }
+  #template-help-cntr {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    bottom: 4px;
+    left: 4px;
+    background: white;
+    z-index: 1000;
+    article {
+      border: solid silver 1px;
+      border-radius: 4px;
+      padding: 8px;
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 30px;
+      left: 0;
+      overflow-y: scroll;
+      cursor: text;
+      user-select: text;
+
+    }
+    button {
+      position: absolute;
+      bottom: 4px;
+    }
   }
 }
 
@@ -354,7 +502,7 @@ table.es-data-grid {
 }
 
 /* idcRecordDetailsPane */
-.record-details-container {
+.idc-recordDetails {
   .ui-tabs-nav {
     border-bottom: solid silver 1px;
   }

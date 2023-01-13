@@ -40,6 +40,7 @@
    * Registered callbacks for events.
    */
   var callbacks = {
+    itemUpdate: []
   };
 
   /**
@@ -66,6 +67,443 @@
    * Flag to prevent double click on Query button.
    */
   var doingQueryPopup = false;
+
+  /**
+   * Capture the chosen taxon when redetermining, for token replacements.
+   */
+  var redetToTaxon = null;
+
+  /**
+   * Track templates loaded for each status to save unnecessary hits.
+   */
+  var commentTemplatesLoaded = {};
+
+  /**
+   * Uploads a spreadsheet of verification decisions to the warehouse.
+   */
+  function uploadDecisionsFile() {
+    var formdata = new FormData();
+    var file;
+    if($('#decisions-file').prop('files').length > 0) {
+      $('#upload-decisions-form .upload-output').show();
+      $('#upload-decisions-form .instruct').hide();
+      $('#upload-decisions-file').val('').prop('disabled', true);
+      file = $('#decisions-file').prop('files')[0];
+      formdata.append('decisions', file);
+      formdata.append('filter_id', $('.user-filter.defines-permissions').val());
+      formdata.append('es_endpoint', indiciaData.esEndpoint);
+      formdata.append('id_prefix', indiciaData.idPrefix);
+      formdata.append('warehouse_name', indiciaData.warehouseName);
+      $.ajax({
+        url: indiciaData.esProxyAjaxUrl + '/verifyspreadsheet/' + indiciaData.nid,
+        type: 'POST',
+        data: formdata,
+        processData: false,
+        contentType: false,
+        success: function (metadata) {
+          nextSpreadsheetTask(metadata);
+        },
+        error: function(jqXHR) {
+          var msg = indiciaData.lang.verificationButtons.uploadError;
+          if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
+            msg += '<br/>' + jqXHR.responseJSON.message;
+          }
+          $('.upload-output').removeClass('alert-info').addClass('alert-danger');
+          $('.upload-output .msg').html('<p>' + msg + '</p>');
+          $('.upload-output progress').hide();
+        }
+      });
+    }
+  }
+
+  /**
+   * Reset the form when a verification or redet popup first shown.
+   *
+   * @param string formId
+   *   Form element ID.
+   * @param text text
+   *   Default comment text.
+   */
+  function resetCommentForm(formId, text) {
+    $('#' + formId + ' textarea').val(text);
+    $('#' + formId + ' input[type="text"]').val('');
+    $('#' + formId + '.template-save-cntr').hide();
+    $('#template-help-cntr').hide();
+    $('#' + formId + ' .comment-edit').click();
+    $('#' + formId + ' .comment-tools button').removeAttr('disabled');
+    $('#' + formId + ' .form-buttons button').removeAttr('disabled');
+  }
+
+  /**
+   * Display the redetermination form.
+   */
+  function showRedetForm(el) {
+    redetToTaxon = null;
+    resetCommentForm('redet-form', 'Redetermined from {{ rank }} {{ taxon full name }} to {{ new rank }} {{ new taxon full name }}.');
+    if (el.settings.verificationTemplates) {
+      loadVerificationTemplates('DT', '#redet-template');
+    }
+    $.fancybox.open($('#redet-form'));
+  }
+
+  /**
+   * If a template is selected, load the template into the comment.
+   */
+  function onSelectCommentTemplate(e) {
+    const templateId = $(e.currentTarget).val();
+    const data = $(e.currentTarget).data('data');
+    const textarea = $(e.currentTarget).closest('.verification-popup').find('textarea')
+    $.each(data, function eachData() {
+      if (this.id === templateId) {
+        $(textarea).val(this.template);
+      }
+    });
+  }
+
+  /**
+   * Submit handler for the redetermination popup form.
+   */
+  function redetFormSubmit() {
+    var data;
+    if ($('#redet-species').val() === '') {
+      redetFormValidator.showErrors({ 'redet-species:taxon': 'Please type a few characters then choose a name from the list of suggestions' });
+    } else if (redetFormValidator.numberOfInvalids() === 0) {
+      $.fancybox.close();
+      data = {
+        website_id: indiciaData.website_id,
+        'occurrence:id': occurrenceId,
+        'occurrence:taxa_taxon_list_id': $('#redet-species').val(),
+        user_id: indiciaData.user_id
+      };
+      if ($('#redet-comment-textarea').val()) {
+        data['occurrence_comment:comment'] = commentTemplateReplacements($('#redet-comment-textarea').val());
+      }
+      if ($('#no-update-determiner') && $('#no-update-determiner').prop('checked')) {
+        // Determiner_id=-1 is special value that keeps the original
+        // determiner info.
+        data['occurrence:determiner_id'] = -1;
+      }
+      $.post(
+        indiciaData.ajaxFormPostRedet,
+        data,
+        function onResponse(response) {
+          if (typeof response.error !== 'undefined') {
+            alert(response.error);
+          }
+        }
+      );
+      // Now post update to Elasticsearch. Remove the website ID to temporarily
+      // disable the record until it is refreshed with the correct new taxonomy
+      // info.
+      data = {
+        ids: [occurrenceId],
+        doc: {
+          metadata: {
+            website: {
+              id: 0
+            }
+          }
+        }
+      };
+      $.ajax({
+        url: indiciaData.esProxyAjaxUrl + '/verifyids/' + indiciaData.nid,
+        type: 'post',
+        data: data,
+        success: function success() {
+          indiciaFns.hideItemAndMoveNext(listOutputControl[0]);
+        }
+      });
+    }
+  }
+
+  /**
+   * Click handler for the status buttons level toggle.
+   *
+   * Changes from showing just level one options to level 2 options and back.
+   */
+  function toggleStatusButtonLevelMode(e) {
+    var div = $(e.currentTarget).closest('.idc-verificationButtons-row');
+    if ($(e.currentTarget).hasClass('fa-toggle-on')) {
+      $(e.currentTarget).removeClass('fa-toggle-on');
+      $(e.currentTarget).addClass('fa-toggle-off');
+      div.find('.l2').hide();
+      div.find('.l1').show();
+    } else {
+      $(e.currentTarget).removeClass('fa-toggle-off');
+      $(e.currentTarget).addClass('fa-toggle-on');
+      div.find('.l1').hide();
+      div.find('.l2').show();
+    }
+  }
+
+  /**
+   * Click handler for the save comment form which saves a comment.
+   */
+  function saveCommentPopup(el, popup) {
+    var ids = JSON.parse($(popup).data('ids'));
+    var statusData = {};
+    if ($(popup).data('status')) {
+      statusData.status = $(popup).data('status');
+    }
+    if ($(popup).data('query')) {
+      statusData.query = $(popup).data('query');
+    }
+    saveVerifyComment(el, ids, statusData, $(popup).find('textarea').val());
+    $.fancybox.close();
+  }
+
+  /**
+   * Update the loaded templates data object after saving a template.
+   *
+   * Either updates existing template details, or adds the template to the end
+   * of the list.
+   *
+   * @param status
+   *   Status code.
+   * @param object templateData
+   *   Object containing id, title and template for the template to add or update.
+   */
+  function updateTemplatesList(status, templateData) {
+    let existingUpdated = false;
+    $.each(commentTemplatesLoaded[mapToLevel1Status(status)], function() {
+      if (this.id == templateData.id) {
+        this.title = templateData.title;
+        this.template = templateData.template;
+        existingUpdated = true;
+      }
+    });
+    if (!existingUpdated) {
+      commentTemplatesLoaded[mapToLevel1Status(status)].push(templateData);
+    }
+  }
+
+  /**
+   * Save a template to the database for future use.
+   */
+  function saveTemplate(popupEl, data) {
+    let duplicateFound = false;
+    // Don't check duplicates if already selected to overwrite one.
+    if (typeof data.id === 'undefined') {
+      $.each(($(popupEl).find('.comment-template option')), function() {
+        if (this.textContent === data.title) {
+          duplicateFound = true;
+          $.fancyDialog({
+            title: indiciaData.lang.verificationButtons.saveTemplateError,
+            message: indiciaData.lang.verificationButtons.duplicateTemplateMsg,
+            okButton: indiciaData.lang.verificationButtons.overwrite,
+            cancelButton: indiciaData.lang.verificationButtons.close,
+            callbackOk: () => {
+              data.id = $(this).val();
+              saveTemplate(popupEl, data);
+            }
+          });
+        }
+      });
+    }
+    if (!duplicateFound) {
+      $.post(
+        indiciaData.ajaxFormPostVerificationTemplate,
+        data,
+        null,
+        'json'
+      ).done((response) => {
+        const status = $(popupEl).data('status');
+        if (typeof response.error !== 'undefined') {
+          $.fancyDialog({
+            title: indiciaData.lang.verificationButtons.saveTemplateError,
+            message: response.error,
+            cancelButton: null
+          });
+        } else {
+          updateTemplatesList(mapToLevel1Status(status), {
+            id: response.outer_id,
+            title: data.title,
+            template: data.template,
+          });
+          loadVerificationTemplates(mapToLevel1Status(status), '#' + $(popupEl).find('.comment-template').attr('id'));
+          closeSaveTemplateControl(popupEl);
+        }
+      }).fail((qXHR) => {
+        $.fancyDialog({
+          title: indiciaData.lang.verificationButtons.saveTemplateError,
+          message: indiciaData.lang.verificationButtons.saveTemplateErrorMsg,
+          cancelButton: null
+        });
+      });
+    }
+  }
+
+  /**
+   * After saving a template or canceling, hide the template name and associated controls.
+   */
+  function closeSaveTemplateControl(popupEl) {
+    $(popupEl).find('.template-save-cntr').slideUp();
+    // Re-enable tool, save and cancel buttons.
+    $(popupEl).find('.comment-tools button').removeAttr('disabled');
+    $(popupEl).find('.form-buttons button').removeAttr('disabled');
+  }
+
+  /**
+   * Register the various user interface event handlers.
+   */
+  function initHandlers(el) {
+
+    /**
+     * Click handler for the button which starts the upload decisions process off.
+     */
+    $('#upload-decisions-file').click(uploadDecisionsFile);
+
+    /**
+     * Redetermination button click handler.
+     */
+    $(el).find('button.redet').click(() => {
+      showRedetForm(el);
+    });
+
+    /**
+     * Show on the redetermination comment preview.
+     */
+    $('.comment-show-preview').click(function buttonClick() {
+      var ctrlWrap = $(this).closest('.comment-cntr');
+      var textarea = ctrlWrap.find('textarea');
+      var previewBox = ctrlWrap.find('.comment-preview');
+      previewBox.text(commentTemplateReplacements(textarea.val()));
+      // Hide whilst leaving in place to occupy space.
+      textarea.css('opacity', 0);
+      $(previewBox).css('top', $(textarea).position().top + 'px');
+      previewBox.show();
+      $('.comment-show-preview').hide();
+      $('.comment-edit').show();
+    });
+
+    /**
+     * Toggle off the redetermination comment preview.
+     */
+    $('.comment-edit').click(function buttonClick() {
+      var ctrlWrap = $(this).closest('.comment-cntr');
+      var textarea = ctrlWrap.find('textarea');
+      var previewBox = ctrlWrap.find('.comment-preview');
+      textarea.css('opacity', 100);
+      previewBox.hide();
+      $('.comment-edit').hide();
+      $('.comment-show-preview').show();
+    });
+
+    /**
+     * Save template button click handler.
+     *
+     * Displays the input controls for naming and saving the current comment as
+     * a template.
+     */
+    $('.comment-save-template').click(function() {
+      const popupEl = $(this).closest('.verification-popup');
+      // Revert to edit mode so you can see the template you are editing.
+      $(popupEl).find('.comment-edit').click();
+      $(popupEl).find('.template-save-cntr input[type="text"]').val('');
+      $(popupEl).find('.template-save-cntr').slideDown();
+      $(popupEl).find('.comment-tools button').attr('disabled', true);
+      $(popupEl).find('.form-buttons button').attr('disabled', true);
+    });
+
+    /**
+     * Click handler for the button which saves the template.
+     */
+    $('.save-template').click(function() {
+      const ctrlWrap = $(this).closest('.comment-cntr');
+      const popupEl = $(ctrlWrap).closest('.verification-popup');
+      const status = $(popupEl).data('status');
+      const templateName = $(ctrlWrap).find('[name="template-name"]').val().trim();
+      const templateText = $(ctrlWrap).find('.comment-textarea').val().trim();
+      const data = {
+        website_id: indiciaData.website_id,
+        restrict_to_website_id: 't',
+        title: templateName,
+        template: templateText,
+        template_statuses: [mapToLevel1Status(status)],
+      }
+      if (!templateName || !templateText) {
+        $.fancyDialog({
+          title: indiciaData.lang.verificationButtons.templateNameTextRequired,
+          message: indiciaData.lang.verificationButtons.pleaseSupplyATemplateNameAndText,
+          cancelButton: null
+        });
+        return;
+      }
+      saveTemplate(popupEl, data);
+    });
+
+    /**
+     * Save template cancel button click handler.
+     */
+    $('.cancel-save-template').click(function() {
+      const popupEl = $(this).closest('.verification-popup');
+      closeSaveTemplateControl(popupEl);
+    });
+
+    /**
+     * Click handler for the template help button.
+     */
+    $('.comment-help').click(function () {
+      const popupEl = $(this).closest('.verification-popup');
+      $('#template-help-cntr').appendTo(popupEl);
+      $('#template-help-cntr').show();
+    });
+
+    /**
+     * Click handler for the help close button.
+     */
+    $('.help-close').click(function() {
+      $('#template-help-cntr').fadeOut();
+    })
+
+    /**
+     * Result handler for the taxon redetermination autocomplete.
+     *
+     * Captures the taxon so it can be used in template token replacements.
+     */
+    $('#redet-species\\:taxon').result(function(event, data) {
+      redetToTaxon = data;
+    });
+
+    /**
+     * Redetermination dialog select template change handler.
+     */
+    $('.comment-template').change(onSelectCommentTemplate);
+
+    /**
+     * Redetermination dialog submit form handler.
+     */
+    $('#apply-redet').click(redetFormSubmit);
+
+    /**
+     * Verification dialog submit form handler.
+     */
+    $('#apply-verification').click((e) => {
+      saveCommentPopup(el, $(e.currentTarget).closest('.comment-popup'));
+    });
+
+    /**
+     * Redetermination and verification dialog cancel button click handler.
+     */
+     $('#cancel-verification,#cancel-redet').click(() => {
+      $.fancybox.close();
+    });
+
+    /**
+     * Status buttons level mode toggle click handler.
+     */
+    $(el).find('.toggle').click(toggleStatusButtonLevelMode);
+
+    /**
+     * Toggle the apply to selected|table mode buttons.
+     */
+    $(el).find('.apply-to button').click(function modeClick(e) {
+      var div = $(e.currentTarget).closest('.idc-verificationButtons-row');
+      div.find('.apply-to button').not(e.currentTarget).removeClass('active');
+      $(e.currentTarget).addClass('active');
+    });
+
+  }
 
   /**
    * Fetch the PG record updates required for a verification event.
@@ -194,20 +632,11 @@
   }
 
   /**
-   * When verifying rows, move the selected row to the next enabled one.
+   * Fire item update callbacks after a verification change.
    */
-  function moveToNextEnabledRow() {
-    var currentRow = $(listOutputControl).find('.selected');
-    $(currentRow).removeClass('selected');
-    while (currentRow.length > 0 && $(currentRow).hasClass('disabled')) {
-      currentRow = $(currentRow).next('[data-row-id]');
-    }
-    if (currentRow) {
-      $(currentRow).addClass('selected').focus();
-    }
-    // Fire callbacks for selected row, or if no round found to select.
-    $.each($(listOutputControl)[0].settings.callbacks.itemSelect, function eachCallback() {
-      this(currentRow.length === 0 ? null : currentRow);
+  function fireItemUpdate(el) {
+    $.each(el.callbacks.itemUpdate, function() {
+      this($(listOutputControl).find('.selected'));
     });
   }
 
@@ -231,7 +660,7 @@
     $.post(
       indiciaData.esProxyAjaxUrl + '/verifyall/' + indiciaData.nid,
       pgUpdates,
-      function success(response) {
+      function success() {
         // Unset all table mode as this is a "dangerous" state that should be explicitly chosen each time.
         $(listOutputControl).find('.multi-mode-table.active').removeClass('active');
         $(listOutputControl).find('.multi-mode-selected').addClass('active');
@@ -250,7 +679,7 @@
    *
    * Might be the verification of a single occurrence or list of occurrences.
    */
-  function saveVerifyCommentForSelection(occurrenceIds, status, comment, email) {
+  function saveVerifyCommentForSelection(el, occurrenceIds, status, comment, email) {
     var pgUpdates = getVerifyPgUpdates(status, comment, email);
     var esUpdates = getVerifyEsUpdates(status);
     var data;
@@ -281,7 +710,8 @@
     pgUpdates['occurrence:ids'] = occurrenceIds.join(',');
     // Disable rows that are being processed.
     rowsToRemove = disableRowsForIds(occurrenceIds);
-    moveToNextEnabledRow();
+    fireItemUpdate(el);
+    // @todo should repopulateAfterVerify be handled inside the list output control?
     if (listWillBeEmptied) {
       doRepopulateAfterVerify(occurrenceIds);
     }
@@ -339,29 +769,53 @@
   /**
    * Instigates a verification event.
    */
-  function saveVerifyComment(occurrenceIds, status, comment, email) {
+  function saveVerifyComment(el, occurrenceIds, status, comment, email) {
     if ($(listOutputControl).find('.multi-mode-table.active').length > 0) {
       // Verifying the whole table.
       saveVerifyCommentForWholeTable(status, comment, email);
     }
     else {
       // Verifying a single record or selection.
-      saveVerifyCommentForSelection(occurrenceIds, status, comment, email);
+      saveVerifyCommentForSelection(el, occurrenceIds, status, comment, email);
     }
+  }
+
+  /**
+   * Simplifies a status code to V or R for accept/reject.
+   *
+   * Other statuses returned as is, with C3 for plausible.
+   *
+   * @param string status
+   *   Status code.
+   *
+   * @return string
+   *   Simplified code.
+   */
+  function mapToLevel1Status(status) {
+    if (status[0] === 'V') {
+      return 'V';
+    }
+    if (status[0] === 'R') {
+      return 'R';
+    }
+    return status;
   }
 
   /**
    * Displays a popup dialog for capturing a verification or query comment.
    */
-  function commentPopup(status, commentInstruction) {
+  function commentPopup(el, status, commentInstruction) {
     var doc;
-    var fs;
     var heading;
-    var statusData = [];
     var overallStatus = status.status ? status.status : status.query;
     var ids = [];
     var todoCount;
     var selectedItems;
+    // Form reset.
+    resetCommentForm('verification-form', '');
+    if (el.settings.verificationTemplates) {
+      loadVerificationTemplates(mapToLevel1Status(status.status ? status.status : status.query), '#verify-template');
+    }
     if ($(listOutputControl).find('.multi-mode-table.active').length > 0) {
       todoCount = $(listOutputControl)[0].settings.totalRowCount;
     } else {
@@ -378,34 +832,35 @@
       });
       todoCount = ids.length;
     }
-    if (status.status) {
-      statusData.push('data-status="' + status.status + '"');
-    }
-    if (status.query) {
-      statusData.push('data-query="' + status.query + '"');
-    }
-    fs = $('<fieldset class="comment-popup verification-popup" data-ids="' + JSON.stringify(ids) + '" ' + statusData.join('') + '>');
     if (todoCount > 1) {
       heading = status.status
         ? 'Set status to ' + indiciaData.statusMsgs[overallStatus] + ' for ' + todoCount + ' records'
         : 'Query ' + todoCount + ' records';
-      $('<div class="alert alert-info">You are updating multiple records!</alert>').appendTo(fs);
+      $('#verification-form .multiple-warning').show();
     } else {
       heading = status.status
         ? 'Set status to ' + indiciaData.statusMsgs[overallStatus]
         : 'Query this record';
+      $('#verification-form .multiple-warning').hide();
     }
-    $('<legend><span class="' + indiciaData.statusClasses[overallStatus] + ' fa-2x"></span>' + heading + '</legend>')
-      .appendTo(fs);
+
+    $('#verification-form').data('ids', JSON.stringify(ids));
+    status.status ? $('#verification-form').data('status', status.status) : $('#verification-form').removeData('status');
+    status.query ? $('#verification-form').data('query', status.query) : $('#verification-form').removeData('query');
+    $('#verification-form legend span:first-child')
+      .removeClass()
+      .addClass(indiciaData.statusClasses[overallStatus])
+      .addClass('fa-2x');
+    $('#verification-form legend span:last-child').text(heading);
+
     if (commentInstruction) {
-      $('<p class="alert alert-info">' + commentInstruction + '</p>').appendTo(fs);
+      $('#verification-form p.alert')
+        .text(commentInstruction)
+        .show();
+    } else {
+      $('#verification-form p.alert').hide();
     }
-    $('<div class="form-group">' +
-        '<label for="comment-textarea">Add the following comment:</label>' +
-        '<textarea id="comment-textarea" class="form-control" rows="6"></textarea>' +
-      '</div>').appendTo(fs);
-    $('<button class="btn btn-primary">Save</button>').appendTo(fs);
-    $.fancybox.open(fs);
+    $.fancybox.open($('#verification-form'));
   }
 
   /**
@@ -578,7 +1033,7 @@
   /**
    * Display the popup dialog for querying a record.
    */
-  function queryPopup() {
+  function queryPopup(el) {
     var doc;
     if (doingQueryPopup) {
       return;
@@ -586,7 +1041,7 @@
     if ($(listOutputControl).hasClass('multiselect-mode')) {
       // As there are multiple records possibly selected, sending an email
       // option not available.
-      commentPopup({ query: 'Q' }, indiciaData.lang.verificationButtons.queryInMultiselectMode);
+      commentPopup(el, { query: 'Q' }, indiciaData.lang.verificationButtons.queryInMultiselectMode);
     } else {
       doc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
       getCurrentRecordEmail(doc, function callback(emailTo) {
@@ -736,44 +1191,6 @@
     });
   }
 
-  /**
-   * Click handler for the button which starts the upload decisions process off.
-   */
-  $('#upload-decisions-file').click(function() {
-    var formdata = new FormData();
-    var file;
-    if($('#decisions-file').prop('files').length > 0) {
-      $('#upload-decisions-form .upload-output').show();
-      $('#upload-decisions-form .instruct').hide();
-      $('#upload-decisions-file').val('').prop('disabled', true);
-      file = $('#decisions-file').prop('files')[0];
-      formdata.append('decisions', file);
-      formdata.append('filter_id', $('.user-filter.defines-permissions').val());
-      formdata.append('es_endpoint', indiciaData.esEndpoint);
-      formdata.append('id_prefix', indiciaData.idPrefix);
-      formdata.append('warehouse_name', indiciaData.warehouseName);
-      $.ajax({
-        url: indiciaData.esProxyAjaxUrl + '/verifyspreadsheet/' + indiciaData.nid,
-        type: 'POST',
-        data: formdata,
-        processData: false,
-        contentType: false,
-        success: function (metadata) {
-          nextSpreadsheetTask(metadata);
-        },
-        error: function(jqXHR) {
-          var msg = indiciaData.lang.verificationButtons.uploadError;
-          if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
-            msg += '<br/>' + jqXHR.responseJSON.message;
-          }
-          $('.upload-output').removeClass('alert-info').addClass('alert-danger');
-          $('.upload-output .msg').html('<p>' + msg + '</p>');
-          $('.upload-output progress').hide();
-        }
-      });
-    }
-  });
-
   /*
    * Saves the authorisation token for the Record Comment Quick Reply.
    *
@@ -858,7 +1275,6 @@
     var popup = $(e.currentTarget).closest('.query-popup');
     var occurrenceId = $(popup).data('id');
     var sampleId = $(popup).data('sample-id');
-    var emailType = $(popup).data('email-type');
     var urlSep = indiciaData.esProxyAjaxUrl.indexOf('?') === -1 ? '?' : '&';
     // Setup the quick reply page link and get an authorisation number.
     // Note: The quick reply page does actually support supplying a user_id parameter to it, however we don't do that in practice here as
@@ -891,6 +1307,7 @@
           email.body = email.body.replace(/\{{ comments }}/g, response.comments);
           // save a comment to indicate that the mail was sent
           saveVerifyComment(
+            el,
             [occurrenceId],
             { query: 'Q' },
             $(popup).hasClass('email-expert-popup') ? indiciaData.lang.verificationButtons.emailExpertLoggedAsComment : indiciaData.lang.verificationButtons.emailQueryLoggedAsComment,
@@ -908,57 +1325,56 @@
   }
 
   /**
-   * Submit handler for the redetermination popup form.
+   * Populates a select with the list of available verification templates.
+   *
+   * @param string select
+   *   Selector for the select control.
+   * @param array data
+   *   Database data for the templates.
    */
-  function redetFormSubmit(e) {
-    var data;
-    e.preventDefault();
-    if ($('#redet-species').val() === '') {
-      redetFormValidator.showErrors({ 'redet-species:taxon': 'Please type a few characters then choose a name from the list of suggestions' });
-    } else if (redetFormValidator.numberOfInvalids() === 0) {
-      $.fancybox.close();
-      data = {
-        website_id: indiciaData.website_id,
-        'occurrence:id': occurrenceId,
-        'occurrence:taxa_taxon_list_id': $('#redet-species').val(),
-        user_id: indiciaData.user_id
-      };
-      if ($('#redet-comment').val()) {
-        data['occurrence_comment:comment'] = $('#redet-comment').val();
-      }
-      if ($('#no-update-determiner') && $('#no-update-determiner').prop('checked')) {
-        // Determiner_id=-1 is special value that keeps the original
-        // determiner info.
-        data['occurrence:determiner_id'] = -1;
-      }
-      $.post(
-        indiciaData.ajaxFormPostRedet,
-        data,
-        function onResponse(response) {
-          if (typeof response.error !== 'undefined') {
-            alert(response.error);
-          }
+  function populateVerificationTemplates(select, data) {
+    // Remove all but the empty "please select" option.
+    $(select).find('option[value!=""]').remove();
+    if (data.length > 0) {
+      $.each(data, function() {
+        $(select).append('<option value="' + this.id + '">' + this.title + '</option>');
+      });
+      $(select).data('data', data);
+      $(select).closest('.ctrl-wrap').show();
+    } else {
+      $(select).closest('.ctrl-wrap').hide();
+    }
+  }
+
+  /**
+   * Loads a user's templates from the database for a status.
+   *
+   * @param string status
+   *   Status code to load templates for.
+   * @param string select
+   *   Selector for the <select> element to add them to.
+   */
+  function loadVerificationTemplates(statusCode, select) {
+    var getTemplatesReport = indiciaData.read.url + '/index.php/services/report/requestReport?report=library/verification_templates/verification_templates.xml&mode=json&mode=json&callback=?';
+    var getTemplatesReportParameters = {
+      auth_token: indiciaData.read.auth_token,
+      nonce: indiciaData.read.nonce,
+      reportSource: 'local',
+      template_status: statusCode,
+      created_by_id: indiciaData.user_id,
+      website_id: indiciaData.website_id
+    };
+    if (typeof commentTemplatesLoaded[statusCode] === 'undefined') {
+      $.getJSON(
+        getTemplatesReport,
+        getTemplatesReportParameters,
+        function (data) {
+          commentTemplatesLoaded[statusCode] = data;
+          populateVerificationTemplates(select, commentTemplatesLoaded[statusCode]);
         }
       );
-      // Now post update to Elasticsearch. Remove the website ID to temporarily disable the record.
-      data = {
-        ids: [occurrenceId],
-        doc: {
-          metadata: {
-            website: {
-              id: 0
-            }
-          }
-        }
-      };
-      $.ajax({
-        url: indiciaData.esProxyAjaxUrl + '/verifyids/' + indiciaData.nid,
-        type: 'post',
-        data: data,
-        success: function success() {
-          indiciaFns.hideItemAndMoveNext(listOutputControl[0]);
-        }
-      });
+    } else {
+      populateVerificationTemplates(select, commentTemplatesLoaded[statusCode]);
     }
   }
 
@@ -997,13 +1413,13 @@
         // Only interested in keys 1-5, q, r and x.
         if ($('[data-keycode="' + e.which +'"]:visible').length || e.which === 113 || e.which === 114 || e.which === 120) {
           if ($('[data-keycode="' + e.which +'"]:visible').length) {
-            commentPopup({ status: $('[data-keycode="' + e.which +'"]:visible').attr('data-status') });
+            commentPopup(el, { status: $('[data-keycode="' + e.which +'"]:visible').attr('data-status') });
           } else if (e.which === 113) {
             // q
-            queryPopup();
+            queryPopup(el);
           } else if (e.which === 114) {
             // r
-            $.fancybox.open($('#redet-form'));
+            showRedetForm(el);
           } else if (e.which === 120) {
             // x
             emailExpertPopup();
@@ -1015,10 +1431,49 @@
     }
   }
 
+  function getTaxonNameLabel(doc) {
+    var scientific = doc.taxon.accepted_name ? doc.taxon.taxon_name : doc.taxon.accepted_name;
+    var vernacular;
+    if (doc.taxon.vernacular_name) {
+      vernacular = doc.taxon.vernacular_name;
+      return vernacular === scientific ? scientific : scientific + ' (' + vernacular + ')';
+    }
+    return scientific;
+  }
+
+  function commentTemplateReplacements(text) {
+    var currentDoc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
+    var conversions = {
+      date: indiciaFns.fieldConvertors.event_date(currentDoc),
+      sref: currentDoc.location.output_sref,
+      taxon: currentDoc.taxon.taxon_name,
+      'common name': [currentDoc.taxon.vernacular_name, currentDoc.taxon.accepted_name, currentDoc.taxon.taxon_name],
+      'preferred name': [currentDoc.taxon.accepted_name, currentDoc.taxon.taxon_name],
+      'taxon full name': getTaxonNameLabel(currentDoc),
+      'rank': currentDoc.taxon.taxon_rank.charAt(0).toLowerCase() +  currentDoc.taxon.taxon_rank.slice(1),
+      action: indiciaData.lang.verificationButtons.DT,
+      'location name': currentDoc.location.verbatim_locality
+    };
+    if (redetToTaxon) {
+      conversions['new taxon full name'] = getTaxonNameLabel({
+        taxon: {
+          taxon_name: redetToTaxon.taxon,
+          accepted_name: redetToTaxon.preferred_taxon,
+          vernacular_name: redetToTaxon.default_common_name
+        }
+      });
+      conversions['new taxon'] = redetToTaxon.taxon;
+      conversions['new common name'] = [redetToTaxon.default_common_name, redetToTaxon.preferred_taxon];
+      conversions['new rank'] = redetToTaxon.taxon_rank.charAt(0).toLowerCase() + redetToTaxon.taxon_rank.slice(1);
+    }
+    return indiciaFns.applyVerificationTemplateSubsitutions(text, conversions);
+  }
+
   /**
    * Declare public methods.
    */
   var methods = {
+
     /**
      * Initialise the idcVerificationButtons plugin.
      *
@@ -1028,6 +1483,7 @@
       var el = this;
 
       el.settings = $.extend({}, defaults);
+      el.callbacks = callbacks;
       // Apply settings passed in the HTML data-* attribute.
       if (typeof $(el).attr('data-idc-config') !== 'undefined') {
         $.extend(el.settings, JSON.parse($(el).attr('data-idc-config')));
@@ -1041,7 +1497,7 @@
         indiciaFns.controlFail(el, 'Missing showSelectedRow config for table.');
       }
       listOutputControl = $('#' + el.settings.showSelectedRow);
-      listOutputControlClass = $(listOutputControl).hasClass('idc-output-cardGallery') ? 'idcCardGallery' : 'idcDataGrid';
+      listOutputControlClass = $(listOutputControl).data('idc-class');
       // Form validation for redetermination
       redetFormValidator = $('#redet-form').validate();
       // Plus setup redet form texts.
@@ -1064,7 +1520,7 @@
           // button.
           doc = JSON.parse($(tr).attr('data-doc-source'));
           occurrenceId = doc.id;
-          $('.idc-verification-buttons').show();
+          $('.idc-verificationButtons').show();
           sep = el.settings.viewPath.indexOf('?') === -1 ? '?' : '&';
           $(el).find('.view').attr('href', el.settings.viewPath + sep + 'occurrence_id=' + doc.id);
           $(el).find('.edit').attr('href', el.settings.editPath + sep + 'occurrence_id=' + doc.id);
@@ -1093,11 +1549,11 @@
             indiciaData.selectedRecordTaxonListId = doc.taxon.taxon_list.id;
           }
         } else {
-          $('.idc-verification-buttons').hide();
+          $('.idc-verificationButtons').hide();
         }
       });
       $(listOutputControl)[listOutputControlClass]('on', 'populate', function populate() {
-        $('.idc-verification-buttons').hide();
+        $('.idc-verificationButtons').hide();
       });
       // Redet form use main taxon list checkbox.
       $('#redet-from-full-list').change(function(e) {
@@ -1109,10 +1565,10 @@
       });
       $(el).find('button.verify').click(function buttonClick(e) {
         var status = $(e.currentTarget).attr('data-status');
-        commentPopup({ status: status });
+        commentPopup(el, { status: status });
       });
       $(el).find('button.query').click(function buttonClick() {
-        queryPopup();
+        queryPopup(el);
       });
       $(el).find('button.email-expert').click(function buttonClick() {
         emailExpertPopup();
@@ -1128,48 +1584,11 @@
           $(el.settings.uploadButtonContainerElement).append($(el).find('button.upload-decisions'));
         }
       }
-      $(el).find('button.redet').click(function expandRedet() {
-        $.fancybox.open($('#redet-form'));
-      });
-      indiciaFns.on('click', '#cancel-redet', {}, function expandRedet() {
-        $.fancybox.close();
-      });
       enableKeyboardNavigation(el);
-      $('#redet-form').submit(redetFormSubmit);
-      indiciaFns.on('click', '.comment-popup button', {}, function onClickSave(e) {
-        var popup = $(e.currentTarget).closest('.comment-popup');
-        var ids = JSON.parse($(popup).attr('data-ids'));
-        var statusData = {};
-        if ($(popup).attr('data-status')) {
-          statusData.status = $(popup).attr('data-status');
-        }
-        if ($(popup).attr('data-query')) {
-          statusData.query = $(popup).attr('data-query');
-        }
-        saveVerifyComment(ids, statusData, $(popup).find('textarea').val());
-        $.fancybox.close();
-      });
+      // Default state is to show the l2 verification status buttons.
       $(el).find('.l1').hide();
-      $(el).find('.toggle').click(function toggleClick(e) {
-        var div = $(e.currentTarget).closest('.idc-verification-buttons-row');
-        if ($(e.currentTarget).hasClass('fa-toggle-on')) {
-          $(e.currentTarget).removeClass('fa-toggle-on');
-          $(e.currentTarget).addClass('fa-toggle-off');
-          div.find('.l2').hide();
-          div.find('.l1').show();
-        } else {
-          $(e.currentTarget).removeClass('fa-toggle-off');
-          $(e.currentTarget).addClass('fa-toggle-on');
-          div.find('.l1').hide();
-          div.find('.l2').show();
-        }
-      });
-      // Toggle the apply to selected|table mode buttons.
-      $(el).find('.apply-to button').click(function modeClick(e) {
-        var div = $(e.currentTarget).closest('.idc-verification-buttons-row');
-        div.find('.apply-to button').not(e.currentTarget).removeClass('active');
-        $(e.currentTarget).addClass('active');
-      });
+      // Hook up event handlers.
+      initHandlers(el);
     },
 
     on: function on(event, handler) {

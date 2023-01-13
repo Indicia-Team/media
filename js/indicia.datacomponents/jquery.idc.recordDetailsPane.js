@@ -45,10 +45,10 @@
   /**
    * Declare default settings.
    */
-  var defaults = {
-    callbacks: {
-      tabShow: []
-    }
+  var defaults = {};
+
+  var callbacks = {
+    tabShow: []
   };
 
   /**
@@ -381,14 +381,14 @@
       // Populate the tab.
       functions[activeTab](el, doc);
       // Fire callbacks.
-      $.each(el.settings.callbacks.tabShow, function eachCallback() {
+      $.each(el.callbacks.tabShow, function eachCallback() {
         this(tabNames[activeTab], doc, $(el).find('.tabs .ui-tabs-panel:visible'));
       });
     }
   }
 
   function tabActivate(event, ui) {
-    loadCurrentTabAjax($(ui.newPanel).closest('.record-details-container')[0]);
+    loadCurrentTabAjax($(ui.newPanel).closest('.idc-recordDetails')[0]);
   }
 
   /**
@@ -517,6 +517,7 @@
     init: function init(options) {
       var el = this;
       el.settings = $.extend({}, defaults);
+      el.callbacks = callbacks;
       // Apply settings passed in the HTML data-* attribute.
       if (typeof $(el).attr('data-idc-config') !== 'undefined') {
         $.extend(el.settings, JSON.parse($(el).attr('data-idc-config')));
@@ -541,32 +542,26 @@
       // Clean tabs
       $('.ui-tabs-nav').removeClass('ui-widget-header');
       $('.ui-tabs-nav').removeClass('ui-corner-all');
-      if (rowSourceControl.hasClass('idc-output-cardGallery')) {
-        $(rowSourceControl).idcCardGallery('on', 'itemSelect', function itemSelect(tr) {
-          doItemSelect(el, tr);
-        });
-        $(rowSourceControl).idcCardGallery('on', 'populate', function populate() {
-          $(el).find('.empty-message').show();
-          $(el).find('.tabs').hide();
-        });
-      } else {
-        $(rowSourceControl).idcDataGrid('on', 'itemSelect', function itemSelect(tr) {
-          doItemSelect(el, tr);
-        });
-        $(rowSourceControl).idcDataGrid('on', 'populate', function populate() {
-          $(el).find('.empty-message').show();
-          $(el).find('.tabs').hide();
-        });
-      }
+    },
 
-
+    bindControls: function() {
+      var el = this;
+      var controlClass = $(rowSourceControl).data('idc-class');
+      // Hook up events for the row source control.
+      $(rowSourceControl)[controlClass]('on', 'itemSelect', function itemSelect(tr) {
+        doItemSelect(el, tr);
+      });
+      $(rowSourceControl)[controlClass]('on', 'populate', function populate() {
+        $(el).find('.empty-message').show();
+        $(el).find('.tabs').hide();
+      });
     },
 
     on: function on(event, handler) {
-      if (typeof this.settings.callbacks[event] === 'undefined') {
+      if (typeof this.callbacks[event] === 'undefined') {
         indiciaFns.controlFail(this, 'Invalid event handler requested for ' + event);
       }
-      this.settings.callbacks[event].push(handler);
+      this.callbacks[event].push(handler);
     },
 
     /**
