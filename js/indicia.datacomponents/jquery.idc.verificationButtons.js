@@ -250,6 +250,31 @@
   }
 
   /**
+   * Update the loaded templates data object after saving a template.
+   *
+   * Either updates existing template details, or adds the template to the end
+   * of the list.
+   *
+   * @param status
+   *   Status code.
+   * @param object templateData
+   *   Object containing id, title and template for the template to add or update.
+   */
+  function updateTemplatesList(status, templateData) {
+    let existingUpdated = false;
+    $.each(commentTemplatesLoaded[mapToLevel1Status(status)], function() {
+      if (this.id == templateData.id) {
+        this.title = templateData.title;
+        this.template = templateData.template;
+        existingUpdated = true;
+      }
+    });
+    if (!existingUpdated) {
+      commentTemplatesLoaded[mapToLevel1Status(status)].push(templateData);
+    }
+  }
+
+  /**
      * Save a template to the database for future use.
      */
   function saveTemplate(popupEl, data) {
@@ -287,7 +312,7 @@
             cancelButton: null
           });
         } else {
-          commentTemplatesLoaded[mapToLevel1Status(status)].push({
+          updateTemplatesList(mapToLevel1Status(status), {
             id: response.outer_id,
             title: data.title,
             template: data.template,
@@ -303,6 +328,16 @@
         });
       });
     }
+  }
+
+  /**
+   * After saving a template or canceling, hide the template name and associated controls.
+   */
+  function closeSaveTemplateControl(popupEl) {
+    $(popupEl).find('.template-save-cntr').slideUp();
+    // Re-enable tool, save and cancel buttons.
+    $(popupEl).find('.comment-tools button').removeAttr('disabled');
+    $(popupEl).find('.form-buttons button').removeAttr('disabled');
   }
 
   /**
@@ -350,16 +385,6 @@
       $('.comment-edit').hide();
       $('.comment-show-preview').show();
     });
-
-    /**
-     * After saving a template or canceling, hide the template name and associated controls.
-     */
-    function closeSaveTemplateControl(popupEl) {
-      $(popupEl).find('.template-save-cntr').slideUp();
-      // Re-enable tool, save and cancel buttons.
-      $(popupEl).find('.comment-tools button').removeAttr('disabled');
-      $(popupEl).find('.form-buttons button').removeAttr('disabled');
-    }
 
     /**
      * Save template button click handler.
