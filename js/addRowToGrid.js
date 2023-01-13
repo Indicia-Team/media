@@ -286,24 +286,17 @@ var resetSpeciesTextOnEscape;
   }
 
   /**
-   * After a taxon name adjustment is made, we need to indicate the verification information may be
-   * out of date by setting the text as strikethrough text.
+   * Strike out verification info.
+   *
+   * If using the verification information columns option, after a taxon name
+   * adjustment is made, we need to indicate the verification information may
+   * be out of date by setting the text as strikethrough text.
    *
    * @param object row
    *   HTMLTableRowElement for the table row.
-   * @param object taxonCell
-   *   HTMLTableRowElement for the taxon cell.
    */
-    function strikeThroughVerificationInfoLabels(row, taxonCell) {
-      var gridId = $(taxonCell).closest('table').attr('id');
-      var rowIdMatch = $(row).find('.scPresence').last().attr('id').match(/(sc:[a-z0-9\-]+):(\d+)?/);
-      var occurrenceId = rowIdMatch.length >= 3 ? rowIdMatch[2] : null;
-      // Selector contains a number that can vary, so match start and end separately, and ignore middle.
-      var startSelectorForVerifiedBy = 'sc\\:' + gridId + '-';
-      var endSelectorForVerifiedBy = '\\:' + occurrenceId + '\\:occurrence\\:verified_by';
-      $('[id^="' + startSelectorForVerifiedBy + '"][id$="' + endSelectorForVerifiedBy + '"]').wrapInner("<strike>");
-      var endSelectorForVerifiedOn = '\\:' + occurrenceId + '\\:occurrence\\:verified_on';
-      $('[id^="' + startSelectorForVerifiedBy + '"][id$="' + endSelectorForVerifiedOn + '"]').wrapInner("<strike>");
+    function strikeThroughVerificationInfoLabels(row) {
+      $(row).find('.scVerificationInfoCell').css('text-decoration', 'line-through');
     }
 
   function updateRowSpatialRefFeatureLabel(row) {
@@ -328,22 +321,24 @@ var resetSpeciesTextOnEscape;
     }
   }
 
-  // Create an inner function for adding blank rows to the bottom of the grid
+  // Create an inner function for adding blank rows to the bottom of the grid.
   var makeSpareRow = function(gridId, lookupListId, scroll, force) {
 
     /**
-     * Function fired when return pressed in the species selector - adds a new row and focuses it. Must be enclosed so that
-     * it can refer to things like the gridId if there are multiple grids.
+     * Function fired when return pressed in the species selector.
+     *
+     * Adds a new row and focuses it. Must be enclosed so that it can refer to
+     * things like the gridId if there are multiple grids.
      */
     returnPressedInAutocomplete = function (e) {
       var rows = $(e.currentTarget).parents('tbody').children();
       var rowIndex = rows.index($(e.currentTarget).parents('tr')[0]);
       if (rowIndex === rows.length - 1) {
         var ctrl = makeSpareRow(gridId, lookupListId, true, true);
-        // is return key pressed, if so focus next row
+        // Is return key pressed? If so focus next row.
         setTimeout(function () { $(ctrl).focus(); });
       } else {
-        // focus the next row
+        // Focus the next row.
         $(rows[rowIndex + 1]).find('td.scTaxonCell input').focus();
         e.preventDefault();
       }
