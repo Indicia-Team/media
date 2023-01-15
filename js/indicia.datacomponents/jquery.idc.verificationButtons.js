@@ -79,6 +79,45 @@
   var commentTemplatesLoaded = {};
 
   /**
+   * Is multi-select mode enabled?
+   *
+   * @returns bool
+   *   True if multi-select mode enabled.
+   */
+  function multiselectMode() {
+    return $(listOutputControl).hasClass('multiselect-mode');
+  }
+
+  /**
+   * Fetch the "todo list" of records which need to be processed.
+   *
+   * @returns object
+   *   Object which describes the current selection mode and records which are
+   *   selected for processing.
+   */
+  function getTodoListInfo() {
+    var selectedItems;
+    let todoListInfo = {
+      ids: []
+    };
+    if ($(listOutputControl).find('.multi-mode-table.active').length > 0) {
+      todoListInfo.mode = 'table';
+      todoListInfo.todoCount = $(listOutputControl)[0].settings.totalRowCount;
+    } else {
+      todoListInfo.mode =  $(listOutputControl).hasClass('multiselect-mode') ? 'selection' : 'single';
+      selectedItems = $(listOutputControl).hasClass('multiselect-mode')
+        ? $(listOutputControl).find('.multiselect:checked').closest('tr,.card')
+        : $(listOutputControl).find('.selected');
+      $.each(selectedItems, function eachRow() {
+        const doc = JSON.parse($(this).attr('data-doc-source'));
+        todoListInfo.ids.push(parseInt(doc.id, 10));
+      });
+      todoListInfo.todoCount = todoListInfo.ids.length;
+    }
+    return todoListInfo;
+  }
+
+  /**
    * Uploads a spreadsheet of verification decisions to the warehouse.
    */
   function uploadDecisionsFile() {
@@ -805,37 +844,23 @@
    * Displays a popup dialog for capturing a verification or query comment.
    */
   function commentPopup(el, status, commentInstruction) {
-    var doc;
     var heading;
     var overallStatus = status.status ? status.status : status.query;
-    var ids = [];
-    var todoCount;
-    var selectedItems;
+    var todoListInfo;
     // Form reset.
     resetCommentForm('verification-form', '');
     if (el.settings.verificationTemplates) {
       loadVerificationTemplates(mapToLevel1Status(status.status ? status.status : status.query), '#verify-template');
     }
-    if ($(listOutputControl).find('.multi-mode-table.active').length > 0) {
-      todoCount = $(listOutputControl)[0].settings.totalRowCount;
-    } else {
-      selectedItems = $(listOutputControl).hasClass('multiselect-mode')
-        ? $(listOutputControl).find('.multiselect:checked').closest('tr,.card')
-        : $(listOutputControl).find('.selected');
-      if (selectedItems.length === 0) {
-        alert(indiciaData.lang.verificationButtons.nothingSelected);
-        return;
-      }
-      $.each(selectedItems, function eachRow() {
-        doc = JSON.parse($(this).attr('data-doc-source'));
-        ids.push(parseInt(doc.id, 10));
-      });
-      todoCount = ids.length;
+    todoListInfo = getTodoListInfo();
+    if (todoListInfo.mode === 'selection' && todoListInfo.todoCount === 0) {
+      alert(indiciaData.lang.verificationButtons.nothingSelected);
+      return;
     }
-    if (todoCount > 1) {
+    if (todoListInfo.todoCount > 1) {
       heading = status.status
-        ? 'Set status to ' + indiciaData.statusMsgs[overallStatus] + ' for ' + todoCount + ' records'
-        : 'Query ' + todoCount + ' records';
+        ? 'Set status to ' + indiciaData.statusMsgs[overallStatus] + ' for ' + todoListInfo.todoCount + ' records'
+        : 'Query ' + todoListInfo.todoCount + ' records';
       $('#verification-form .multiple-warning').show();
     } else {
       heading = status.status
@@ -844,7 +869,7 @@
       $('#verification-form .multiple-warning').hide();
     }
 
-    $('#verification-form').data('ids', JSON.stringify(ids));
+    $('#verification-form').data('ids', JSON.stringify(todoListInfo.ids));
     status.status ? $('#verification-form').data('status', status.status) : $('#verification-form').removeData('status');
     status.query ? $('#verification-form').data('query', status.query) : $('#verification-form').removeData('query');
     $('#verification-form legend span:first-child')
@@ -854,11 +879,11 @@
     $('#verification-form legend span:last-child').text(heading);
 
     if (commentInstruction) {
-      $('#verification-form p.alert')
+      $('#verification-form p.alert-info')
         .text(commentInstruction)
         .show();
     } else {
-      $('#verification-form p.alert').hide();
+      $('#verification-form p.alert-info').hide();
     }
     $.fancybox.open($('#verification-form'));
   }
@@ -1038,7 +1063,7 @@
     if (doingQueryPopup) {
       return;
     }
-    if ($(listOutputControl).hasClass('multiselect-mode')) {
+    if (multiselectMode()) {
       // As there are multiple records possibly selected, sending an email
       // option not available.
       commentPopup(el, { query: 'Q' }, indiciaData.lang.verificationButtons.queryInMultiselectMode);
