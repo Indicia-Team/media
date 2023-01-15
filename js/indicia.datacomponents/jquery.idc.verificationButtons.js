@@ -177,11 +177,22 @@
    * Display the redetermination form.
    */
   function showRedetForm(el) {
+    const todoListInfo = getTodoListInfo();
     redetToTaxon = null;
     resetCommentForm('redet-form', 'Redetermined from {{ rank }} {{ taxon full name }} to {{ new rank }} {{ new taxon full name }}.');
     if (el.settings.verificationTemplates) {
       loadVerificationTemplates('DT', '#redet-template');
     }
+    if (todoListInfo.mode === 'selection' && todoListInfo.todoCount === 0) {
+      alert(indiciaData.lang.verificationButtons.nothingSelected);
+      return;
+    }
+    if (todoListInfo.todoCount > 1) {
+      $('#redet-form .multiple-warning').show();
+    } else {
+      $('#redet-form .multiple-warning').hide();
+    }
+    $('#redet-form').data('ids', JSON.stringify(todoListInfo.ids));
     $.fancybox.open($('#redet-form'));
   }
 
@@ -200,58 +211,71 @@
   }
 
   /**
+   * Actually perform the task of redetermining one or more records.
+   *
+   * @param int occurrenceIdToRedet
+   *   Occurrence ID.
+   * @param int newTaxaTaxonListId
+   *   Redetermine to this ID.
+   * @param string comment
+   *   Optional comment which can contain template tokens.
+   */
+  function doRedetermination(occurrenceIdToRedet, newTaxaTaxonListId, comment) {
+    let data = {
+      website_id: indiciaData.website_id,
+      'occurrence:id': occurrenceIdToRedet,
+      'occurrence:taxa_taxon_list_id': newTaxaTaxonListId,
+      user_id: indiciaData.user_id
+    };
+    if (comment) {
+      data['occurrence_comment:comment'] = commentTemplateReplacements(comment);
+    }
+    if ($('#no-update-determiner') && $('#no-update-determiner').prop('checked')) {
+      // Determiner_id=-1 is special value that keeps the original
+      // determiner info.
+      data['occurrence:determiner_id'] = -1;
+    }
+    $.post(
+      indiciaData.ajaxFormPostRedet,
+      data,
+      function onResponse(response) {
+        if (typeof response.error !== 'undefined') {
+          alert(response.error);
+        }
+      }
+    );
+    // Now post update to Elasticsearch. Remove the website ID to temporarily
+    // disable the record until it is refreshed with the correct new taxonomy
+    // info.
+    data = {
+      ids: [occurrenceIdToRedet],
+      doc: {
+        metadata: {
+          website: {
+            id: 0
+          }
+        }
+      }
+    };
+    $.ajax({
+      url: indiciaData.esProxyAjaxUrl + '/verifyids/' + indiciaData.nid,
+      type: 'post',
+      data: data,
+      success: function success() {
+        indiciaFns.hideItemAndMoveNext(listOutputControl[0]);
+      }
+    });
+  }
+
+  /**
    * Submit handler for the redetermination popup form.
    */
   function redetFormSubmit() {
-    var data;
     if ($('#redet-species').val() === '') {
       redetFormValidator.showErrors({ 'redet-species:taxon': 'Please type a few characters then choose a name from the list of suggestions' });
     } else if (redetFormValidator.numberOfInvalids() === 0) {
       $.fancybox.close();
-      data = {
-        website_id: indiciaData.website_id,
-        'occurrence:id': occurrenceId,
-        'occurrence:taxa_taxon_list_id': $('#redet-species').val(),
-        user_id: indiciaData.user_id
-      };
-      if ($('#redet-comment-textarea').val()) {
-        data['occurrence_comment:comment'] = commentTemplateReplacements($('#redet-comment-textarea').val());
-      }
-      if ($('#no-update-determiner') && $('#no-update-determiner').prop('checked')) {
-        // Determiner_id=-1 is special value that keeps the original
-        // determiner info.
-        data['occurrence:determiner_id'] = -1;
-      }
-      $.post(
-        indiciaData.ajaxFormPostRedet,
-        data,
-        function onResponse(response) {
-          if (typeof response.error !== 'undefined') {
-            alert(response.error);
-          }
-        }
-      );
-      // Now post update to Elasticsearch. Remove the website ID to temporarily
-      // disable the record until it is refreshed with the correct new taxonomy
-      // info.
-      data = {
-        ids: [occurrenceId],
-        doc: {
-          metadata: {
-            website: {
-              id: 0
-            }
-          }
-        }
-      };
-      $.ajax({
-        url: indiciaData.esProxyAjaxUrl + '/verifyids/' + indiciaData.nid,
-        type: 'post',
-        data: data,
-        success: function success() {
-          indiciaFns.hideItemAndMoveNext(listOutputControl[0]);
-        }
-      });
+      doRedetermination(occurrenceId, $('#redet-species').val(), $('#redet-comment-textarea').val());
     }
   }
 
