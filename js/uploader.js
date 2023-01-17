@@ -230,6 +230,24 @@ jQuery(document).ready(function($) {
   }
 
   /**
+   * Button handler to show the unrestricted version of a global values control.
+   *
+   * Appears if the settings list several options, plus a special option *
+   * which triggers the extra unrestricted control.
+   */
+  $('.show-unrestricted').click(function() {
+    const ctrlWrap = $(this).closest('.ctrl-wrap');
+    const input = ctrlWrap.find(':input');
+    const controlName = input.attr('name');
+    const unrestrictedCtrlWrap = $('#' + $(ctrlWrap).attr('id') + '-unrestricted');
+    ctrlWrap.slideUp();
+    // Prevent old input from submitting.
+    input.attr('disabled', true);
+    $(unrestrictedCtrlWrap).closest('.unrestricted-cntr').slideDown();
+    $(unrestrictedCtrlWrap).find(':input').attr('name', controlName);
+  });
+
+  /**
    * Lookup matching page code.
    */
 
