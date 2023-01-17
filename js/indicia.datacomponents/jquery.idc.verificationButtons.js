@@ -79,6 +79,21 @@
   var commentTemplatesLoaded = {};
 
   /**
+   * Track count of active update requests.
+   */
+  var activeRequests = 0;
+
+  /**
+   * Track processed rows to remove after update requests completed.
+   */
+  var rowsToRemove = [];
+
+  /**
+   * Set to true when an update operation will result in the entire output list being emptied.
+   */
+  var listWillBeEmptied = false;
+
+  /**
    * Is multi-select mode enabled?
    *
    * @returns bool
@@ -86,6 +101,17 @@
    */
   function multiselectMode() {
     return $(listOutputControl).hasClass('multiselect-mode');
+  }
+
+  /**
+   * Is multi-select mode enabled and apply to whole table selected.
+   *
+   * @returns bool
+   *   True if multi-select mode enabled and the apply to whole table toggle
+   *   selected.
+   */
+  function multiselectWholeTableMode() {
+    return $(listOutputControl).find('.multi-mode-table.active').length > 0;
   }
 
   /**
@@ -100,7 +126,7 @@
     let todoListInfo = {
       ids: []
     };
-    if ($(listOutputControl).find('.multi-mode-table.active').length > 0) {
+    if (multiselectWholeTableMode()) {
       todoListInfo.mode = 'table';
       todoListInfo.todoCount = $(listOutputControl)[0].settings.totalRowCount;
     } else {
@@ -211,71 +237,121 @@
   }
 
   /**
+   * Always() handler for AJAX requests that update rows.
+   *
+   * Tracks if AJAX work completed, if so, removes the row(s) and updates the
+   * pager. Ajax requests should increment activeRequests before starting.
+   */
+  function cleanupAfterAjaxUpdate() {
+    var pagerLabel = $(listOutputControl).find('.showing');
+    var total;
+    var match;
+    activeRequests--;
+    if (activeRequests <= 0 && !listWillBeEmptied) {
+      $.each(rowsToRemove, function() {
+        $(this).remove();
+      });
+      // Update the pager to reflect the removed rows.
+      if (pagerLabel.length) {
+        match = pagerLabel.html().match(/\d+$/);
+        if (match) {
+          total = match[0] - rowsToRemove.length;
+          pagerLabel.html($(listOutputControl).find('[data-row-id]').length + ' of ' + total);
+        }
+      }
+    }
+  }
+
+  /**
+   * Saves a redetermination that should apply to the whole table dataset.
+   */
+  function doRedeterminationWholeTable(newTaxaTaxonListId, comment) {
+    const pgUpdates = getRedetPgUpdates(newTaxaTaxonListId, comment);
+    // Since this might be slow.
+    $('body').append('<div class="loading-spinner"><div>Loading...</div></div>');
+    // Loop sources and apply the filter data, only 1 will apply.
+    $.each($(listOutputControl)[0].settings.source, function eachSource(sourceId) {
+      pgUpdates['occurrence:idsFromElasticFilter'] = indiciaFns.getFormQueryData(indiciaData.esSourceObjects[sourceId])
+      return false;
+    });
+    $.post(
+      indiciaData.esProxyAjaxUrl + '/redetall/' + indiciaData.nid,
+      pgUpdates,
+      function success() {
+        // Unset all table mode as this is a "dangerous" state that should be explicitly chosen each time.
+        $(listOutputControl).find('.multi-mode-table.active').removeClass('active');
+        $(listOutputControl).find('.multi-mode-selected').addClass('active');
+        // Table can be emptied.
+        $(listOutputControl).find('[data-row-id').remove();
+        $(listOutputControl).find('.showing').html('No hits');
+      }
+    ).always(function cleanup() {
+      $('body > .loading-spinner').remove();
+    });
+    // In all table mode, everything handled by the ES proxy so nothing else to do.
+  }
+
+  /**
    * Actually perform the task of redetermining one or more records.
    *
-   * @param int occurrenceIdToRedet
-   *   Occurrence ID.
+   * @param array occurrenceIds
+   *   Array of occurrence IDs to redetermine.
    * @param int newTaxaTaxonListId
    *   Redetermine to this ID.
    * @param string comment
    *   Optional comment which can contain template tokens.
    */
-  function doRedetermination(occurrenceIdToRedet, newTaxaTaxonListId, comment) {
-    let data = {
-      website_id: indiciaData.website_id,
-      'occurrence:id': occurrenceIdToRedet,
-      'occurrence:taxa_taxon_list_id': newTaxaTaxonListId,
-      user_id: indiciaData.user_id
-    };
-    if (comment) {
-      data['occurrence_comment:comment'] = commentTemplateReplacements(comment);
+  function saveRedeterminationForSelection(el, occurrenceIds, newTaxaTaxonListId, comment) {
+    const pgUpdates = getRedetPgUpdates(occurrenceIds, newTaxaTaxonListId, comment);
+    const esUpdates = getRedetEsUpdates(occurrenceIds);
+    rowsToRemove = [];
+    listWillBeEmptied = $(listOutputControl).find('[data-row-id]').length - occurrenceIds.length <= 0;
+    activeRequests = 0;
+    pgUpdates['occurrence:ids'] = occurrenceIds.join(',');
+    rowsToRemove = disableRowsForIds(occurrenceIds);
+    fireItemUpdate(el);
+    // @todo should repopulateAfterVerify be handled inside the list output control?
+    if (listWillBeEmptied) {
+      doRepopulateAfterVerify(occurrenceIds);
     }
-    if ($('#no-update-determiner') && $('#no-update-determiner').prop('checked')) {
-      // Determiner_id=-1 is special value that keeps the original
-      // determiner info.
-      data['occurrence:determiner_id'] = -1;
-    }
+    activeRequests++;
     $.post(
       indiciaData.ajaxFormPostRedet,
-      data,
+      pgUpdates,
       function onResponse(response) {
         if (typeof response.error !== 'undefined') {
           alert(response.error);
         }
       }
-    );
+    ).always(cleanupAfterAjaxUpdate);
     // Now post update to Elasticsearch. Remove the website ID to temporarily
     // disable the record until it is refreshed with the correct new taxonomy
     // info.
-    data = {
-      ids: [occurrenceIdToRedet],
-      doc: {
-        metadata: {
-          website: {
-            id: 0
-          }
-        }
-      }
-    };
+    activeRequests++;
     $.ajax({
-      url: indiciaData.esProxyAjaxUrl + '/verifyids/' + indiciaData.nid,
+      url: indiciaData.esProxyAjaxUrl + '/redetids/' + indiciaData.nid,
       type: 'post',
-      data: data,
+      data: esUpdates,
       success: function success() {
         indiciaFns.hideItemAndMoveNext(listOutputControl[0]);
       }
-    });
+    }).always(cleanupAfterAjaxUpdate);
   }
 
   /**
    * Submit handler for the redetermination popup form.
    */
-  function redetFormSubmit() {
+  function redetFormSubmit(el) {
     if ($('#redet-species').val() === '') {
       redetFormValidator.showErrors({ 'redet-species:taxon': 'Please type a few characters then choose a name from the list of suggestions' });
     } else if (redetFormValidator.numberOfInvalids() === 0) {
       $.fancybox.close();
-      doRedetermination(occurrenceId, $('#redet-species').val(), $('#redet-comment-textarea').val());
+      if (multiselectWholeTableMode()) {
+        doRedeterminationWholeTable($('#redet-species').val(), $('#redet-form').find('.comment-textarea').val());
+      } else {
+        const ids = JSON.parse($('#redet-form').data('ids'));
+        saveRedeterminationForSelection(el, ids, $('#redet-species').val(), $('#redet-form').find('.comment-textarea').val());
+      }
     }
   }
 
@@ -303,8 +379,8 @@
    * Click handler for the save comment form which saves a comment.
    */
   function saveCommentPopup(el, popup) {
-    var ids = JSON.parse($(popup).data('ids'));
-    var statusData = {};
+    const ids = JSON.parse($(popup).data('ids'));
+    let statusData = {};
     if ($(popup).data('status')) {
       statusData.status = $(popup).data('status');
     }
@@ -536,7 +612,9 @@
     /**
      * Redetermination dialog submit form handler.
      */
-    $('#apply-redet').click(redetFormSubmit);
+    $('#apply-redet').click((e) => {
+      redetFormSubmit(el);
+    });
 
     /**
      * Verification dialog submit form handler.
@@ -634,6 +712,45 @@
       esUpdates.identification.query = status.query;
     }
     return esUpdates;
+  }
+
+  /**
+   * Fetch the PostgreSQL occurrence updates required for a redetermination event.
+   */
+  function getRedetPgUpdates(newTaxaTaxonListId, comment) {
+    let pgUpdates = {
+      website_id: indiciaData.website_id,
+      'occurrence:taxa_taxon_list_id': newTaxaTaxonListId,
+      user_id: indiciaData.user_id
+    };
+    if (comment) {
+      // Template replacements will be done server side.
+      pgUpdates['occurrence_comment:comment'] = comment;
+    }
+    if ($('#no-update-determiner') && $('#no-update-determiner').prop('checked')) {
+      // Determiner_id=-1 is special value that keeps the original
+      // determiner info.
+      pgUpdates['occurrence:determiner_id'] = -1;
+    }
+    return pgUpdates;
+  }
+
+  /**
+   * Fetch the ES document updates required for a redetermination event.
+   */
+  function getRedetEsUpdates(occurrenceIds) {
+    // This just wipes the website ID, disabling the record until Logstash
+    // updates it properly.
+    return {
+      ids: occurrenceIds,
+      doc: {
+        metadata: {
+          website: {
+            id: 0
+          }
+        }
+      }
+    };
   }
 
   /**
@@ -746,29 +863,9 @@
     var pgUpdates = getVerifyPgUpdates(status, comment, email);
     var esUpdates = getVerifyEsUpdates(status);
     var data;
-    var rowsToRemove = [];
-    var requests = 0;
-    var listWillBeEmptied = $(listOutputControl).find('[data-row-id]').length - occurrenceIds.length <= 0;
-
-    var cleanup = function() {
-      var pagerLabel = $(listOutputControl).find('.showing');
-      var total;
-      var match;
-      requests--;
-      if (requests <= 0 && !listWillBeEmptied) {
-        $.each(rowsToRemove, function() {
-          $(this).remove();
-        });
-        // Update the pager to reflect the removed rows.
-        if (pagerLabel.length) {
-          match = pagerLabel.html().match(/\d+$/);
-          if (match) {
-            total = match[0] - rowsToRemove.length;
-            pagerLabel.html($(listOutputControl).find('[data-row-id]').length + ' of ' + total);
-          }
-        }
-      }
-    }
+    rowsToRemove = [];
+    activeRequests = 0;
+    listWillBeEmptied = $(listOutputControl).find('[data-row-id]').length - occurrenceIds.length <= 0;
 
     pgUpdates['occurrence:ids'] = occurrenceIds.join(',');
     // Disable rows that are being processed.
@@ -780,26 +877,26 @@
     }
     if (status.status) {
       // Post update to Indicia.
-      requests++;
+      activeRequests++;
       $.post(
-        indiciaData.ajaxFormPostSingleVerify,
+        indiciaData.ajaxFormPostVerify,
         pgUpdates,
         function success(response) {
           if (response !== 'OK') {
             alert('Indicia records update failed');
           }
         }
-      ).always(cleanup);
+      ).always(cleanupAfterAjaxUpdate);
     } else if (status.query) {
       // No bulk API for query updates at the moment, so process one at a time.
       $.each(occurrenceIds, function eachOccurrence() {
         pgUpdates['occurrence_comment:occurrence_id'] = this;
         // Post update to Indicia.
-        requests++;
+        activeRequests++;
         $.post(
           indiciaData.ajaxFormPostComment,
           pgUpdates
-        ).always(cleanup);
+        ).always(cleanupAfterAjaxUpdate);
       });
     }
     // Now post update to Elasticsearch.
@@ -807,7 +904,7 @@
       ids: occurrenceIds,
       doc: esUpdates
     };
-    requests++;
+    activeRequests++;
     $.ajax({
       url: indiciaData.esProxyAjaxUrl + '/verifyids/' + indiciaData.nid,
       type: 'post',
@@ -826,14 +923,14 @@
         alert(indiciaData.lang.verificationButtons.elasticsearchUpdateError);
       },
       dataType: 'json'
-    }).always(cleanup);
+    }).always(cleanupAfterAjaxUpdate);
   }
 
   /**
    * Instigates a verification event.
    */
   function saveVerifyComment(el, occurrenceIds, status, comment, email) {
-    if ($(listOutputControl).find('.multi-mode-table.active').length > 0) {
+    if (multiselectWholeTableMode()) {
       // Verifying the whole table.
       saveVerifyCommentForWholeTable(status, comment, email);
     }
