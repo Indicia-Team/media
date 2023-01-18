@@ -898,53 +898,63 @@ jQuery(document).ready(function($) {
     });
     // Auto-match any obvious column/field matches.
     $.each($('#mappings-table tbody tr'), function() {
-      var row = this;
-      var label = $(row).find('td:first-child').text().toLowerCase().replace(/[^a-z0-9]/g, '');
-      var qualifiedMatches = [];
-      var unqualifiedMatches = [];
-      var suggestions = [];
-      var allMatches = [];
+      const row = this;
+      const columnLabel = $(row).find('td:first-child').text().toLowerCase().replace(/[^a-z0-9]/g, '');
+      const columnLabelExcludeBrackets = $(row).find('td:first-child').text().toLowerCase().replace(/\(.+\)/, '').replace(/[^a-z0-9]/g, '');
+      // 4 categories of match in descending order of exactness.
+      let matches = {
+        headingPlusLabel: [],
+        label: [],
+        headingPlusLabelExcludeBrackets: [],
+        labelExcludeBrackets: []
+      };
+      let suggestions = [];
+      let allMatches = [];
       if (indiciaData.columns && indiciaData.columns[$(row).find('td:first-child').text()] && indiciaData.columns[$(row).find('td:first-child').text()]['warehouseField']) {
         // Mapping is already in the columns info, e.g. when loaded from a template.
         $(row).find('option[value="' + indiciaData.columns[$(row).find('td:first-child').text()]['warehouseField'] + '"]').attr('selected', true);
       } else if (!indiciaData.import_template_id) {
         // Scan for matches by field name, but only if not using a template.
-        $.each($(row).find('option'), function() {
-          var option = this;
-          var unqualified = $(option).text().toLowerCase().replace(/\(.+\)/, '').replace(/[^a-z0-9]/g, '');
-          var optGroupLabel
-          var qualified;
+        $.each($(row).find('option[value!=""]'), function() {
+          const option = this;
+          const optGroupHeading = $(option).parent().attr('label').toLowerCase().replace(/[^a-z0-9]/g, '');
+          const label = $(option).text().toLowerCase().replace(/[^a-z0-9]/g, '');
+          const labelExcludeBrackets = $(option).text().toLowerCase().replace(/\(.+\)/, '').replace(/[^a-z0-9]/g, '');
           var altTerms;
-          if (!$(option).val()) {
-            // Skip the not-imported option.
-            return true;
+          if (columnLabel === optGroupHeading + label) {
+            matches.headingPlusLabel.push(option);
           }
-          optGroupLabel = $(option).parent().attr('label').toLowerCase().replace(/[^a-z0-9]/g, '');
-          qualified = optGroupLabel + unqualified;
-          if (label === qualified) {
-            qualifiedMatches.push(option);
+          else if (columnLabel === label) {
+            matches.label.push(option);
           }
-          if (label === unqualified) {
-            unqualifiedMatches.push(option);
+          else if (columnLabelExcludeBrackets === optGroupHeading + labelExcludeBrackets) {
+            matches.headingPlusLabelExcludeBrackets.push(option);
+          }
+          else if (columnLabelExcludeBrackets === labelExcludeBrackets) {
+            matches.labelExcludeBrackets.push(option);
           }
           if ($(option).data('alt')) {
             altTerms = $(option).data('alt').split(',');
             $.each(altTerms, function() {
-              if (label === this) {
-                unqualifiedMatches.push(option);
+              if (columnLabel === this) {
+                matches.label.push(option);
               }
             });
           }
         });
-        if (qualifiedMatches.length === 1) {
-          $(qualifiedMatches[0]).attr('selected', true);
-        } else if (qualifiedMatches.length === 0 && unqualifiedMatches.length === 1) {
-          $(unqualifiedMatches[0]).attr('selected', true);
-        } else if (qualifiedMatches.length + unqualifiedMatches.length > 1) {
-          $.extend(allMatches, qualifiedMatches, unqualifiedMatches)
+        if (matches.headingPlusLabel.length === 1) {
+          // A single, fully qualified match can be selected.
+          $(matches.headingPlusLabel[0]).attr('selected', true);
+        } else if (matches.headingPlusLabel.length === 0 && matches.label.length === 1) {
+          // A single match without specifying the heading can also be selected.
+          $(matches.label[0]).attr('selected', true);
+        } else if (matches.headingPlusLabel.length + matches.label.length + matches.headingPlusLabelExcludeBrackets.length + matches.labelExcludeBrackets.length > 0) {
+          // Any other match scenario isn't certain enough for automatic
+          // selection so show suggestions.
+          $.extend(allMatches, matches.headingPlusLabel, matches.label, matches.headingPlusLabelExcludeBrackets, matches.labelExcludeBrackets)
           $.each(allMatches, function() {
-            var label = $(this).parent().data('short-label') + ' - ' + this.text;
-            suggestions.push('<a class="apply-suggestion" data-value="' + this.value + '">' + label + '</a>');
+            const suggestionLabel = $(this).parent().data('short-label') + ' - ' + this.text;
+            suggestions.push('<a class="apply-suggestion" data-value="' + this.value + '">' + suggestionLabel + '</a>');
           });
           $(row).find('select.mapped-field').after('<p class="helpText">' +  indiciaData.lang.import_helper_2.suggestions + ': ' + suggestions.join('; ') + '</p>');
         }
