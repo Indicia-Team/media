@@ -888,6 +888,11 @@ jQuery(document).ready(function($) {
   if (indiciaData.step === 'fileSelectForm') {
     initFileUploadControl();
   }
+  else if (indiciaData.step === 'globalValuesForm') {
+    // Prevent hidden unrestricted versions of options controls from submitting
+    // a value until they are selected by the user.
+    $('.unrestricted-cntr :input').removeAttr('name');
+  }
   else if (indiciaData.step === 'mappingsForm') {
     var urlSep = indiciaData.getRequiredFieldsUrl.indexOf('?') === -1 ? '?' : '&';
     // On the mappings page.
