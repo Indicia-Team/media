@@ -123,6 +123,7 @@
       }
       // Show the navigation buttons.
       $(card).find('.verification-buttons-cntr').append($('#card-nav-buttons'));
+      $(card)[0].scrollIntoView();
     }
 
     /**
