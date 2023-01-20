@@ -99,9 +99,11 @@ body {
         color: $colour-hover-row;
         background-color: $colour-hover-row-bg;
       }
-      &.selected:not(.disabled) {
+      &.selected:not(.disabled,.show-max-size) {
         color: $colour-select-row;
         background-color: $colour-select-row-bg;
+      }
+      &.selected:not(.disabled) {
         border: 1px solid grey;
       }
       .expand-card {
@@ -127,6 +129,16 @@ body {
         width: 100%;
         z-index: 1000;
         margin: 0;
+        box-shadow: 3px 4px 14px rgba(0, 0, 0, 0.2);
+	      -webkit-box-shadow: 3px 4px 14px rgba(0, 0, 0, 0.2);
+	      -moz-box-shadow: 3px 4px 14px rgba(0, 0, 0, 0.2);
+        .image-container {
+          text-align: center;
+          /* Prevent images pushing buttons off bottom of page. */
+          img {
+            max-height: 600px;
+          }
+        }
         .expand-card {
           display: none;
         }
