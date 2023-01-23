@@ -1587,9 +1587,19 @@
     return scientific;
   }
 
+  /**
+   * Replace tokens in a comment text.
+   *
+   * @param string text
+   *   Comment text.
+   *
+   * @return string
+   *   Text with tokens replaced by data values.
+   */
   function commentTemplateReplacements(text) {
     var currentDoc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
     var status = $('form.verification-popup:visible').data('status');
+    // Action term can be overridden due to language construct, e.g. plausible should be "marked as plausible".
     var actionTerm = typeof indiciaData.lang.verificationButtons[status] !== 'undefined' ? indiciaData.lang.verificationButtons[status] : indiciaData.statusMsgs[status].toLowerCase();
     var conversions = {
       date: indiciaFns.fieldConvertors.event_date(currentDoc),
