@@ -283,6 +283,10 @@
        */
       indiciaFns.on('keydown', 'body', {}, function onDataGridKeydown(e) {
         var oldSelected = $(el).find('.card.selected');
+        // Prevent capturing when the user trying to do something else, e.g. copy text.
+        if (e.ctrlKey || e.metaKey) {
+          return;
+        }
         if ($(':input:focus').length) {
           // Input focused, so the only keystroke we are interested in is
           // escape to close a Fancbox dialog.
