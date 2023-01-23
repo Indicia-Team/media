@@ -1589,6 +1589,8 @@
 
   function commentTemplateReplacements(text) {
     var currentDoc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
+    var status = $('form.verification-popup:visible').data('status');
+    var actionTerm = typeof indiciaData.lang.verificationButtons[status] !== 'undefined' ? indiciaData.lang.verificationButtons[status] : indiciaData.statusMsgs[status].toLowerCase();
     var conversions = {
       date: indiciaFns.fieldConvertors.event_date(currentDoc),
       sref: currentDoc.location.output_sref,
@@ -1597,7 +1599,7 @@
       'preferred name': [currentDoc.taxon.accepted_name, currentDoc.taxon.taxon_name],
       'taxon full name': getTaxonNameLabel(currentDoc),
       'rank': currentDoc.taxon.taxon_rank.charAt(0).toLowerCase() +  currentDoc.taxon.taxon_rank.slice(1),
-      action: indiciaData.lang.verificationButtons.DT,
+      action: actionTerm,
       'location name': currentDoc.location.verbatim_locality
     };
     if (redetToTaxon) {
