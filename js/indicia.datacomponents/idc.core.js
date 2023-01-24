@@ -1576,6 +1576,39 @@
   };
 
   /**
+   * Calculated a buffered bounding box for a map query.
+   *
+   * Buffering used to reduce number of service hits resulting from small pan
+   * or zoom movements of the map.
+   *
+   * @param bounds bounds
+   *   Bounds object.
+   *
+   * @return object
+   *   Bounds data buffered.
+   */
+  function getBufferedBBforQuery(bounds) {
+    var width;
+    var height;
+    if (typeof indiciaData.lastBufferedBB === 'undefined'
+        || bounds.getNorth() > indiciaData.lastBufferedBB.north
+        || bounds.getSouth() < indiciaData.lastBufferedBB.south
+        || bounds.getEast() > indiciaData.lastBufferedBB.east
+        || bounds.getWest() < indiciaData.lastBufferedBB.west) {
+      // Need a new query bounding box. Build one with a wide buffer.
+      width = bounds.getEast() - bounds.getWest();
+      height = bounds.getNorth() - bounds.getSouth();
+      indiciaData.lastBufferedBB = {
+        north: Math.max(-90, Math.min(90, bounds.getNorth() + height * 2)),
+        south: Math.max(-90, Math.min(90, bounds.getSouth() - height * 2)),
+        east: Math.max(-180, Math.min(180, bounds.getEast() + width * 2)),
+        west: Math.max(-180, Math.min(180, bounds.getWest() - width * 2))
+      };
+    }
+    return indiciaData.lastBufferedBB;
+  }
+
+  /**
    * Build query data to send to ES proxy.
    *
    * Builds the data to post to the Elasticsearch search proxy to represent
@@ -1603,6 +1636,7 @@
     var bounds;
     var agg = {};
     var filterRows;
+    var bufferedBB;
     if (typeof source.settings.size !== 'undefined') {
       data.size = source.settings.size;
     }
@@ -1665,6 +1699,7 @@
         alert('Data source incorrectly configured. @filterBoundsUsingMap does not point to a valid map.');
       } else if (!doingCount && !source.settings.initialMapBounds || mapToFilterTo[0].settings.initialBoundsSet) {
         if (bounds.getNorth() !== bounds.getSouth() && bounds.getEast() !== bounds.getWest()) {
+          bufferedBB = getBufferedBBforQuery(bounds);
           data.bool_queries.push({
             bool_clause: 'must',
             query_type: 'geo_bounding_box',
@@ -1672,12 +1707,12 @@
               ignore_unmapped: true,
               'location.point': {
                 top_left: {
-                  lat: Math.max(-90, Math.min(90, bounds.getNorth())),
-                  lon: Math.max(-180, Math.min(180, bounds.getWest()))
+                  lat: bufferedBB.north,
+                  lon: bufferedBB.west
                 },
                 bottom_right: {
-                  lat: Math.max(-90, Math.min(90, bounds.getSouth())),
-                  lon: Math.max(-180, Math.min(180, bounds.getEast()))
+                  lat: bufferedBB.south,
+                  lon: bufferedBB.east
                 }
               }
             }
