@@ -1007,6 +1007,7 @@
       $('#verification-form p.alert-info').hide();
     }
     $.fancybox.open($('#verification-form'));
+    $('#verification-form textarea').focus();
   }
 
   /**
@@ -1587,8 +1588,20 @@
     return scientific;
   }
 
+  /**
+   * Replace tokens in a comment text.
+   *
+   * @param string text
+   *   Comment text.
+   *
+   * @return string
+   *   Text with tokens replaced by data values.
+   */
   function commentTemplateReplacements(text) {
     var currentDoc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
+    var status = $('form.verification-popup:visible').data('status');
+    // Action term can be overridden due to language construct, e.g. plausible should be "marked as plausible".
+    var actionTerm = typeof indiciaData.lang.verificationButtons[status] !== 'undefined' ? indiciaData.lang.verificationButtons[status] : indiciaData.statusMsgs[status].toLowerCase();
     var conversions = {
       date: indiciaFns.fieldConvertors.event_date(currentDoc),
       sref: currentDoc.location.output_sref,
@@ -1597,7 +1610,7 @@
       'preferred name': [currentDoc.taxon.accepted_name, currentDoc.taxon.taxon_name],
       'taxon full name': getTaxonNameLabel(currentDoc),
       'rank': currentDoc.taxon.taxon_rank.charAt(0).toLowerCase() +  currentDoc.taxon.taxon_rank.slice(1),
-      action: indiciaData.lang.verificationButtons.DT,
+      action: actionTerm,
       'location name': currentDoc.location.verbatim_locality
     };
     if (redetToTaxon) {
