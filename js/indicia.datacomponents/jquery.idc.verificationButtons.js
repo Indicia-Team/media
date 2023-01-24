@@ -1007,6 +1007,7 @@
       $('#verification-form p.alert-info').hide();
     }
     $.fancybox.open($('#verification-form'));
+    $('#verification-form textarea').focus();
   }
 
   /**
