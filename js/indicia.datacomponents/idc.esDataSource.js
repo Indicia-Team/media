@@ -38,12 +38,12 @@ var IdcEsDataSource;
     /**
      * Track the last request so we avoid duplicate requests.
      */
-    var lastRequestStr = '';
+    this.lastRequestStr = '';
 
     /**
      * Track the last count request so we avoid duplicate requests.
      */
-    var lastCountRequestStr = '';
+    this.lastCountRequestStr = '';
 
     /**
      * A list of additional setup functions depending on the mode.
@@ -95,8 +95,8 @@ var IdcEsDataSource;
       settings.aggregation = settings.suppliedAggregation;
       // Work out if the request required to count the data has changed.
       countingRequest = indiciaFns.getFormQueryData(this, true);
-      settings.needsRecount = JSON.stringify(countingRequest) !== lastCountRequestStr;
-      lastCountRequestStr = JSON.stringify(countingRequest);
+      settings.needsRecount = JSON.stringify(countingRequest) !== this.lastCountRequestStr;
+      this.lastCountRequestStr = JSON.stringify(countingRequest);
     }
 
     /**
@@ -366,8 +366,8 @@ var IdcEsDataSource;
         delete this.settings.proxyCacheTimeout;
       }
       // Don't repopulate if exactly the same request as already loaded.
-      if (request && (JSON.stringify(request) !== lastRequestStr || force)) {
-        lastRequestStr = JSON.stringify(request);
+      if (request && (JSON.stringify(request) !== this.lastRequestStr || force)) {
+        this.lastRequestStr = JSON.stringify(request);
         url = indiciaData.esProxyAjaxUrl + '/searchbyparams/' + (indiciaData.nid || '0');
         // Pass through additional parameters to the request.
         if (source.settings.filterPath) {
@@ -472,7 +472,7 @@ var IdcEsDataSource;
      * Ensure next request includes a count.
      */
     IdcEsDataSource.prototype.forceRecount = function forceRecount() {
-      lastCountRequestStr = '';
+      this.lastCountRequestStr = '';
     };
 
     /**
