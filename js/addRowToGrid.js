@@ -543,11 +543,21 @@ var resetSpeciesTextOnEscape;
     indiciaData['gridCounter-' + gridId]++;
     return ctrl;
   };
-
+  
+  // Track the species list used against each grid if multiple grids
+  var gridLookupLists = {};
   indiciaFns.addRowToGrid = function (gridId, lookupListId) {
+    if (gridId && lookupListId) {
+      gridLookupLists[gridId] = lookupListId;
+    }
     makeSpareRow(gridId, lookupListId, false);
     // Deal with user clicking on edit taxon icon
     indiciaFns.on('click', '.edit-taxon-name', {}, function (e) {
+      var gridId = $(e.target).closest('table').attr('id');
+      // Multiple grids might mean different species lists used for each grid
+      if (gridLookupLists[gridId]) {
+        lookupListId = gridLookupLists[gridId];
+      }
       var row = $($(e.target).parents('tr:first'));
       var taxonCell = $(row).children('.scTaxonCell');
       var subspSelect = $(row).find('.scSubSpecies');
