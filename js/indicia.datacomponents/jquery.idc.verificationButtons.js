@@ -302,7 +302,7 @@
    *   Optional comment which can contain template tokens.
    */
   function saveRedeterminationForSelection(el, occurrenceIds, newTaxaTaxonListId, comment) {
-    const pgUpdates = getRedetPgUpdates(occurrenceIds, newTaxaTaxonListId, comment);
+    const pgUpdates = getRedetPgUpdates(newTaxaTaxonListId, comment);
     const esUpdates = getRedetEsUpdates(occurrenceIds);
     rowsToRemove = [];
     listWillBeEmptied = $(listOutputControl).find('[data-row-id]').length - occurrenceIds.length <= 0;
@@ -310,7 +310,6 @@
     pgUpdates['occurrence:ids'] = occurrenceIds.join(',');
     rowsToRemove = disableRowsForIds(occurrenceIds);
     fireItemUpdate(el);
-    // @todo should repopulateAfterVerify be handled inside the list output control?
     if (listWillBeEmptied) {
       doRepopulateAfterVerify(occurrenceIds);
     }
@@ -333,7 +332,9 @@
       type: 'post',
       data: esUpdates,
       success: function success() {
-        indiciaFns.hideItemAndMoveNext(listOutputControl[0]);
+        if (!listWillBeEmptied) {
+          indiciaFns.hideItemAndMoveNext(listOutputControl[0]);
+        }
       }
     }).always(cleanupAfterAjaxUpdate);
   }
@@ -786,9 +787,12 @@
     var sourceSettings = $(listOutputControl)[0].settings.sourceObject.settings;
     var docIds = [];
 
+    // Build lisat of verified IDs to exclude from the new view.
     $.each(occurrenceIds, function() {
       docIds.push(indiciaData.idPrefix + this);
-    })
+      // Also exclude sensitive version.
+      docIds.push(indiciaData.idPrefix + this + '!');
+    });
     // As ES updates are not instant, we need a temporary must_not match
     // filter to prevent the verified records reappearing.
     if (!sourceSettings.filterBoolClauses) {
