@@ -49,7 +49,8 @@
     includeFullScreenTool: true,
     includePager: true,
     includeSortTool: true,
-    keyboardNavigation: false
+    keyboardNavigation: false,
+    totalHits: null
   };
 
   /**
@@ -445,7 +446,7 @@
       if (typeof options !== 'undefined') {
         $.extend(el.settings, options);
       }
-      // dataGrid does not make use of multiple sources.
+      // CardGallery does not make use of multiple sources.
       el.settings.sourceObject = indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]];
 
       if (!el.settings.columns) {
@@ -576,6 +577,7 @@
           '<i class="fas fa-compress-arrows-alt"></i></button>')
           .appendTo(card);
       });
+      el.settings.totalHits = response.hits.total;
       indiciaFns.drawPagingFooter(el, response, data, '.card');
       fireAfterPopulationCallbacks(el);
     },

@@ -23,7 +23,7 @@
 /**
 * Output plugin for the verification record details pane.
 */
-(function idcRecordDetailsPane() {
+(function idcRecordsMover() {
   'use strict';
   var $ = jQuery;
 
@@ -44,20 +44,196 @@
   /* Private methods. */
 
   /**
+   * Returns true if the source filter is limited to the current user's data.
+   */
+  function checkHasMyRecordsFilter(el, filter) {
+    var filterFound = false;
+    if (indiciaData.esScope === 'user') {
+      return true;
+    }
+    if (typeof filter.bool_queries !== 'undefined') {
+      filter.bool_queries.forEach((qry) => {
+        if (qry.bool_clause === 'must' && typeof qry.field !== 'undefined' && qry.field === 'metadata.created_by_id'
+            && typeof qry.query_type !== 'undefined' && qry.query_type === 'term'
+            && typeof qry.value !== 'undefined' && qry.value == indiciaData.user_id) {
+          filterFound = true;
+        }
+      });
+    }
+    return filterFound;
+  }
+
+  /**
+   * Fetches the source from the linked data control.
+   *
+   * @param DOM el
+   *   The recordsMover container element.
+   */
+  function linkToDataSource(el) {
+    let settings = $(el)[0].settings;
+    let ctrlSettings;
+    if (!settings.sourceObject) {
+      if ($('#' + settings.linkToDataControl).length !== 1) {
+        indiciaFns.controlFail(el, 'Failed to find data control ' + settings.linkToDataControl + ' linked to recordsMover');
+      }
+      // Find the source linked to the data control.
+      ctrlSettings = $('#' + settings.linkToDataControl)[0].settings;
+      settings.source = ctrlSettings.source;
+      settings.sourceObject = indiciaData.esSourceObjects[Object.keys(settings.source)[0]];
+      if (settings.sourceObject.settings.mode !== 'docs') {
+        indiciaFns.controlFail(el, 'The recordsMover control needs to link to a source that lists occurrences rather than aggregated data');
+      }
+    }
+  }
+
+  /**
+   * Retrieve a summary of the work to do.
+   *
+   * @param DOM el
+   *   The recordsMover container element.
+   */
+  function getTodoListInfo(el) {
+    const linkToDataControl = $('#' + $(el)[0].settings.linkToDataControl);
+    const totalHits = linkToDataControl[0].settings.totalHits;
+    var r;
+    var selectedItems;
+    if (linkToDataControl.hasClass('multiselect-mode')) {
+      // Using multi-select checkboxes, so find how many are checked.
+      r = {
+        total: $(linkToDataControl).find('.multiselect:checked').length,
+        totalAsText: $(linkToDataControl).find('.multiselect:checked').length,
+        message: indiciaData.lang.recordsMover.recordsMoverDialogMessageSelected,
+        ids: []
+      };
+      selectedItems = $(linkToDataControl).find('.multiselect:checked').closest('tr,.card')
+      $.each(selectedItems, function eachRow() {
+        const doc = JSON.parse($(this).attr('data-doc-source'));
+        r.ids.push(parseInt(doc.id, 10));
+      });
+    } else {
+      // Not using multi-select checkboxes, so return count of all records in filter.
+      r = {
+        total: totalHits.value,
+        totalAsText : (totalHits.relation === 'gte' ? 'at least ' : '') + totalHits.value,
+        message: indiciaData.lang.recordsMover.recordsMoverDialogMessageAll
+      }
+    }
+    r.message = r.message.replace('{1}', r.totalAsText);
+    return r;
+  }
+
+  /**
+   * Popup a message if the move cannot proceed.
+   */
+  function cannotProceedMessage(message) {
+    $.fancyDialog({
+      title: indiciaData.lang.recordsMover.cannotProceed,
+      message: message,
+      cancelButton: null
+    });
+  }
+
+  function logOutput(info) {
+    $('#post-move-info .output').append('<p>' + info + '</p>');
+  }
+
+  function checkResponseCode(response) {
+    if (response.code !== 200) {
+      logOutput(indiciaData.lang.recordsMover.error);
+      logOutput(response.message);
+      $('#close-move').removeAttr('disabled');
+      return false;
+    }
+    return true;
+  }
+
+
+  function performBulkMove(data, endpoint) {
+    data.precheck = true;
+    $('#pre-move-info').slideUp();
+    $('#post-move-info').slideDown();
+    logOutput(indiciaData.lang.recordsMover.preparing);
+    $.post(indiciaData.esProxyAjaxUrl + '/' + endpoint + '/' + indiciaData.nid, data, null, 'json')
+    .done(function(response) {
+      if (!checkResponseCode(response)) {
+        return;
+      }
+      logOutput(indiciaData.lang.recordsMover.moving);
+      delete data.precheck;
+      $.post(indiciaData.esProxyAjaxUrl + '/' + endpoint + '/' + indiciaData.nid, data, null, 'json')
+      .done(function(response) {
+        // @todo update outputs to remove the moved records.
+        // @todo handle scenario where >10000
+        // @todo close button
+        console.log(response);
+        if (!checkResponseCode(response)) {
+          return;
+        }
+        $('#close-move').removeAttr('disabled');
+        logOutput(indiciaData.lang.recordsMover.done);
+      })
+      .fail(function() {
+        logOutput(indiciaData.lang.recordsMover.error);
+      });
+    })
+    .fail(function() {
+      logOutput(indiciaData.lang.recordsMover.error);
+    });
+  }
+
+  function proceedClickHandler(el) {
+    // Either pass through list of IDs or pass through a filter to restrict to.
+    const linkToDataControl = $('#' + $(el)[0].settings.linkToDataControl);
+    const todoInfo = getTodoListInfo(el);
+    let data = {
+      datasetMappings: JSON.stringify($(el)[0].settings.datasetMappings),
+      website_id: indiciaData.website_id
+    };
+    if (linkToDataControl.hasClass('multiselect-mode')) {
+      data['occurrence:ids'] = todoInfo.ids.join(',');
+      performBulkMove(data, 'bulkmoveids');
+    } else {
+      const filter = indiciaFns.getFormQueryData($(el)[0].settings.sourceObject, false);
+      data['occurrence:idsFromElasticFilter'] = filter;
+      performBulkMove(data, 'bulkmoveall');
+    }
+  }
+
+  /**
+   * Click button displays info message before allowing user to proceed with move.
+   */
+  function moveRecordsBtnClickHandler(e) {
+    const el = $(e.currentTarget).closest('.idc-recordsMover');
+    const todoInfo = getTodoListInfo(el);
+    linkToDataSource(el);
+    const filter = indiciaFns.getFormQueryData($(el)[0].settings.sourceObject, false);
+    // Validate that it won't affect other user data if it shouldn't.
+    if (el[0].settings.restrictToOwnData && !checkHasMyRecordsFilter(el, filter)) {
+      cannotProceedMessage(indiciaData.lang.recordsMover.errorNotFilteredToCurrentUser);
+      return;
+    }
+    // Message if nothing to do.
+    if (todoInfo.total === 0) {
+      cannotProceedMessage(indiciaData.lang.recordsMover.warningNothingToDo);
+      return;
+    }
+    // Reset the dialog.
+    $('#records-mover-dlg-wrap .message').text(todoInfo.message);
+    $('#pre-move-info').show();
+    $('#post-move-info').hide();
+    $('#close-move').attr('disabled', true);
+    $('#post-move-info .output p').remove();
+    // Now open it.
+    $.fancybox.open($('#records-mover-dlg-wrap'));
+  }
+
+  /**
    * Register the various user interface event handlers.
    */
   function initHandlers(el) {
-    $(el).find('.move-records-btn').click(() => {
-      $.fancyDialog({
-        title: indiciaData.lang.recordsMover.recordsMoverDialogTitle,
-        message: indiciaData.lang.recordsMover.recordsMoverDialogMessage,
-        okButton: indiciaData.lang.recordsMover.move,
-        cancelButton: indiciaData.lang.recordsMover.cancel,
-        callbackOk: () => {
-          // @todo Check that the source does have a survey ID filter that matches the datasetMappings sources.
-          // @todo Call new API on the warehouse
-        }
-      });
+    $(el).find('.move-records-btn').click(moveRecordsBtnClickHandler);
+    $(el).find('#proceed-move').click(() => {
+      proceedClickHandler(el);
     });
   }
 
@@ -82,8 +258,6 @@
       if (typeof options !== 'undefined') {
         $.extend(el.settings, options);
       }
-      // @todo Validate settings, e.g. source exists.
-
       initHandlers(el);
     },
 

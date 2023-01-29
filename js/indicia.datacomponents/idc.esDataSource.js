@@ -214,7 +214,7 @@ var IdcEsDataSource;
       var termSources = [];
       prepareAggregationMode.call(this);
       // Convert list of fields to one suitable for top_hits _source.
-      $.each(this.settings.fields, function eachField() {
+      $.each(settings.fields, function eachField() {
         var matches = this.match(/^#([^:]+)(:([^:]+):([^:]+))?#$/);
         var key;
         var entity;
