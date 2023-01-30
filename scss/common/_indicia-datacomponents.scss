@@ -92,6 +92,8 @@ body {
       box-sizing: border-box;
       background-color: $colour-even-row;
       position: relative;
+      border: 1px solid grey;
+      box-shadow: 2px 4px 11px 0px rgba(170,170,170,1);
       &:not(.selected) {
         a[data-fancybox] {
           pointer-events: none;
@@ -108,7 +110,7 @@ body {
         color: $colour-select-row;
         background-color: $colour-select-row-bg;
       }
-      &.selected:not(.disabled) {
+      &:not(.disabled) {
         border: 1px solid grey;
       }
       .expand-card {
