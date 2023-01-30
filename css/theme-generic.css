@@ -653,6 +653,9 @@ body > .loading-spinner {
   /* Taxon label titles */
   /* If verification buttons moved to card in max size mode */
 }
+.idc-cardGallery .es-card-gallery .card:not(.selected) a[data-fancybox] {
+  pointer-events: none;
+}
 .idc-cardGallery .es-card-gallery .card:last-of-type {
   flex-grow: 0;
 }

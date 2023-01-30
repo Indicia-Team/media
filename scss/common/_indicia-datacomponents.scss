@@ -92,6 +92,11 @@ body {
       box-sizing: border-box;
       background-color: $colour-even-row;
       position: relative;
+      &:not(.selected) {
+        a[data-fancybox] {
+          pointer-events: none;
+        }
+      }
       &:last-of-type {
         flex-grow: 0;
       }
