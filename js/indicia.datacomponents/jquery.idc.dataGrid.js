@@ -41,6 +41,12 @@
   var defaults = {
     actions: [],
     aggregation: null,
+    autoResponsiveCols: false,
+    // Page tracking for composite aggregations
+    compositeInfo: {
+      page: 0,
+      pageAfterKeys: {}
+    },
     cookies: true,
     includeColumnHeadings: true,
     includeColumnSettingsTool: true,
@@ -58,13 +64,9 @@
         lg: 1200
       }
     },
-    autoResponsiveCols: false,
-    // Page tracking for composite aggregations
-    compositeInfo: {
-      page: 0,
-      pageAfterKeys: {}
-    },
-    totalHits: null
+    tbodyHasScrollBar: false,
+    totalHits: null,
+    totalRowCount: null
   };
 
   /**
@@ -186,7 +188,7 @@
     if (el.settings.actions.length) {
       $('<th class="col-actions"></th>').appendTo(headerRow);
     }
-    if (el.settings.scrollY) {
+    if (el.settings.tbodyHasScrollBar) {
       // Spacer in header to allow for scrollbar in body.
       $('<th class="scroll-spacer"></th>').appendTo(headerRow);
     }
@@ -709,7 +711,7 @@
     var scrollBarInnerWidth;
     var outerSpacing = $(el).find('.col-0').outerWidth() - $(el).find('.col-0').width();
     // Column resizing needs to be done manually when tbody has scroll bar.
-    if (el.settings.scrollY) {
+    if (el.settings.tbodyHasScrollBar) {
       if (el.settings.responsive) {
         // Allow 14px space for responsive show + button.
         $(el).find('.footable-toggle-col').css('width', '14px');
@@ -852,15 +854,18 @@
 
       indiciaFns.registerOutputPluginClass('idcDataGrid');
       el.settings = $.extend(true, {}, defaults);
-      el.callbacks = callbacks;
       // Apply settings passed in the HTML data-* attribute.
-      if (typeof $(el).attr('data-idc-config') !== 'undefined') {
-        $.extend(el.settings, JSON.parse($(el).attr('data-idc-config')));
+      if ($(el).data('idc-config')) {
+        $.extend(el.settings, $(el).data('idc-config'));
+      }
+      if (el.settings.scrollY) {
+        el.settings.tbodyHasScrollBar = true;
       }
       // Apply settings passed to the constructor.
       if (typeof options !== 'undefined') {
         $.extend(el.settings, options);
       }
+      el.callbacks = callbacks;
       // dataGrid does not make use of multiple sources.
       el.settings.sourceObject = indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]];
       // Disable cookies unless id specified.
@@ -884,7 +889,7 @@
       }
       footableSort = el.settings.sourceObject.settings.mode === 'compositeAggregation' && el.settings.sortable
         ? 'true' : 'false';
-      if (el.settings.scrollY) {
+      if (el.settings.tbodyHasScrollBar) {
         tableClasses.push('fixed-header');
       }
       // Build the elements required for the table.
@@ -957,11 +962,11 @@
       $(el).find('tbody tr').remove();
       lastLoadedRowId = null;
       $(el).find('.multiselect-all').prop('checked', false);
-      // In scrollY mode, we have to calculate the column widths ourselves
-      // since putting CSS overflow on tbody requires us to lose table layout.
-      // Start by finding the number of characters in header cells. Later we'll
-      // increase this if  we find cells in a column that contain more
-      // characters.
+      // In tbodyHasScrollBar mode, we have to calculate the column widths
+      // ourselves since putting CSS overflow on tbody requires us to lose
+      // table layout. Start by finding the number of characters in header
+      // cells. Later we'll increase this if  we find cells in a column that
+      // contain more characters.
       $.each(el.settings.columns, function eachColumn(idx) {
         // Only use the longest word in the caption as we'd rather break the
         // heading than the data rows.
@@ -971,7 +976,7 @@
           maxCharsPerCol['col-' + idx] += 2;
         }
       });
-      if (el.settings.actions.length === 0 && !el.settings.scrollY) {
+      if (el.settings.actions.length === 0 && !el.settings.tbodyHasScrollBar) {
         // If no scrollbar or actions column, 2 extra chars for the last
         // heading as it contains tool icons.
         maxCharsPerCol['col-' + (el.settings.columns.length - 1)] += 2;

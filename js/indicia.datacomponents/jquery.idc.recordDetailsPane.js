@@ -45,7 +45,9 @@
   /**
    * Declare default settings.
    */
-  var defaults = {};
+  var defaults = {
+    controlLayoutDone: false
+  };
 
   var callbacks = {
     tabShow: []
@@ -496,6 +498,12 @@
       }
       $(el).find('.empty-message').hide();
       $(el).find('.tabs').show();
+      if (!el.settings.controlLayoutDone) {
+        // On first show, make sure controlLayout control can apply any changes.
+        indiciaFns.updateControlLayout();
+        el.settings.controlLayoutDone = true;
+      }
+
       // Load Ajax content depending on the tab.
       loadCurrentTabAjax(el);
     } else {

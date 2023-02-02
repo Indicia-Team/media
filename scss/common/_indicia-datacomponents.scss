@@ -1,4 +1,4 @@
-$shadow-colour: silver;
+$shadow-colour: #a7a7a7;
 $file-box-width: 400px;
 $file-box-padding: 20px;
 $file-box-icon-size: 30px;
@@ -6,6 +6,12 @@ $file-box-icon-size: 30px;
 @mixin cell {
   padding: 4px 2px;
   word-wrap: break-word;
+}
+
+@mixin drop-shadow($size:4px) {
+  -webkit-box-shadow: $size $size calc($size*2) $shadow-colour;
+  -moz-box-shadow: $size $size calc($size*2) $shadow-colour;
+  box-shadow: $size $size calc($size*2) $shadow-colour;
 }
 
 @mixin verification-button {
@@ -83,7 +89,6 @@ body {
     display: flex;
     flex-wrap: wrap;
     margin: 0 auto;
-    padding: 0.5em 0;
     .card {
       flex-basis: 98%;
       flex-grow: 1;
@@ -92,6 +97,13 @@ body {
       box-sizing: border-box;
       background-color: $colour-even-row;
       position: relative;
+      border: 1px solid grey;
+      @include drop-shadow;
+      &:not(.selected) {
+        a[data-fancybox] {
+          pointer-events: none;
+        }
+      }
       &:last-of-type {
         flex-grow: 0;
       }
@@ -103,7 +115,7 @@ body {
         color: $colour-select-row;
         background-color: $colour-select-row-bg;
       }
-      &.selected:not(.disabled) {
+      &:not(.disabled) {
         border: 1px solid grey;
       }
       .expand-card {
@@ -129,9 +141,7 @@ body {
         width: 100%;
         z-index: 1000;
         margin: 0;
-        box-shadow: 3px 4px 14px rgba(0, 0, 0, 0.2);
-	      -webkit-box-shadow: 3px 4px 14px rgba(0, 0, 0, 0.2);
-	      -moz-box-shadow: 3px 4px 14px rgba(0, 0, 0, 0.2);
+        @include drop-shadow(6px);
         .image-container {
           text-align: center;
           /* Prevent images pushing buttons off bottom of page. */
@@ -280,6 +290,12 @@ body {
       }
     }
   }
+  &.layout-align-bottom {
+    table.es-data-grid {
+      /* Remove margin so controlLayout can anchor to bottom of page. */
+      margin-bottom: 0;
+    }
+  }
 }
 table.es-data-grid {
   background-color: $colour-odd-row;
@@ -317,7 +333,7 @@ table.es-data-grid {
         max-height: 60px;
         border-radius: 4px;
         margin: 2px;
-        box-shadow: #aaa 0px 2px 4px 0px;
+        @include drop-shadow(3px);
         &.multi {
           max-height: 45px;
         }
@@ -485,9 +501,7 @@ table.es-data-grid {
 }
 .idc-download-files {
   display: none;
-  -webkit-box-shadow: 6px 7px 8px 1px $shadow-colour;
-  -moz-box-shadow: 6px 7px 8px 1px $shadow-colour;
-  box-shadow: 6px 7px 8px 1px $shadow-colour;
+  @include drop-shadow;
   max-width: $file-box-width;
   padding: $file-box-padding;
   margin: auto;
@@ -561,7 +575,7 @@ table.es-data-grid {
           vertical-align: middle;
           height: 15px;
           border-radius: 4px;
-          box-shadow: #aaa 0px 2px 4px 0px;
+          @include drop-shadow(2px);
           &.exp-V {
             background-color: green;
           }
