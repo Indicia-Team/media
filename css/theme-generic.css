@@ -640,7 +640,6 @@ body > .loading-spinner {
   display: flex;
   flex-wrap: wrap;
   margin: 0 auto;
-  padding: 0.5em 0;
 }
 .idc-cardGallery .es-card-gallery .card {
   flex-basis: 98%;
