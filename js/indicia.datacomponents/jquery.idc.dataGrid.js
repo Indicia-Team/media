@@ -267,7 +267,7 @@
   function setTableHeight(el) {
     var tbody = $(el).find('tbody');
     var fullscreenOffset;
-    if (el.settings.scrollY) {
+    if (el.settings.scrollY && typeof indiciaFns.updateControlLayout === 'undefined') {
       if (el.settings.scrollY.match(/^-/)) {
         // If fullscreen, treat full screen element as page top, so need to offset.
         fullscreenOffset = indiciaFns.fullscreenElement() ? $(indiciaFns.fullscreenElement()).offset().top : 0;
