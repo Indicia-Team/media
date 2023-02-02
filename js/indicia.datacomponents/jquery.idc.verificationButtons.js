@@ -379,7 +379,8 @@
   /**
    * Click handler for the save comment form which saves a comment.
    */
-  function saveCommentPopup(el, popup) {
+  function saveCommentPopup(e) {
+    const popup = $(e.currentTarget).closest('.comment-popup');
     const ids = JSON.parse($(popup).data('ids'));
     let statusData = {};
     if ($(popup).data('status')) {
@@ -388,7 +389,7 @@
     if ($(popup).data('query')) {
       statusData.query = $(popup).data('query');
     }
-    saveVerifyComment(el, ids, statusData, $(popup).find('textarea').val());
+    saveVerifyComment(ids, statusData, $(popup).find('textarea').val());
     $.fancybox.close();
   }
 
@@ -619,10 +620,15 @@
 
     /**
      * Verification dialog submit form handler.
-     */
+     *
     $('#apply-verification').click((e) => {
-      saveCommentPopup(el, $(e.currentTarget).closest('.comment-popup'));
-    });
+      saveCommentPopup($(e.currentTarget).closest('.comment-popup'));
+    });*/
+
+    /**
+     * Verification comment popup save button click handler.
+     */
+    indiciaFns.on('click', '.comment-popup button', {}, saveCommentPopup);
 
     /**
      * Redetermination and verification dialog cancel button click handler.
@@ -863,7 +869,7 @@
    *
    * Might be the verification of a single occurrence or list of occurrences.
    */
-  function saveVerifyCommentForSelection(el, occurrenceIds, status, comment, email) {
+  function saveVerifyCommentForSelection(occurrenceIds, status, comment, email) {
     var pgUpdates = getVerifyPgUpdates(status, comment, email);
     var esUpdates = getVerifyEsUpdates(status);
     var data;
@@ -874,7 +880,9 @@
     pgUpdates['occurrence:ids'] = occurrenceIds.join(',');
     // Disable rows that are being processed.
     rowsToRemove = disableRowsForIds(occurrenceIds);
-    fireItemUpdate(el);
+    $.each($('.idc-verificationButtons'), function() {
+      fireItemUpdate(this);
+    });
     // @todo should repopulateAfterVerify be handled inside the list output control?
     if (listWillBeEmptied) {
       doRepopulateAfterVerify(occurrenceIds);
@@ -933,14 +941,14 @@
   /**
    * Instigates a verification event.
    */
-  function saveVerifyComment(el, occurrenceIds, status, comment, email) {
+  function saveVerifyComment(occurrenceIds, status, comment, email) {
     if (multiselectWholeTableMode()) {
       // Verifying the whole table.
       saveVerifyCommentForWholeTable(status, comment, email);
     }
     else {
       // Verifying a single record or selection.
-      saveVerifyCommentForSelection(el, occurrenceIds, status, comment, email);
+      saveVerifyCommentForSelection(occurrenceIds, status, comment, email);
     }
   }
 
@@ -1099,7 +1107,8 @@
    * Get HTML for the query by comment tab's form.
    */
   function getQueryCommentTab(doc, commentInstruct, warning) {
-    var commentTab = $('<fieldset class="comment-popup" data-ids="' + JSON.stringify([parseInt(doc.id, 10)]) + '" data-query="Q" />');
+    var commentTab = $('<fieldset class="comment-popup" data-query="Q" />');
+    commentTab.data('ids', JSON.stringify([parseInt(doc.id, 10)]));
     $('<legend><span class="fas fa-question-circle fa-2x"></span>' +
       indiciaData.lang.verificationButtons.commentTabTitle + '</legend>')
       .appendTo(commentTab);
@@ -1457,7 +1466,6 @@
           email.body = email.body.replace(/\{{ comments }}/g, response.comments);
           // save a comment to indicate that the mail was sent
           saveVerifyComment(
-            el,
             [occurrenceId],
             { query: 'Q' },
             $(popup).hasClass('email-expert-popup') ? indiciaData.lang.verificationButtons.emailExpertLoggedAsComment : indiciaData.lang.verificationButtons.emailQueryLoggedAsComment,
