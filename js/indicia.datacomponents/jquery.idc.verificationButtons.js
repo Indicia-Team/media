@@ -619,13 +619,6 @@
     });
 
     /**
-     * Verification dialog submit form handler.
-     *
-    $('#apply-verification').click((e) => {
-      saveCommentPopup($(e.currentTarget).closest('.comment-popup'));
-    });*/
-
-    /**
      * Verification comment popup save button click handler.
      */
     indiciaFns.on('click', '.comment-popup button', {}, saveCommentPopup);
@@ -1776,7 +1769,7 @@
     }
   };
 
-    /**
+  /**
    * Extend jQuery to declare idcVerificationButtons plugin.
    */
   $.fn.idcVerificationButtons = function buildVerificationButtons(methodOrOptions) {
