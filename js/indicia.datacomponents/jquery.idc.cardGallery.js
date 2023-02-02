@@ -181,7 +181,7 @@
     /**
      * Double click grid row handler.
      *
-     * Adds selected class and fires callbacks.
+     * Adds selected class. fires callbacks and maximises the card.
      */
     indiciaFns.on('dblclick', '#' + el.id + ' .es-card-gallery .card', {}, function onCardGalleryitemDblClick() {
       var card = this;
@@ -189,6 +189,8 @@
         $(card).closest('.es-card-gallery').find('.card.selected').removeClass('selected');
         $(card).addClass('selected');
       }
+      setCardToMaxSize(card);
+      inMaxSizeMode(true);
       $.each(el.callbacks.itemDblClick, function eachCallback() {
         this(card);
       });
