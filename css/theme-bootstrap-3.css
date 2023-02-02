@@ -876,6 +876,10 @@ body > .loading-spinner {
 .idc-dataGrid .data-grid-settings ol li p {
   margin: 0;
 }
+.idc-dataGrid.layout-align-bottom table.es-data-grid {
+  /* Remove margin so controlLayout can anchor to bottom of page. */
+  margin-bottom: 0;
+}
 
 table.es-data-grid {
   background-color: #ffffff;

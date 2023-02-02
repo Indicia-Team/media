@@ -101,20 +101,33 @@ jQuery(document).ready(function($) {
         }
       });
       $.each(indiciaData.esControlLayout.alignBottom, function() {
-        const thisCtrl = $(getResizeableScrollComponent(this));
+        const resizeEl = $(getResizeableScrollComponent(this));
+        // If originY is at the top of the page, find the bottom.
+        const proposedPageBottom = originY + (window.innerHeight - getCtrlStyledSizing($('body'), 'paddingTop'));
         // Ensure control ready.
-        if (thisCtrl.length > 0) {
+        if (resizeEl.length > 0) {
           if (belowBreakpoint) {
             // Below breakpoint, so revert to unstyled height.
-            thisCtrl.css('max-height', '');
+            resizeEl.css('max-height', '');
           } else {
-            const thisCtrlTop = thisCtrl[0].getBoundingClientRect().y;
-            thisCtrl.css('overflow-y', 'auto');
-            thisCtrl.css('max-height', ((window.innerHeight + originY) - (thisCtrlTop + getCtrlStyledSizing($('body'), 'paddingTop'))) + 'px');
+            const resizeElTop = resizeEl[0].getBoundingClientRect().y;
+            // Allow for any footer area in the control that is under the scrollbox area (e.g. a tfoot).
+            const allowForSpaceBelowResizeEl = $('#' + this)[0].getBoundingClientRect().height - resizeEl[0].getBoundingClientRect().height - (resizeElTop - $('#' + this)[0].getBoundingClientRect().y);
+            resizeEl.css('overflow-y', 'auto');
+            resizeEl.css('max-height', proposedPageBottom - resizeElTop - allowForSpaceBelowResizeEl);
           }
         }
       });
     }
+
+    // Ensure dataGrids have scrollbar on tbody set, as this changes various
+    // bits of table behaviour.
+    $.each(indiciaData.esControlLayout.alignBottom, function() {
+      if ($('#' + this).hasClass('idc-dataGrid')) {
+        $('#' + this).data('idc-config').tbodyHasScrollBar = true;
+        $('#' + this).addClass('layout-align-bottom');
+      }
+    });
 
     window.addEventListener('resize', indiciaFns.updateControlLayout);
     // Also recalc on fullscreen change otherwise layout refreshes too early
