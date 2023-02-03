@@ -404,6 +404,15 @@ table.es-data-grid {
 }
 
 .verification-popup {
+  button {
+    margin-left: 8px;
+    &:first-child {
+      margin-left: 0;
+    }
+  }
+}
+
+.verification-popup {
   .comment-cntr {
     position: relative;
     .comment-tools {
