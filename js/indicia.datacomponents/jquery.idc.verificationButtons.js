@@ -1688,6 +1688,7 @@
           sep = el.settings.viewPath.indexOf('?') === -1 ? '?' : '&';
           $(el).find('.view').attr('href', el.settings.viewPath + sep + 'occurrence_id=' + doc.id);
           $(el).find('.edit').attr('href', el.settings.editPath + sep + 'occurrence_id=' + doc.id);
+          $(el).find('.species').attr('href', el.settings.speciesPath + sep + 'taxon_meaning_id=' + doc.taxon.taxon_meaning_id);
           // Deprecated doc field mappings had occurrence_external_key instead
           // of occurrence.source_system_key. This line can be removed if the
           // index has been rebuilt.
