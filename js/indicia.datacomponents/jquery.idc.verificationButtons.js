@@ -621,12 +621,12 @@
     /**
      * Verification comment popup save button click handler.
      */
-    indiciaFns.on('click', '.comment-popup button', {}, saveCommentPopup);
+    indiciaFns.on('click', '.comment-popup button.save', {}, saveCommentPopup);
 
     /**
      * Redetermination and verification dialog cancel button click handler.
      */
-     $('#cancel-verification,#cancel-redet').click(() => {
+    indiciaFns.on('click', 'button.cancel', {}, () => {
       $.fancybox.close();
     });
 
@@ -1112,7 +1112,8 @@
         '<label for="comment-textarea">Add the following comment:</label>' +
         '<textarea id="comment-textarea" class="form-control" rows="6"></textarea>' +
       '</div>').appendTo(commentTab);
-    $('<button class="btn btn-primary">Add comment</button>').appendTo(commentTab);
+    $('<button class="' + indiciaData.templates.buttonHighlightedClass + ' save">' + indiciaData.lang.verificationButtons.addComment + '</button>').appendTo(commentTab);
+    $('<button class="' + indiciaData.templates.buttonDefaultClass + ' cancel">' + indiciaData.lang.verificationButtons.cancel + '</button>').appendTo(commentTab);
     return commentTab;
   }
 
