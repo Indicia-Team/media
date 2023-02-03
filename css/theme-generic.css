@@ -1013,6 +1013,13 @@ table.es-data-grid tfoot button span {
   margin: 0 8px;
 }
 
+.verification-popup button {
+  margin-left: 8px;
+}
+.verification-popup button:first-child {
+  margin-left: 0;
+}
+
 .verification-popup .comment-cntr {
   position: relative;
 }

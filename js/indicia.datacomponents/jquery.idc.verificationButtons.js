@@ -621,12 +621,12 @@
     /**
      * Verification comment popup save button click handler.
      */
-    indiciaFns.on('click', '.comment-popup button', {}, saveCommentPopup);
+    indiciaFns.on('click', '.comment-popup button.save', {}, saveCommentPopup);
 
     /**
      * Redetermination and verification dialog cancel button click handler.
      */
-     $('#cancel-verification,#cancel-redet').click(() => {
+    indiciaFns.on('click', 'button.cancel', {}, () => {
       $.fancybox.close();
     });
 
@@ -1113,7 +1113,8 @@
         '<label for="comment-textarea">Add the following comment:</label>' +
         '<textarea id="comment-textarea" class="form-control" rows="6"></textarea>' +
       '</div>').appendTo(commentTab);
-    $('<button class="btn btn-primary">Add comment</button>').appendTo(commentTab);
+    $('<button class="' + indiciaData.templates.buttonHighlightedClass + ' save">' + indiciaData.lang.verificationButtons.addComment + '</button>').appendTo(commentTab);
+    $('<button class="' + indiciaData.templates.buttonDefaultClass + ' cancel">' + indiciaData.lang.verificationButtons.cancel + '</button>').appendTo(commentTab);
     return commentTab;
   }
 
@@ -1688,6 +1689,7 @@
           sep = el.settings.viewPath.indexOf('?') === -1 ? '?' : '&';
           $(el).find('.view').attr('href', el.settings.viewPath + sep + 'occurrence_id=' + doc.id);
           $(el).find('.edit').attr('href', el.settings.editPath + sep + 'occurrence_id=' + doc.id);
+          $(el).find('.species').attr('href', el.settings.speciesPath + sep + 'taxon_meaning_id=' + doc.taxon.taxon_meaning_id);
           // Deprecated doc field mappings had occurrence_external_key instead
           // of occurrence.source_system_key. This line can be removed if the
           // index has been rebuilt.
