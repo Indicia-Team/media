@@ -1231,14 +1231,14 @@ table.es-data-grid tfoot button span {
 }
 
 /* idcRecordsMover */
-#post-move-info .output {
+.post-move-info .output {
   border: solid silver 1px;
-  min-width: 250px;
+  width: 350px;
   min-height: 90px;
   padding: 4px;
   margin-bottom: 8px;
 }
-#post-move-info .output p {
+.post-move-info .output p {
   margin: 2px;
 }
 
