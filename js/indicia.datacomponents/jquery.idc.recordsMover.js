@@ -133,32 +133,33 @@
     });
   }
 
-  function logOutput(info) {
-    $('#post-move-info .output').append('<p>' + info + '</p>');
+  function logOutput(dlg, info) {
+    dlg.find('.post-move-info .output').append('<p>' + info + '</p>');
   }
 
-  function checkResponseCode(response) {
+  function checkResponseCode(dlg, response) {
     if (response.code !== 200) {
-      logOutput(indiciaData.lang.recordsMover.error);
-      logOutput(response.message);
-      $('#close-move').removeAttr('disabled');
+      logOutput(dlg, indiciaData.lang.recordsMover.error);
+      logOutput(dlg, response.message);
+      dlg.find('.close-move').removeAttr('disabled');
       return false;
     }
     return true;
   }
 
 
-  function performBulkMove(data, endpoint) {
+  function performBulkMove(dlg, data, endpoint) {
+    dlg.find('.pre-move-info').hide();
+    dlg.find('.post-move-info').show();
+    logOutput(dlg, indiciaData.lang.recordsMover.preparing);
+    // First post doesn't change anything - just checks the data can be moved.
     data.precheck = true;
-    $('#pre-move-info').slideUp();
-    $('#post-move-info').slideDown();
-    logOutput(indiciaData.lang.recordsMover.preparing);
     $.post(indiciaData.esProxyAjaxUrl + '/' + endpoint + '/' + indiciaData.nid, data, null, 'json')
     .done(function(response) {
-      if (!checkResponseCode(response)) {
+      if (!checkResponseCode(dlg, response)) {
         return;
       }
-      logOutput(indiciaData.lang.recordsMover.moving);
+      logOutput(dlg, indiciaData.lang.recordsMover.moving);
       delete data.precheck;
       $.post(indiciaData.esProxyAjaxUrl + '/' + endpoint + '/' + indiciaData.nid, data, null, 'json')
       .done(function(response) {
@@ -166,18 +167,18 @@
         // @todo handle scenario where >10000
         // @todo close button
         console.log(response);
-        if (!checkResponseCode(response)) {
+        if (!checkResponseCode(dlg, response)) {
           return;
         }
-        $('#close-move').removeAttr('disabled');
-        logOutput(indiciaData.lang.recordsMover.done);
+        dlg.find('.close-move').removeAttr('disabled');
+        logOutput(dlg, indiciaData.lang.recordsMover.done);
       })
       .fail(function() {
-        logOutput(indiciaData.lang.recordsMover.error);
+        logOutput(dlg, indiciaData.lang.recordsMover.error);
       });
     })
     .fail(function() {
-      logOutput(indiciaData.lang.recordsMover.error);
+      logOutput(dlg, indiciaData.lang.recordsMover.error);
     });
   }
 
@@ -185,17 +186,18 @@
     // Either pass through list of IDs or pass through a filter to restrict to.
     const linkToDataControl = $('#' + $(el)[0].settings.linkToDataControl);
     const todoInfo = getTodoListInfo(el);
+    const dlg = $('#' + $(el)[0].settings.id + '-dlg');
     let data = {
       datasetMappings: JSON.stringify($(el)[0].settings.datasetMappings),
       website_id: indiciaData.website_id
     };
     if (linkToDataControl.hasClass('multiselect-mode')) {
       data['occurrence:ids'] = todoInfo.ids.join(',');
-      performBulkMove(data, 'bulkmoveids');
+      performBulkMove(dlg, data, 'bulkmoveids');
     } else {
       const filter = indiciaFns.getFormQueryData($(el)[0].settings.sourceObject, false);
       data['occurrence:idsFromElasticFilter'] = filter;
-      performBulkMove(data, 'bulkmoveall');
+      performBulkMove(dlg, data, 'bulkmoveall');
     }
   }
 
@@ -205,6 +207,7 @@
   function moveRecordsBtnClickHandler(e) {
     const el = $(e.currentTarget).closest('.idc-recordsMover');
     const todoInfo = getTodoListInfo(el);
+    const dlg = $('#' + $(el)[0].settings.id + '-dlg');
     linkToDataSource(el);
     const filter = indiciaFns.getFormQueryData($(el)[0].settings.sourceObject, false);
     // Validate that it won't affect other user data if it shouldn't.
@@ -218,13 +221,13 @@
       return;
     }
     // Reset the dialog.
-    $('#records-mover-dlg-wrap .message').text(todoInfo.message);
-    $('#pre-move-info').show();
-    $('#post-move-info').hide();
-    $('#close-move').attr('disabled', true);
-    $('#post-move-info .output p').remove();
+    dlg.find('.message').text(todoInfo.message);
+    dlg.find('.pre-move-info').show();
+    dlg.find('.post-move-info').hide();
+    dlg.find('.close-move').attr('disabled', true);
+    dlg.find('.post-move-info .output p').remove();
     // Now open it.
-    $.fancybox.open($('#records-mover-dlg-wrap'));
+    $.fancybox.open(dlg);
   }
 
   /**
@@ -232,8 +235,13 @@
    */
   function initHandlers(el) {
     $(el).find('.move-records-btn').click(moveRecordsBtnClickHandler);
-    $(el).find('#proceed-move').click(() => {
+
+    $(el).find('.proceed-move').click(() => {
       proceedClickHandler(el);
+    });
+
+    $(el).find('.close-move-dlg').click(() => {
+      $.fancybox.close();
     });
   }
 
