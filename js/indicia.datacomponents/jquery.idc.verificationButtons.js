@@ -786,7 +786,7 @@
     var sourceSettings = $(listOutputControl)[0].settings.sourceObject.settings;
     var docIds = [];
 
-    // Build lisat of verified IDs to exclude from the new view.
+    // Build list of verified IDs to exclude from the new view.
     $.each(occurrenceIds, function() {
       docIds.push(indiciaData.idPrefix + this);
       // Also exclude sensitive version.

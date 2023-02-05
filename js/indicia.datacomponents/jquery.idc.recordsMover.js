@@ -133,10 +133,31 @@
     });
   }
 
+  /**
+   * Adds a message to the progress log box on the dialog.
+   *
+   * @param DOM dlg
+   *   Dialog element.
+   * @param string info
+   *   Information to log.
+   */
   function logOutput(dlg, info) {
     dlg.find('.post-move-info .output').append('<p>' + info + '</p>');
   }
 
+  /**
+   * Checks the response from the server is status 200 OK.
+   *
+   * If not, adds a message to the log output and returns false.
+   *
+   * @param DOM dlg
+   *   Dialog element.
+   * @param object response
+   *   API request response object.
+   *
+   * @returns bool
+   *   True if status is 200 OK.
+   */
   function checkResponseCode(dlg, response) {
     if (response.code !== 200) {
       logOutput(dlg, indiciaData.lang.recordsMover.error);
@@ -147,7 +168,17 @@
     return true;
   }
 
-
+  /**
+   * Perform the actual move operation once proceed confirmed.
+   *
+   * @param DOM dlg
+   *   Dialog element.
+   * @param object data
+   *   Data object to send to the warehouse bulk move web-service.
+   * @param string endpoint
+   *   Name of the endpoint to call: bulkmoveids for a list of ids, or
+   *   bulkmoveall to move all records in the current filter.
+   */
   function performBulkMove(dlg, data, endpoint) {
     dlg.find('.pre-move-info').hide();
     dlg.find('.post-move-info').show();
@@ -163,15 +194,14 @@
       delete data.precheck;
       $.post(indiciaData.esProxyAjaxUrl + '/' + endpoint + '/' + indiciaData.nid, data, null, 'json')
       .done(function(response) {
-        // @todo update outputs to remove the moved records.
         // @todo handle scenario where >10000
         // @todo close button
-        console.log(response);
         if (!checkResponseCode(dlg, response)) {
           return;
         }
         dlg.find('.close-move').removeAttr('disabled');
         logOutput(dlg, indiciaData.lang.recordsMover.done);
+        $(el)[0].settings.sourceObject.populate(true);
       })
       .fail(function() {
         logOutput(dlg, indiciaData.lang.recordsMover.error);
@@ -182,6 +212,9 @@
     });
   }
 
+  /**
+   * Handler for the proceed button on the confirmation dialog.
+   */
   function proceedClickHandler(el) {
     // Either pass through list of IDs or pass through a filter to restrict to.
     const linkToDataControl = $('#' + $(el)[0].settings.linkToDataControl);
