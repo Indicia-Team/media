@@ -1230,6 +1230,18 @@ table.es-data-grid tfoot button span {
   font-style: italic;
 }
 
+/* idcRecordsMover */
+.post-move-info .output {
+  border: solid silver 1px;
+  width: 350px;
+  min-height: 140px;
+  padding: 4px;
+  margin-bottom: 8px;
+}
+.post-move-info .output p {
+  margin: 2px;
+}
+
 /* Progress spinner */
 .progress-circle-container {
   width: 180px;

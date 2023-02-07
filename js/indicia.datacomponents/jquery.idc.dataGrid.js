@@ -65,6 +65,7 @@
       }
     },
     tbodyHasScrollBar: false,
+    totalHits: null,
     totalRowCount: null
   };
 
@@ -1018,9 +1019,9 @@
         $(el).find('table').trigger('footable_redraw');
       }
       if (el.settings.sourceObject.settings.mode === 'docs') {
-        el.settings.totalRowCount = response.hits.total.value;
+        el.settings.totalHits = response.hits.total;
       }
-      indiciaFns.drawPagingFooter(el, response, data, 'tbody tr', afterKey);
+      indiciaFns.updatePagingFooter(el, response, data, 'tbody tr', afterKey);
       fireAfterPopulationCallbacks(el);
       setColWidths(el, maxCharsPerCol);
     },

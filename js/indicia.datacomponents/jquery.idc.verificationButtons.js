@@ -128,7 +128,7 @@
     };
     if (multiselectWholeTableMode()) {
       todoListInfo.mode = 'table';
-      todoListInfo.todoCount = $(listOutputControl)[0].settings.totalRowCount;
+      todoListInfo.totalHits = $(listOutputControl)[0].settings.totalHits;
     } else {
       todoListInfo.mode =  $(listOutputControl).hasClass('multiselect-mode') ? 'selection' : 'single';
       selectedItems = $(listOutputControl).hasClass('multiselect-mode')
@@ -138,7 +138,7 @@
         const doc = JSON.parse($(this).attr('data-doc-source'));
         todoListInfo.ids.push(parseInt(doc.id, 10));
       });
-      todoListInfo.todoCount = todoListInfo.ids.length;
+      todoListInfo.totalHits = {value: todoListInfo.ids.length, relation: 'eq'};
     }
     return todoListInfo;
   }
@@ -209,11 +209,11 @@
     if (el.settings.verificationTemplates) {
       loadVerificationTemplates('DT', '#redet-template');
     }
-    if (todoListInfo.mode === 'selection' && todoListInfo.todoCount === 0) {
+    if (todoListInfo.mode === 'selection' && todoListInfo.totalHits.value === 0) {
       alert(indiciaData.lang.verificationButtons.nothingSelected);
       return;
     }
-    if (todoListInfo.todoCount > 1) {
+    if (todoListInfo.totalHits.value > 1) {
       $('#redet-form .multiple-warning').show();
     } else {
       $('#redet-form .multiple-warning').hide();
@@ -243,22 +243,22 @@
    * pager. Ajax requests should increment activeRequests before starting.
    */
   function cleanupAfterAjaxUpdate() {
-    var pagerLabel = $(listOutputControl).find('.showing');
+    var pagerLabel = listOutputControl.find('.showing');
     var total;
     var match;
     activeRequests--;
     if (activeRequests <= 0 && !listWillBeEmptied) {
+      listOutputControl[0].settings.totalHits.value -= rowsToRemove.length;
       $.each(rowsToRemove, function() {
         $(this).remove();
       });
-      // Update the pager to reflect the removed rows.
-      if (pagerLabel.length) {
-        match = pagerLabel.html().match(/\d+$/);
-        if (match) {
-          total = match[0] - rowsToRemove.length;
-          pagerLabel.html($(listOutputControl).find('[data-row-id]').length + ' of ' + total);
-        }
-      }
+      indiciaFns.drawPager(
+        pagerLabel,
+        listOutputControl.find('[data-row-id]').length,
+        listOutputControl[0].settings.sourceObject.settings.from,
+        listOutputControl[0].settings.totalHits.value,
+        listOutputControl[0].settings.totalHits.relation
+      );
     }
   }
 
@@ -786,7 +786,7 @@
     var sourceSettings = $(listOutputControl)[0].settings.sourceObject.settings;
     var docIds = [];
 
-    // Build lisat of verified IDs to exclude from the new view.
+    // Build list of verified IDs to exclude from the new view.
     $.each(occurrenceIds, function() {
       docIds.push(indiciaData.idPrefix + this);
       // Also exclude sensitive version.
@@ -973,20 +973,22 @@
     var heading;
     var overallStatus = status.status ? status.status : status.query;
     var todoListInfo;
+    var totalAsText;
     // Form reset.
     resetCommentForm('verification-form', '');
     if (el.settings.verificationTemplates) {
       loadVerificationTemplates(mapToLevel1Status(status.status ? status.status : status.query), '#verify-template');
     }
     todoListInfo = getTodoListInfo();
-    if (todoListInfo.mode === 'selection' && todoListInfo.todoCount === 0) {
+    if (todoListInfo.mode === 'selection' && todoListInfo.totalHits.value === 0) {
       alert(indiciaData.lang.verificationButtons.nothingSelected);
       return;
     }
-    if (todoListInfo.todoCount > 1) {
+    if (todoListInfo.totalHits.value > 1) {
+      totalAsText = (todoListInfo.totalHits.relation === 'gte' ? 'at least ' : '') + todoListInfo.totalHits.value;
       heading = status.status
-        ? 'Set status to ' + indiciaData.statusMsgs[overallStatus] + ' for ' + todoListInfo.todoCount + ' records'
-        : 'Query ' + todoListInfo.todoCount + ' records';
+        ? 'Set status to ' + indiciaData.statusMsgs[overallStatus] + ' for ' + totalAsText + ' records'
+        : 'Query ' + totalAsText + ' records';
       $('#verification-form .multiple-warning').show();
     } else {
       heading = status.status

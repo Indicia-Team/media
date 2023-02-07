@@ -187,7 +187,7 @@
   indiciaFns.hideItemAndMoveNext = function hideItemAndMoveNext(el) {
     var oldSelected = $(el).find('.selected');
     var newSelectedId;
-    var showingLabel = $(el).find('.showing');
+    var pagerLabel = $(el).find('.showing');
     var selectedIds = [];
     var sourceSettings = el.settings.sourceObject.settings;
     if ($(el).find('.multiselect-mode').length > 0) {
@@ -230,7 +230,15 @@
       }
     } else {
       // Update the paging info if some rows left.
-      showingLabel.html(showingLabel.html().replace(/\d+ of /, $(el).find('[data-row-id]').length + ' of '));
+      if (pagerLabel) {
+        indiciaFns.drawPager(
+          pagerLabel,
+          $(el).find('[data-row-id]').length,
+          el.settings.sourceObject.settings.from,
+          el.settings.totalHits.value,
+          el.settings.totalHits.relation
+        );
+      }
       // Immediately select the next row.
       if (typeof newSelectedId !== 'undefined') {
         $(el).find('[data-row-id="' + newSelectedId + '"]').addClass('selected').focus();
