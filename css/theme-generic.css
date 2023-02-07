@@ -1234,7 +1234,7 @@ table.es-data-grid tfoot button span {
 .post-move-info .output {
   border: solid silver 1px;
   width: 350px;
-  min-height: 90px;
+  min-height: 140px;
   padding: 4px;
   margin-bottom: 8px;
 }
