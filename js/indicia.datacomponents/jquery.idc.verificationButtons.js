@@ -930,6 +930,7 @@
    * Instigates a verification event.
    */
   function saveVerifyComment(occurrenceIds, status, comment, email) {
+    resetCommentForm('verification-form', '');
     if (multiselectWholeTableMode()) {
       // Verifying the whole table.
       saveVerifyCommentForWholeTable(status, comment, email);
@@ -969,7 +970,10 @@
     var overallStatus = status.status ? status.status : status.query;
     var todoListInfo;
     // Form reset.
-    resetCommentForm('verification-form', '');
+    if (!el.settings.lastCommentStatus || (el.settings.lastCommentStatus !== overallStatus)) {
+      resetCommentForm('verification-form', '');
+      el.settings.lastCommentStatus = overallStatus;
+    }
     if (el.settings.verificationTemplates) {
       loadVerificationTemplates(mapToLevel1Status(status.status ? status.status : status.query), '#verify-template');
     }
@@ -1671,6 +1675,7 @@
         var key;
         var keyParts;
         const buttonEl = $('#' + el.settings.id + '-buttons');
+        resetCommentForm('verification-form', '');
         $('.external-record-link').remove();
         // Reset the redetermination form.
         $('#redet-form :input').val('');
