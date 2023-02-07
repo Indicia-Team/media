@@ -1021,7 +1021,7 @@
       if (el.settings.sourceObject.settings.mode === 'docs') {
         el.settings.totalHits = response.hits.total;
       }
-      indiciaFns.drawPagingFooter(el, response, data, 'tbody tr', afterKey);
+      indiciaFns.updatePagingFooter(el, response, data, 'tbody tr', afterKey);
       fireAfterPopulationCallbacks(el);
       setColWidths(el, maxCharsPerCol);
     },

@@ -103,8 +103,38 @@
       getRowsPerPageControl(el);
   }
 
-   /**
-   * Outputs the HTML for the paging footer.
+  /**
+   * Update the HTML for the paging footer after a data response.
+   *
+   * @param DOM el
+   *   Pager message element.
+   * @param int pageSize
+   *   Number of data items on the current page.
+   * @param int offset
+   *   Offset in the data.
+   * @param int total
+   *   Total number of available data items.
+   * @param int relation
+   *   Either eq or gte (greater than or equal) if the total is approximate.
+   */
+  indiciaFns.drawPager = (pagerEl, pageSize, offset, total, relation) => {
+    // Output text describing loaded hits.
+    if (pageSize > 0) {
+      if (offset === 0 && pageSize === total) {
+        $(pagerEl).html('Showing all ' + total + ' hits');
+      } else {
+        const toLabel = offset === 0 ? 'first ' : (offset + 1) + ' to ';
+        // Indicate if approximate.
+        const ofLabel = relation === 'gte' ? 'at least ' : '';
+        $(pagerEl).html('Showing ' + toLabel + (offset + pageSize) + ' of ' + ofLabel + total);
+      }
+    } else {
+      $(pagerEl).html('No hits');
+    }
+  }
+
+  /**
+   * Update the HTML for the paging footer after a data response.
    *
    * @param DOM el
    *   Control element.
@@ -115,18 +145,18 @@
    * @param string itemSelector
    *   CSS selector for each item in the output.
    */
-  indiciaFns.drawPagingFooter = function drawPagingFooter(el, response, data, itemSelector, afterKey) {
-    var fromRowIndex;
-    var ofLabel = '';
-    var toLabel;
+  indiciaFns.updatePagingFooter = function updatePagingFooter(el, response, data, itemSelector, afterKey) {
+    var offset;
+    var relation = 'eq';
     var pageSize = $(el).find(itemSelector).length;
     var footer = $(el).find('.footer');
     var sourceSettings = el.settings.sourceObject.settings;
     var total;
     if (sourceSettings.mode === 'docs') {
       total = response.hits.total.value;
-      if (response.hits.total.relation && response.hits.total.relation === 'gte') {
-        ofLabel = 'at least ';
+      if (response.hits.total.relation) {
+        // If an approximate gte count then need to know.
+        relation = response.hits.total.relation;
       }
     } else if (response.aggregations._count) {
       // Aggregation modes use a separate agg to count only when the filter changes.
@@ -149,28 +179,18 @@
       }
       $(footer).find('.next').prop('disabled', !afterKey);
       $(footer).find('.prev').prop('disabled', el.settings.compositeInfo.page === 0);
-      fromRowIndex = (el.settings.compositeInfo.page * sourceSettings.aggregationSize) + 1;
+      offset = (el.settings.compositeInfo.page * sourceSettings.aggregationSize);
     } else if (sourceSettings.mode === 'termAggregation') {
       // Can't page through a standard terms aggregation.
       $(footer).find('.buttons').hide();
-      fromRowIndex = 1;
+      offset = 0;
     } else {
-      fromRowIndex = typeof data.from === 'undefined' ? 1 : (data.from + 1);
+      offset = typeof data.from === 'undefined' ? 0 : data.from;
       // Enable or disable the paging buttons.
-      $(footer).find('.prev').prop('disabled', fromRowIndex <= 1);
-      $(footer).find('.next').prop('disabled', fromRowIndex + response.hits.hits.length >= response.hits.total.value);
+      $(footer).find('.prev').prop('disabled', offset <= 0);
+      $(footer).find('.next').prop('disabled', offset + response.hits.hits.length > response.hits.total.value);
     }
-    // Output text describing loaded hits.
-    if (pageSize > 0) {
-      if (fromRowIndex === 1 && pageSize === total) {
-        $(footer).find('.showing').html('Showing all ' + total + ' hits');
-      } else {
-        toLabel = fromRowIndex === 1 ? 'first ' : fromRowIndex + ' to ';
-        $(footer).find('.showing').html('Showing ' + toLabel + (fromRowIndex + (pageSize - 1)) + ' of ' + ofLabel + total);
-      }
-    } else {
-      $(footer).find('.showing').html('No hits');
-    }
+    indiciaFns.drawPager($(footer).find('.showing'), pageSize, offset, total, relation);
   }
 
 }());

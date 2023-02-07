@@ -580,7 +580,7 @@
           .appendTo(card);
       });
       el.settings.totalHits = response.hits.total;
-      indiciaFns.drawPagingFooter(el, response, data, '.card');
+      indiciaFns.updatePagingFooter(el, response, data, '.card');
       fireAfterPopulationCallbacks(el);
     },
 
