@@ -243,22 +243,22 @@
    * pager. Ajax requests should increment activeRequests before starting.
    */
   function cleanupAfterAjaxUpdate() {
-    var pagerLabel = $(listOutputControl).find('.showing');
+    var pagerLabel = listOutputControl.find('.showing');
     var total;
     var match;
     activeRequests--;
     if (activeRequests <= 0 && !listWillBeEmptied) {
+      listOutputControl[0].settings.totalHits.value -= rowsToRemove.length;
       $.each(rowsToRemove, function() {
         $(this).remove();
       });
-      // Update the pager to reflect the removed rows.
-      if (pagerLabel.length) {
-        match = pagerLabel.html().match(/\d+$/);
-        if (match) {
-          total = match[0] - rowsToRemove.length;
-          pagerLabel.html($(listOutputControl).find('[data-row-id]').length + ' of ' + total);
-        }
-      }
+      indiciaFns.drawPager(
+        pagerLabel,
+        listOutputControl.find('[data-row-id]').length,
+        listOutputControl[0].settings.sourceObject.settings.from,
+        listOutputControl[0].settings.totalHits.value,
+        listOutputControl[0].settings.totalHits.relation
+      );
     }
   }
 
