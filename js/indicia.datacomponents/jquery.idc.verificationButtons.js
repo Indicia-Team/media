@@ -330,12 +330,7 @@
     $.ajax({
       url: indiciaData.esProxyAjaxUrl + '/redetids/' + indiciaData.nid,
       type: 'post',
-      data: esUpdates,
-      success: function success() {
-        if (!listWillBeEmptied) {
-          indiciaFns.hideItemAndMoveNext(listOutputControl[0]);
-        }
-      }
+      data: esUpdates
     }).always(cleanupAfterAjaxUpdate);
   }
 
