@@ -76,16 +76,14 @@ body {
 
 /* idcCardGallery plugin */
 .idc-cardGallery {
-  position: relative;
   /* Ensure height enough for spinner. */
   min-height: 140px;
   &.max-size-mode {
     .card:not(.show-max-size) {
-      opacity: 0.3;
+      display: none;
     }
   }
   .es-card-gallery {
-    position: relative;
     display: flex;
     flex-wrap: wrap;
     margin: 0 auto;
@@ -134,12 +132,6 @@ body {
         padding: 0;
       }
       &.show-max-size {
-        position: absolute;
-        top: 0;
-        left: 0;
-        height: auto;
-        width: 100%;
-        z-index: 1000;
         margin: 0;
         @include drop-shadow(6px);
         .image-container {
