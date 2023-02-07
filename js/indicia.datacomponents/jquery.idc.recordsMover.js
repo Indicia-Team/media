@@ -146,6 +146,32 @@
   }
 
   /**
+   * Adds a progress information line to the output log.
+   *
+   * @param DOM dlg
+   *   Dialog element
+   * @param bool precheck
+   *   Is this prechecking?
+   * @param object affected
+   *   Sample and occurrences updated by the last API request.
+   */
+  function showProgressInOutput(dlg, precheck, affected) {
+    let p = dlg.find('.post-move-info .output p:last-child');
+    let msg = precheck ? indiciaData.lang.recordsMover.precheckProgress : indiciaData.lang.recordsMover.moveProgress;
+    if (!p || !p.hasClass('progress-message')) {
+      p = $('<p class="progress-message">').appendTo(dlg.find('.post-move-info .output'));
+      dlg.data('affected-samples', 0);
+      dlg.data('affected-occurrences', 0);
+    }
+    dlg.data('affected-samples', dlg.data('affected-samples') + parseInt(affected.samples, 10));
+    dlg.data('affected-occurrences', dlg.data('affected-occurrences') + parseInt(affected.occurrences, 10));
+    $(p).html(msg
+      .replace('{samples}', dlg.data('affected-samples'))
+      .replace('{occurrences}', dlg.data('affected-occurrences'))
+    )
+  }
+
+  /**
    * Checks the response from the server is status 200 OK.
    *
    * If not, adds a message to the log output and returns false.
@@ -159,13 +185,25 @@
    *   True if status is 200 OK.
    */
   function checkResponseCode(dlg, response) {
-    if (response.code !== 200) {
+    if (response.code !== 200 && response.code !== 204) {
       logOutput(dlg, indiciaData.lang.recordsMover.error);
       logOutput(dlg, response.message);
-      dlg.find('.close-move').removeAttr('disabled');
       return false;
     }
     return true;
+  }
+
+  /**
+   * Resest the dialog before doing a bulk move.
+   *
+   * @param DOM dlg
+   *   Dialog element.
+   */
+  function prepareForBulkMove(dlg) {
+    dlg.find('.pre-move-info').hide();
+    dlg.find('.post-move-info .output *').remove();
+    dlg.find('.post-move-info').show();
+    logOutput(dlg, indiciaData.lang.recordsMover.preparing);
   }
 
   /**
@@ -180,35 +218,63 @@
    *   bulkmoveall to move all records in the current filter.
    */
   function performBulkMove(dlg, data, endpoint) {
-    dlg.find('.pre-move-info').hide();
-    dlg.find('.post-move-info').show();
-    logOutput(dlg, indiciaData.lang.recordsMover.preparing);
-    // First post doesn't change anything - just checks the data can be moved.
-    data.precheck = true;
     $.post(indiciaData.esProxyAjaxUrl + '/' + endpoint + '/' + indiciaData.nid, data, null, 'json')
     .done(function(response) {
       if (!checkResponseCode(dlg, response)) {
+        dlg.find('.post-move-info .close-move-dlg').removeAttr('disabled');
         return;
       }
-      logOutput(dlg, indiciaData.lang.recordsMover.moving);
-      delete data.precheck;
-      $.post(indiciaData.esProxyAjaxUrl + '/' + endpoint + '/' + indiciaData.nid, data, null, 'json')
-      .done(function(response) {
-        // @todo handle scenario where >10000
-        // @todo close button
-        if (!checkResponseCode(dlg, response)) {
-          return;
+      if (response.search_after) {
+        // Paging through a set of records.
+        showProgressInOutput(dlg, data.precheck, response.affected);
+        data.search_after = response.search_after;
+        performBulkMove(dlg, data, endpoint);
+      } else if ((response.code === 200 && endpoint === 'bulkmoveids')
+          || (response.code === 204 && endpoint === 'bulkmoveall')) {
+        if (typeof data.precheck !== 'undefined') {
+          // Finished doing the precheck.
+          logOutput(dlg, indiciaData.lang.recordsMover.moving);
+          // Restart without the precheck flag so it actually does updates.
+          delete data.precheck;
+          delete data.search_after;
+          performBulkMove(dlg, data, endpoint);
+        } else {
+          // Finished.
+          const settings = $('#' + $(dlg).attr('id').replace(/-dlg$/, ''))[0].settings;
+          const dataOutputControl = $('#' + settings.linkToDataControl);
+          const pagerLabel = dataOutputControl.find('.showing');
+          var toRemove;
+          dlg.find('.post-move-info .close-move-dlg').removeAttr('disabled');
+          logOutput(dlg, indiciaData.lang.recordsMover.done);
+
+          if (endpoint === 'bulkmoveall') {
+            toRemove = dataOutputControl.find('[data-row-id]');
+          } else {
+            toRemove = dataOutputControl.find('[type=checkbox]:checked').closest('[data-row-id]');
+          }
+          dataOutputControl[0].settings.totalHits.value -= toRemove.length;
+          toRemove.remove();
+          // Update the pager to reflect the removed rows.
+          if (pagerLabel.length) {
+            indiciaFns.drawPager(
+              pagerLabel,
+              dataOutputControl.find('[data-row-id]').length,
+              dataOutputControl[0].settings.sourceObject.settings.from,
+              dataOutputControl[0].settings.totalHits.value,
+              dataOutputControl[0].settings.totalHits.relation
+            );
+          }
         }
-        dlg.find('.close-move').removeAttr('disabled');
-        logOutput(dlg, indiciaData.lang.recordsMover.done);
-        $(el)[0].settings.sourceObject.populate(true);
-      })
-      .fail(function() {
+      } else {
         logOutput(dlg, indiciaData.lang.recordsMover.error);
-      });
+        logOutput(dlg, 'Internal error - incorrect response from server.');
+        dlg.find('.post-move-info .close-move-dlg').removeAttr('disabled');
+      }
+
     })
     .fail(function() {
       logOutput(dlg, indiciaData.lang.recordsMover.error);
+      dlg.find('.post-move-info .close-move-dlg').removeAttr('disabled');
     });
   }
 
@@ -222,8 +288,10 @@
     const dlg = $('#' + $(el)[0].settings.id + '-dlg');
     let data = {
       datasetMappings: JSON.stringify($(el)[0].settings.datasetMappings),
-      website_id: indiciaData.website_id
+      website_id: indiciaData.website_id,
+      precheck: true
     };
+    prepareForBulkMove(dlg);
     if (linkToDataControl.hasClass('multiselect-mode')) {
       data['occurrence:ids'] = todoInfo.ids.join(',');
       performBulkMove(dlg, data, 'bulkmoveids');
@@ -257,10 +325,16 @@
     dlg.find('.message').text(todoInfo.message);
     dlg.find('.pre-move-info').show();
     dlg.find('.post-move-info').hide();
-    dlg.find('.close-move').attr('disabled', true);
+    dlg.find('.post-move-info .close-move-dlg').attr('disabled', true);
     dlg.find('.post-move-info .output p').remove();
     // Now open it.
-    $.fancybox.open(dlg);
+    $.fancybox.open({
+      src: dlg,
+      type: 'html',
+      opts: {
+        modal: true
+      }
+    });
   }
 
   /**
