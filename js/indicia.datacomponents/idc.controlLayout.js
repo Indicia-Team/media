@@ -111,12 +111,15 @@ jQuery(document).ready(function($) {
           if (belowBreakpoint) {
             // Below breakpoint, so revert to unstyled height.
             resizeEl.css('max-height', '');
+            $('body').css('padding-bottom', '4px');
           } else {
+            const padding = 4;
             const resizeElTop = resizeEl[0].getBoundingClientRect().y;
             // Allow for any footer area in the control that is under the scrollbox area (e.g. a tfoot).
             const allowForSpaceBelowResizeEl = $('#' + this)[0].getBoundingClientRect().height - resizeEl[0].getBoundingClientRect().height - (resizeElTop - $('#' + this)[0].getBoundingClientRect().y);
             resizeEl.css('overflow-y', 'auto');
-            resizeEl.css('max-height', proposedPageBottom - resizeElTop - allowForSpaceBelowResizeEl);
+            resizeEl.css('max-height', proposedPageBottom - resizeElTop - allowForSpaceBelowResizeEl - padding * 2);
+            $('body').css('padding-bottom', padding + 'px');
           }
         }
       });
