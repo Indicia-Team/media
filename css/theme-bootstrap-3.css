@@ -687,12 +687,6 @@ body > .loading-spinner {
   padding: 0;
 }
 .idc-cardGallery .es-card-gallery .card.show-max-size {
-  /*position: absolute;
-  top: 0;
-  left: 0;
-  height: auto;*/
-  width: 100%;
-  z-index: 1000;
   margin: 0;
   -webkit-box-shadow: 6px 6px 12px #a7a7a7;
   -moz-box-shadow: 6px 6px 12px #a7a7a7;
