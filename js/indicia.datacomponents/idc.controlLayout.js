@@ -74,8 +74,12 @@ jQuery(document).ready(function($) {
      * Resize layout management function.
      */
     indiciaFns.updateControlLayout = function updateLayout() {
-      const originY = $('#' + indiciaData.esControlLayout.setOriginY)[0].getBoundingClientRect().y;
       const belowBreakpoint = window.matchMedia('(max-width: ' + indiciaData.esControlLayout.breakpoint + 'px)').matches;
+      const originY = $('#' + indiciaData.esControlLayout.setOriginY)[0].getBoundingClientRect().y;
+      // If originY is at the top of the page, find the bottom. The page
+      // starts below the body element's padding, as the latter is space for
+      // the Drupal admin toolbar.
+      const proposedPageBottom = originY + (window.innerHeight - getCtrlStyledSizing($('body'), 'paddingTop'));
       $.each(indiciaData.esControlLayout.alignTop, function() {
         const thisCtrl = $('#' + this);
         if (belowBreakpoint) {
@@ -102,19 +106,20 @@ jQuery(document).ready(function($) {
       });
       $.each(indiciaData.esControlLayout.alignBottom, function() {
         const resizeEl = $(getResizeableScrollComponent(this));
-        // If originY is at the top of the page, find the bottom.
-        const proposedPageBottom = originY + (window.innerHeight - getCtrlStyledSizing($('body'), 'paddingTop'));
         // Ensure control ready.
         if (resizeEl.length > 0) {
           if (belowBreakpoint) {
             // Below breakpoint, so revert to unstyled height.
             resizeEl.css('max-height', '');
+            $('body').css('padding-bottom', '4px');
           } else {
+            const padding = 4;
             const resizeElTop = resizeEl[0].getBoundingClientRect().y;
             // Allow for any footer area in the control that is under the scrollbox area (e.g. a tfoot).
             const allowForSpaceBelowResizeEl = $('#' + this)[0].getBoundingClientRect().height - resizeEl[0].getBoundingClientRect().height - (resizeElTop - $('#' + this)[0].getBoundingClientRect().y);
             resizeEl.css('overflow-y', 'auto');
-            resizeEl.css('max-height', proposedPageBottom - resizeElTop - allowForSpaceBelowResizeEl);
+            resizeEl.css('max-height', proposedPageBottom - resizeElTop - allowForSpaceBelowResizeEl - padding * 2);
+            $('body').css('padding-bottom', padding + 'px');
           }
         }
       });
@@ -134,6 +139,8 @@ jQuery(document).ready(function($) {
     // when closing fullscreen.
     document.addEventListener("fullscreenchange", indiciaFns.updateControlLayout);
     document.addEventListener("webkitfullscreenchange", indiciaFns.updateControlLayout);
+
+    indiciaFns.updateControlLayout();
   } else {
     // No control layout settings so nothing to do.
     indiciaFns.updateControlLayout = () => {};

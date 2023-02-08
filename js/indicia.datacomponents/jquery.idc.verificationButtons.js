@@ -219,7 +219,13 @@
       $('#redet-form .multiple-warning').hide();
     }
     $('#redet-form').data('ids', JSON.stringify(todoListInfo.ids));
-    $.fancybox.open($('#redet-form'));
+    $.fancybox.open({
+      src: $('#redet-form'),
+      type: 'html',
+      opts: {
+        modal: true
+      }
+    });
   }
 
   /**
@@ -330,12 +336,7 @@
     $.ajax({
       url: indiciaData.esProxyAjaxUrl + '/redetids/' + indiciaData.nid,
       type: 'post',
-      data: esUpdates,
-      success: function success() {
-        if (!listWillBeEmptied) {
-          indiciaFns.hideItemAndMoveNext(listOutputControl[0]);
-        }
-      }
+      data: esUpdates
     }).always(cleanupAfterAjaxUpdate);
   }
 
@@ -624,7 +625,7 @@
     indiciaFns.on('click', '.comment-popup button.save', {}, saveCommentPopup);
 
     /**
-     * Redetermination and verification dialog cancel button click handler.
+     * Redet, query and verification dialog cancel button click handler.
      */
     indiciaFns.on('click', 'button.cancel', {}, () => {
       $.fancybox.close();
@@ -935,6 +936,7 @@
    * Instigates a verification event.
    */
   function saveVerifyComment(occurrenceIds, status, comment, email) {
+    resetCommentForm('verification-form', '');
     if (multiselectWholeTableMode()) {
       // Verifying the whole table.
       saveVerifyCommentForWholeTable(status, comment, email);
@@ -975,7 +977,10 @@
     var todoListInfo;
     var totalAsText;
     // Form reset.
-    resetCommentForm('verification-form', '');
+    if (!el.settings.lastCommentStatus || (el.settings.lastCommentStatus !== overallStatus)) {
+      resetCommentForm('verification-form', '');
+      el.settings.lastCommentStatus = overallStatus;
+    }
     if (el.settings.verificationTemplates) {
       loadVerificationTemplates(mapToLevel1Status(status.status ? status.status : status.query), '#verify-template');
     }
@@ -1013,7 +1018,13 @@
     } else {
       $('#verification-form p.alert-info').hide();
     }
-    $.fancybox.open($('#verification-form'));
+    $.fancybox.open({
+      src: $('#verification-form'),
+      type: 'html',
+      opts: {
+        modal: true
+      }
+    });
     $('#verification-form textarea').focus();
   }
 
@@ -1136,7 +1147,8 @@
         '<label for="email-body">Email body:</label>' +
         '<textarea id="email-body" class="form-control required" rows="12">' + emailBody + '\n\n' + recordData + '</textarea>' +
       '</div>').appendTo(form);
-    $('<input type="submit" class="btn btn-primary" value="Send email" />').appendTo(form);
+    $('<button type="submit" class="' + indiciaData.templates.buttonHighlightedClass + '">Send email</button>').appendTo(form);
+    $('<button type="button" class="' + indiciaData.templates.buttonDefaultClass + ' cancel">' + indiciaData.lang.verificationButtons.cancel + '</button>').appendTo(form);
   }
 
   /**
@@ -1182,7 +1194,14 @@
       emailTab.appendTo(content);
       commentTab.appendTo(content);
     }
-    $.fancybox.open(content);
+    $(content).draggable();
+    $.fancybox.open({
+      src: content,
+      type: 'html',
+      opts: {
+        modal: true
+      }
+    });
     $('#popup-tabs').tabs();
   }
 
@@ -1248,12 +1267,19 @@
     appendRecordEmailControls(form, '', emailSubject, emailBody, recordData);
     emailFormvalidator = $(form).validate({});
     $(form).submit(processEmail);
+    $(container).draggable();
     return container;
   }
 
   function emailExpertPopup() {
     var doc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
-    $.fancybox.open(getEmailExpertForm(doc));
+    $.fancybox.open({
+      src: getEmailExpertForm(doc),
+      type: 'html',
+      opts: {
+        modal: true
+      }
+    });
   }
 
   /**
@@ -1342,8 +1368,9 @@
     }
     resetUploadDecisionsForm();
     $.fancybox.open($('#upload-decisions-form'), {
-      clickSlide: false, // disable close on outside click
-      touch: false // disable close on swipe
+      opts: {
+        modal: true
+      }
     });
   }
 
@@ -1673,11 +1700,15 @@
           $('.alt-taxon-list-message').html().replace('{message}', indiciaData.lang.verificationButtons.redetPartialListInfo)
         );
       }
+      // Enable dialog dragging.
+      $('.verification-popup').draggable();
       $(listOutputControl)[listOutputControlClass]('on', 'itemSelect', function itemSelect(tr) {
         var sep;
         var doc;
         var key;
         var keyParts;
+        const buttonEl = $('#' + el.settings.id + '-buttons');
+        resetCommentForm('verification-form', '');
         $('.external-record-link').remove();
         // Reset the redetermination form.
         $('#redet-form :input').val('');
@@ -1689,9 +1720,9 @@
           occurrenceId = doc.id;
           $('.idc-verificationButtons').show();
           sep = el.settings.viewPath.indexOf('?') === -1 ? '?' : '&';
-          $(el).find('.view').attr('href', el.settings.viewPath + sep + 'occurrence_id=' + doc.id);
-          $(el).find('.edit').attr('href', el.settings.editPath + sep + 'occurrence_id=' + doc.id);
-          $(el).find('.species').attr('href', el.settings.speciesPath + sep + 'taxon_meaning_id=' + doc.taxon.taxon_meaning_id);
+          $(buttonEl).find('.view').attr('href', el.settings.viewPath + sep + 'occurrence_id=' + doc.id);
+          $(buttonEl).find('.edit').attr('href', el.settings.editPath + sep + 'occurrence_id=' + doc.id);
+          $(buttonEl).find('.species').attr('href', el.settings.speciesPath + sep + 'taxon_meaning_id=' + doc.taxon.taxon_meaning_id);
           // Deprecated doc field mappings had occurrence_external_key instead
           // of occurrence.source_system_key. This line can be removed if the
           // index has been rebuilt.
@@ -1699,7 +1730,7 @@
             key = doc.occurrence.source_system_key ? doc.occurrence.source_system_key : doc.occurrence_external_key;
             if (key.match(/^iNat:/)) {
               keyParts = key.split(':');
-              $(el).find('.view').after('<a href="https://www.inaturalist.org/observations/' + keyParts[1] + '" ' +
+              $(buttonEl).find('.view').after('<a href="https://www.inaturalist.org/observations/' + keyParts[1] + '" ' +
                 'target="_blank" title="View source record on iNaturalist" class="external-record-link">' +
                 '<span class="fas fa-file-invoice"></span>iNaturalist</a>');
             }
