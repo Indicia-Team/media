@@ -219,7 +219,13 @@
       $('#redet-form .multiple-warning').hide();
     }
     $('#redet-form').data('ids', JSON.stringify(todoListInfo.ids));
-    $.fancybox.open($('#redet-form'));
+    $.fancybox.open({
+      src: $('#redet-form'),
+      type: 'html',
+      opts: {
+        modal: true
+      }
+    });
   }
 
   /**
@@ -1010,7 +1016,13 @@
     } else {
       $('#verification-form p.alert-info').hide();
     }
-    $.fancybox.open($('#verification-form'));
+    $.fancybox.open({
+      src: $('#verification-form'),
+      type: 'html',
+      opts: {
+        modal: true
+      }
+    });
   }
 
   /**
@@ -1178,7 +1190,13 @@
       emailTab.appendTo(content);
       commentTab.appendTo(content);
     }
-    $.fancybox.open(content);
+    $.fancybox.open({
+      src: content,
+      type: 'html',
+      opts: {
+        modal: true
+      }
+    });
     $('#popup-tabs').tabs();
   }
 
@@ -1244,12 +1262,19 @@
     appendRecordEmailControls(form, '', emailSubject, emailBody, recordData);
     emailFormvalidator = $(form).validate({});
     $(form).submit(processEmail);
+    $(container).draggable();
     return container;
   }
 
   function emailExpertPopup() {
     var doc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
-    $.fancybox.open(getEmailExpertForm(doc));
+    $.fancybox.open({
+      src: getEmailExpertForm(doc),
+      type: 'html',
+      opts: {
+        modal: true
+      }
+    });
   }
 
   /**
@@ -1338,8 +1363,9 @@
     }
     resetUploadDecisionsForm();
     $.fancybox.open($('#upload-decisions-form'), {
-      clickSlide: false, // disable close on outside click
-      touch: false // disable close on swipe
+      opts: {
+        modal: true
+      }
     });
   }
 
@@ -1669,6 +1695,8 @@
           $('.alt-taxon-list-message').html().replace('{message}', indiciaData.lang.verificationButtons.redetPartialListInfo)
         );
       }
+      // Enable dialog dragging.
+      $('.verification-popup').draggable();
       $(listOutputControl)[listOutputControlClass]('on', 'itemSelect', function itemSelect(tr) {
         var sep;
         var doc;
