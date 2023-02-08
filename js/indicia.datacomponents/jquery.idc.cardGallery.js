@@ -97,6 +97,7 @@
           // Hide the nav buttons.
           $('#card-nav-buttons-cntr').append($('#card-nav-buttons'));
         }
+        indiciaFns.updateControlLayout();
       }
       return $(el).hasClass('max-size-mode');
     }
@@ -123,6 +124,7 @@
       }
       // Show the navigation buttons.
       $(card).find('.verification-buttons-cntr').append($('#card-nav-buttons'));
+      // Ensure card visible.
       $(card)[0].scrollIntoView();
     }
 
@@ -154,13 +156,14 @@
         });
       }
       if (inMaxSizeMode()) {
-        if (!$(el).find('.card.selected').hasClass('show-max-size')) {
-          setCardToMaxSize($(el).find('.card.selected'));
-        }
         // Minimise cards that were max size but are no longer selected.
         $.each($(el).find('.card.show-max-size:not(.selected)'), function() {
           setCardToNormalSize(this);
         });
+        // Maximise the selected card.
+        if (!$(el).find('.card.selected').hasClass('show-max-size')) {
+          setCardToMaxSize($(el).find('.card.selected'));
+        }
       }
     }
 
