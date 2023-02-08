@@ -625,7 +625,7 @@
     indiciaFns.on('click', '.comment-popup button.save', {}, saveCommentPopup);
 
     /**
-     * Redetermination and verification dialog cancel button click handler.
+     * Redet, query and verification dialog cancel button click handler.
      */
     indiciaFns.on('click', 'button.cancel', {}, () => {
       $.fancybox.close();
@@ -1144,7 +1144,8 @@
         '<label for="email-body">Email body:</label>' +
         '<textarea id="email-body" class="form-control required" rows="12">' + emailBody + '\n\n' + recordData + '</textarea>' +
       '</div>').appendTo(form);
-    $('<input type="submit" class="btn btn-primary" value="Send email" />').appendTo(form);
+    $('<button type="submit" class="' + indiciaData.templates.buttonHighlightedClass + '">Send email</button>').appendTo(form);
+    $('<button type="button" class="' + indiciaData.templates.buttonDefaultClass + ' cancel">' + indiciaData.lang.verificationButtons.cancel + '</button>').appendTo(form);
   }
 
   /**
@@ -1190,6 +1191,7 @@
       emailTab.appendTo(content);
       commentTab.appendTo(content);
     }
+    $(content).draggable();
     $.fancybox.open({
       src: content,
       type: 'html',
