@@ -723,7 +723,6 @@
       website_id: indiciaData.website_id,
       'occurrence:taxa_taxon_list_id': newTaxaTaxonListId,
       user_id: indiciaData.user_id,
-      'occurrence_comment:redet_taxa_taxon_list_id': newTaxaTaxonListId,
     };
     // Note, template replacements will be done server side.
     pgUpdates['occurrence_comment:comment'] = comment ? comment : indiciaData.lang.verificationButtons.recordRedetermined;
