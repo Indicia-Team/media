@@ -722,12 +722,11 @@
     let pgUpdates = {
       website_id: indiciaData.website_id,
       'occurrence:taxa_taxon_list_id': newTaxaTaxonListId,
-      user_id: indiciaData.user_id
+      user_id: indiciaData.user_id,
+      'occurrence_comment:redet_taxa_taxon_list_id': newTaxaTaxonListId,
     };
-    if (comment) {
-      // Template replacements will be done server side.
-      pgUpdates['occurrence_comment:comment'] = comment;
-    }
+    // Note, template replacements will be done server side.
+    pgUpdates['occurrence_comment:comment'] = comment ? comment : indiciaData.lang.verificationButtons.recordRedetermined;
     if ($('#no-update-determiner') && $('#no-update-determiner').prop('checked')) {
       // Determiner_id=-1 is special value that keeps the original
       // determiner info.
