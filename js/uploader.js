@@ -61,6 +61,7 @@ jQuery(document).ready(function($) {
       },
       onUploadSuccess: function(id, data) {
         var ext;
+        $('#file-progress').val(100);
         // IForm proxy code doesn't set header correctly.
         if (typeof data === 'string') {
           data = JSON.parse(data);
