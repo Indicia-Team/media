@@ -111,17 +111,22 @@ div.fancybox-content {
     font-size: 2rem;
   }
 }
-div.taxon-card {
+div.choice-card {
   border: solid silver 1px;
   border-radius: 4px;
   padding: 8px;
   margin: 8px;
   display: inline-block;
   vertical-align: top;
-  &.active {
-    background: lighten(lightcoral, 20%);
+  cursor: pointer;
+  &:hover {
+    border: solid grey 1px;
+    background: #f7f7f7;
   }
-  .taxon-name {
+  &.active {
+    background: #e7ffe7;
+  }
+  .card-name {
     font-weight: bold;
   }
 }
