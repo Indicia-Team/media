@@ -367,9 +367,9 @@ jQuery(document).ready(function($) {
     var rows = [];
     var prefix = '';
     if (info.taxon_rank_sort_order >= 300 && info.language_iso === 'lat') {
-      rows.push('<div class="taxon-name"><em>' + info.taxon + '</em>' + (info.authority ? ' ' + info.authority : '') + '</div>');
+      rows.push('<div class="card-name"><em>' + info.taxon + '</em>' + (info.authority ? ' ' + info.authority : '') + '</div>');
     } else {
-      rows.push('<div class="taxon-name">' + info.taxon + (info.authority ? ' ' + info.authority : '') + '</div>');
+      rows.push('<div class="card-name">' + info.taxon + (info.authority ? ' ' + info.authority : '') + '</div>');
     }
     if (info.taxon !== info.preferred_taxon || info.authority !== info.preferred_authority) {
       if (info.language_iso === 'lat') {
@@ -382,6 +382,60 @@ jQuery(document).ready(function($) {
       }
     }
     rows.push('<div>' + info.taxon_group + (info.taxon_rank ? ' | ' + info.taxon_rank : '') + '</div>');
+    return rows.join('');
+  }
+
+  /**
+   * Returns autocomplete settings for location searches.
+   */
+  function getLocationAutocompleteSettings(filters) {
+    return {
+      extraParams : $.extend({
+        orderby : 'name',
+        mode : 'json',
+        qfield : 'name',
+        auth_token: indiciaData.read.auth_token,
+        nonce: indiciaData.read.nonce,
+        user_id: indiciaData.user_id,
+        person_site_attr_id: '1',
+        view : 'detail',
+        report : 'library/locations/my_sites_lookup_for_import.xml',
+        reportSource : 'local'
+      }, filters),
+      simplify: false,
+      selectMode: false,
+      warnIfNoMatch: false,
+      continueOnBlur: false,
+      matchContains: false,
+      parse: function(data) {
+        var results = [];
+        $.each(data, function(i, item) {
+          results.push({
+            'data' : item,
+            'result' : item.name,
+            'value' : item.id
+          });
+        });
+        return results;
+      },
+      formatItem: function(item) { return item.name; }
+    };
+  }
+
+  /**
+   * Build a card showing details of a potential location for duplicate possibility resolution.
+   */
+  function getLocationCard(info) {
+    let rows = [];
+    const fullName = info.parent_name ? info.parent_name + ' :: ' + info.name : info.name;
+    rows.push('<div class="card-name">' + fullName + '</div>');
+    if (info.code) {
+      rows.push('<div>' + info.code + '</div>');
+    }
+    rows.push('<div>' + info.centroid_sref + '</div>');
+    if (info.type) {
+      rows.push('<div>' + info.type + '</div>');
+    }
     return rows.join('');
   }
 
@@ -406,7 +460,7 @@ jQuery(document).ready(function($) {
       var choiceCards = [];
       var choicesObj = JSON.parse(choiceInfo);
       $.each(choicesObj, function() {
-        choiceCards.push('<div class="taxon-card" data-taxon="' + this.taxon + '" data-id="' + this.id + '">' + getTaxonCard(this) + '</div>');
+        choiceCards.push('<div class="taxon-card choice-card" data-taxon="' + this.taxon + '" data-id="' + this.id + '">' + getTaxonCard(this) + '</div>');
       })
       // Hidden input for the ID.
       searchControl += '<input type="hidden" name="' + controlName + '" class="taxon-id" data-value="' + taxon.replace('"', '&quot;') + '"/>';
@@ -437,7 +491,7 @@ jQuery(document).ready(function($) {
       // Remember the string it was set for to prevent it being cleared.
       $('input[name="match-taxon-' + $(e.currentTarget).data('index')).data('set-for', $(e.currentTarget).val());
     });
-    $('.taxon-card').click(function(e) {
+    $(matchingPanelBody).find('.taxon-card').click(function(e) {
       var id = $(e.currentTarget).data('id');
       var taxon = $(e.currentTarget).data('taxon');
       var tr = $(e.currentTarget).closest('tr');
@@ -446,8 +500,71 @@ jQuery(document).ready(function($) {
       $(e.currentTarget).addClass('active');
       $(trPrev).find('.taxon-id').val(id);
       $(trPrev).find('.taxon-search').val(taxon);
-      console.log(id);
+    });
+  }
 
+  /**
+   * Where there are species names that need matching, adds a matching table.
+   */
+  function addLocationMatchingTableToForm(result) {
+    var matchingPanelBody = $('<div class="panel-body">')
+      .appendTo($('<div class="panel panel-default"><div class="panel-heading">' +
+        indiciaData.lang.import_helper_2.matchingPanelFor.replace('{1}', result.columnLabel) + '</div></div>')
+        .appendTo($('#matching-area')));
+    var matchingTable = $('<table class="table" id="matches-' + result.sourceField + '"><thead><tr>' +
+      '<th>' + indiciaData.lang.import_helper_2.dataValue + '</th>' +
+      '<th>' + indiciaData.lang.import_helper_2.matchesToLocation + '</th></tr></table>')
+      .appendTo(matchingPanelBody);
+    var tbody = $('<tbody />')
+      .appendTo(matchingTable);
+    var idx = 0;
+    $.each(result.unmatchedInfo.values, function(location, choiceInfo) {
+      var controlName = 'match-location-' + idx;
+      var searchControl = '<input type="text" class="location-search form-control" data-index="' + idx + '" placeholder="' + indiciaData.lang.import_helper_2.typeLocationNameToSearch + '" />';
+      var choiceCards = [];
+      var choicesObj = JSON.parse(choiceInfo);
+      $.each(choicesObj, function() {
+        choiceCards.push('<div class="location-card choice-card" data-name="' + this.name + '" data-id="' + this.id + '">' + getLocationCard(this) + '</div>');
+      })
+      // Hidden input for the ID.
+      searchControl += '<input type="hidden" name="' + controlName + '" class="location-id" data-value="' + location.replace('"', '&quot;') + '"/>';
+      $('<tr><th scope="row" data-value="' + location + '">' + location + '</th>' +
+        '<td>' + searchControl + '</td></tr>')
+        .appendTo(tbody);
+      if (choiceCards.length > 0) {
+        $('<tr class="location-suggestions"><td colspan="2"><p>' + indiciaData.lang.import_helper_2.severalMatches.replace('{1}', result.columnLabel) + '</p>' + choiceCards.join('') + '</td></tr>')
+        .appendTo(tbody);
+      }
+      idx++;
+    });
+    // Save button
+    $('<button type="button" class="btn btn-primary save-matches" ' +
+      'data-source-field="' + result.sourceField + '"' +
+      '>Save matches for ' + result.columnLabel + ' <i class="far fa-check"></i></button>')
+      .appendTo($('<div class="panel-body">').appendTo(matchingPanelBody));
+
+    // Enable location search autocomplete for the matching inputs.
+    $(matchingPanelBody).find('.location-search').autocomplete(indiciaData.warehouseUrl+'index.php/services/report/requestReport', getLocationAutocompleteSettings(result.unmatchedInfo.locationFilters));
+    $(matchingPanelBody).find('.location-search').change(function() {
+      // Clear when changed, unless value is correct for the current search string.
+      if ($('[name="match-location-' + $(this).data('index') + '"]').data('set-for') !== $(this).val()) {
+        $('[name="match-location-' + $(this).data('index') + '"]').val('');
+      }
+    });
+    $(matchingPanelBody).find('.location-search').result(function(e, data) {
+      $('input[name="match-location-' + $(e.currentTarget).data('index') + '"]').val(data.id);
+      // Remember the string it was set for to prevent it being cleared.
+      $('input[name="match-location-' + $(e.currentTarget).data('index')).data('set-for', $(e.currentTarget).val());
+    });
+    $(matchingPanelBody).find('.location-card').click(function(e) {
+      var id = $(e.currentTarget).data('id');
+      var name = $(e.currentTarget).data('name');
+      var tr = $(e.currentTarget).closest('tr');
+      var trPrev = $(tr).prev();
+      $(tr).find('.location-card.active').removeClass('active');
+      $(e.currentTarget).addClass('active');
+      $(trPrev).find('.location-id').val(id);
+      $(trPrev).find('.location-search').val(name);
     });
   }
 
@@ -481,6 +598,9 @@ jQuery(document).ready(function($) {
             }
             else if (result.unmatchedInfo.type === 'taxon') {
               addTaxonMatchingTableToForm(result);
+            }
+            else if (result.unmatchedInfo.type === 'location') {
+              addLocationMatchingTableToForm(result);
             }
           }
           if (result.colTitle) {
@@ -532,7 +652,7 @@ jQuery(document).ready(function($) {
       values: {}
     };
     var anythingToSave = false;
-    $.each($('#matches-' + sourceField).find('select, .taxon-id'), function() {
+    $.each($('#matches-' + sourceField).find('select, .taxon-id, .location-id'), function() {
       var select = this;
       if ($(select).val() !== '') {
         matches.values[$(select).data('value')] = $(select).val();
@@ -984,6 +1104,5 @@ jQuery(document).ready(function($) {
   } else if (indiciaData.step === 'doImportPage') {
     importNextChunk('startPrecheck');
   }
-
 
 });

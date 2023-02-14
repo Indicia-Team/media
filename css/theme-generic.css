@@ -687,12 +687,6 @@ body > .loading-spinner {
   padding: 0;
 }
 .idc-cardGallery .es-card-gallery .card.show-max-size {
-  /*position: absolute;
-  top: 0;
-  left: 0;
-  height: auto;*/
-  width: 100%;
-  z-index: 1000;
   margin: 0;
   -webkit-box-shadow: 6px 6px 12px #a7a7a7;
   -moz-box-shadow: 6px 6px 12px #a7a7a7;
@@ -1673,18 +1667,23 @@ div.fancybox-content h2 {
   font-size: 2rem;
 }
 
-div.taxon-card {
+div.choice-card {
   border: solid silver 1px;
   border-radius: 4px;
   padding: 8px;
   margin: 8px;
   display: inline-block;
   vertical-align: top;
+  cursor: pointer;
 }
-div.taxon-card.active {
-  background: #fbdbdb;
+div.choice-card:hover {
+  border: solid grey 1px;
+  background: #f7f7f7;
 }
-div.taxon-card .taxon-name {
+div.choice-card.active {
+  background: #e7ffe7;
+}
+div.choice-card .card-name {
   font-weight: bold;
 }
 
