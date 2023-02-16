@@ -15,8 +15,7 @@ $file-box-icon-size: 30px;
 }
 
 @mixin verification-button {
-  font-size: 120%;
-  border: none;
+  border: solid #f0f0f0 1px;
   border-radius: 4px;
   background: none;
   box-shadow: none;
@@ -26,10 +25,21 @@ $file-box-icon-size: 30px;
   margin: 4px;
   padding: 6px;
   &:hover {
-    background: silver;
+    background: #f0f0f0;
+    color: #000000;
   }
   &:link, &:visited {
     color: black;
+  }
+  &:active {
+    background: lighten(lightcoral, 20%);
+  }
+  &:focus {
+    background: none;
+    color: #000000;
+    &:active {
+      background: lighten(lightcoral, 20%);
+    }
   }
 }
 
@@ -186,6 +196,10 @@ body {
         border-radius: 4px;
         button {
           @include verification-button;
+        }
+        .fas, .far {
+          /* Consistent height independent of border settings. */
+          height: 18px;
         }
       }
     }
@@ -493,6 +507,9 @@ table.es-data-grid {
         border: #999;
       }
     }
+  }
+  .single-only {
+    display: none;
   }
 }
 

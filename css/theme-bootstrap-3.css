@@ -741,8 +741,7 @@ body > .loading-spinner {
   border-radius: 4px;
 }
 .idc-cardGallery .es-card-gallery .card .verification-buttons-cntr button {
-  font-size: 120%;
-  border: none;
+  border: solid #f0f0f0 1px;
   border-radius: 4px;
   background: none;
   box-shadow: none;
@@ -753,10 +752,25 @@ body > .loading-spinner {
   padding: 6px;
 }
 .idc-cardGallery .es-card-gallery .card .verification-buttons-cntr button:hover {
-  background: silver;
+  background: #f0f0f0;
+  color: #000000;
 }
 .idc-cardGallery .es-card-gallery .card .verification-buttons-cntr button:link, .idc-cardGallery .es-card-gallery .card .verification-buttons-cntr button:visited {
   color: black;
+}
+.idc-cardGallery .es-card-gallery .card .verification-buttons-cntr button:active {
+  background: #fbdbdb;
+}
+.idc-cardGallery .es-card-gallery .card .verification-buttons-cntr button:focus {
+  background: none;
+  color: #000000;
+}
+.idc-cardGallery .es-card-gallery .card .verification-buttons-cntr button:focus:active {
+  background: #fbdbdb;
+}
+.idc-cardGallery .es-card-gallery .card .verification-buttons-cntr .fas, .idc-cardGallery .es-card-gallery .card .verification-buttons-cntr .far {
+  /* Consistent height independent of border settings. */
+  height: 18px;
 }
 @media (min-width: 801px) {
   .idc-cardGallery .es-card-gallery .card {
@@ -978,8 +992,7 @@ table.es-data-grid tfoot button span {
 }
 
 .idc-verificationButtons-row button, .idc-verificationButtons-row a {
-  font-size: 120%;
-  border: none;
+  border: solid #f0f0f0 1px;
   border-radius: 4px;
   background: none;
   box-shadow: none;
@@ -990,10 +1003,21 @@ table.es-data-grid tfoot button span {
   padding: 6px;
 }
 .idc-verificationButtons-row button:hover, .idc-verificationButtons-row a:hover {
-  background: silver;
+  background: #f0f0f0;
+  color: #000000;
 }
 .idc-verificationButtons-row button:link, .idc-verificationButtons-row button:visited, .idc-verificationButtons-row a:link, .idc-verificationButtons-row a:visited {
   color: black;
+}
+.idc-verificationButtons-row button:active, .idc-verificationButtons-row a:active {
+  background: #fbdbdb;
+}
+.idc-verificationButtons-row button:focus, .idc-verificationButtons-row a:focus {
+  background: none;
+  color: #000000;
+}
+.idc-verificationButtons-row button:focus:active, .idc-verificationButtons-row a:focus:active {
+  background: #fbdbdb;
 }
 .idc-verificationButtons-row .multi-only {
   display: none;
@@ -1097,6 +1121,9 @@ table.es-data-grid tfoot button span {
 .multiselect-mode .multi-only button.active {
   background: #cde;
   border: #999;
+}
+.multiselect-mode .single-only {
+  display: none;
 }
 
 /* idcEsDownload */

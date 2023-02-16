@@ -776,6 +776,48 @@
   }
 
   /**
+   * Disable all rows of same taxon in the parent sample.
+   *
+   * After a verification event where the apply to records of same taxon in
+   * parent sample button is active, ensure that the disabled rows (which
+   * eventually get removed from the grid) include all the records which are
+   * being verified. We can work this out by scanning the docs loaded for each
+   * row in the grid.
+   *
+   * @param int occurrenceId
+   *   The selected occurrence that is being verified.
+   *
+   * @return array
+   *   The list of rows being verified.
+   */
+  function disableRowForAllSameTaxonInParentSample(occurrenceId) {
+    const selectedRow = $(listOutputControl).find('[data-row-id="' + indiciaData.idPrefix + occurrenceId + '"],[data-row-id="' + indiciaData.idPrefix + occurrenceId + '!"]');
+    const selectedDoc = JSON.parse($(selectedRow).attr('data-doc-source'));
+    if (selectedDoc.event.parent_event_id) {
+      // Record in a parent sample, so find other rows in the same parent, with
+      // the same taxon, that aren't verified.
+      let rows = [];
+      $.each($('.data-row'), function() {
+        const thisRow = this;
+        const doc = JSON.parse($(thisRow).attr('data-doc-source'));
+        if (doc.event.parent_event_id === selectedDoc.event.parent_event_id
+            && doc.taxon.accepted_taxon_id === selectedDoc.taxon.accepted_taxon_id
+            && (doc.taxon.id === selectedDoc.taxon.id || (doc.identification.verification_status === 'C' && doc.identification.verification_substatus === '0'))
+            ) {
+          $(thisRow)
+              .addClass('disabled processing')
+              .find('.footable-toggle-col').append('<i class="fas fa-spinner fa-spin"></i>');
+          rows.push(thisRow);
+        }
+      });
+      return rows;
+    } else {
+      // Record not in a parent sample, so just use current row.
+      return [selectedRow];
+    }
+  }
+
+  /**
    * List output control will be empty after verification so re-populate.
    *
    * @param array occurrenceIds
@@ -865,13 +907,13 @@
     var pgUpdates = getVerifyPgUpdates(status, comment, email);
     var esUpdates = getVerifyEsUpdates(status);
     var data;
+    const applyDecisionToParentSample = status.status && occurrenceIds.length === 1 && $('.apply-to-parent-sample-contents:enabled').hasClass('active');
     rowsToRemove = [];
     activeRequests = 0;
     listWillBeEmptied = $(listOutputControl).find('[data-row-id]').length - occurrenceIds.length <= 0;
-
     pgUpdates['occurrence:ids'] = occurrenceIds.join(',');
     // Disable rows that are being processed.
-    rowsToRemove = disableRowsForIds(occurrenceIds);
+    rowsToRemove = applyDecisionToParentSample ? disableRowForAllSameTaxonInParentSample(occurrenceIds[0]) : disableRowsForIds(occurrenceIds);
     $.each($('.idc-verificationButtons'), function() {
       fireItemUpdate(this);
     });
@@ -880,6 +922,11 @@
       doRepopulateAfterVerify(occurrenceIds);
     }
     if (status.status) {
+      // In single record mode, can request to also apply the decision to other
+      // records of the same taxon within a transect or timed count.
+      if (applyDecisionToParentSample) {
+        pgUpdates['applyDecisionToParentSample'] = true;
+      }
       // Post update to Indicia.
       activeRequests++;
       $.post(
@@ -993,13 +1040,19 @@
         ? 'Set status to ' + indiciaData.statusMsgs[overallStatus] + ' for ' + totalAsText + ' records'
         : 'Query ' + totalAsText + ' records';
       $('#verification-form .multiple-warning').show();
+      $('#verification-form .multiple-in-parent-sample-warning').hide();
     } else {
       heading = status.status
         ? 'Set status to ' + indiciaData.statusMsgs[overallStatus]
         : 'Query this record';
       $('#verification-form .multiple-warning').hide();
+      if ($(el).find('.apply-to-parent-sample-contents:enabled').hasClass('active')) {
+        // Accept all of this taxon in same parent sample is enabled, so warn.
+        $('#verification-form .multiple-in-parent-sample-warning').show();
+      } else {
+        $('#verification-form .multiple-in-parent-sample-warning').hide();
+      }
     }
-
     $('#verification-form').data('ids', JSON.stringify(todoListInfo.ids));
     status.status ? $('#verification-form').data('status', status.status) : $('#verification-form').removeData('status');
     status.query ? $('#verification-form').data('query', status.query) : $('#verification-form').removeData('query');
@@ -1745,6 +1798,13 @@
             $('#redet-from-full-list').prop('checked', false);
             indiciaData.selectedRecordTaxonListId = doc.taxon.taxon_list.id;
           }
+          // Enable apply to parent sample button only if selected record in a
+          // parent sample.
+          if (doc.event.parent_event_id) {
+            $(buttonEl).find('.apply-to-parent-sample-contents').removeAttr('disabled');
+          } else {
+            $(buttonEl).find('.apply-to-parent-sample-contents').attr('disabled', true);
+          }
         } else {
           $('.idc-verificationButtons').hide();
         }
@@ -1760,16 +1820,32 @@
           $('#redet-species\\:taxon').setExtraParams({ taxon_list_id: indiciaData.selectedRecordTaxonListId });
         }
       });
+
+      // Verify button click handler pop's up dialog.
       $(el).find('button.verify').click(function buttonClick(e) {
         var status = $(e.currentTarget).attr('data-status');
         commentPopup(el, { status: status });
       });
+
+      // Query button click handler pop's up dialog.
       $(el).find('button.query').click(function buttonClick() {
         queryPopup(el);
       });
+
+      // Apply to parent sample click toggles active state.
+      $(el).find('button.apply-to-parent-sample-contents').click(function buttonClick() {
+        if ($(this).hasClass('active')) {
+          $(this).removeClass('active');
+        } else {
+          $(this).addClass('active');
+        }
+      });
+
+      // Email expert button click handler pop's up dialog.
       $(el).find('button.email-expert').click(function buttonClick() {
         emailExpertPopup();
       });
+
       // If we have an upload decisions spreadsheet button, set it up.
       if ($(el).find('button.upload-decisions').length) {
         // Click handler.
