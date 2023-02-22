@@ -871,6 +871,24 @@
         // Not yet checked.
         icons.push('<span title="Record not yet checked against rules." class="' + indiciaData.ruleClasses.pending + '"></span>');
       }
+      if (doc.identification.custom_verification_rule_flags) {
+        $.each(doc.identification.custom_verification_rule_flags, function() {
+          // Only show the user's own rule flags.
+          if (this.created_by_id == indiciaData.user_id) {
+            const mapping = {
+              'calendar': 'fas fa-calendar-times',
+              'count': 'fas fa-sort-amount-up-alt',
+              'globe': 'fas fa-globe',
+              'graph': 'fas fa-chart-bar',
+              'phenology': 'fas fa-calendar-alt',
+              'warning': 'fas fa-exclamation'
+            };
+            const icon = (typeof mapping[this.icon] === 'undefined') ? 'fas fa-exclamation' : mapping[this.icon];
+            icons.push('<i class="custom-rule-flag ' + icon + '" title="Custom rule check failed: ' + this.message + '"></i>');
+          }
+        });
+
+      }
       return icons.join('');
     },
 
