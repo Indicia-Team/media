@@ -1,6 +1,6 @@
 /**
  * @file
- * A data grid plugin.
+ * A data card gallery plugin.
  *
  * Indicia, the OPAL Online Recording Toolkit.
  *
