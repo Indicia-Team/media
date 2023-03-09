@@ -876,12 +876,22 @@
           // Only show the user's own rule flags.
           if (this.created_by_id == indiciaData.user_id) {
             const mapping = {
-              'calendar': 'fas fa-calendar-times',
+              'bar-chart': 'fas fa-chart-bar',
+              'bug': 'fas fa-bug',
+              'calendar': 'fas fa-calendar-alt',
+              'calendar-cross': 'fas fa-calendar-times',
+              'calendar-tick': 'fas fa-calendar-check',
+              'clock': 'far fa-clock',
               'count': 'fas fa-sort-amount-up-alt',
+              'cross': 'fas fa-times',
+              'exclamation': 'fas fa-exclamation',
+              'flag': 'far fa-flag',
               'globe': 'fas fa-globe',
-              'graph': 'fas fa-chart-bar',
-              'phenology': 'fas fa-calendar-alt',
-              'warning': 'fas fa-exclamation'
+              'history': 'fas fa-history',
+              'leaf': 'fas fa-leaf',
+              'spider': 'fas fa-spider',
+              'tick-in-box': 'fas fa-check-square',
+              'warning': 'fas fa-exclamation-triangle'
             };
             const icon = (typeof mapping[this.icon] === 'undefined') ? 'fas fa-exclamation' : mapping[this.icon];
             icons.push('<i class="custom-rule-flag ' + icon + '" title="Custom rule check failed: ' + this.message + '"></i>');
