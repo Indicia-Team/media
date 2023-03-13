@@ -64,9 +64,7 @@
         lg: 1200
       }
     },
-    tbodyHasScrollBar: false,
-    totalHits: null,
-    totalRowCount: null
+    tbodyHasScrollBar: false
   };
 
   /**
@@ -1017,9 +1015,6 @@
       });
       if (el.settings.responsive) {
         $(el).find('table').trigger('footable_redraw');
-      }
-      if (el.settings.sourceObject.settings.mode === 'docs') {
-        el.settings.totalHits = response.hits.total;
       }
       indiciaFns.updatePagingFooter(el, response, data, 'tbody tr', afterKey);
       fireAfterPopulationCallbacks(el);

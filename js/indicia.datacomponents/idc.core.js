@@ -234,9 +234,7 @@
         indiciaFns.drawPager(
           pagerLabel,
           $(el).find('[data-row-id]').length,
-          el.settings.sourceObject.settings.from,
-          el.settings.totalHits.value,
-          el.settings.totalHits.relation
+          el.settings.sourceObject.settings
         );
       }
       // Immediately select the next row.

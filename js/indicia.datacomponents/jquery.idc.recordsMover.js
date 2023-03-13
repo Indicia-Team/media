@@ -94,7 +94,7 @@
    */
   function getTodoListInfo(el) {
     const linkToDataControl = $('#' + $(el)[0].settings.linkToDataControl);
-    const totalHits = linkToDataControl[0].settings.totalHits;
+    const total = linkToDataControl[0].settings.sourceObject.total;
     var r;
     var selectedItems;
     if (linkToDataControl.hasClass('multiselect-mode')) {
@@ -113,8 +113,8 @@
     } else {
       // Not using multi-select checkboxes, so return count of all records in filter.
       r = {
-        total: totalHits.value,
-        totalAsText : (totalHits.relation === 'gte' ? 'at least ' : '') + totalHits.value,
+        total: total.value,
+        totalAsText : (total.relation === 'gte' ? 'at least ' : '') + total.value,
         message: indiciaData.lang.recordsMover.recordsMoverDialogMessageAll
       }
     }
@@ -252,16 +252,14 @@
           } else {
             toRemove = dataOutputControl.find('[type=checkbox]:checked').closest('[data-row-id]');
           }
-          dataOutputControl[0].settings.totalHits.value -= toRemove.length;
+          dataOutputControl[0].settings.sourceObject.total.value -= toRemove.length;
           toRemove.remove();
           // Update the pager to reflect the removed rows.
           if (pagerLabel.length) {
             indiciaFns.drawPager(
               pagerLabel,
               dataOutputControl.find('[data-row-id]').length,
-              dataOutputControl[0].settings.sourceObject.settings.from,
-              dataOutputControl[0].settings.totalHits.value,
-              dataOutputControl[0].settings.totalHits.relation
+              dataOutputControl[0].settings.sourceObject.settings
             );
           }
         }

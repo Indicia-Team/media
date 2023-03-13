@@ -49,8 +49,7 @@
     includeFullScreenTool: true,
     includePager: true,
     includeSortTool: true,
-    keyboardNavigation: false,
-    totalHits: null
+    keyboardNavigation: false
   };
 
   /**
@@ -582,7 +581,6 @@
           '<i class="fas fa-compress-arrows-alt"></i></button>')
           .appendTo(card);
       });
-      el.settings.totalHits = response.hits.total;
       indiciaFns.updatePagingFooter(el, response, data, '.card');
       fireAfterPopulationCallbacks(el);
     },
