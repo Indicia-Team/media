@@ -44,15 +44,18 @@
 
     $(el).find('.custom-rule-popup-btn').click(function() {
       const dlg = $('#' + el.settings.id + '-dlg-cntr');
-      dlg.find('.msg-count').html(2222); // indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]].settings.);
-      $.fancybox.open(dlg);
+      // Only do anything if source population has completed.
+      if (indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]].settings.total) {
+        dlg.find('.msg-count').html(indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]].settings.total.value);
+        $.fancybox.open(dlg);
+      }
     });
 
     indiciaFns.on('click', '.run-custom-verification-ruleset', {}, function() {
       const source = indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]]
       const request = indiciaFns.getFormQueryData(source);
       $.ajax({
-        url: indiciaData.esProxyAjaxUrl + '/runcustomruleset/' + indiciaData.nid + '?ruleset_id=1&',
+        url: indiciaData.esProxyAjaxUrl + '/runcustomruleset/' + indiciaData.nid + '?ruleset_id=' + $('[name="ruleset-list"]:checked').val(),
         type: 'POST',
         dataType: 'json',
         data: request,
