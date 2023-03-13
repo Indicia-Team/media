@@ -1261,6 +1261,18 @@ table.es-data-grid tfoot button span {
   margin: 2px;
 }
 
+/* Custom verification rule icons */
+.custom-rule-flag {
+  background: #ffedcc;
+  /* color: white; */
+  padding: 3px;
+  border-radius: 11px;
+  width: 22px;
+  height: 22px;
+  text-align: center;
+  border: solid 1px orange;
+}
+
 /* Progress spinner */
 .progress-circle-container {
   width: 180px;

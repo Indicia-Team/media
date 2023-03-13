@@ -64,9 +64,7 @@
         lg: 1200
       }
     },
-    tbodyHasScrollBar: false,
-    totalHits: null,
-    totalRowCount: null
+    tbodyHasScrollBar: false
   };
 
   /**
@@ -1018,9 +1016,6 @@
       if (el.settings.responsive) {
         $(el).find('table').trigger('footable_redraw');
       }
-      if (el.settings.sourceObject.settings.mode === 'docs') {
-        el.settings.totalHits = response.hits.total;
-      }
       indiciaFns.updatePagingFooter(el, response, data, 'tbody tr', afterKey);
       fireAfterPopulationCallbacks(el);
       setColWidths(el, maxCharsPerCol);
@@ -1037,7 +1032,7 @@
       var el = this;
       $.each($('.idc-control'), function() {
         var controlClass = $(this).data('idc-class');
-        if (typeof this.callbacks.itemUpdate !== 'undefined') {
+        if (this.callbacks && this.callbacks.itemUpdate) {
           $(this)[controlClass]('on', 'itemUpdate', (item) => {
             $(item).removeClass('selected');
             while (item.length > 0 && $(item).hasClass('disabled')) {

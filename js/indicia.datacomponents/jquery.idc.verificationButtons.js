@@ -128,7 +128,7 @@
     };
     if (multiselectWholeTableMode()) {
       todoListInfo.mode = 'table';
-      todoListInfo.totalHits = $(listOutputControl)[0].settings.totalHits;
+      todoListInfo.total = $(listOutputControl)[0].settings.sourceObject.total;
     } else {
       todoListInfo.mode =  $(listOutputControl).hasClass('multiselect-mode') ? 'selection' : 'single';
       selectedItems = $(listOutputControl).hasClass('multiselect-mode')
@@ -138,7 +138,7 @@
         const doc = JSON.parse($(this).attr('data-doc-source'));
         todoListInfo.ids.push(parseInt(doc.id, 10));
       });
-      todoListInfo.totalHits = {value: todoListInfo.ids.length, relation: 'eq'};
+      todoListInfo.total = {value: todoListInfo.ids.length, relation: 'eq'};
     }
     return todoListInfo;
   }
@@ -209,11 +209,11 @@
     if (el.settings.verificationTemplates) {
       loadVerificationTemplates('DT', '#redet-template');
     }
-    if (todoListInfo.mode === 'selection' && todoListInfo.totalHits.value === 0) {
+    if (todoListInfo.mode === 'selection' && todoListInfo.total.value === 0) {
       alert(indiciaData.lang.verificationButtons.nothingSelected);
       return;
     }
-    if (todoListInfo.totalHits.value > 1) {
+    if (todoListInfo.total.value > 1) {
       $('#redet-form .multiple-warning').show();
     } else {
       $('#redet-form .multiple-warning').hide();
@@ -254,16 +254,14 @@
     var match;
     activeRequests--;
     if (activeRequests <= 0 && !listWillBeEmptied) {
-      listOutputControl[0].settings.totalHits.value -= rowsToRemove.length;
+      listOutputControl[0].settings.sourceObject.total.value -= rowsToRemove.length;
       $.each(rowsToRemove, function() {
         $(this).remove();
       });
       indiciaFns.drawPager(
         pagerLabel,
         listOutputControl.find('[data-row-id]').length,
-        listOutputControl[0].settings.sourceObject.settings.from,
-        listOutputControl[0].settings.totalHits.value,
-        listOutputControl[0].settings.totalHits.relation
+        listOutputControl[0].settings.sourceObject.settings
       );
     }
   }
@@ -1030,12 +1028,12 @@
       loadVerificationTemplates(mapToLevel1Status(status.status ? status.status : status.query), '#verify-template');
     }
     todoListInfo = getTodoListInfo();
-    if (todoListInfo.mode === 'selection' && todoListInfo.totalHits.value === 0) {
+    if (todoListInfo.mode === 'selection' && todoListInfo.total.value === 0) {
       alert(indiciaData.lang.verificationButtons.nothingSelected);
       return;
     }
-    if (todoListInfo.totalHits.value > 1) {
-      totalAsText = (todoListInfo.totalHits.relation === 'gte' ? 'at least ' : '') + todoListInfo.totalHits.value;
+    if (todoListInfo.total.value > 1) {
+      totalAsText = (todoListInfo.total.relation === 'gte' ? 'at least ' : '') + todoListInfo.total.value;
       heading = status.status
         ? 'Set status to ' + indiciaData.statusMsgs[overallStatus] + ' for ' + totalAsText + ' records'
         : 'Query ' + totalAsText + ' records';

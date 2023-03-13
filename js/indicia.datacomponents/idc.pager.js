@@ -110,23 +110,20 @@
    *   Pager message element.
    * @param int pageSize
    *   Number of data items on the current page.
-   * @param int offset
-   *   Offset in the data.
-   * @param int total
-   *   Total number of available data items.
-   * @param int relation
-   *   Either eq or gte (greater than or equal) if the total is approximate.
+   * @param obj sourceSettings
+   *   Settings for the source that provides the data for the control the pager
+   *   is linked to. Determines the limit, offset and total.
    */
-  indiciaFns.drawPager = (pagerEl, pageSize, offset, total, relation) => {
+  indiciaFns.drawPager = (pagerEl, pageSize, sourceSettings) => {
     // Output text describing loaded hits.
     if (pageSize > 0) {
-      if (offset === 0 && pageSize === total) {
-        $(pagerEl).html('Showing all ' + total + ' hits');
+      if (sourceSettings.from === 0 && pageSize === sourceSettings.total.value) {
+        $(pagerEl).html('Showing all ' + sourceSettings.total.value + ' hits');
       } else {
-        const toLabel = offset === 0 ? 'first ' : (offset + 1) + ' to ';
+        const toLabel = sourceSettings.from === 0 ? 'first ' : (sourceSettings.from + 1) + ' to ';
         // Indicate if approximate.
-        const ofLabel = relation === 'gte' ? 'at least ' : '';
-        $(pagerEl).html('Showing ' + toLabel + (offset + pageSize) + ' of ' + ofLabel + total);
+        const ofLabel = sourceSettings.total.relation === 'gte' ? 'at least ' : '';
+        $(pagerEl).html('Showing ' + toLabel + (sourceSettings.from + pageSize) + ' of ' + ofLabel + sourceSettings.total.value);
       }
     } else {
       $(pagerEl).html('No hits');
@@ -147,30 +144,9 @@
    */
   indiciaFns.updatePagingFooter = function updatePagingFooter(el, response, data, itemSelector, afterKey) {
     var offset;
-    var relation = 'eq';
     var pageSize = $(el).find(itemSelector).length;
     var footer = $(el).find('.footer');
     var sourceSettings = el.settings.sourceObject.settings;
-    var total;
-    if (sourceSettings.mode === 'docs') {
-      total = response.hits.total.value;
-      if (response.hits.total.relation) {
-        // If an approximate gte count then need to know.
-        relation = response.hits.total.relation;
-      }
-    } else if (response.aggregations._count) {
-      // Aggregation modes use a separate agg to count only when the filter changes.
-      total = response.aggregations._count.value;
-      // Safety check in case count's cardinal field makes less unique rows
-      // than the selection in a composite aggregation. Ideally, the count
-      // should work across all fields but that may affect performance.
-      if (response.aggregations._rows) {
-        total = Math.max(total, response.aggregations._rows.buckets.length);
-      }
-      el.settings.lastCount = total;
-    } else if (el.settings.lastCount) {
-      total = el.settings.lastCount;
-    }
     // Set up the count info in the footer.
     if (sourceSettings.mode === 'compositeAggregation') {
       // Composite aggs use after_key for simple paging.
@@ -190,7 +166,7 @@
       $(footer).find('.prev').prop('disabled', offset <= 0);
       $(footer).find('.next').prop('disabled', offset + response.hits.hits.length > response.hits.total.value);
     }
-    indiciaFns.drawPager($(footer).find('.showing'), pageSize, offset, total, relation);
+    indiciaFns.drawPager($(footer).find('.showing'), pageSize, sourceSettings);
   }
 
 }());
