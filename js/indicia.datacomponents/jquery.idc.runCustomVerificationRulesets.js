@@ -45,6 +45,7 @@
     // Handler for the button that shows the custom rule popup.
     $(el).find('.custom-rule-popup-btn').click(function() {
       const dlg = $('#' + el.settings.id + '-dlg-cntr');
+      dlg.find('.progress-cntr').hide();
       // Only do anything if source population has completed.
       if (indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]].settings.total) {
         dlg.find('.msg-count').html(indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]].settings.total.value);
@@ -56,6 +57,8 @@
     $('.run-custom-verification-ruleset').click(() => {
       const source = indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]];
       const request = indiciaFns.getFormQueryData(source);
+      const dlg = $('#' + el.settings.id + '-dlg-cntr');
+      dlg.find('.progress-cntr').fadeIn();
       $.ajax({
         url: indiciaData.esProxyAjaxUrl + '/runcustomruleset/' + indiciaData.nid + '?ruleset_id=' + $('[name="ruleset-list"]:checked').val(),
         type: 'POST',
@@ -63,39 +66,59 @@
         data: request,
       })
       .done(function(data) {
-        alert('The custom verification rules have been applied. ' + data.updated + ' records were checked.');
+        dlg.find('.progress-cntr').hide();
         $.fancybox.close();
-        // Do this after the alert closed so ES lazy updates are completed.
-        source.populate(true);
+        $.fancyDialog({
+          title: indiciaData.lang.runCustomVerificationRulesets.processComplete,
+          message: indiciaData.lang.runCustomVerificationRulesets.processCompleteMessage.replace('{1}', data.updated),
+          cancelButton: null,
+          callbackOk: () => {
+            // Do this after the message closed so ES lazy updates are completed.
+            source.populate(true);
+          }
+        });
       })
       .fail(function(data) {
-        console.log(data);
+        dlg.find('.progress-cntr').hide();
         alert('An error occurred whilst applying the rules.');
       });
     });
 
     // Handler for the clear results button on the popup.
     $('.clear-results').click(() => {
-      if (confirm(indiciaData.lang.runCustomVerificationRulesets.areYouSureClear)) {
-        const source = indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]];
-        const request = indiciaFns.getFormQueryData(source);
-        $.ajax({
-          url: indiciaData.esProxyAjaxUrl + '/clearcustomresults/' + indiciaData.nid,
-          type: 'POST',
-          dataType: 'json',
-          data: request,
-        })
-        .done(function(data) {
-          alert(data.updated + ' records had their flags removed.');
-          $.fancybox.close();
-          // Do this after the alert closed so ES lazy updates are completed.
-          source.populate(true);
-        })
-        .fail(function(data) {
-          console.log(data);
-          alert('An error occurred whilst clearing the results.');
-        });
-      }
+      $.fancyDialog({
+        title: indiciaData.lang.runCustomVerificationRulesets.clearResults,
+        message: indiciaData.lang.runCustomVerificationRulesets.areYouSureClear,
+        callbackOk: () => {
+          const source = indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]];
+          const request = indiciaFns.getFormQueryData(source);
+          const dlg = $('#' + el.settings.id + '-dlg-cntr');
+          dlg.find('.progress-cntr').fadeIn();
+          $.ajax({
+            url: indiciaData.esProxyAjaxUrl + '/clearcustomresults/' + indiciaData.nid,
+            type: 'POST',
+            dataType: 'json',
+            data: request,
+          })
+          .done(function(data) {
+            dlg.find('.progress-cntr').hide();
+            $.fancybox.close();
+            $.fancyDialog({
+              title: indiciaData.lang.runCustomVerificationRulesets.processComplete,
+              message: indiciaData.lang.runCustomVerificationRulesets.clearResultsDoneMessage.replace('{1}', data.updated),
+              cancelButton: null,
+              callbackOk: () => {
+                // Do this after the message closed so ES lazy updates are completed.
+                source.populate(true);
+              }
+            });
+          })
+          .fail(function(data) {
+            dlg.find('.progress-cntr').fadeIn();
+            alert('An error occurred whilst clearing the results.');
+          });
+        }
+      });
     });
 
     $(el).find('[name="ruleset-list"]').change(function() {

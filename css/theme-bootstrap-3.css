@@ -1273,6 +1273,35 @@ table.es-data-grid tfoot button span {
   border: solid 1px orange;
 }
 
+/* A progress bar for stuff when we don't know the duration */
+@keyframes slideprogress {
+  from {
+    margin-left: 0;
+  }
+  to {
+    margin-left: 90%;
+  }
+}
+.progress-cntr {
+  margin-top: 15px;
+}
+.progress-cntr .unknown-time-progressbar {
+  background-color: #f0f0f0;
+  border: solid silver 1px;
+  border-radius: 8px;
+  /* (height of inner div) / 2 + padding */
+  padding: 3px;
+}
+.progress-cntr .unknown-time-progressbar > div {
+  background-color: silver;
+  width: 10%;
+  height: 10px;
+  border-radius: 10px;
+  animation: slideprogress;
+  animation-duration: 4s;
+  animation-iteration-count: infinite;
+}
+
 /* Progress spinner */
 .progress-circle-container {
   width: 180px;
