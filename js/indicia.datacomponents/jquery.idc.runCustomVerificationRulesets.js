@@ -42,6 +42,7 @@
    */
   function initHandlers(el) {
 
+    // Handler for the button that shows the custom rule popup.
     $(el).find('.custom-rule-popup-btn').click(function() {
       const dlg = $('#' + el.settings.id + '-dlg-cntr');
       // Only do anything if source population has completed.
@@ -51,8 +52,9 @@
       }
     });
 
-    indiciaFns.on('click', '.run-custom-verification-ruleset', {}, function() {
-      const source = indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]]
+    // Handler for the button on the popup that runs the selected ruleset.
+    $('.run-custom-verification-ruleset').click(() => {
+      const source = indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]];
       const request = indiciaFns.getFormQueryData(source);
       $.ajax({
         url: indiciaData.esProxyAjaxUrl + '/runcustomruleset/' + indiciaData.nid + '?ruleset_id=' + $('[name="ruleset-list"]:checked').val(),
@@ -60,8 +62,40 @@
         dataType: 'json',
         data: request,
       })
-      .done(function() {})
-      .fail(function() {});
+      .done(function(data) {
+        alert('The custom verification rules have been applied. ' + data.updated + ' records were checked.');
+        $.fancybox.close();
+        // Do this after the alert closed so ES lazy updates are completed.
+        source.populate(true);
+      })
+      .fail(function(data) {
+        console.log(data);
+        alert('An error occurred whilst applying the rules.');
+      });
+    });
+
+    // Handler for the clear results button on the popup.
+    $('.clear-results').click(() => {
+      if (confirm(indiciaData.lang.runCustomVerificationRulesets.areYouSureClear)) {
+        const source = indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]];
+        const request = indiciaFns.getFormQueryData(source);
+        $.ajax({
+          url: indiciaData.esProxyAjaxUrl + '/clearcustomresults/' + indiciaData.nid,
+          type: 'POST',
+          dataType: 'json',
+          data: request,
+        })
+        .done(function(data) {
+          alert(data.updated + ' records had their flags removed.');
+          $.fancybox.close();
+          // Do this after the alert closed so ES lazy updates are completed.
+          source.populate(true);
+        })
+        .fail(function(data) {
+          console.log(data);
+          alert('An error occurred whilst clearing the results.');
+        });
+      }
     });
 
     $(el).find('[name="ruleset-list"]').change(function() {
