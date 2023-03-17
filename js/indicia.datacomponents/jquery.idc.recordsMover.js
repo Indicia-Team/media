@@ -94,7 +94,7 @@
    */
   function getTodoListInfo(el) {
     const linkToDataControl = $('#' + $(el)[0].settings.linkToDataControl);
-    const total = linkToDataControl[0].settings.sourceObject.total;
+    const total = linkToDataControl[0].settings.sourceObject.settings.total;
     var r;
     var selectedItems;
     if (linkToDataControl.hasClass('multiselect-mode')) {
@@ -252,7 +252,7 @@
           } else {
             toRemove = dataOutputControl.find('[type=checkbox]:checked').closest('[data-row-id]');
           }
-          dataOutputControl[0].settings.sourceObject.total.value -= toRemove.length;
+          dataOutputControl[0].settings.sourceObject.settings.total.value -= toRemove.length;
           toRemove.remove();
           // Update the pager to reflect the removed rows.
           if (pagerLabel.length) {

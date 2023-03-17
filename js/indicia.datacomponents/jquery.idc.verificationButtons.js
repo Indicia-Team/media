@@ -128,7 +128,7 @@
     };
     if (multiselectWholeTableMode()) {
       todoListInfo.mode = 'table';
-      todoListInfo.total = $(listOutputControl)[0].settings.sourceObject.total;
+      todoListInfo.total = $(listOutputControl)[0].settings.sourceObject.settings.total;
     } else {
       todoListInfo.mode =  $(listOutputControl).hasClass('multiselect-mode') ? 'selection' : 'single';
       selectedItems = $(listOutputControl).hasClass('multiselect-mode')
@@ -254,7 +254,7 @@
     var match;
     activeRequests--;
     if (activeRequests <= 0 && !listWillBeEmptied) {
-      listOutputControl[0].settings.sourceObject.total.value -= rowsToRemove.length;
+      listOutputControl[0].settings.sourceObject.settings.total.value -= rowsToRemove.length;
       $.each(rowsToRemove, function() {
         $(this).remove();
       });
