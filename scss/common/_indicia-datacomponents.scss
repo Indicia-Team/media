@@ -657,7 +657,7 @@ table.es-data-grid {
 /* Custom verification rule icons */
 .custom-rule-flag {
   background: lighten(orange, 40%);
-  /* color: white; */
+  color: $colour-hover-row;
   padding: 3px;
   border-radius: 11px;
   width: 22px;

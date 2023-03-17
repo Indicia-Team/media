@@ -1264,7 +1264,7 @@ table.es-data-grid tfoot button span {
 /* Custom verification rule icons */
 .custom-rule-flag {
   background: #ffedcc;
-  /* color: white; */
+  color: #333333;
   padding: 3px;
   border-radius: 11px;
   width: 22px;
