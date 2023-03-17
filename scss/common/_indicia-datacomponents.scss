@@ -15,8 +15,7 @@ $file-box-icon-size: 30px;
 }
 
 @mixin verification-button {
-  font-size: 120%;
-  border: none;
+  border: solid #f0f0f0 1px;
   border-radius: 4px;
   background: none;
   box-shadow: none;
@@ -26,10 +25,21 @@ $file-box-icon-size: 30px;
   margin: 4px;
   padding: 6px;
   &:hover {
-    background: silver;
+    background: #f0f0f0;
+    color: #000000;
   }
   &:link, &:visited {
     color: black;
+  }
+  &:active {
+    background: lighten(lightcoral, 20%);
+  }
+  &:focus {
+    background: none;
+    color: #000000;
+    &:active {
+      background: lighten(lightcoral, 20%);
+    }
   }
 }
 
@@ -186,6 +196,10 @@ body {
         border-radius: 4px;
         button {
           @include verification-button;
+        }
+        .fas, .far {
+          /* Consistent height independent of border settings. */
+          height: 18px;
         }
       }
     }
@@ -494,6 +508,9 @@ table.es-data-grid {
       }
     }
   }
+  .single-only {
+    display: none;
+  }
 }
 
 /* idcEsDownload */
@@ -623,3 +640,54 @@ table.es-data-grid {
   font-style: italic;
 }
 
+/* idcRecordsMover */
+.post-move-info {
+  .output {
+    border: solid silver 1px;
+    width: 350px;
+    min-height: 140px;
+    padding: 4px;
+    margin-bottom: 8px;
+    p {
+      margin: 2px;
+    }
+  }
+}
+
+/* Custom verification rule icons */
+.custom-rule-flag {
+  background: lighten(orange, 40%);
+  color: $colour-hover-row;
+  padding: 3px;
+  border-radius: 11px;
+  width: 22px;
+  height: 22px;
+  text-align: center;
+  border: solid 1px orange;
+}
+
+/* A progress bar for stuff when we don't know the duration */
+@keyframes slideprogress {
+  from {margin-left: 0;}
+  to {margin-left: 90%;}
+}
+
+.progress-cntr {
+  margin-top: 15px;
+  .unknown-time-progressbar {
+    background-color: #f0f0f0;
+    border: solid silver 1px;
+    border-radius: 8px;
+    /* (height of inner div) / 2 + padding */
+    padding: 3px;
+    > div {
+      background-color: silver;
+      width: 10%;
+      height: 10px;
+      border-radius: 10px;
+      animation: slideprogress;
+      animation-duration: 4s;
+      animation-iteration-count: infinite;
+    }
+  }
+}

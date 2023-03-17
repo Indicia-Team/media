@@ -214,7 +214,7 @@ var IdcEsDataSource;
       var termSources = [];
       prepareAggregationMode.call(this);
       // Convert list of fields to one suitable for top_hits _source.
-      $.each(this.settings.fields, function eachField() {
+      $.each(settings.fields, function eachField() {
         var matches = this.match(/^#([^:]+)(:([^:]+):([^:]+))?#$/);
         var key;
         var entity;
@@ -319,15 +319,31 @@ var IdcEsDataSource;
     /**
      * AJAX success handler for the population call.
      */
-    function handlePopulationResponse(url, request, response, force, onlyForControl) {
+    function handlePopulationResponse(request, response, onlyForControl) {
       var source = this;
       if (response.error || (response.code && response.code !== 200)) {
         hideAllSpinners.call(this);
         alert('Elasticsearch query failed');
       } else {
-        // Convert hits.total to Elasticsearch 7 style.
-        if (response.hits && response.hits.total && indiciaData.esVersion === 6) {
-          response.hits.total = { value: response.hits.total, relation: 'eq' };
+        // Store the total count.
+        if (source.settings.mode === 'docs') {
+          // Convert hits.total to Elasticsearch 7 style.
+          if (response.hits && response.hits.total && indiciaData.esVersion === 6) {
+            response.hits.total = { value: response.hits.total, relation: 'eq' };
+          }
+          source.settings.total = response.hits.total;
+        } else if (response.aggregations._count) {
+          // Aggregation modes use a separate agg to count only when the filter changes.
+          source.settings.total = {
+            value: response.aggregations._count.value,
+            relation: 'eq'
+          };
+          // Safety check in case count's cardinal field makes less unique rows
+          // than the selection in a composite aggregation. Ideally, the count
+          // should work across all fields but that may affect performance.
+          if (response.aggregations._rows) {
+            source.settings.total.value = Math.max(source.settings.total.value, response.aggregations._rows.buckets.length);
+          }
         }
         $.each(indiciaData.outputPluginClasses, function eachPluginClass(i, pluginClass) {
           $.each(source.outputs[pluginClass], function eachOutput() {
@@ -385,7 +401,7 @@ var IdcEsDataSource;
           type: 'post',
           data: request,
           success: function onSuccess(response) {
-            handlePopulationResponse.call(source, url, request, response, force, onlyForControl);
+            handlePopulationResponse.call(source, request, response, onlyForControl);
           },
           error: function error(jqXHR) {
             hideAllSpinners.call(source);

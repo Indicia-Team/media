@@ -3350,7 +3350,7 @@ var destroyAllFeatures;
           });
         }
         // Optional switch to satellite layer
-        if (indiciaData.srefHandlers) {
+        if (indiciaData.srefHandlers && $('#' + div.settings.srefId).length > 0) {
           var handler = indiciaData.srefHandlers[_getSystem().toLowerCase()];
           info = handler.getPrecisionInfo(handler.valueToAccuracy($('#' + div.settings.srefId).val()));
           if (div.settings.helpToPickPrecisionSwitchAt && info.metres <= div.settings.helpToPickPrecisionSwitchAt

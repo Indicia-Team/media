@@ -128,7 +128,7 @@
     };
     if (multiselectWholeTableMode()) {
       todoListInfo.mode = 'table';
-      todoListInfo.todoCount = $(listOutputControl)[0].settings.totalRowCount;
+      todoListInfo.total = $(listOutputControl)[0].settings.sourceObject.settings.total;
     } else {
       todoListInfo.mode =  $(listOutputControl).hasClass('multiselect-mode') ? 'selection' : 'single';
       selectedItems = $(listOutputControl).hasClass('multiselect-mode')
@@ -138,7 +138,7 @@
         const doc = JSON.parse($(this).attr('data-doc-source'));
         todoListInfo.ids.push(parseInt(doc.id, 10));
       });
-      todoListInfo.todoCount = todoListInfo.ids.length;
+      todoListInfo.total = {value: todoListInfo.ids.length, relation: 'eq'};
     }
     return todoListInfo;
   }
@@ -209,11 +209,11 @@
     if (el.settings.verificationTemplates) {
       loadVerificationTemplates('DT', '#redet-template');
     }
-    if (todoListInfo.mode === 'selection' && todoListInfo.todoCount === 0) {
+    if (todoListInfo.mode === 'selection' && todoListInfo.total.value === 0) {
       alert(indiciaData.lang.verificationButtons.nothingSelected);
       return;
     }
-    if (todoListInfo.todoCount > 1) {
+    if (todoListInfo.total.value > 1) {
       $('#redet-form .multiple-warning').show();
     } else {
       $('#redet-form .multiple-warning').hide();
@@ -249,22 +249,20 @@
    * pager. Ajax requests should increment activeRequests before starting.
    */
   function cleanupAfterAjaxUpdate() {
-    var pagerLabel = $(listOutputControl).find('.showing');
+    var pagerLabel = listOutputControl.find('.showing');
     var total;
     var match;
     activeRequests--;
     if (activeRequests <= 0 && !listWillBeEmptied) {
+      listOutputControl[0].settings.sourceObject.settings.total.value -= rowsToRemove.length;
       $.each(rowsToRemove, function() {
         $(this).remove();
       });
-      // Update the pager to reflect the removed rows.
-      if (pagerLabel.length) {
-        match = pagerLabel.html().match(/\d+$/);
-        if (match) {
-          total = match[0] - rowsToRemove.length;
-          pagerLabel.html($(listOutputControl).find('[data-row-id]').length + ' of ' + total);
-        }
-      }
+      indiciaFns.drawPager(
+        pagerLabel,
+        listOutputControl.find('[data-row-id]').length,
+        listOutputControl[0].settings.sourceObject.settings
+      );
     }
   }
 
@@ -722,12 +720,10 @@
     let pgUpdates = {
       website_id: indiciaData.website_id,
       'occurrence:taxa_taxon_list_id': newTaxaTaxonListId,
-      user_id: indiciaData.user_id
+      user_id: indiciaData.user_id,
     };
-    if (comment) {
-      // Template replacements will be done server side.
-      pgUpdates['occurrence_comment:comment'] = comment;
-    }
+    // Note, template replacements will be done server side.
+    pgUpdates['occurrence_comment:comment'] = comment ? comment : indiciaData.lang.verificationButtons.recordRedetermined;
     if ($('#no-update-determiner') && $('#no-update-determiner').prop('checked')) {
       // Determiner_id=-1 is special value that keeps the original
       // determiner info.
@@ -778,6 +774,48 @@
   }
 
   /**
+   * Disable all rows of same taxon in the parent sample.
+   *
+   * After a verification event where the apply to records of same taxon in
+   * parent sample button is active, ensure that the disabled rows (which
+   * eventually get removed from the grid) include all the records which are
+   * being verified. We can work this out by scanning the docs loaded for each
+   * row in the grid.
+   *
+   * @param int occurrenceId
+   *   The selected occurrence that is being verified.
+   *
+   * @return array
+   *   The list of rows being verified.
+   */
+  function disableRowForAllSameTaxonInParentSample(occurrenceId) {
+    const selectedRow = $(listOutputControl).find('[data-row-id="' + indiciaData.idPrefix + occurrenceId + '"],[data-row-id="' + indiciaData.idPrefix + occurrenceId + '!"]');
+    const selectedDoc = JSON.parse($(selectedRow).attr('data-doc-source'));
+    if (selectedDoc.event.parent_event_id) {
+      // Record in a parent sample, so find other rows in the same parent, with
+      // the same taxon, that aren't verified.
+      let rows = [];
+      $.each($('.data-row'), function() {
+        const thisRow = this;
+        const doc = JSON.parse($(thisRow).attr('data-doc-source'));
+        if (doc.event.parent_event_id === selectedDoc.event.parent_event_id
+            && doc.taxon.accepted_taxon_id === selectedDoc.taxon.accepted_taxon_id
+            && (doc.taxon.id === selectedDoc.taxon.id || (doc.identification.verification_status === 'C' && doc.identification.verification_substatus === '0'))
+            ) {
+          $(thisRow)
+              .addClass('disabled processing')
+              .find('.footable-toggle-col').append('<i class="fas fa-spinner fa-spin"></i>');
+          rows.push(thisRow);
+        }
+      });
+      return rows;
+    } else {
+      // Record not in a parent sample, so just use current row.
+      return [selectedRow];
+    }
+  }
+
+  /**
    * List output control will be empty after verification so re-populate.
    *
    * @param array occurrenceIds
@@ -787,7 +825,7 @@
     var sourceSettings = $(listOutputControl)[0].settings.sourceObject.settings;
     var docIds = [];
 
-    // Build lisat of verified IDs to exclude from the new view.
+    // Build list of verified IDs to exclude from the new view.
     $.each(occurrenceIds, function() {
       docIds.push(indiciaData.idPrefix + this);
       // Also exclude sensitive version.
@@ -867,13 +905,13 @@
     var pgUpdates = getVerifyPgUpdates(status, comment, email);
     var esUpdates = getVerifyEsUpdates(status);
     var data;
+    const applyDecisionToParentSample = status.status && occurrenceIds.length === 1 && $('.apply-to-parent-sample-contents:enabled').hasClass('active');
     rowsToRemove = [];
     activeRequests = 0;
     listWillBeEmptied = $(listOutputControl).find('[data-row-id]').length - occurrenceIds.length <= 0;
-
     pgUpdates['occurrence:ids'] = occurrenceIds.join(',');
     // Disable rows that are being processed.
-    rowsToRemove = disableRowsForIds(occurrenceIds);
+    rowsToRemove = applyDecisionToParentSample ? disableRowForAllSameTaxonInParentSample(occurrenceIds[0]) : disableRowsForIds(occurrenceIds);
     $.each($('.idc-verificationButtons'), function() {
       fireItemUpdate(this);
     });
@@ -882,6 +920,11 @@
       doRepopulateAfterVerify(occurrenceIds);
     }
     if (status.status) {
+      // In single record mode, can request to also apply the decision to other
+      // records of the same taxon within a transect or timed count.
+      if (applyDecisionToParentSample) {
+        pgUpdates['applyDecisionToParentSample'] = true;
+      }
       // Post update to Indicia.
       activeRequests++;
       $.post(
@@ -975,6 +1018,7 @@
     var heading;
     var overallStatus = status.status ? status.status : status.query;
     var todoListInfo;
+    var totalAsText;
     // Form reset.
     if (!el.settings.lastCommentStatus || (el.settings.lastCommentStatus !== overallStatus)) {
       resetCommentForm('verification-form', '');
@@ -984,22 +1028,29 @@
       loadVerificationTemplates(mapToLevel1Status(status.status ? status.status : status.query), '#verify-template');
     }
     todoListInfo = getTodoListInfo();
-    if (todoListInfo.mode === 'selection' && todoListInfo.todoCount === 0) {
+    if (todoListInfo.mode === 'selection' && todoListInfo.total.value === 0) {
       alert(indiciaData.lang.verificationButtons.nothingSelected);
       return;
     }
-    if (todoListInfo.todoCount > 1) {
+    if (todoListInfo.total.value > 1) {
+      totalAsText = (todoListInfo.total.relation === 'gte' ? 'at least ' : '') + todoListInfo.total.value;
       heading = status.status
-        ? 'Set status to ' + indiciaData.statusMsgs[overallStatus] + ' for ' + todoListInfo.todoCount + ' records'
-        : 'Query ' + todoListInfo.todoCount + ' records';
+        ? 'Set status to ' + indiciaData.statusMsgs[overallStatus] + ' for ' + totalAsText + ' records'
+        : 'Query ' + totalAsText + ' records';
       $('#verification-form .multiple-warning').show();
+      $('#verification-form .multiple-in-parent-sample-warning').hide();
     } else {
       heading = status.status
         ? 'Set status to ' + indiciaData.statusMsgs[overallStatus]
         : 'Query this record';
       $('#verification-form .multiple-warning').hide();
+      if ($(el).find('.apply-to-parent-sample-contents:enabled').hasClass('active')) {
+        // Accept all of this taxon in same parent sample is enabled, so warn.
+        $('#verification-form .multiple-in-parent-sample-warning').show();
+      } else {
+        $('#verification-form .multiple-in-parent-sample-warning').hide();
+      }
     }
-
     $('#verification-form').data('ids', JSON.stringify(todoListInfo.ids));
     status.status ? $('#verification-form').data('status', status.status) : $('#verification-form').removeData('status');
     status.query ? $('#verification-form').data('query', status.query) : $('#verification-form').removeData('query');
@@ -1023,6 +1074,7 @@
         modal: true
       }
     });
+    $('#verification-form textarea').focus();
   }
 
   /**
@@ -1744,6 +1796,13 @@
             $('#redet-from-full-list').prop('checked', false);
             indiciaData.selectedRecordTaxonListId = doc.taxon.taxon_list.id;
           }
+          // Enable apply to parent sample button only if selected record in a
+          // parent sample.
+          if (doc.event.parent_event_id) {
+            $(buttonEl).find('.apply-to-parent-sample-contents').removeAttr('disabled');
+          } else {
+            $(buttonEl).find('.apply-to-parent-sample-contents').attr('disabled', true);
+          }
         } else {
           $('.idc-verificationButtons').hide();
         }
@@ -1759,16 +1818,32 @@
           $('#redet-species\\:taxon').setExtraParams({ taxon_list_id: indiciaData.selectedRecordTaxonListId });
         }
       });
+
+      // Verify button click handler pop's up dialog.
       $(el).find('button.verify').click(function buttonClick(e) {
         var status = $(e.currentTarget).attr('data-status');
         commentPopup(el, { status: status });
       });
+
+      // Query button click handler pop's up dialog.
       $(el).find('button.query').click(function buttonClick() {
         queryPopup(el);
       });
+
+      // Apply to parent sample click toggles active state.
+      $(el).find('button.apply-to-parent-sample-contents').click(function buttonClick() {
+        if ($(this).hasClass('active')) {
+          $(this).removeClass('active');
+        } else {
+          $(this).addClass('active');
+        }
+      });
+
+      // Email expert button click handler pop's up dialog.
       $(el).find('button.email-expert').click(function buttonClick() {
         emailExpertPopup();
       });
+
       // If we have an upload decisions spreadsheet button, set it up.
       if ($(el).find('button.upload-decisions').length) {
         // Click handler.

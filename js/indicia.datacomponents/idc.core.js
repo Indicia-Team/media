@@ -187,7 +187,7 @@
   indiciaFns.hideItemAndMoveNext = function hideItemAndMoveNext(el) {
     var oldSelected = $(el).find('.selected');
     var newSelectedId;
-    var showingLabel = $(el).find('.showing');
+    var pagerLabel = $(el).find('.showing');
     var selectedIds = [];
     var sourceSettings = el.settings.sourceObject.settings;
     if ($(el).find('.multiselect-mode').length > 0) {
@@ -230,7 +230,13 @@
       }
     } else {
       // Update the paging info if some rows left.
-      showingLabel.html(showingLabel.html().replace(/\d+ of /, $(el).find('[data-row-id]').length + ' of '));
+      if (pagerLabel) {
+        indiciaFns.drawPager(
+          pagerLabel,
+          $(el).find('[data-row-id]').length,
+          el.settings.sourceObject.settings
+        );
+      }
       // Immediately select the next row.
       if (typeof newSelectedId !== 'undefined') {
         $(el).find('[data-row-id="' + newSelectedId + '"]').addClass('selected').focus();
@@ -563,7 +569,7 @@
     if (file.type.match(/:Local$/)) {
       return '<a ' + mediaAttr + ' ' + captionAttr +
         ' href="' + indiciaData.warehouseUrl + 'upload/' + file.path + '">' +
-        '<span class="fas fa-file-invoice fa-2x"></span><br/>'
+        '<span class="fas fa-file-invoice fa-2x"></span><br/>' +
         file.type.split(':')[0] + '</a>';
     }
     urlMatch = file.path.match(/^http(s)?:\/\/(www\.)?([a-z]+(\.kr)?)/);
@@ -862,6 +868,34 @@
       } else {
         // Not yet checked.
         icons.push('<span title="Record not yet checked against rules." class="' + indiciaData.ruleClasses.pending + '"></span>');
+      }
+      if (doc.identification.custom_verification_rule_flags) {
+        $.each(doc.identification.custom_verification_rule_flags, function() {
+          // Only show the user's own rule flags.
+          if (this.created_by_id == indiciaData.user_id) {
+            const mapping = {
+              'bar-chart': 'fas fa-chart-bar',
+              'bug': 'fas fa-bug',
+              'calendar': 'fas fa-calendar-alt',
+              'calendar-cross': 'fas fa-calendar-times',
+              'calendar-tick': 'fas fa-calendar-check',
+              'clock': 'far fa-clock',
+              'count': 'fas fa-sort-amount-up-alt',
+              'cross': 'fas fa-times',
+              'exclamation': 'fas fa-exclamation',
+              'flag': 'far fa-flag',
+              'globe': 'fas fa-globe',
+              'history': 'fas fa-history',
+              'leaf': 'fas fa-leaf',
+              'spider': 'fas fa-spider',
+              'tick-in-box': 'fas fa-check-square',
+              'warning': 'fas fa-exclamation-triangle'
+            };
+            const icon = (typeof mapping[this.icon] === 'undefined') ? 'fas fa-exclamation' : mapping[this.icon];
+            icons.push('<i class="custom-rule-flag ' + icon + '" title="Custom rule check failed: ' + this.message + '"></i>');
+          }
+        });
+
       }
       return icons.join('');
     },

@@ -1,6 +1,6 @@
 /**
  * @file
- * A data grid plugin.
+ * A data card gallery plugin.
  *
  * Indicia, the OPAL Online Recording Toolkit.
  *
@@ -450,7 +450,7 @@
       if (typeof options !== 'undefined') {
         $.extend(el.settings, options);
       }
-      // dataGrid does not make use of multiple sources.
+      // CardGallery does not make use of multiple sources.
       el.settings.sourceObject = indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]];
 
       if (!el.settings.columns) {
@@ -581,7 +581,7 @@
           '<i class="fas fa-compress-arrows-alt"></i></button>')
           .appendTo(card);
       });
-      indiciaFns.drawPagingFooter(el, response, data, '.card');
+      indiciaFns.updatePagingFooter(el, response, data, '.card');
       fireAfterPopulationCallbacks(el);
     },
 

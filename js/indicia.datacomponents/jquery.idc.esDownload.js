@@ -91,8 +91,8 @@
     var rowsDone = response.done;
     if (response.total) {
       rowsToDownload = response.total;
-    } else if (el.settings.linkToDataGrid) {
-      rowsToDownload = $('#' + el.settings.linkToDataGrid)[0].settings.lastCount;
+    } else if (el.settings.linkToDataControl) {
+      rowsToDownload = $('#' + el.settings.linkToDataControl)[0].settings.lastCount;
     }
     // ES V7 seems to overshoot, reporting whole rather than partial last page size.
     rowsDone = Math.min(rowsDone, rowsToDownload);
@@ -175,12 +175,12 @@
     var gridSettings;
     var sourceSettings;
     var gridColumns = [];
-    if (settings.linkToDataGrid) {
-      if ($('#' + settings.linkToDataGrid).length !== 1) {
-        indiciaFns.controlFail(el, 'Failed to find dataGrid ' + settings.linkToDataGrid + ' linked to download');
+    if (settings.linkToDataControl) {
+      if ($('#' + settings.linkToDataControl).length !== 1) {
+        indiciaFns.controlFail(el, 'Failed to find dataGrid ' + settings.linkToDataControl + ' linked to download');
       }
       // Refresh the columns according to those currently in the dataGrid.
-      gridSettings = $('#' + settings.linkToDataGrid)[0].settings;
+      gridSettings = $('#' + settings.linkToDataControl)[0].settings;
       settings.source = gridSettings.source;
       sourceSettings = indiciaData.esSourceObjects[Object.keys(settings.source)[0]].settings;
       settings.columnsTemplate = '';
@@ -200,7 +200,7 @@
     }
     // Only allow a single source for download, so simplify the sources.
     settings.sourceObject = indiciaData.esSourceObjects[Object.keys(settings.source)[0]];
-    if (!settings.linkToDataGrid) {
+    if (!settings.linkToDataControl) {
       // Ensure we get count data, in case source has already done a count for another control.
       settings.sourceObject.forceRecount();
     }

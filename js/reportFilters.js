@@ -329,10 +329,8 @@ jQuery(document).ready(function ($) {
         if (quality !== 'all') {
           r.push($('#quality-filter option[value=' + quality.replace('!', '\\!') + ']').html());
         }
-        if (filterDef.autochecks === 'F') {
-          r.push(indiciaData.lang.reportFilterParser.AutochecksFailed);
-        } else if (filterDef.autochecks === 'P') {
-          r.push(indiciaData.lang.reportFilterParser.AutochecksPassed);
+        if (filterDef.autochecks) {
+          r.push(indiciaData.lang.reportFilterParser['Autochecks' + filterDef.autochecks]);
         }
         if (filterDef.autocheck_rule) {
           if (typeof indiciaData.lang.reportFilterParser['Rule_' + filterDef.autocheck_rule] !== 'undefined') {

@@ -103,8 +103,35 @@
       getRowsPerPageControl(el);
   }
 
-   /**
-   * Outputs the HTML for the paging footer.
+  /**
+   * Update the HTML for the paging footer after a data response.
+   *
+   * @param DOM el
+   *   Pager message element.
+   * @param int pageSize
+   *   Number of data items on the current page.
+   * @param obj sourceSettings
+   *   Settings for the source that provides the data for the control the pager
+   *   is linked to. Determines the limit, offset and total.
+   */
+  indiciaFns.drawPager = (pagerEl, pageSize, sourceSettings) => {
+    // Output text describing loaded hits.
+    if (pageSize > 0) {
+      if (sourceSettings.from === 0 && pageSize === sourceSettings.total.value) {
+        $(pagerEl).html('Showing all ' + sourceSettings.total.value + ' hits');
+      } else {
+        const toLabel = sourceSettings.from === 0 ? 'first ' : (sourceSettings.from + 1) + ' to ';
+        // Indicate if approximate.
+        const ofLabel = sourceSettings.total.relation === 'gte' ? 'at least ' : '';
+        $(pagerEl).html('Showing ' + toLabel + (sourceSettings.from + pageSize) + ' of ' + ofLabel + sourceSettings.total.value);
+      }
+    } else {
+      $(pagerEl).html('No hits');
+    }
+  }
+
+  /**
+   * Update the HTML for the paging footer after a data response.
    *
    * @param DOM el
    *   Control element.
@@ -115,32 +142,11 @@
    * @param string itemSelector
    *   CSS selector for each item in the output.
    */
-  indiciaFns.drawPagingFooter = function drawPagingFooter(el, response, data, itemSelector, afterKey) {
-    var fromRowIndex;
-    var ofLabel = '';
-    var toLabel;
+  indiciaFns.updatePagingFooter = function updatePagingFooter(el, response, data, itemSelector, afterKey) {
+    var offset;
     var pageSize = $(el).find(itemSelector).length;
     var footer = $(el).find('.footer');
     var sourceSettings = el.settings.sourceObject.settings;
-    var total;
-    if (sourceSettings.mode === 'docs') {
-      total = response.hits.total.value;
-      if (response.hits.total.relation && response.hits.total.relation === 'gte') {
-        ofLabel = 'at least ';
-      }
-    } else if (response.aggregations._count) {
-      // Aggregation modes use a separate agg to count only when the filter changes.
-      total = response.aggregations._count.value;
-      // Safety check in case count's cardinal field makes less unique rows
-      // than the selection in a composite aggregation. Ideally, the count
-      // should work across all fields but that may affect performance.
-      if (response.aggregations._rows) {
-        total = Math.max(total, response.aggregations._rows.buckets.length);
-      }
-      el.settings.lastCount = total;
-    } else if (el.settings.lastCount) {
-      total = el.settings.lastCount;
-    }
     // Set up the count info in the footer.
     if (sourceSettings.mode === 'compositeAggregation') {
       // Composite aggs use after_key for simple paging.
@@ -149,28 +155,18 @@
       }
       $(footer).find('.next').prop('disabled', !afterKey);
       $(footer).find('.prev').prop('disabled', el.settings.compositeInfo.page === 0);
-      fromRowIndex = (el.settings.compositeInfo.page * sourceSettings.aggregationSize) + 1;
+      offset = (el.settings.compositeInfo.page * sourceSettings.aggregationSize);
     } else if (sourceSettings.mode === 'termAggregation') {
       // Can't page through a standard terms aggregation.
       $(footer).find('.buttons').hide();
-      fromRowIndex = 1;
+      offset = 0;
     } else {
-      fromRowIndex = typeof data.from === 'undefined' ? 1 : (data.from + 1);
+      offset = typeof data.from === 'undefined' ? 0 : data.from;
       // Enable or disable the paging buttons.
-      $(footer).find('.prev').prop('disabled', fromRowIndex <= 1);
-      $(footer).find('.next').prop('disabled', fromRowIndex + response.hits.hits.length >= response.hits.total.value);
+      $(footer).find('.prev').prop('disabled', offset <= 0);
+      $(footer).find('.next').prop('disabled', offset + response.hits.hits.length > response.hits.total.value);
     }
-    // Output text describing loaded hits.
-    if (pageSize > 0) {
-      if (fromRowIndex === 1 && pageSize === total) {
-        $(footer).find('.showing').html('Showing all ' + total + ' hits');
-      } else {
-        toLabel = fromRowIndex === 1 ? 'first ' : fromRowIndex + ' to ';
-        $(footer).find('.showing').html('Showing ' + toLabel + (fromRowIndex + (pageSize - 1)) + ' of ' + ofLabel + total);
-      }
-    } else {
-      $(footer).find('.showing').html('No hits');
-    }
+    indiciaFns.drawPager($(footer).find('.showing'), pageSize, sourceSettings);
   }
 
 }());
