@@ -702,6 +702,10 @@ var addMediaRowOnClick;
       autopick: true,
       mediaTypes: mediaTypes
     };
+    // Merge opts with evt.data (added so that fileClassifier.js can trigger
+    // this function with additional options rather than duplicate it.)
+    opts = Object.assign(opts, evt.data);
+
     // Copy settings from indiciaData.uploadSettings
     $.each(settingsToClone, function() {
       if (typeof indiciaData.uploadSettings[this]!=='undefined') {
