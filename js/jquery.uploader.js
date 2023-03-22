@@ -525,15 +525,25 @@ var checkSubmitInProgress = function () {
       }
 
       indiciaFns.on('click', '.delete-file', null, function(evt) {
-        // if this is a newly uploaded file or still uploading, we can simply delete the div since all that has been done is an upload to the
-        // temp upload folder, which will get purged anyway. isNewField is a hidden input that marks up new and existing files.
-        var id=evt.target.id.substr(4);
-        if ($('#isNew-'+id).length===0 || $('#isNew-'+id).val()==='t')
-          $(evt.target).parents('#'+id).remove();
+        // The delete button has an id like del-<id> where <id> is the id of the
+        // containing div.mediafile
+        var id = evt.target.id.substr(4);
+        var $div = $(evt.target).parents('#'+id)
+
+        // The isNew field is a hidden input that marks up new and existing
+        // files. It has an id like isNew-<id>
+        var isNew = $('#isNew-' + id).length === 0 || 
+          $('#isNew-' + id).val() === 't';
+
+        // If this is a newly uploaded file or still uploading, we can simply
+        // delete the div since all that has been done is an upload to the
+        // temp upload folder, which will get purged anyway. 
+        if (isNew)
+          $div.remove();
         else {
-          $(evt.target).parents('#'+id).addClass('disabled').css('opacity', 0.5);
-          $(evt.target).parents('#'+id).find('.deleted-value').val('t');
-          $(evt.target).parents('#'+id+' .progress').remove();
+          $div.addClass('disabled').css('opacity', 0.5);
+          $div.find('.deleted-value').val('t');
+          $div.find('.progress').remove();
         }
       });
 
