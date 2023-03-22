@@ -18,6 +18,12 @@
  */
 var mediaUploadAddedHooks = [];
 
+/**
+ * Add functions to mediaDeleteAddedHooks to recieve a notification when a file
+ * is deleted.
+ */
+var mediaDeleteAddedHooks = [];
+
  /**
  * Form submit handler that prevents the user clicking save during an upload
  */
@@ -534,6 +540,11 @@ var checkSubmitInProgress = function () {
         // files. It has an id like isNew-<id>
         var isNew = $('#isNew-' + id).length === 0 || 
           $('#isNew-' + id).val() === 't';
+
+        // Call any hooks prior to delete.
+        $.each(mediaDeleteAddedHooks, function() {
+          this($div, isNew);
+        });
 
         // If this is a newly uploaded file or still uploading, we can simply
         // delete the div since all that has been done is an upload to the
