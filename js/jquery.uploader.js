@@ -18,6 +18,12 @@
  */
 var mediaUploadAddedHooks = [];
 
+/**
+ * Add functions to mediaDeleteAddedHooks to recieve a notification when a file
+ * is deleted.
+ */
+var mediaDeleteAddedHooks = [];
+
  /**
  * Form submit handler that prevents the user clicking save during an upload
  */
@@ -483,7 +489,7 @@ var checkSubmitInProgress = function () {
                 .replace(/\{captionValue\}/g, '')
                 .replace(/\{captionPlaceholder\}/g, div.settings.msgCaptionPlaceholder)
                 .replace(/\{pathField\}/g, div.settings.table + ':path:' + uniqueId)
-                .replace(/\{pathValue\}/g, '')
+                .replace(/\{pathValue\}/g, file.name)
                 .replace(/\{typeField\}/g, div.settings.table + ':media_type_id:' + uniqueId)
                 .replace(/\{typeValue\}/g, mediaTypeId)
                 .replace(/\{typeNameField\}/g, div.settings.table + ':media_type:' + uniqueId)
@@ -497,8 +503,6 @@ var checkSubmitInProgress = function () {
                 .replace(/\{licenceIdField\}/g, div.settings.table + ':licence_id:' + uniqueId)
                 .replace(/\{licenceIdValue\}/g, div.settings.mediaLicenceId)
           );
-          // Copy the path into the hidden path input. Watch colon escaping for jQuery selectors.
-          $('#' + div.settings.table.replace(/:/g,'\\:') + '\\:path\\:' + uniqueId).val(file.name);
           $.each(mediaUploadAddedHooks, function() {
             this(div, file);
           });
@@ -525,15 +529,30 @@ var checkSubmitInProgress = function () {
       }
 
       indiciaFns.on('click', '.delete-file', null, function(evt) {
-        // if this is a newly uploaded file or still uploading, we can simply delete the div since all that has been done is an upload to the
-        // temp upload folder, which will get purged anyway. isNewField is a hidden input that marks up new and existing files.
-        var id=evt.target.id.substr(4);
-        if ($('#isNew-'+id).length===0 || $('#isNew-'+id).val()==='t')
-          $(evt.target).parents('#'+id).remove();
+        // The delete button has an id like del-<id> where <id> is the id of the
+        // containing div.mediafile
+        var id = evt.target.id.substr(4);
+        var $div = $(evt.target).parents('#'+id)
+
+        // The isNew field is a hidden input that marks up new and existing
+        // files. It has an id like isNew-<id>
+        var isNew = $('#isNew-' + id).length === 0 || 
+          $('#isNew-' + id).val() === 't';
+
+        // Call any hooks prior to delete.
+        $.each(mediaDeleteAddedHooks, function() {
+          this($div, isNew);
+        });
+
+        // If this is a newly uploaded file or still uploading, we can simply
+        // delete the div since all that has been done is an upload to the
+        // temp upload folder, which will get purged anyway. 
+        if (isNew)
+          $div.remove();
         else {
-          $(evt.target).parents('#'+id).addClass('disabled').css('opacity', 0.5);
-          $(evt.target).parents('#'+id).find('.deleted-value').val('t');
-          $(evt.target).parents('#'+id+' .progress').remove();
+          $div.addClass('disabled').css('opacity', 0.5);
+          $div.find('.deleted-value').val('t');
+          $div.find('.progress').remove();
         }
       });
 
