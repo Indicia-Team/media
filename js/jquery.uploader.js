@@ -489,7 +489,7 @@ var checkSubmitInProgress = function () {
                 .replace(/\{captionValue\}/g, '')
                 .replace(/\{captionPlaceholder\}/g, div.settings.msgCaptionPlaceholder)
                 .replace(/\{pathField\}/g, div.settings.table + ':path:' + uniqueId)
-                .replace(/\{pathValue\}/g, '')
+                .replace(/\{pathValue\}/g, file.name)
                 .replace(/\{typeField\}/g, div.settings.table + ':media_type_id:' + uniqueId)
                 .replace(/\{typeValue\}/g, mediaTypeId)
                 .replace(/\{typeNameField\}/g, div.settings.table + ':media_type:' + uniqueId)
@@ -503,8 +503,6 @@ var checkSubmitInProgress = function () {
                 .replace(/\{licenceIdField\}/g, div.settings.table + ':licence_id:' + uniqueId)
                 .replace(/\{licenceIdValue\}/g, div.settings.mediaLicenceId)
           );
-          // Copy the path into the hidden path input. Watch colon escaping for jQuery selectors.
-          $('#' + div.settings.table.replace(/:/g,'\\:') + '\\:path\\:' + uniqueId).val(file.name);
           $.each(mediaUploadAddedHooks, function() {
             this(div, file);
           });
