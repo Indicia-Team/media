@@ -325,25 +325,27 @@ var IdcEsDataSource;
         hideAllSpinners.call(this);
         alert('Elasticsearch query failed');
       } else {
-        // Store the total count.
-        if (source.settings.mode === 'docs') {
+        // Store the total count, method might be aggregation size, or hits size.
+        if (response.aggregations) {
+          if (response.aggregations._count) {
+            // Aggregation modes use a separate agg to count only when the filter changes.
+            source.settings.total = {
+              value: response.aggregations._count.value,
+              relation: 'eq'
+            };
+            // Safety check in case count's cardinal field makes less unique rows
+            // than the selection in a composite aggregation. Ideally, the count
+            // should work across all fields but that may affect performance.
+            if (response.aggregations._rows) {
+              source.settings.total.value = Math.max(source.settings.total.value, response.aggregations._rows.buckets.length);
+            }
+          }
+        } else if (response.hits && response.hits.total) {
           // Convert hits.total to Elasticsearch 7 style.
-          if (response.hits && response.hits.total && indiciaData.esVersion === 6) {
+          if (indiciaData.esVersion === 6) {
             response.hits.total = { value: response.hits.total, relation: 'eq' };
           }
           source.settings.total = response.hits.total;
-        } else if (response.aggregations._count) {
-          // Aggregation modes use a separate agg to count only when the filter changes.
-          source.settings.total = {
-            value: response.aggregations._count.value,
-            relation: 'eq'
-          };
-          // Safety check in case count's cardinal field makes less unique rows
-          // than the selection in a composite aggregation. Ideally, the count
-          // should work across all fields but that may affect performance.
-          if (response.aggregations._rows) {
-            source.settings.total.value = Math.max(source.settings.total.value, response.aggregations._rows.buckets.length);
-          }
         }
         $.each(indiciaData.outputPluginClasses, function eachPluginClass(i, pluginClass) {
           $.each(source.outputs[pluginClass], function eachOutput() {
