@@ -199,16 +199,42 @@ let hook_image_classifier_new_occurrence = [];
     // Put up a jQueryUI dialog saying we are going to clasify the file.
     showDialog(div, 'dialogStart', false);
 
+    // Set up handler for tracking progress with posts.
+    let nrPosts;
+    let nrSuccess = 0;
+    let nrFail = 0;
+    let donePost = function(response) {
+      if (response === false) {
+        nrPosts--;
+        nrFail++;
+      }
+      else {
+        nrPosts--;
+        nrSuccess++;
+      }
+
+      if (nrPosts === 0) {
+        // Put up a jQueryUI dialog saying we are done.
+        showDialog(div, 'dialogEnd');
+      }
+    };
+
     // Post the files to the classifier.
     if (div.settings.mode.includes('single')) {
       // All the files are classified to give one result.
-      doPost(div, files);
+      nrPosts = 1;
+      doPost(div, files)
+      .then(donePost)
+      .catch(donePost);
     }
     else {
       // Each file is classified to give a separate result.
+      nrPosts = files.length;
       files.forEach((file) => {
-        doPost(div, [file]);
-      });
+        doPost(div, [file])
+        .then(donePost)
+        .catch(donePost);
+       });
     }
   };
 
@@ -218,21 +244,25 @@ let hook_image_classifier_new_occurrence = [];
    * 
    * @param {object} div - Contains all the details of the control.
    * @param {array} files - Array of file objects to be classified.
+   * @returns {promise} 
    */
   function doPost(div, files) {
-    // At present the classifier module can only handle one image at a time.
-    $.post(div.settings.url, {
-      'image': files[0].path,
-      'list': div.settings.taxonListId
-    })
-    .done(function(response){
-      handleResponse(div, files, response);
-    })
-    .fail(function(){
-      handleResponse(div, files, null)
-      showDialog(div, 'dialogFail');
-    });
+    return new Promise((resolve, reject) => {
+      // At present the classifier module can only handle one image at a time.
+      $.post(div.settings.url, {
+        'image': files[0].path,
+        'list': div.settings.taxonListId
+      })
+      .done(function(response){
+        handleResponse(div, files, response);
+        resolve(response);
+      })
+      .fail(function(){
+        handleResponse(div, files, null)
+        reject(false);
+      });
 
+    })
   }
 
 
@@ -262,7 +292,6 @@ let hook_image_classifier_new_occurrence = [];
           // Classifier found a match but it was not in the Indicia species list.
           // Add a row with unknown species
           $row = addSpecies(div,files, unknown);
-          showDialog(div, 'dialogUnmatched', true);
         }
         else {
           // Classifier matched a species.
@@ -271,13 +300,11 @@ let hook_image_classifier_new_occurrence = [];
           prediction.language_iso = 'lat'
           $row = addSpecies(div, files, prediction);
           let probability = Math.floor(prediction.probability * 100);
-          showDialog(div, 'dialogNew', true, prediction.taxon, probability);
         }
       }
       else {
         // Classifier made no suggestions.
         $row = addSpecies(div, files, unknown);
-        showDialog(div, 'dialogUnknown');
       }
 
       // Increment count attribute (which must have system function of
