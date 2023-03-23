@@ -60,18 +60,16 @@ jQuery(document).ready(function($) {
         });
       },
       onUploadSuccess: function(id, data) {
-        var ext;
         $('#file-progress').val(100);
         // IForm proxy code doesn't set header correctly.
         if (typeof data === 'string') {
           data = JSON.parse(data);
         }
-        ext = data.interimFile.split('.').pop().toUpperCase();
         $('#interim-file').val(data.interimFile);
         $('#file-upload-form input[type="submit"]').attr('disabled', false);
         $('#uploaded-files').append($('<i class="far fa-file-alt fa-7x"></i>'));
         $('#uploaded-files').append($('<i class="far fa-trash-alt remove-file" title="' + indiciaData.lang.import_helper_2.removeUploadedFileHint + '"></i>'));
-        $('#uploaded-files').append($('<p>' + indiciaData.lang.import_helper_2.selectedFile.replace('{1}', ext) + '</p>'));
+        $('#uploaded-files').append($('<p>' + data.originalName + '</p>'));
       }
     });
   }
