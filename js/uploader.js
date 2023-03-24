@@ -60,18 +60,16 @@ jQuery(document).ready(function($) {
         });
       },
       onUploadSuccess: function(id, data) {
-        var ext;
         $('#file-progress').val(100);
         // IForm proxy code doesn't set header correctly.
         if (typeof data === 'string') {
           data = JSON.parse(data);
         }
-        ext = data.interimFile.split('.').pop().toUpperCase();
         $('#interim-file').val(data.interimFile);
         $('#file-upload-form input[type="submit"]').attr('disabled', false);
         $('#uploaded-files').append($('<i class="far fa-file-alt fa-7x"></i>'));
         $('#uploaded-files').append($('<i class="far fa-trash-alt remove-file" title="' + indiciaData.lang.import_helper_2.removeUploadedFileHint + '"></i>'));
-        $('#uploaded-files').append($('<p>' + indiciaData.lang.import_helper_2.selectedFile.replace('{1}', ext) + '</p>'));
+        $('#uploaded-files').append($('<p>' + data.originalName + '</p>'));
       }
     });
   }
@@ -237,15 +235,35 @@ jQuery(document).ready(function($) {
    * which triggers the extra unrestricted control.
    */
   $('.show-unrestricted').click(function() {
-    const ctrlWrap = $(this).closest('.ctrl-wrap');
-    const input = ctrlWrap.find(':input');
-    const controlName = input.attr('name');
-    const unrestrictedCtrlWrap = $('#' + $(ctrlWrap).attr('id') + '-unrestricted');
-    ctrlWrap.slideUp();
-    // Prevent old input from submitting.
-    input.attr('disabled', true);
-    $(unrestrictedCtrlWrap).closest('.unrestricted-cntr').slideDown();
-    $(unrestrictedCtrlWrap).find(':input').attr('name', controlName);
+    const cntrRestricted = $(this).closest('.ctrl-cntr');
+    const inputRestricted = $(cntrRestricted).find('select');
+    const inputUnrestricted = $('.unrestricted [name="' + $(inputRestricted).attr('name') + '"]');
+    const cntrUnrestricted = $(inputUnrestricted).closest('.ctrl-cntr');
+    cntrRestricted.slideUp();
+    inputRestricted.attr('disabled', true);
+    inputUnrestricted.removeAttr('disabled');
+    cntrUnrestricted.slideDown();
+  });
+
+  /**
+   * Button handler to return to the restricted version of a global values control.
+   */
+  $('.show-restricted').click(function() {
+    const cntrUnrestricted = $(this).closest('.ctrl-cntr');
+    const inputUnrestricted = $(cntrUnrestricted).find('select');
+    const inputRestricted = $('.restricted [name="' + $(inputUnrestricted).attr('name') + '"]');
+    const cntrRestricted = $(inputRestricted).closest('.ctrl-cntr');
+    cntrUnrestricted.slideUp();
+    inputUnrestricted.attr('disabled', true);
+    inputRestricted.removeAttr('disabled');
+    cntrRestricted.slideDown();
+  });
+
+  // Unrestricted versions of global value controls initially disabled.
+  $.each($('.ctrl-cntr.unrestricted select'), function() {
+    $(this).attr('disabled', true);
+    // Also set the correct name for when the value is submitted.
+    $(this).attr('name', $(this).attr('name').replace(/-unrestricted$/, ''));
   });
 
   /**
@@ -775,8 +793,13 @@ jQuery(document).ready(function($) {
         if (foundInGlobalValues) {
           $(checkbox).closest('li').hide();
         }
-        // Or field can be populated by a mapping.
-        foundInMapping = foundInMapping || $('.mapped-field option:selected[value="' + this + '"]').length > 0;
+        // Or field can be populated by a mapping. A 2 part required field
+        // (table:field) can be fulfilled by a 3 part mapped field
+        // (table:field:subtype), e.g.
+        // occurrence:fk_taxa_taxon_list:searchcode.
+        foundInMapping = foundInMapping
+          || $('.mapped-field option:selected[value="' + this + '"]').length > 0
+          || $('.mapped-field option:selected[value^="' + this + ':"]').length > 0;
       });
       if (foundInMapping) {
         $(checkbox).removeClass('fa-square');
@@ -1030,9 +1053,7 @@ jQuery(document).ready(function($) {
       // 4 categories of match in descending order of exactness.
       let matches = {
         headingPlusLabel: [],
-        label: [],
-        headingPlusLabelExcludeBrackets: [],
-        labelExcludeBrackets: []
+        label: []
       };
       let suggestions = [];
       let allMatches = [];
@@ -1044,8 +1065,8 @@ jQuery(document).ready(function($) {
         $.each($(row).find('option[value!=""]'), function() {
           const option = this;
           const optGroupHeading = $(option).parent().attr('label').toLowerCase().replace(/[^a-z0-9]/g, '');
-          const label = $(option).text().toLowerCase().replace(/[^a-z0-9]/g, '');
-          const labelExcludeBrackets = $(option).text().toLowerCase().replace(/\(.+\)/, '').replace(/[^a-z0-9]/g, '');
+          const label = $(option).data('untranslated').replace(/[^a-z0-9]/g, '');
+          const labelExcludeBrackets = $(option).data('untranslated').toLowerCase().replace(/\(.+\)/, '').replace(/[^a-z0-9]/g, '');
           var altTerms;
           if (columnLabel === optGroupHeading + label) {
             matches.headingPlusLabel.push(option);
@@ -1054,10 +1075,10 @@ jQuery(document).ready(function($) {
             matches.label.push(option);
           }
           else if (columnLabelExcludeBrackets === optGroupHeading + labelExcludeBrackets) {
-            matches.headingPlusLabelExcludeBrackets.push(option);
+            matches.headingPlusLabel.push(option);
           }
           else if (columnLabelExcludeBrackets === labelExcludeBrackets) {
-            matches.labelExcludeBrackets.push(option);
+            matches.label.push(option);
           }
           if ($(option).data('alt')) {
             altTerms = $(option).data('alt').split(',');
@@ -1074,15 +1095,15 @@ jQuery(document).ready(function($) {
         } else if (matches.headingPlusLabel.length === 0 && matches.label.length === 1) {
           // A single match without specifying the heading can also be selected.
           $(matches.label[0]).attr('selected', true);
-        } else if (matches.headingPlusLabel.length + matches.label.length + matches.headingPlusLabelExcludeBrackets.length + matches.labelExcludeBrackets.length > 0) {
+        } else if (matches.headingPlusLabel.length + matches.label.length > 0) {
           // Any other match scenario isn't certain enough for automatic
           // selection so show suggestions.
-          $.extend(allMatches, matches.headingPlusLabel, matches.label, matches.headingPlusLabelExcludeBrackets, matches.labelExcludeBrackets)
+          $.extend(allMatches, matches.headingPlusLabel, matches.label)
           $.each(allMatches, function() {
             const suggestionLabel = $(this).parent().data('short-label') + ' - ' + this.text;
-            suggestions.push('<a class="apply-suggestion" data-value="' + this.value + '">' + suggestionLabel + '</a>');
+            suggestions.push('<a class="apply-suggestion ' + indiciaData.templates.buttonDefaultClass + ' ' + indiciaData.templates.buttonSmallClass + '" data-value="' + this.value + '">' + suggestionLabel + '</a>');
           });
-          $(row).find('select.mapped-field').after('<p class="helpText">' +  indiciaData.lang.import_helper_2.suggestions + ': ' + suggestions.join('; ') + '</p>');
+          $(row).find('select.mapped-field').after('<p class="helpText">' +  indiciaData.lang.import_helper_2.suggestions + ': ' + suggestions.join(' ') + '</p>');
         }
       }
     });
