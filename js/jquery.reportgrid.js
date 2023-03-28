@@ -520,15 +520,15 @@
             });
             if (div.settings.offset === 0) {
               msg = div.settings.msgNoInformation;
-              $(div).find('tfoot .pager').hide();
+              $(div).find('.pager').hide();
             }
             else {
               msg = div.settings.noInfoAsPageTooHigh;
-              $(div).find('tfoot .pager').show();
+              $(div).find('.pager').show();
             }
             tbody.append('<tr class="empty-row"><td colspan="' + viscols + '">' + msg + '</td></tr>');
           } else {
-            $(div).find('tfoot .pager').show();
+            $(div).find('.pager').show();
           }
           var queryParams = indiciaFns.getUrlVars();
           $.each(rows, function (rowidx, row) {
