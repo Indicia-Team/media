@@ -215,6 +215,7 @@ let hook_image_classifier_new_occurrence = [];
 
       if (nrPosts === 0) {
         // Put up a jQueryUI dialog saying we are done.
+        // We could add something about number of successes and failures.
         showDialog(div, 'dialogEnd');
       }
     };
@@ -279,7 +280,7 @@ let hook_image_classifier_new_occurrence = [];
     if (response === null) {
       // Classifier encountered an error.
       // Add a row with unknown species
-      $row = addSpecies(div, unknown);
+      $row = addSpecies(div, files, unknown);
     }
     else {
       if(response.suggestions.length > 0) {
