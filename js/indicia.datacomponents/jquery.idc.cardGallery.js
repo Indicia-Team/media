@@ -161,7 +161,7 @@
           setCardToNormalSize(this);
         });
         // Maximise the selected card.
-        if (!$(el).find('.card.selected').hasClass('show-max-size')) {
+        if ($(el).find('.card.selected').length > 0 && !$(el).find('.card.selected').hasClass('show-max-size')) {
           setCardToMaxSize($(el).find('.card.selected'));
         }
       }
