@@ -688,6 +688,7 @@ body > .loading-spinner {
 }
 .idc-cardGallery .es-card-gallery .card.show-max-size {
   margin: 0;
+  flex-basis: 98%;
   -webkit-box-shadow: 6px 6px 12px #a7a7a7;
   -moz-box-shadow: 6px 6px 12px #a7a7a7;
   box-shadow: 6px 6px 12px #a7a7a7;
@@ -773,26 +774,26 @@ body > .loading-spinner {
   height: 18px;
 }
 @media (min-width: 801px) {
-  .idc-cardGallery .es-card-gallery .card {
+  .idc-cardGallery .es-card-gallery .card:not(.show-max-size) {
     flex-basis: 48%;
   }
-  .idc-cardGallery .es-card-gallery .card.big {
+  .idc-cardGallery .es-card-gallery .card.big:not(.show-max-size) {
     flex-basis: 98%;
   }
 }
 @media (min-width: 1201px) {
-  .idc-cardGallery .es-card-gallery .card {
+  .idc-cardGallery .es-card-gallery .card:not(.show-max-size) {
     flex-basis: 31%;
   }
-  .idc-cardGallery .es-card-gallery .card.big {
+  .idc-cardGallery .es-card-gallery .card.big:not(.show-max-size) {
     flex-basis: 48%;
   }
 }
 @media (min-width: 1601px) {
-  .idc-cardGallery .es-card-gallery .card {
+  .idc-cardGallery .es-card-gallery .card:not(.show-max-size) {
     flex-basis: 23%;
   }
-  .idc-cardGallery .es-card-gallery .card.big {
+  .idc-cardGallery .es-card-gallery .card.big:not(.show-max-size) {
     flex-basis: 48%;
   }
 }

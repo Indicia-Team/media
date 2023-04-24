@@ -143,6 +143,7 @@ body {
       }
       &.show-max-size {
         margin: 0;
+        flex-basis: 98%;
         @include drop-shadow(6px);
         .image-container {
           text-align: center;
@@ -204,26 +205,26 @@ body {
       }
     }
     @media (min-width: 801px) {
-      .card {
+      .card:not(.show-max-size) {
         flex-basis: 48%;
       }
-      .card.big {
+      .card.big:not(.show-max-size) {
         flex-basis: 98%;
       }
     }
     @media (min-width: 1201px) {
-      .card {
+      .card:not(.show-max-size) {
         flex-basis: 31%;
       }
-      .card.big {
+      .card.big:not(.show-max-size) {
         flex-basis: 48%;
       }
     }
     @media (min-width: 1601px) {
-      .card {
+      .card:not(.show-max-size) {
         flex-basis: 23%;
       }
-      .card.big {
+      .card.big:not(.show-max-size) {
         flex-basis: 48%;
       }
     }
