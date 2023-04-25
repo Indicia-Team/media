@@ -1251,6 +1251,14 @@ table.es-data-grid tfoot button span {
   min-width: 400px;
 }
 
+#verification-form legend * {
+  display: inline-block;
+  vertical-align: middle;
+}
+#verification-form legend *:first-child {
+  margin-right: 15px;
+}
+
 .field-taxon--accepted-name, .field-taxon--species {
   font-style: italic;
 }
