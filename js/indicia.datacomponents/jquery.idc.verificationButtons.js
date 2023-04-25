@@ -1663,7 +1663,7 @@
   }
 
   function getTaxonNameLabel(doc) {
-    var scientific = doc.taxon.accepted_name ? doc.taxon.taxon_name : doc.taxon.accepted_name;
+    var scientific = doc.taxon.accepted_name ? doc.taxon.accepted_name : doc.taxon.taxon_name;
     var vernacular;
     if (doc.taxon.vernacular_name) {
       vernacular = doc.taxon.vernacular_name;
@@ -1860,6 +1860,22 @@
       $(el).find('.l1').hide();
       // Hook up event handlers.
       initHandlers(el);
+      // Add copy buttons to tokens in help text.
+      $.each($('#template-help-cntr code'), function() {
+        $(this).after(' <i class="far fa-copy" title="' + indiciaData.lang.verificationButtons.copyPlaceholder.replace('{{ placeholder }}', $(this).text())  + '"></i>');
+      });
+      // Click handler for copy button.
+      $('#template-help-cntr .fa-copy').click(function() {
+        navigator.clipboard.writeText($(this).prev('code').text());
+        // Animation to show it worked.
+        $(this).animate({
+          opacity: 0.5
+        }, 200, 'swing', () => {
+            $(this).animate({
+            opacity: 1
+          }, 200);
+        });
+      });
     },
 
     on: function on(event, handler) {
