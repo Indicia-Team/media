@@ -1035,13 +1035,13 @@
     if (todoListInfo.total.value > 1) {
       totalAsText = (todoListInfo.total.relation === 'gte' ? 'at least ' : '') + todoListInfo.total.value;
       heading = status.status
-        ? 'Set status to ' + indiciaData.statusMsgs[overallStatus] + ' for ' + totalAsText + ' records'
+        ? 'Set status to <strong>' + indiciaData.statusMsgs[overallStatus].toLowerCase() + '</strong> for ' + totalAsText + ' records'
         : 'Query ' + totalAsText + ' records';
       $('#verification-form .multiple-warning').show();
       $('#verification-form .multiple-in-parent-sample-warning').hide();
     } else {
       heading = status.status
-        ? 'Set status to ' + indiciaData.statusMsgs[overallStatus]
+        ? 'Set status to <strong>' + indiciaData.statusMsgs[overallStatus].toLowerCase() + '</strong>'
         : 'Query this record';
       $('#verification-form .multiple-warning').hide();
       if ($(el).find('.apply-to-parent-sample-contents:enabled').hasClass('active')) {
@@ -1058,7 +1058,7 @@
       .removeClass()
       .addClass(indiciaData.statusClasses[overallStatus])
       .addClass('fa-2x');
-    $('#verification-form legend span:last-child').text(heading);
+    $('#verification-form legend span:last-child').text('').append(heading);
 
     if (commentInstruction) {
       $('#verification-form p.alert-info')

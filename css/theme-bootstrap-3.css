@@ -1253,7 +1253,7 @@ table.es-data-grid tfoot button span {
 
 #verification-form legend * {
   display: inline-block;
-  vertical-align: middle;
+  vertical-align: baseline;
 }
 #verification-form legend *:first-child {
   margin-right: 15px;
