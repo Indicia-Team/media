@@ -648,6 +648,10 @@ table.es-data-grid {
     &:first-child {
       margin-right: 15px;
     }
+    &.status {
+      font-weight: bold;
+      font-style: italic;
+    }
   }
 }
 
