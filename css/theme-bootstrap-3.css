@@ -1085,8 +1085,13 @@ table.es-data-grid tfoot button span {
   bottom: 30px;
   left: 0;
   overflow-y: scroll;
-  cursor: text;
-  user-select: text;
+}
+.verification-popup #template-help-cntr article .fa-copy {
+  cursor: pointer;
+}
+.verification-popup #template-help-cntr article .fa-copy:hover {
+  background: #e7e7e7;
+  border-radius: 2px;
 }
 .verification-popup #template-help-cntr button {
   position: absolute;

@@ -467,9 +467,13 @@ table.es-data-grid {
       bottom: 30px;
       left: 0;
       overflow-y: scroll;
-      cursor: text;
-      user-select: text;
-
+      .fa-copy {
+        cursor: pointer;
+        &:hover {
+          background: #e7e7e7;
+          border-radius: 2px;
+        }
+      }
     }
     button {
       position: absolute;
