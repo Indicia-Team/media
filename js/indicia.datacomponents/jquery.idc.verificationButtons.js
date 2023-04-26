@@ -1268,6 +1268,7 @@
       commentPopup(el, { query: 'Q' }, indiciaData.lang.verificationButtons.queryInMultiselectMode);
     } else {
       doc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
+      const thisRowId = doc.id;
       getCurrentRecordEmail(doc, function callback(emailTo) {
         var t = indiciaData.lang.verificationButtons;
         if (doc.metadata.created_by_id == 1 && emailTo === '' || !emailTo.match(/@/)) {
@@ -1283,10 +1284,16 @@
             url: indiciaData.esProxyAjaxUrl + '/doesUserSeeNotifications/' + indiciaData.nid,
             data: { user_id: doc.metadata.created_by_id },
             success: function success(data) {
-              if (data.msg === 'yes' || data.msg === 'maybe') {
-                tabbedQueryPopup(doc, true, t.queryCommentTabUserIsNotified, t.queryEmailTabUserIsNotified, emailTo);
-              } else {
-                tabbedQueryPopup(doc, false, t.queryCommentTabUserIsNotNotified, t.queryEmailTabUserIsNotNotified, emailTo);
+              // Skip if we've moved records.
+              if ($(listOutputControl).find('.selected').length > 0) {
+                const currentDoc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
+                if (thisRowId === currentDoc.id) {
+                  if (data.msg === 'yes' || data.msg === 'maybe') {
+                    tabbedQueryPopup(doc, true, t.queryCommentTabUserIsNotified, t.queryEmailTabUserIsNotified, emailTo);
+                  } else {
+                    tabbedQueryPopup(doc, false, t.queryCommentTabUserIsNotNotified, t.queryEmailTabUserIsNotNotified, emailTo);
+                  }
+                }
               }
             },
             complete: function complete() {
