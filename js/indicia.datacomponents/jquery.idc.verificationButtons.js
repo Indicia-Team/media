@@ -234,7 +234,13 @@
   function onSelectCommentTemplate(e) {
     const templateId = $(e.currentTarget).val();
     const data = $(e.currentTarget).data('data');
-    const textarea = $(e.currentTarget).closest('.verification-popup').find('textarea')
+    const textarea = $(e.currentTarget).closest('.verification-popup').find('textarea');
+    const deleteBtn = $(e.currentTarget).closest('.ctrl-wrap').find('.delete-template');
+    if (templateId) {
+      deleteBtn.removeClass('disabled');
+    } else {
+      deleteBtn.addClass('disabled');
+    }
     $.each(data, function eachData() {
       if (this.id === templateId) {
         $(textarea).val(this.template);
@@ -250,8 +256,6 @@
    */
   function cleanupAfterAjaxUpdate() {
     var pagerLabel = listOutputControl.find('.showing');
-    var total;
-    var match;
     activeRequests--;
     if (activeRequests <= 0 && !listWillBeEmptied) {
       listOutputControl[0].settings.sourceObject.settings.total.value -= rowsToRemove.length;
@@ -475,6 +479,27 @@
     }
   }
 
+  function deleteTemplate(popupEl, id) {
+    const data = {
+      website_id: indiciaData.website_id,
+      id: id,
+      deleted: true
+    };
+    $.post(
+      indiciaData.ajaxFormPostVerificationTemplate,
+      data,
+      null,
+      'json'
+    ).done((response) => {
+    }).fail((qXHR) => {
+      $.fancyDialog({
+        title: indiciaData.lang.verificationButtons.deleteTemplateError,
+        message: indiciaData.lang.verificationButtons.deleteTemplateErrorMsg,
+        cancelButton: null
+      });
+    });
+  }
+
   /**
    * After saving a template or canceling, hide the template name and associated controls.
    */
@@ -562,7 +587,7 @@
         title: templateName,
         template: templateText,
         template_statuses: [mapToLevel1Status(status)],
-      }
+      };
       if (!templateName || !templateText) {
         $.fancyDialog({
           title: indiciaData.lang.verificationButtons.templateNameTextRequired,
@@ -572,6 +597,28 @@
         return;
       }
       saveTemplate(popupEl, data);
+    });
+
+    /**
+     * Click handler for the button which deletes a template.
+     */
+    $('.delete-template').click(function() {
+      const ctrlWrap = $(this).closest('.ctrl-wrap');
+      const popupEl = $(ctrlWrap).closest('.verification-popup');
+      let option = $(ctrlWrap).find('select option:selected');
+      if (option && $(option).val()) {
+        $.fancyDialog({
+          title: indiciaData.lang.verificationButtons.deleteTemplateConfirm,
+          message: indiciaData.lang.verificationButtons.deleteTemplateMsg.replace('{{ title }}', $(option).text()),
+          okButton: indiciaData.lang.verificationButtons.delete,
+          cancelButton: indiciaData.lang.verificationButtons.cancel,
+          callbackOk: () => {
+            deleteTemplate(popupEl, $(option).val());
+            $(ctrlWrap).find('select option[value=""]').attr('selected', true);
+            $(option).remove();
+          }
+        });
+      }
     });
 
     /**

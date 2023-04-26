@@ -653,6 +653,16 @@ table.es-data-grid {
       font-style: italic;
     }
   }
+  #ctrl-wrap-verify-template {
+    max-width: 400px;
+    .fa-trash-alt {
+      margin: 0;
+      cursor: pointer;
+      &.disabled {
+        opacity: 0.2;
+      }
+    }
+  }
 }
 
 .field-taxon--accepted-name, .field-taxon--species {

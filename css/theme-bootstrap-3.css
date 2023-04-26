@@ -1262,6 +1262,16 @@ table.es-data-grid tfoot button span {
   font-weight: bold;
   font-style: italic;
 }
+#verification-form #ctrl-wrap-verify-template {
+  max-width: 400px;
+}
+#verification-form #ctrl-wrap-verify-template .fa-trash-alt {
+  margin: 0;
+  cursor: pointer;
+}
+#verification-form #ctrl-wrap-verify-template .fa-trash-alt.disabled {
+  opacity: 0.2;
+}
 
 .field-taxon--accepted-name, .field-taxon--species {
   font-style: italic;
