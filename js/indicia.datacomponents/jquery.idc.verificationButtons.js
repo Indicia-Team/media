@@ -461,6 +461,8 @@
             template: data.template,
           });
           loadVerificationTemplates(mapToLevel1Status(status), '#' + $(popupEl).find('.comment-template').attr('id'));
+          // Select it.
+          $(popupEl).find('.comment-template').val(response.outer_id);
           closeSaveTemplateControl(popupEl);
         }
       }).fail((qXHR) => {
@@ -539,7 +541,7 @@
       const popupEl = $(this).closest('.verification-popup');
       // Revert to edit mode so you can see the template you are editing.
       $(popupEl).find('.comment-edit').click();
-      $(popupEl).find('.template-save-cntr input[type="text"]').val('');
+      $(popupEl).find('.template-save-cntr input[type="text"]').val($(popupEl).find('select.comment-template').val() ? $(popupEl).find('select.comment-template option:selected').text() : '');
       $(popupEl).find('.template-save-cntr').slideDown();
       $(popupEl).find('.comment-tools button').attr('disabled', true);
       $(popupEl).find('.form-buttons button').attr('disabled', true);
