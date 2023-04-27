@@ -234,7 +234,13 @@
   function onSelectCommentTemplate(e) {
     const templateId = $(e.currentTarget).val();
     const data = $(e.currentTarget).data('data');
-    const textarea = $(e.currentTarget).closest('.verification-popup').find('textarea')
+    const textarea = $(e.currentTarget).closest('.verification-popup').find('textarea');
+    const deleteBtn = $(e.currentTarget).closest('.ctrl-wrap').find('.delete-template');
+    if (templateId) {
+      deleteBtn.removeClass('disabled');
+    } else {
+      deleteBtn.addClass('disabled');
+    }
     $.each(data, function eachData() {
       if (this.id === templateId) {
         $(textarea).val(this.template);
@@ -250,8 +256,6 @@
    */
   function cleanupAfterAjaxUpdate() {
     var pagerLabel = listOutputControl.find('.showing');
-    var total;
-    var match;
     activeRequests--;
     if (activeRequests <= 0 && !listWillBeEmptied) {
       listOutputControl[0].settings.sourceObject.settings.total.value -= rowsToRemove.length;
@@ -461,6 +465,8 @@
             template: data.template,
           });
           loadVerificationTemplates(mapToLevel1Status(status), '#' + $(popupEl).find('.comment-template').attr('id'));
+          // Select it.
+          $(popupEl).find('.comment-template').val(response.outer_id);
           closeSaveTemplateControl(popupEl);
         }
       }).fail((qXHR) => {
@@ -471,6 +477,27 @@
         });
       });
     }
+  }
+
+  function deleteTemplate(popupEl, id) {
+    const data = {
+      website_id: indiciaData.website_id,
+      id: id,
+      deleted: true
+    };
+    $.post(
+      indiciaData.ajaxFormPostVerificationTemplate,
+      data,
+      null,
+      'json'
+    ).done((response) => {
+    }).fail((qXHR) => {
+      $.fancyDialog({
+        title: indiciaData.lang.verificationButtons.deleteTemplateError,
+        message: indiciaData.lang.verificationButtons.deleteTemplateErrorMsg,
+        cancelButton: null
+      });
+    });
   }
 
   /**
@@ -539,7 +566,7 @@
       const popupEl = $(this).closest('.verification-popup');
       // Revert to edit mode so you can see the template you are editing.
       $(popupEl).find('.comment-edit').click();
-      $(popupEl).find('.template-save-cntr input[type="text"]').val('');
+      $(popupEl).find('.template-save-cntr input[type="text"]').val($(popupEl).find('select.comment-template').val() ? $(popupEl).find('select.comment-template option:selected').text() : '');
       $(popupEl).find('.template-save-cntr').slideDown();
       $(popupEl).find('.comment-tools button').attr('disabled', true);
       $(popupEl).find('.form-buttons button').attr('disabled', true);
@@ -560,7 +587,7 @@
         title: templateName,
         template: templateText,
         template_statuses: [mapToLevel1Status(status)],
-      }
+      };
       if (!templateName || !templateText) {
         $.fancyDialog({
           title: indiciaData.lang.verificationButtons.templateNameTextRequired,
@@ -570,6 +597,28 @@
         return;
       }
       saveTemplate(popupEl, data);
+    });
+
+    /**
+     * Click handler for the button which deletes a template.
+     */
+    $('.delete-template').click(function() {
+      const ctrlWrap = $(this).closest('.ctrl-wrap');
+      const popupEl = $(ctrlWrap).closest('.verification-popup');
+      let option = $(ctrlWrap).find('select option:selected');
+      if (option && $(option).val()) {
+        $.fancyDialog({
+          title: indiciaData.lang.verificationButtons.deleteTemplateConfirm,
+          message: indiciaData.lang.verificationButtons.deleteTemplateMsg.replace('{{ title }}', $(option).text()),
+          okButton: indiciaData.lang.verificationButtons.delete,
+          cancelButton: indiciaData.lang.verificationButtons.cancel,
+          callbackOk: () => {
+            deleteTemplate(popupEl, $(option).val());
+            $(ctrlWrap).find('select option[value=""]').attr('selected', true);
+            $(option).remove();
+          }
+        });
+      }
     });
 
     /**
@@ -1035,13 +1084,13 @@
     if (todoListInfo.total.value > 1) {
       totalAsText = (todoListInfo.total.relation === 'gte' ? 'at least ' : '') + todoListInfo.total.value;
       heading = status.status
-        ? 'Set status to ' + indiciaData.statusMsgs[overallStatus] + ' for ' + totalAsText + ' records'
+        ? 'Set status to <span class="status">' + indiciaData.statusMsgs[overallStatus].toLowerCase() + '</span> for ' + totalAsText + ' records'
         : 'Query ' + totalAsText + ' records';
       $('#verification-form .multiple-warning').show();
       $('#verification-form .multiple-in-parent-sample-warning').hide();
     } else {
       heading = status.status
-        ? 'Set status to ' + indiciaData.statusMsgs[overallStatus]
+        ? 'Set status to <span class="status">' + indiciaData.statusMsgs[overallStatus].toLowerCase() + '</span>'
         : 'Query this record';
       $('#verification-form .multiple-warning').hide();
       if ($(el).find('.apply-to-parent-sample-contents:enabled').hasClass('active')) {
@@ -1058,7 +1107,7 @@
       .removeClass()
       .addClass(indiciaData.statusClasses[overallStatus])
       .addClass('fa-2x');
-    $('#verification-form legend span:last-child').text(heading);
+    $('#verification-form legend span:last-child').text('').append(heading);
 
     if (commentInstruction) {
       $('#verification-form p.alert-info')
@@ -1268,6 +1317,7 @@
       commentPopup(el, { query: 'Q' }, indiciaData.lang.verificationButtons.queryInMultiselectMode);
     } else {
       doc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
+      const thisRowId = doc.id;
       getCurrentRecordEmail(doc, function callback(emailTo) {
         var t = indiciaData.lang.verificationButtons;
         if (doc.metadata.created_by_id == 1 && emailTo === '' || !emailTo.match(/@/)) {
@@ -1283,10 +1333,16 @@
             url: indiciaData.esProxyAjaxUrl + '/doesUserSeeNotifications/' + indiciaData.nid,
             data: { user_id: doc.metadata.created_by_id },
             success: function success(data) {
-              if (data.msg === 'yes' || data.msg === 'maybe') {
-                tabbedQueryPopup(doc, true, t.queryCommentTabUserIsNotified, t.queryEmailTabUserIsNotified, emailTo);
-              } else {
-                tabbedQueryPopup(doc, false, t.queryCommentTabUserIsNotNotified, t.queryEmailTabUserIsNotNotified, emailTo);
+              // Skip if we've moved records.
+              if ($(listOutputControl).find('.selected').length > 0) {
+                const currentDoc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
+                if (thisRowId === currentDoc.id) {
+                  if (data.msg === 'yes' || data.msg === 'maybe') {
+                    tabbedQueryPopup(doc, true, t.queryCommentTabUserIsNotified, t.queryEmailTabUserIsNotified, emailTo);
+                  } else {
+                    tabbedQueryPopup(doc, false, t.queryCommentTabUserIsNotNotified, t.queryEmailTabUserIsNotNotified, emailTo);
+                  }
+                }
               }
             },
             complete: function complete() {
@@ -1663,7 +1719,7 @@
   }
 
   function getTaxonNameLabel(doc) {
-    var scientific = doc.taxon.accepted_name ? doc.taxon.taxon_name : doc.taxon.accepted_name;
+    var scientific = doc.taxon.accepted_name ? doc.taxon.accepted_name : doc.taxon.taxon_name;
     var vernacular;
     if (doc.taxon.vernacular_name) {
       vernacular = doc.taxon.vernacular_name;
@@ -1860,6 +1916,22 @@
       $(el).find('.l1').hide();
       // Hook up event handlers.
       initHandlers(el);
+      // Add copy buttons to tokens in help text.
+      $.each($('#template-help-cntr code'), function() {
+        $(this).after(' <i class="far fa-copy" title="' + indiciaData.lang.verificationButtons.copyPlaceholder.replace('{{ placeholder }}', $(this).text())  + '"></i>');
+      });
+      // Click handler for copy button.
+      $('#template-help-cntr .fa-copy').click(function() {
+        navigator.clipboard.writeText($(this).prev('code').text());
+        // Animation to show it worked.
+        $(this).animate({
+          opacity: 0.5
+        }, 200, 'swing', () => {
+            $(this).animate({
+            opacity: 1
+          }, 200);
+        });
+      });
     },
 
     on: function on(event, handler) {

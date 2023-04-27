@@ -143,6 +143,7 @@ body {
       }
       &.show-max-size {
         margin: 0;
+        flex-basis: 98%;
         @include drop-shadow(6px);
         .image-container {
           text-align: center;
@@ -204,26 +205,26 @@ body {
       }
     }
     @media (min-width: 801px) {
-      .card {
+      .card:not(.show-max-size) {
         flex-basis: 48%;
       }
-      .card.big {
+      .card.big:not(.show-max-size) {
         flex-basis: 98%;
       }
     }
     @media (min-width: 1201px) {
-      .card {
+      .card:not(.show-max-size) {
         flex-basis: 31%;
       }
-      .card.big {
+      .card.big:not(.show-max-size) {
         flex-basis: 48%;
       }
     }
     @media (min-width: 1601px) {
-      .card {
+      .card:not(.show-max-size) {
         flex-basis: 23%;
       }
-      .card.big {
+      .card.big:not(.show-max-size) {
         flex-basis: 48%;
       }
     }
@@ -466,9 +467,13 @@ table.es-data-grid {
       bottom: 30px;
       left: 0;
       overflow-y: scroll;
-      cursor: text;
-      user-select: text;
-
+      .fa-copy {
+        cursor: pointer;
+        &:hover {
+          background: #e7e7e7;
+          border-radius: 2px;
+        }
+      }
     }
     button {
       position: absolute;
@@ -633,6 +638,30 @@ table.es-data-grid {
 .verification-popup {
   textarea {
     min-width: 400px;
+  }
+}
+
+#verification-form {
+  legend * {
+    display: inline-block;
+    vertical-align: baseline;
+    &:first-child {
+      margin-right: 15px;
+    }
+    &.status {
+      font-weight: bold;
+      font-style: italic;
+    }
+  }
+  #ctrl-wrap-verify-template {
+    max-width: 400px;
+    .fa-trash-alt {
+      margin: 0;
+      cursor: pointer;
+      &.disabled {
+        opacity: 0.2;
+      }
+    }
   }
 }
 

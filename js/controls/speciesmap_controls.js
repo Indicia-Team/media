@@ -189,7 +189,7 @@ var control_speciesmap_addcontrols;
     var endMove = function () {
       var div = $(indiciaData.control_speciesmap_opts.mapDiv)[0];
       var block = $('#scm-' + indiciaData.control_speciesmap_existing_feature.attributes.subSampleIndex + '-block');
-      div.map.editLayer.destroyFeatures();
+      destroyAllFeatures(div.map.editLayer, 'clickPoint');
       div.map.editLayer.clickControl.deactivate(); // to allow user to select new position.
       indiciaData.control_speciesmap_selectFeatureControl.activate();
       indiciaData.control_speciesmap_selectFeatureControl.unselectAll();
@@ -212,7 +212,7 @@ var control_speciesmap_addcontrols;
       var subsampleBlock;
       var gridIdx;
       var sampleControlsDiv;
-      div.map.editLayer.destroyFeatures();
+      destroyAllFeatures(div.map.editLayer, 'clickPoint');
       indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id]++;
       indiciaData.control_speciesmap_new_feature.attributes.subSampleIndex =
         indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id];
@@ -438,7 +438,7 @@ var control_speciesmap_addcontrols;
       indiciaData.control_speciesmap_new_feature = null;
       // Switches off add button functionality - note this equivalent of 'Finishing'
       div.map.editLayer.clickControl.deactivate();
-      div.map.editLayer.destroyFeatures();
+      destroyAllFeatures(div.map.editLayer, 'clickPoint');
       $('#imp-sref,#imp-geom').val('');
       switchToOverviewMap();
       $('#' + indiciaData.control_speciesmap_opts.id + '-container').removeClass('new')
@@ -509,7 +509,7 @@ var control_speciesmap_addcontrols;
           $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(
               indiciaData.lang.speciesMap.MoveMessage1);
           showButtons(['add', 'mod', 'move', 'del']);
-          div.map.editLayer.destroyFeatures();
+          destroyAllFeatures(div.map.editLayer, 'clickPoint');
           $('#imp-sref,#imp-geom').val('');
           indiciaData.control_speciesmap_existing_feature = null;
           setClusteringOn(true);

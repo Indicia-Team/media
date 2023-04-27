@@ -486,7 +486,7 @@
       if (doc.occurrence.source_system_key || doc.occurrence_external_key) {
         key = doc.occurrence.source_system_key ? doc.occurrence.source_system_key : doc.occurrence_external_key;
         if (key.match(/^iNat:/)) {
-          externalMessage = 'View details of this record in iNaturalist using the link above.';
+          externalMessage = 'View details of this record in iNaturalist using the link provided.';
           if (!doc.occurrence.media) {
             externalMessage += ' Although there are no media files linked to the imported record, this may be ' +
               'because the source record\'s images were not licensed so could not be imported. If so then they ' +

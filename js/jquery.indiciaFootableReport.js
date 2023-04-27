@@ -33,7 +33,7 @@
         $filterCell.addClass('footable-visible');
       }
     });
-    $table.find('thead tr').after($filterRow);
+    $table.find('thead tr:first-child').after($filterRow);
   }
 
 

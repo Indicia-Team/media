@@ -161,7 +161,7 @@
           setCardToNormalSize(this);
         });
         // Maximise the selected card.
-        if (!$(el).find('.card.selected').hasClass('show-max-size')) {
+        if ($(el).find('.card.selected').length > 0 && !$(el).find('.card.selected').hasClass('show-max-size')) {
           setCardToMaxSize($(el).find('.card.selected'));
         }
       }
@@ -484,7 +484,7 @@
         tools.push('<span class="far fa-window-maximize fullscreen-tool" title="' + indiciaData.lang.cardGallery.fullScreenToolHint + '"></span>');
       }
       if (el.settings.includeSortTool) {
-        tools.push('<span class="fas fa-sort-alpha-down sort-tool" title="' + indiciaData.lang.cardGallery.sortToolHint + '"></span>');
+        tools.push('<span class="fas fa-sort-alpha-up sort-tool" title="' + indiciaData.lang.cardGallery.sortToolHint + '"></span>');
         $('<div class="sort-dropdown" style="display: none"><h3>' + indiciaData.lang.cardGallery.sortConfiguration + '</h3>' +
           '<p>' + indiciaData.lang.cardGallery.clickToSort + '<ul></ul>' +
           '<button class="sort-close ' + indiciaData.templates.buttonHighlightedClass + '">Close</button></div>').appendTo(el);

@@ -37,6 +37,7 @@ var handleSelectedTaxon;
 var taxonNameBeforeUserEdit;
 var returnPressedInAutocomplete;
 var resetSpeciesTextOnEscape;
+var addMediaRowOnClick;
 
 (function ($) {
   'use strict';
@@ -669,7 +670,7 @@ var resetSpeciesTextOnEscape;
    * it has been linked to a taxon. Adds a row to the grid specifically to contain a file uploader for images
    * linked to that occurrence.
    */
-  indiciaFns.on('click', '.add-media-link', {}, function onClick(evt) {
+  addMediaRowOnClick = function (evt) {
     var table = evt.target.id.replace('add-media', 'sc') + ':occurrence_medium';
     var ctrlId = 'container-' + table + '-' + Math.floor((Math.random()) * 0x10000);
     var colspan = $($(evt.target).parent().parent()).children().length;
@@ -701,6 +702,10 @@ var resetSpeciesTextOnEscape;
       autopick: true,
       mediaTypes: mediaTypes
     };
+    // Merge opts with evt.data (added so that fileClassifier.js can trigger
+    // this function with additional options rather than duplicate it.)
+    opts = Object.assign(opts, evt.data);
+
     // Copy settings from indiciaData.uploadSettings
     $.each(settingsToClone, function() {
       if (typeof indiciaData.uploadSettings[this]!=='undefined') {
@@ -713,7 +718,9 @@ var resetSpeciesTextOnEscape;
     if (typeof file_box_uploaded_imageTemplate!=='undefined') { opts.file_box_uploaded_imageTemplate=file_box_uploaded_imageTemplate; }
     imageRow.find('div').uploader(opts);
     $(evt.target).hide();
-  });
+  }
+
+  indiciaFns.on('click', '.add-media-link', {}, addMediaRowOnClick);
 
   indiciaFns.on('click', '.hide-image-link', {}, function (evt) {
     var ctrlId = (evt.target.id.replace(/^hide\-images/, 'container-sc') + ':occurrence_medium').replace(/:/g, '\\:');
