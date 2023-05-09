@@ -1774,11 +1774,16 @@
       } else if (source.settings.mode === 'mapGeoHash' && mapToFilterTo) {
         // Set geohash_grid precision.
         // See https://gis.stackexchange.com/questions/231719/calculating-optimal-geohash-precision-from-bounding-box
-        var viewportAreaSqDegrees = (bounds.getEast() - bounds.getWest()) * (bounds.getNorth() - bounds.getSouth());
-        var hashPrecisionAreas = [2025, 63.281, 1.97754, 0.061799, 0.0019311904, 0.0000603497028, 0.000001885928, 0.0000000589352567];
-        var precision = 1;
+        // We use the viewport cropped to a max 2:1 ratio for our calculations,
+        // otherwise a very tall or very wide map selects an inappropriate
+        // square size.
+        const shortestEdge = Math.min(bounds.getEast() - bounds.getWest(), bounds.getNorth() - bounds.getSouth());
+        const longEdgeForCalc = Math.min(shortestEdge * 2, Math.max(bounds.getEast() - bounds.getWest(), bounds.getNorth() - bounds.getSouth()));
+        const viewportCroppedAreaSqDegrees = shortestEdge * longEdgeForCalc;
+        const hashPrecisionAreas = [2025, 63.281, 1.97754, 0.061799, 0.0019311904, 0.0000603497028, 0.000001885928, 0.0000000589352567];
+        let precision = 1;
         for (var i = 8; i >= 1; i--) {
-          if (viewportAreaSqDegrees / hashPrecisionAreas[i - 1] < 10000) {
+          if (viewportCroppedAreaSqDegrees / hashPrecisionAreas[i - 1] < 10000) {
             precision = i;
             break;
           }
