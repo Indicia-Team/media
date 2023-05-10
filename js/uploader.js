@@ -775,6 +775,11 @@ jQuery(document).ready(function($) {
    * Check that required fields are mapped. Set checkbox ticked state in UI.
    */
   function checkRequiredFields() {
+    // Fields where if one mapping is present, the other is required.
+    const pairedFields = {
+      'occurrence:fk_taxa_taxon_list': ['genus', 'specific']
+    }
+    let messages = [];
     $.each($('.required-checkbox'), function() {
       var checkbox = $(this);
       var checkboxKeyList = checkbox.data('key');
@@ -797,6 +802,26 @@ jQuery(document).ready(function($) {
         // (table:field) can be fulfilled by a 3 part mapped field
         // (table:field:subtype), e.g.
         // occurrence:fk_taxa_taxon_list:searchcode.
+        // First we need to consider pairs of fields where both are required if
+        // either are present.
+        if (typeof pairedFields[this] !== 'undefined') {
+          if ($('.mapped-field option:selected[value^="' + this + ':' + pairedFields[this][0] + '"]').length > 0) {
+            // Got paired field #1, so check if #2 is present.
+            if ($('.mapped-field option:selected[value^="' + this + ':' + pairedFields[this][1] + '"]').length > 0) {
+              foundInMapping = true;
+            } else {
+              // Paired field missing so warn the user.
+              messages.push(indiciaData.lang.import_helper_2[this + ':' + pairedFields[this][1]]);
+            }
+            return true;
+          } else if ($('.mapped-field option:selected[value^="' + this + ':' + pairedFields[this][1] + '"]').length > 0) {
+            // Got paired field #2, so #1 is missing. Warn the user.
+            messages.push(indiciaData.lang.import_helper_2[this + ':' + pairedFields[this][0]]);
+            return true;
+          }
+        }
+        // Now consider other single fields that fulful a required mapping
+        // requirement.
         foundInMapping = foundInMapping
           || $('.mapped-field option:selected[value="' + this + '"]').length > 0
           || $('.mapped-field option:selected[value^="' + this + ':"]').length > 0;
@@ -809,6 +834,12 @@ jQuery(document).ready(function($) {
         $(checkbox).addClass('fa-square');
       }
     });
+    if (messages.length) {
+      $('#required-messages').html(messages.join('<br/>'));
+      $('#required-messages').fadeIn();
+    } else {
+      $('#required-messages').fadeOut();
+    }
     $('input[type="submit"]').attr('disabled', $('.required-checkbox.fa-square:visible').length > 0);
   }
 
