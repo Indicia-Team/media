@@ -1184,21 +1184,23 @@
         url: indiciaData.esProxyAjaxUrl + '/attrs/' + indiciaData.nid,
         data: { occurrence_id: doc.id },
         success: function success(response) {
+          let email = '';
           $.each(response, function eachHeading(title, attrs) {
             if (title === 'Recorder attributes') {
               $.each(attrs, function eachAttr() {
                 if (this.caption.toLowerCase() === 'email') {
-                  callback(this.value);
+                  email = this.value;
+                  // Stop looking through attributes.
                   return false;
                 }
                 return true;
               });
+              // Stop looking through headings.
               return false;
             }
             return true;
           });
-          // No email address in the attributes.
-          callback('');
+          callback(email);
         }
       });
     } else {
