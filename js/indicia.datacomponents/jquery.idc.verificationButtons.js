@@ -290,7 +290,7 @@
         $(listOutputControl).find('.multi-mode-table.active').removeClass('active');
         $(listOutputControl).find('.multi-mode-selected').addClass('active');
         // Table can be emptied.
-        $(listOutputControl).find('[data-row-id').remove();
+        $(listOutputControl).find('[data-row-id]').remove();
         $(listOutputControl).find('.showing').html('No hits');
       }
     ).always(function cleanup() {
@@ -936,7 +936,7 @@
         $(listOutputControl).find('.multi-mode-table.active').removeClass('active');
         $(listOutputControl).find('.multi-mode-selected').addClass('active');
         // Table can be emptied.
-        $(listOutputControl).find('[data-row-id').remove();
+        $(listOutputControl).find('[data-row-id]').remove();
         $(listOutputControl).find('.showing').html('No hits');
       }
     ).always(function cleanup() {
