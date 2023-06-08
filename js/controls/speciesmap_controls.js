@@ -29,6 +29,11 @@ var control_speciesmap_addcontrols;
     // Therefore every time a feature is added or removed, all the features
     // must be removed and then added again to the clustered layer.
     var ftrsSubSampleLayer = [];
+    var resetSubSampleFeatures = function() {
+      indiciaData.SubSampleLayer.removeAllFeatures();
+      indiciaData.SubSampleLayer.addFeatures(ftrsSubSampleLayer);
+      setClusteringOn(true);
+    };
     var addSubSampleFtr = function(ftr) {
       ftrsSubSampleLayer.push(ftr);
       indiciaData.SubSampleLayer.removeAllFeatures();
@@ -155,9 +160,11 @@ var control_speciesmap_addcontrols;
       });
       $('#' + indiciaData.control_speciesmap_opts.id + '-cluster').append($cancel);
       // Buttons for sub-sample select
-      a1.feature.cluster.forEach(function(f){
-        var $input = $('<input type="button" value="' + getSubSampleLabel(f, "; ") + '"/><br/>');
-        $input.click(function(){
+      let sampleIndex = 1;
+      a1.feature.cluster.forEach(function(f) {
+        const input = $('<input type="button" class="' + indiciaData.templates.buttonDefaultClass + '" value="Select sample ' + sampleIndex + '"/><br/>');
+        const infoPanel = $('<div>').append(getSubSampleLabel(f, "<br/>", true));
+        input.click(function(){
           $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(currentMsg);
           if (indiciaData.control_speciesmap_mode === 'Modify') {
             switchToSubSampleForm();
@@ -166,7 +173,8 @@ var control_speciesmap_addcontrols;
           }
           clusterFeatureSelected(f.id);
         });
-        $('#' + indiciaData.control_speciesmap_opts.id + '-cluster').append($input);
+        $('#' + indiciaData.control_speciesmap_opts.id + '-cluster').append($('<div class="panel">').append(input).append(infoPanel));
+        sampleIndex++;
       });
       // Clustering must be turned of for feature move etc
       setClusteringOn(false);
@@ -197,8 +205,7 @@ var control_speciesmap_addcontrols;
       indiciaData.control_speciesmap_new_feature.attributes.count = indiciaData.control_speciesmap_existing_feature.attributes.count;
       indiciaData.control_speciesmap_new_feature.attributes.sRef = $('#imp-sref').val();
       indiciaData.control_speciesmap_new_feature.style = null; // needed so picks up style from new layer, including label
-      removeSubSampleFtr(indiciaData.control_speciesmap_existing_feature);
-      addSubSampleFtr(indiciaData.control_speciesmap_new_feature);
+      resetSubSampleFeatures();
       fillInMainSref();
       block.find('[name$="\:entered_sref"]').val($('#imp-sref').val());
       block.find('[name$="\:geom"]').val($('#imp-geom').val());
@@ -250,7 +257,11 @@ var control_speciesmap_addcontrols;
       if (typeof indiciaData.control_speciesmap_opts.sampleMethodId !== "undefined" && indiciaData.control_speciesmap_opts.sampleMethodId !== '') {
         $('<input type="hidden" name="sc:' + indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id] + '::sample:sample_method_id" value="' + indiciaData.control_speciesmap_opts.sampleMethodId + '" />')
           .appendTo(subsampleBlock);
-        sampleControlsDiv = $('#' + indiciaData.control_speciesmap_opts.id + '-subsample-ctrls').clone(true, true).appendTo(subsampleBlock).show();
+        sampleControlsDiv = $('#' + indiciaData.control_speciesmap_opts.id + '-subsample-ctrls')
+          .clone(true, true)
+          .appendTo(subsampleBlock)
+          .show()
+          .removeAttr('id');
         // correct the IDs on the cloned block of sample controls
         $.each(sampleControlsDiv.find('*'), function(idx, elem) {
           if ($(elem).attr('id')) {
@@ -267,13 +278,17 @@ var control_speciesmap_addcontrols;
       }
     };
     var featureAdded = function (a1) { // on editLayer
-      if (a1.feature.attributes.type !== 'clickPoint' ) { return true; }
-      indiciaData.control_speciesmap_new_feature = a1.feature.clone();
+      if (a1.feature.attributes.type !== 'clickPoint' ) {
+        return true;
+      }
       switch (indiciaData.control_speciesmap_mode) {
         case 'Add':
+          indiciaData.control_speciesmap_new_feature = a1.feature.clone();
           doAddSref();
           break;
         case 'Move':
+          indiciaData.control_speciesmap_existing_feature.geometry = a1.feature.geometry.clone()
+          indiciaData.control_speciesmap_new_feature = indiciaData.control_speciesmap_existing_feature;
           endMove();
           break;
       }
@@ -556,22 +571,58 @@ var control_speciesmap_addcontrols;
       finishButtonId: 'speciesmap_finishbutton_control',
       messageId: 'speciesmap_controls_messages',
       messageClasses: '',
-      animationDuration: 1000
+      animationDuration: 1000,
+      sampleMapLabelContents: indiciaData.speciesInLabel ? ['speciesName', 'gridRef'] : ['recordsCount', 'gridRef'],
+      sampleClusterButtonContents: indiciaData.speciesInLabel ? ['speciesName', 'gridRef'] : ['recordsCount', 'gridRef']
     };
-    var getSubSampleLabel = function(feature, separator) {
-      if (indiciaData.speciesInLabel) {
-        var $rowsToShow = $("[name$='\:sampleIDX']").filter('[value=' + feature.attributes.subSampleIndex + ']').closest('tr');
-        var $cell = $rowsToShow.find('.scTaxonCell');
-        var commonName = $($cell[0]).find('.taxon-name').text();
-        var scientificName = $($cell[0]).find('em').text();
-        labelSpecies = commonName ? commonName : scientificName;
-        if (feature.attributes.count > 1) {
-          var labelSpecies = labelSpecies + " +" + (feature.attributes.count-1);
+    var getSubSampleLabel = function(feature, separator, clusterButton) {
+      let labelContents = [];
+      // Cluster button can optionally have different contents to the map label.
+      const contentItems = clusterButton ? opts.sampleClusterButtonContents : opts.sampleMapLabelContents;
+      $.each(contentItems, function(idx, item) {
+        const tokens = item.split('|');
+        switch(tokens[0]) {
+          case 'recordsCount':
+            labelContents.push('Records: ' + feature.attributes.count);
+            break;
+
+          case 'speciesName':
+            let labelSpecies;
+            var $rowsToShow = $("[name$='\:sampleIDX']").filter('[value=' + feature.attributes.subSampleIndex + ']').closest('tr');
+            var $cell = $rowsToShow.find('.scTaxonCell');
+            var commonName = $($cell[0]).find('.taxon-name').text();
+            var scientificName = $($cell[0]).find('em').text();
+            labelSpecies = commonName ? commonName : scientificName;
+            if (feature.attributes.count > 1) {
+              labelSpecies = labelSpecies + " +" + (feature.attributes.count-1);
+            }
+            labelContents.push('Species: ' + labelSpecies);
+            break;
+
+          case 'gridRef':
+            labelContents.push('Grid: ' + feature.attributes.sRef);
+            break;
+
+          default:
+            // Look for sample custom attributes.
+            const matches = [...tokens[0].matchAll(/smpAttr:(\d*)$/g)];
+            if (matches.length > 0) {
+              $.each($('#scm-' + feature.attributes.subSampleIndex + '-block .subsample-ctrl-cntr').find(':input'), function() {
+                if ($(this).attr('id').match(new RegExp('smpAttr:' + matches[0][1] + '$'))) {
+                  if ($(this).is('select')) {
+                    labelContents.push(tokens[1] + ': '  + $(this).find('option:selected').text());
+                  } else {
+                    labelContents.push(tokens[1] + ': '  + $(this).val());
+                  }
+                }
+              });
+
+            } else {
+              labelContents.push('Unknown label item: ' + this);
+            }
         }
-      } else {
-        var labelSpecies = 'Species: ' + feature.attributes.count;
-      }
-      return 'Grid: ' + feature.attributes.sRef + separator + labelSpecies;
+      });
+      return labelContents.join(separator);
     }
     var opts;
     var container;
@@ -612,7 +663,7 @@ var control_speciesmap_addcontrols;
           context: {
             getLabel: function(feature) {
               if (feature.attributes.sRef) {
-                return getSubSampleLabel(feature, "\n");
+                return getSubSampleLabel(feature, "\n", false);
               } else {
                 return 'Cluster of ' + feature.attributes.count;
               }
@@ -677,11 +728,10 @@ var control_speciesmap_addcontrols;
           var feature = (indiciaData.control_speciesmap_mode === 'Add' ?
               indiciaData.control_speciesmap_new_feature : indiciaData.control_speciesmap_existing_feature);
           // need to remove then re-add feature to rebuild label
-          removeSubSampleFtr(feature);
           feature.attributes.count = $('[name$="\:sampleIDX"]')
               .filter('[value=' + feature.attributes.subSampleIndex + ']').closest('tr').not('.scClonableRow').length;
           feature.style = null;
-          addSubSampleFtr(feature);
+          resetSubSampleFeatures();
         };
         window.hook_species_checklist_delete_row.push(rebuildFeatureLabel);
         window.hook_species_checklist_delete_row.push(showHideClonableRow);
