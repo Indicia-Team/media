@@ -544,7 +544,7 @@ var addMediaRowOnClick;
     indiciaData['gridCounter-' + gridId]++;
     return ctrl;
   };
-  
+
   // Track the species list used against each grid if multiple grids
   var gridLookupLists = {};
   indiciaFns.addRowToGrid = function (gridId, lookupListId) {
@@ -700,7 +700,9 @@ var addMediaRowOnClick;
       maxUploadSize: '4000000', // 4mb
       container: ctrlId,
       autopick: true,
-      mediaTypes: mediaTypes
+      mediaTypes: mediaTypes,
+      resizeWidth: 1500,
+      resizeHeight: 1500
     };
     // Merge opts with evt.data (added so that fileClassifier.js can trigger
     // this function with additional options rather than duplicate it.)
@@ -716,7 +718,7 @@ var addMediaRowOnClick;
     if (typeof file_boxTemplate!=='undefined') { opts.file_boxTemplate=file_boxTemplate; }
     if (typeof file_box_initial_file_infoTemplate!=='undefined') { opts.file_box_initial_file_infoTemplate=file_box_initial_file_infoTemplate; }
     if (typeof file_box_uploaded_imageTemplate!=='undefined') { opts.file_box_uploaded_imageTemplate=file_box_uploaded_imageTemplate; }
-    imageRow.find('div').uploader(opts);
+    imageRow.find('div.file-box').uploader(opts);
     $(evt.target).hide();
   }
 
