@@ -186,6 +186,33 @@ var control_speciesmap_addcontrols;
       // Hide tab navigation buttons as they are confusing in this state.
       $('.wizard-buttons').hide();
     };
+    var enableImageUploader = function(el, gridIdx) {
+      $(el).uploader({
+        addBtnCaption: indiciaData.uploadSettings.addBtnCaption,
+        autopick: true,
+        autoupload: '1',
+        caption: indiciaData.uploadSettings.caption,
+        container: el,
+        destinationFolder: indiciaData.uploadSettings.destinationFolder,
+        imagewidth: 250,
+        jsPath: indiciaData.uploadSettings.jsPath,
+        maxUploadSize: 4000000,
+        mediaTypes: indiciaData.uploadSettings.mediaTypes,
+        msgDelete: indiciaData.uploadSettings.msgDelete,
+        msgFile: indiciaData.uploadSettings.msgFile,
+        msgFileTooBig: 'The image file cannot be uploaded because it is larger than the maximum file size allowed.',
+        msgLink: indiciaData.uploadSettings.msgLink,
+        msgNewImage: indiciaData.uploadSettings.msgNewImage,
+        msgPhoto: indiciaData.uploadSettings.msgPhoto,
+        msgUploadError: 'An error occurred uploading the file.',
+        relativeImageFolder: indiciaData.uploadSettings.relativeImageFolder,
+        resizeHeight: opts.resizeHeight ? opts.resizeHeight : 1500,
+        resizeWidth: opts.resizeWidth ? opts.resizeWidth : 1500,
+        runtimes: 'html5,flash,silverlight,html4',
+        table: 'sc:' + gridIdx + '::sample_medium',
+        uploadScript: indiciaData.uploadSettings.uploadScript
+      });
+    };
     var beginMove = function () {
       var div = $(indiciaData.control_speciesmap_opts.mapDiv)[0];
       indiciaData.control_speciesmap_selectFeatureControl.deactivate();
@@ -262,11 +289,15 @@ var control_speciesmap_addcontrols;
           .appendTo(subsampleBlock)
           .show()
           .removeAttr('id');
-        // correct the IDs on the cloned block of sample controls
+        // Correct the IDs on the cloned block of sample controls
         $.each(sampleControlsDiv.find('*'), function(idx, elem) {
           if ($(elem).attr('id')) {
             $(elem).attr('id', $(elem).attr('id').replace(/^sc:n::/, 'sc:' + gridIdx + '::'));
             $(elem).attr('id', $(elem).attr('id').replace(/sc-n--/, 'sc-' + gridIdx + '--'));
+            // Also do the sample photos container.
+            if (opts.samplePhotos) {
+              $(elem).attr('id', $(elem).attr('id').replace(/-sc:n::/, '-sc:' + gridIdx + '::'));
+            }
           }
           if ($(elem).attr('name')) {
             $(elem).attr('name', $(elem).attr('name').replace(/^sc:n::/, 'sc:' + gridIdx + '::'));
@@ -275,6 +306,11 @@ var control_speciesmap_addcontrols;
             $(elem).attr('for', $(elem).attr('for').replace(/^sc:n::/, 'sc:' + gridIdx + '::'));
           }
         });
+        if (opts.samplePhotos) {
+          const photoCtrlId = 'container-sample_medium-' + gridIdx;
+          const photoCtrlCntr = $('<div id="' + photoCtrlId + '">').appendTo(sampleControlsDiv);
+          enableImageUploader(photoCtrlCntr, gridIdx);
+        }
       }
     };
     var featureAdded = function (a1) { // on editLayer
@@ -454,7 +490,6 @@ var control_speciesmap_addcontrols;
       // Switches off add button functionality - note this equivalent of 'Finishing'
       div.map.editLayer.clickControl.deactivate();
       destroyAllFeatures(div.map.editLayer, 'clickPoint');
-      $('#imp-sref,#imp-geom').val('');
       switchToOverviewMap();
       $('#' + indiciaData.control_speciesmap_opts.id + '-container').removeClass('new')
       showButtons(['add', 'mod', 'move', 'del']);
@@ -479,7 +514,6 @@ var control_speciesmap_addcontrols;
           indiciaData.control_speciesmap_selectFeatureControl.activate();
           break;
       }
-      $('#imp-sref,#imp-geom').val('');
       // don't fire map events on the sref hidden control, otherwise the map zooms in
       $('#imp-sref').unbind('change');
       indiciaData.control_speciesmap_mode = mode;
