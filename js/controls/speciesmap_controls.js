@@ -188,10 +188,10 @@ var control_speciesmap_addcontrols;
     };
     var enableImageUploader = function(el, gridIdx) {
       $(el).uploader({
-        addBtnCaption: indiciaData.uploadSettings.addBtnCaption,
+        addBtnCaption: indiciaData.uploadSettings.addBtnCaptionSubsamples,
         autopick: true,
         autoupload: '1',
-        caption: indiciaData.uploadSettings.caption,
+        caption: indiciaData.uploadSettings.captionSubsamples,
         container: el,
         destinationFolder: indiciaData.uploadSettings.destinationFolder,
         imagewidth: 250,
