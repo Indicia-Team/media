@@ -616,7 +616,8 @@ jQuery(document).ready(function ($) {
           delete indiciaData.filter.def.date_from;
           delete indiciaData.filter.def.date_to;
           delete indiciaData.filter.def.date_age;
-          delete indiciaData.filter.def.date_age_op;
+          delete indiciaData.filter.def.date_year;
+          delete indiciaData.filter.def.date_year_op;
         }
       }
     },
