@@ -62,6 +62,76 @@
   };
 
   /**
+     * Zooms a card in to use the full width of the control, as an overlay.
+     *
+     * @param DOM card
+     *   Card to zoom.
+     */
+  function setCardToMaxSize(card) {
+    $(card).addClass('show-max-size');
+    // Load the full size images.
+    $.each($(card).find('img'), function() {
+      var anchor = $(this).closest('a');
+      if ($(anchor).attr('href') !== $(this).attr('src')) {
+        $(this).data('thumb-src', $(this).attr('src'));
+        $(this).attr('src', $(anchor).attr('href'));
+      }
+    });
+    // Move verification buttons onto the card.
+    if ($('.idc-verificationButtons').length > 0) {
+      $(card).find('.data-container').after($('.verification-buttons-cntr'));
+    }
+    // Show the navigation buttons.
+    $(card).find('.verification-buttons-cntr').append($('#card-nav-buttons'));
+    // Ensure card visible.
+    $(card)[0].scrollIntoView();
+  }
+
+  /**
+   * Undoes the max size of a card.
+   *
+   * @param DOM card
+   *   Card to unzoom.
+   */
+  function setCardToNormalSize(card) {
+    $(card).removeClass('show-max-size');
+    // Load the medium size images.
+    $.each($(card).find('img'), function() {
+      if ($(this).data('thumb-src')) {
+        $(this).attr('src', $(this).data('thumb-src'));
+      }
+    });
+  }
+
+  /**
+   * Max size mode handling.
+   *
+   * @param DOM el
+   *   Card gallery element.
+   * @param bool on
+   *   If true, then sets max size mode on. If false, then turns it off. If
+   *   not provided, then just returns the current state.
+   *
+   * @returns bool
+   *   True if in max size mode, else false.
+   */
+  function inMaxSizeMode(el, on) {
+    if (typeof on !== 'undefined') {
+      on ? $(el).addClass('max-size-mode') : $(el).removeClass('max-size-mode');
+      if (!on && $('.idc-verificationButtons').length > 0) {
+        // Move verification buttons back to original location.
+        $('.idc-verificationButtons').append($('.verification-buttons-cntr'));
+      }
+      if (!on) {
+        // Hide the nav buttons.
+        $('#card-nav-buttons-cntr').append($('#card-nav-buttons'));
+      }
+      indiciaFns.updateControlLayout();
+    }
+    return $(el).hasClass('max-size-mode');
+  }
+
+  /**
    * Register the various user interface event handlers.
    */
   function initHandlers(el) {
@@ -77,74 +147,6 @@
     var loadRowTimeout;
 
     /**
-     * Max size mode handling.
-     *
-     * @param bool on
-     *   If true, then sets max size mode on. If false, then turns it off. If
-     *   not provided, then just returns the current state.
-     *
-     * @returns bool
-     *   True if in max size mode, else false.
-     */
-    function inMaxSizeMode(on) {
-      if (typeof on !== 'undefined') {
-        on ? $(el).addClass('max-size-mode') : $(el).removeClass('max-size-mode');
-        if (!on && $('.idc-verificationButtons').length > 0) {
-          // Move verification buttons back to original location.
-          $('.idc-verificationButtons').append($('.verification-buttons-cntr'));
-        }
-        if (!on) {
-          // Hide the nav buttons.
-          $('#card-nav-buttons-cntr').append($('#card-nav-buttons'));
-        }
-        indiciaFns.updateControlLayout();
-      }
-      return $(el).hasClass('max-size-mode');
-    }
-
-    /**
-     * Zooms a card in to use the full width of the control, as an overlay.
-     *
-     * @param DOM card
-     *   Card to zoom.
-     */
-    function setCardToMaxSize(card) {
-      $(card).addClass('show-max-size');
-      // Load the full size images.
-      $.each($(card).find('img'), function() {
-        var anchor = $(this).closest('a');
-        if ($(anchor).attr('href') !== $(this).attr('src')) {
-          $(this).data('thumb-src', $(this).attr('src'));
-          $(this).attr('src', $(anchor).attr('href'));
-        }
-      });
-      // Move verification buttons onto the card.
-      if ($('.idc-verificationButtons').length > 0) {
-        $(card).find('.data-container').after($('.verification-buttons-cntr'));
-      }
-      // Show the navigation buttons.
-      $(card).find('.verification-buttons-cntr').append($('#card-nav-buttons'));
-      // Ensure card visible.
-      $(card)[0].scrollIntoView();
-    }
-
-    /**
-     * Undoes the max size of a card.
-     *
-     * @param DOM card
-     *   Card to unzoom.
-     */
-    function setCardToNormalSize(card) {
-      $(card).removeClass('show-max-size');
-      // Load the medium size images.
-      $.each($(card).find('img'), function() {
-        if ($(this).data('thumb-src')) {
-          $(this).attr('src', $(this).data('thumb-src'));
-        }
-      });
-    }
-
-    /**
      * Fire callbacks when a card has been selected.
      */
     function loadSelectedCard() {
@@ -155,7 +157,7 @@
           this(card);
         });
       }
-      if (inMaxSizeMode()) {
+      if (inMaxSizeMode(el)) {
         // Minimise cards that were max size but are no longer selected.
         $.each($(el).find('.card.show-max-size:not(.selected)'), function() {
           setCardToNormalSize(this);
@@ -193,7 +195,7 @@
         $(card).addClass('selected');
       }
       setCardToMaxSize(card);
-      inMaxSizeMode(true);
+      inMaxSizeMode(el, true);
       $.each(el.callbacks.itemDblClick, function eachCallback() {
         this(card);
       });
@@ -301,7 +303,7 @@
         } else if (e.key.match(/^Arrow/) && !$('.fancybox-image').length) {
           // Arrow key pressed when image popup not shown.
           // Only allow left/right when showing a card in max size mode.
-          if (!inMaxSizeMode() || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+          if (!inMaxSizeMode(el) || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
             handleArrowKeyNavigation(e.key, oldSelected);
           }
           e.preventDefault();
@@ -320,12 +322,12 @@
         }
         else if (e.key.toLowerCase() === 'c' || e.key === '+') {
           // c or + key toggles the current card zooming to full size of the control.
-          if (inMaxSizeMode()) {
+          if (inMaxSizeMode(el)) {
             setCardToNormalSize(oldSelected);
-            inMaxSizeMode(false);
+            inMaxSizeMode(el, false);
           } else {
             setCardToMaxSize(oldSelected);
-            inMaxSizeMode(true);
+            inMaxSizeMode(el, true);
           }
         }
       });
@@ -352,7 +354,7 @@
       indiciaFns.on('click', '.expand-card', {}, function() {
         const card = $(this).closest('.card');
         setCardToMaxSize(card);
-        inMaxSizeMode(true);
+        inMaxSizeMode(el, true);
       });
 
       /**
@@ -361,7 +363,7 @@
       indiciaFns.on('click', '.collapse-card', {}, function() {
         const card = $(this).closest('.card');
         setCardToNormalSize(card);
-        inMaxSizeMode(false);
+        inMaxSizeMode(el, false);
       });
 
       // Public function so it can be called from bindControls event handlers.
@@ -518,6 +520,17 @@
       var el = this;
       var dataList = response.hits.hits;
 
+      // If currently in max size mode, move the verification and nav buttons
+      // off the card so they don't get inadvertently removed.
+      if (inMaxSizeMode(el)) {
+        if ($('.idc-verificationButtons').length > 0) {
+          // Move verification buttons back to original location.
+          $('.idc-verificationButtons').append($('.verification-buttons-cntr'));
+        }
+        // Hide the nav buttons.
+        $('#card-nav-buttons-cntr').append($('#card-nav-buttons'));
+      }
+
       // Cleanup before repopulating.
       $(el).find('.card').remove();
 
@@ -583,6 +596,10 @@
         $('<button type="button" title="' + indiciaData.lang.cardGallery.collapseCard + '" class="collapse-card ' + indiciaData.templates.buttonDefaultClass + ' ' + indiciaData.templates.buttonSmallClass + '">' +
           '<i class="fas fa-compress-arrows-alt"></i></button>')
           .appendTo(card);
+        if (i === 0 && inMaxSizeMode(el)) {
+          setCardToMaxSize(card);
+          $(card).addClass('selected');
+        }
       });
       indiciaFns.updatePagingFooter(el, response, data, '.card');
       fireAfterPopulationCallbacks(el);
