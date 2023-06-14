@@ -1955,4 +1955,9 @@ progress.progress::-moz-progress-bar {
   border-radius: 4px;
 }
 
+.table {
+  width: 100%;
+  max-width: 100%;
+}
+
 /*# sourceMappingURL=theme-generic.css.map */
