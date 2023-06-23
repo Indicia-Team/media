@@ -845,7 +845,7 @@ var addMediaRowOnClick;
     var feature;
     var system = $('#' + indiciaData.mapdiv.settings.srefSystemId).val();
     // Find numeric index of row from control ID.
-    var rowUniqueIdx = e.currentTarget.id.match(/^sc:species-grid-\d+-(\d+)/)[1];
+    var rowUniqueIdx = e.currentTarget.id.match(/(\d+):\d*:occurrence:spatialref$/)[1];
     var existingFeature = indiciaData.mapdiv.map.editLayer.getFeatureById('subsample-' + rowUniqueIdx);
     if (existingFeature) {
       indiciaData.mapdiv.map.editLayer.removeFeatures([existingFeature]);
