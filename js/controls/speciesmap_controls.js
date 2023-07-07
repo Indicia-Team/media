@@ -244,12 +244,11 @@ var control_speciesmap_addcontrols;
     var doAddSref = function () {
       var div = $(indiciaData.control_speciesmap_opts.mapDiv)[0];
       var subsampleBlock;
-      var gridIdx;
       var sampleControlsDiv;
-      destroyAllFeatures(div.map.editLayer, 'clickPoint');
+      const gridIdx = indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id];
       indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id]++;
-      indiciaData.control_speciesmap_new_feature.attributes.subSampleIndex =
-        indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id];
+      destroyAllFeatures(div.map.editLayer, 'clickPoint');
+      indiciaData.control_speciesmap_new_feature.attributes.subSampleIndex = gridIdx;
       indiciaData.control_speciesmap_new_feature.attributes.sRef = $('#imp-sref').val();
       indiciaData.control_speciesmap_new_feature.attributes.count = 0;
       indiciaData.control_speciesmap_new_feature.style = null;
@@ -264,25 +263,23 @@ var control_speciesmap_addcontrols;
           $(field).val(indiciaData.control_speciesmap_new_feature.attributes.subSampleIndex);
         }
       );
-      subsampleBlock = $('<div class="new added scm-block" id="scm-' + indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id] + '-block"></div>')
+      subsampleBlock = $('<div class="new added scm-block" id="scm-' + gridIdx + '-block"></div>')
         .appendTo('#' + indiciaData.control_speciesmap_opts.id + '-blocks');
       $('<label>' + indiciaData.lang.speciesMap.SRefLabel + ':</label> ').appendTo(subsampleBlock);
-      $('<input type="text" name="sc:' + indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id] + '::sample:entered_sref" readonly="readonly" value="' + $('#imp-sref').val() + '" />')
+      $('<input type="text" name="sc:' + gridIdx + '::sample:entered_sref" readonly="readonly" value="' + $('#imp-sref').val() + '" />')
         .appendTo(subsampleBlock);
-      $('<input type="hidden" name="sc:' + indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id] + '::sample:geom" value="' + $('#imp-geom').val() + '" />')
+      $('<input type="hidden" name="sc:' + gridIdx + '::sample:geom" value="' + $('#imp-geom').val() + '" />')
         .appendTo(subsampleBlock);
       if (options.subSampleSampleMethodID) {
-        $('<input type="hidden" name="sc:' + indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id] +
-          '::sample:sample_method_id" value="' + options.subSampleSampleMethodID + '" />')
+        $('<input type="hidden" name="sc:' + gridIdx + '::sample:sample_method_id" value="' + options.subSampleSampleMethodID + '" />')
           .appendTo(subsampleBlock);
       }
       // new rows have no deleted field
       $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(indiciaData.lang.speciesMap.AddDataMessage);
       $('#' + indiciaData.control_speciesmap_opts.buttonsId).each(function () {window.scroll(0, $(this).offset().top); });
       showButtons(['cancel', 'finish']);
-      gridIdx = indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id];
       if (typeof indiciaData.control_speciesmap_opts.sampleMethodId !== "undefined" && indiciaData.control_speciesmap_opts.sampleMethodId !== '') {
-        $('<input type="hidden" name="sc:' + indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id] + '::sample:sample_method_id" value="' + indiciaData.control_speciesmap_opts.sampleMethodId + '" />')
+        $('<input type="hidden" name="sc:' + gridIdx + '::sample:sample_method_id" value="' + indiciaData.control_speciesmap_opts.sampleMethodId + '" />')
           .appendTo(subsampleBlock);
         sampleControlsDiv = $('#' + indiciaData.control_speciesmap_opts.id + '-subsample-ctrls')
           .clone(true, true)
