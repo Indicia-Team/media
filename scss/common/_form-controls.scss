@@ -99,6 +99,13 @@ table.species-grid {
     vertical-align: middle;
     padding: 3px 0;
   }
+  /* Tweak layout of extra row controls shown when using responsive Footable columns */
+  .footable-row-detail-value {
+    padding: 8px 0;
+  }
+  .footable-row-detail-name {
+      padding-left: 0.5em;
+  }
 }
 
 #new-taxon-form {

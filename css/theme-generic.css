@@ -43,6 +43,7 @@
 table.species-grid {
   width: 100%;
   /* Inside control button alignment. */
+  /* Tweak layout of extra row controls shown when using responsive Footable columns */
 }
 table.species-grid th button {
   padding: 0;
@@ -100,6 +101,12 @@ table.species-grid tr td input, table.species-grid tr td select {
   margin: 0;
   vertical-align: middle;
   padding: 3px 0;
+}
+table.species-grid .footable-row-detail-value {
+  padding: 8px 0;
+}
+table.species-grid .footable-row-detail-name {
+  padding-left: 0.5em;
 }
 
 #new-taxon-form {
