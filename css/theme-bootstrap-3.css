@@ -1131,10 +1131,6 @@ table.es-data-grid tfoot button span {
 .multiselect-mode .multi-only button {
   margin: 0;
 }
-.multiselect-mode .multi-only button.active {
-  background: #cde;
-  border: #999;
-}
 .multiselect-mode .single-only {
   display: none;
 }
