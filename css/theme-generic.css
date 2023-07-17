@@ -780,6 +780,14 @@ body > .loading-spinner {
   /* Consistent height independent of border settings. */
   height: 18px;
 }
+.idc-cardGallery .es-card-gallery .card .multiselect-cntr {
+  position: absolute;
+  top: 6px;
+  right: 12px;
+}
+.idc-cardGallery .es-card-gallery .card .multiselect-cntr .multiselect {
+  transform: scale(1.4);
+}
 @media (min-width: 801px) {
   .idc-cardGallery .es-card-gallery .card:not(.show-max-size) {
     flex-basis: 48%;
@@ -972,7 +980,7 @@ table.es-data-grid.fixed-header thead, table.es-data-grid.fixed-header tbody tr 
   /* even columns width , fix width of table too*/
   table-layout: fixed;
 }
-table.es-data-grid.fixed-header .multiselect-cell {
+table.es-data-grid.fixed-header .multiselect-cntr {
   padding: 0;
   width: 12px;
 }
@@ -1125,6 +1133,9 @@ table.es-data-grid tfoot button span {
   margin-bottom: 8px;
 }
 
+.multiselect-mode .multiselect-switch {
+  color: black;
+}
 .multiselect-mode .multi-only {
   display: initial;
 }

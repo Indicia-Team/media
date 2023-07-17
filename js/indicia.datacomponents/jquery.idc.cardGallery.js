@@ -392,6 +392,23 @@
     });
 
     /**
+     * Multi-select switch toggle handler.
+     */
+    $(el).find('.multiselect-switch').click(function clickMultiselectSwitch(e) {
+      if ($(el).hasClass('multiselect-mode')) {
+        $(el).removeClass('multiselect-mode');
+        $(el).find('.multiselect-cntr').remove();
+        $('.selection-buttons-placeholder').append($('.all-selected-buttons'));
+      } else {
+        $(el).addClass('multiselect-mode');
+        $(el).find('.card').prepend('<div class="multiselect-cntr"><input type="checkbox" title="' + indiciaData.lang.cardGallery.checkToIncludeInList + '" class="multiselect" /></div>');
+        $(el).prepend(
+          $('.all-selected-buttons')
+        );
+      }
+    });
+
+    /**
      * Fullscreen tool.
      */
     $(el).find('.fullscreen-tool').click(function settingsIconClick() {
@@ -480,7 +497,10 @@
       if (el.settings.includePager) {
         $('<div class="footer">' + indiciaFns.getFooterControls(el) + '</div>').appendTo(el);
       }
-
+      // Add tool icons for full screen and multiselect mode.
+      if (el.settings.includeMultiSelectTool) {
+        tools.push('<span title="Enable multiple selection mode" class="fas fa-list multiselect-switch"></span>');
+      }
       if (el.settings.includeFullScreenTool &&
         (document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled)) {
         tools.push('<span class="far fa-window-maximize fullscreen-tool" title="' + indiciaData.lang.cardGallery.fullScreenToolHint + '"></span>');
@@ -546,6 +566,10 @@
         var imageContainer;
         var dataContainer;
         var value;
+        // Add multiselect checkbox if required.
+        if ($(el).hasClass('multiselect-mode')) {
+          $(card).prepend('<div class="multiselect-cntr"><input type="checkbox" title="' + indiciaData.lang.cardGallery.checkToIncludeInList + '" class="multiselect" /></div>');
+        }
         // For keyboard navigation, need to enable row focus.
         if (el.settings.keyboardNavigation) {
           $(card).attr('tabindex', i);
