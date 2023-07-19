@@ -552,8 +552,10 @@ var addMediaRowOnClick;
       gridLookupLists[gridId] = lookupListId;
     }
     makeSpareRow(gridId, lookupListId, false);
-    // Deal with user clicking on edit taxon icon
-    indiciaFns.on('click', '.edit-taxon-name', {}, function (e) {
+    // Deal with user clicking on edit taxon icon. Provide a different handler
+    // for each grid as they may have different lookupListId.
+    var editSelector = '#' + gridId + ' .edit-taxon-name';
+    indiciaFns.on('click', editSelector, {}, function (e) {
       var gridId = $(e.target).closest('table').attr('id');
       // Multiple grids might mean different species lists used for each grid
       if (gridLookupLists[gridId]) {
