@@ -45,14 +45,20 @@ var addMediaRowOnClick;
   var resetSpeciesText;
 
   function showExistingSubsamplesOnMap() {
-    var samples;
+    var samples = {};
     var parser;
     var feature;
-    if ($('#existingSampleGeomsBySref').length) {
+    if ($('.existingSampleGeomsBySref').length) {
       parser = new OpenLayers.Format.WKT();
-      samples = JSON.parse($('#existingSampleGeomsBySref').val());
+      // If there are multiple species grids on the page, combine all the lists
+      // of existing geoms.
+      $.each($('.existingSampleGeomsBySref'), function() {
+        samples = {...samples, ...JSON.parse($(this).val())};
+      });
+
       $.each($('.scSpatialRef:not([value=""])'), function (idx) {
-        feature = parser.read(samples[$(this).val().toUpperCase()]);
+        var sref = $(this).val().toUpperCase();
+        feature = parser.read(samples[sref]);
         feature.id = 'subsample-' + idx;
         feature.attributes.type = 'subsample';
         indiciaData.mapdiv.map.editLayer.addFeatures([feature]);
@@ -63,7 +69,7 @@ var addMediaRowOnClick;
   $(document).ready(function () {
     // prevent validation of the clonable row
     $('.scClonableRow :input').addClass('inactive');
-    if ($('#existingSampleGeomsBySref').length) {
+    if ($('.existingSampleGeomsBySref').length) {
       mapInitialisationHooks.push(showExistingSubsamplesOnMap);
     }
 
