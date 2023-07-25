@@ -1,5 +1,8 @@
-/* Theme extension to the default_site.css file which provides Bootstrap 3 optimised style output */
-/* Accessible colour ranges from colorbrewer */
+/* Theme extension to the default_site.css file which provides Bootstrap 3 optimised style output */ /* Accessible colour ranges from colorbrewer */
+.form-inline {
+  margin-bottom: 8px;
+}
+
 .input-group-addon > * {
   display: inline-block;
   vertical-align: middle;
