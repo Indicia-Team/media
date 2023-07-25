@@ -795,7 +795,7 @@ body > .loading-spinner {
   .idc-cardGallery .es-card-gallery .card:not(.show-max-size) {
     flex-basis: 48%;
   }
-  .idc-cardGallery .es-card-gallery .card.big:not(.show-max-size) {
+  .idc-cardGallery .es-card-gallery .card:not(.show-max-size).big, .idc-cardGallery .es-card-gallery .card:not(.show-max-size).x-big {
     flex-basis: 98%;
   }
 }
@@ -803,16 +803,22 @@ body > .loading-spinner {
   .idc-cardGallery .es-card-gallery .card:not(.show-max-size) {
     flex-basis: 31%;
   }
-  .idc-cardGallery .es-card-gallery .card.big:not(.show-max-size) {
+  .idc-cardGallery .es-card-gallery .card:not(.show-max-size).big {
     flex-basis: 48%;
+  }
+  .idc-cardGallery .es-card-gallery .card:not(.show-max-size).x-big {
+    flex-basis: 98%;
   }
 }
 @media (min-width: 1601px) {
   .idc-cardGallery .es-card-gallery .card:not(.show-max-size) {
     flex-basis: 23%;
   }
-  .idc-cardGallery .es-card-gallery .card.big:not(.show-max-size) {
+  .idc-cardGallery .es-card-gallery .card:not(.show-max-size).big {
     flex-basis: 48%;
+  }
+  .idc-cardGallery .es-card-gallery .card:not(.show-max-size).x-big {
+    flex-basis: 98%;
   }
 }
 .idc-cardGallery .pager {

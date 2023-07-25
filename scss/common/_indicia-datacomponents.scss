@@ -215,25 +215,31 @@ body {
     @media (min-width: 801px) {
       .card:not(.show-max-size) {
         flex-basis: 48%;
-      }
-      .card.big:not(.show-max-size) {
-        flex-basis: 98%;
+        &.big, &.x-big {
+          flex-basis: 98%;
+        }
       }
     }
     @media (min-width: 1201px) {
       .card:not(.show-max-size) {
         flex-basis: 31%;
-      }
-      .card.big:not(.show-max-size) {
-        flex-basis: 48%;
+        &.big {
+          flex-basis: 48%;
+        }
+        &.x-big {
+          flex-basis: 98%;
+        }
       }
     }
     @media (min-width: 1601px) {
       .card:not(.show-max-size) {
         flex-basis: 23%;
-      }
-      .card.big:not(.show-max-size) {
-        flex-basis: 48%;
+        &.big {
+          flex-basis: 48%;
+        }
+        &.x-big {
+          flex-basis: 98%;
+        }
       }
     }
   }

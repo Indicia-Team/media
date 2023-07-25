@@ -576,8 +576,11 @@
         }
         if (doc.occurrence.media) {
           imageContainer = $('<div>').addClass('image-container').appendTo(card);
-          if (doc.occurrence.media.length > 1) {
-            // More than one photo needs a bigger card.
+          if (doc.occurrence.media.length > 2) {
+            // More than two photo needs a very large card.
+            classes.push('x-big');
+          } else if (doc.occurrence.media.length > 1) {
+            // More than one photo needs a large card.
             classes.push('big');
           }
           $.each(doc.occurrence.media, function() {
