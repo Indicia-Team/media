@@ -1068,6 +1068,8 @@
     var overallStatus = status.status ? status.status : status.query;
     var todoListInfo;
     var totalAsText;
+    var doc;
+    var request;
     // Form reset.
     if (!el.settings.lastCommentStatus || (el.settings.lastCommentStatus !== overallStatus)) {
       resetCommentForm('verification-form', '');
@@ -1092,10 +1094,24 @@
       heading = status.status
         ? 'Set status to <span class="status">' + indiciaData.statusMsgs[overallStatus].toLowerCase() + '</span>'
         : 'Query this record';
-      $('#verification-form .multiple-warning').hide();
+      $('#verification-form .multiple-warning').html('<i class="fas fa-exclamation-triangle"></i>').hide();
       if ($(el).find('.apply-to-parent-sample-contents:enabled').hasClass('active')) {
         // Accept all of this taxon in same parent sample is enabled, so warn.
-        $('#verification-form .multiple-in-parent-sample-warning').show();
+        // We need a count of affected records for the warning.
+        doc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
+        request = indiciaData.warehouseUrl + 'index.php/services/report/requestReport' +
+          '?mode=json' +
+          '&nonce=' + indiciaData.read.nonce +
+          '&auth_token=' + indiciaData.read.auth_token +
+          '&report=reports_for_prebuilt_forms/elasticsearch_verification/count_occurrences_in_parent_sample.xml' +
+          '&parent_sample_id=' + doc.event.parent_event_id +
+          '&wantRecords=0&wantCount=1' +
+          '&reportSource=local&callback=?';
+        $.getJSON(request).done(function(data) {
+          $('#verification-form .multiple-in-parent-sample-warning')
+            .html('<i class="fas fa-exclamation-triangle"></i> ' + indiciaData.lang.verificationButtons.updatingMultipleInParentSampleWarning.replace('{1}', data.count))
+            .show();
+        });
       } else {
         $('#verification-form .multiple-in-parent-sample-warning').hide();
       }

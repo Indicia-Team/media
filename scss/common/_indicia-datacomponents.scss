@@ -203,6 +203,14 @@ body {
           height: 18px;
         }
       }
+      .multiselect-cntr {
+        position: absolute;
+        top: 6px;
+        right: 12px;
+        .multiselect {
+          transform: scale(1.4);
+        }
+      }
     }
     @media (min-width: 801px) {
       .card:not(.show-max-size) {
@@ -359,7 +367,7 @@ table.es-data-grid {
       /* even columns width , fix width of table too*/
       table-layout: fixed;
     }
-    .multiselect-cell {
+    .multiselect-cntr {
       padding: 0;
       width: 12px;
     }
@@ -503,14 +511,13 @@ table.es-data-grid {
 }
 
 .multiselect-mode {
+  .multiselect-switch {
+    color: black;
+  }
   .multi-only {
     display: initial;
     button {
       margin: 0;
-      &.active {
-        background: #cde;
-        border: #999;
-      }
     }
   }
   .single-only {

@@ -186,6 +186,33 @@ var control_speciesmap_addcontrols;
       // Hide tab navigation buttons as they are confusing in this state.
       $('.wizard-buttons').hide();
     };
+    var enableImageUploader = function(el, gridIdx) {
+      $(el).uploader({
+        addBtnCaption: indiciaData.uploadSettings.addBtnCaptionSubsamples,
+        autopick: true,
+        autoupload: '1',
+        caption: indiciaData.uploadSettings.captionSubsamples,
+        container: el,
+        destinationFolder: indiciaData.uploadSettings.destinationFolder,
+        imagewidth: 250,
+        jsPath: indiciaData.uploadSettings.jsPath,
+        maxUploadSize: 4000000,
+        mediaTypes: indiciaData.uploadSettings.mediaTypes,
+        msgDelete: indiciaData.uploadSettings.msgDelete,
+        msgFile: indiciaData.uploadSettings.msgFile,
+        msgFileTooBig: 'The image file cannot be uploaded because it is larger than the maximum file size allowed.',
+        msgLink: indiciaData.uploadSettings.msgLink,
+        msgNewImage: indiciaData.uploadSettings.msgNewImage,
+        msgPhoto: indiciaData.uploadSettings.msgPhoto,
+        msgUploadError: 'An error occurred uploading the file.',
+        relativeImageFolder: indiciaData.uploadSettings.relativeImageFolder,
+        resizeHeight: opts.resizeHeight ? opts.resizeHeight : 1500,
+        resizeWidth: opts.resizeWidth ? opts.resizeWidth : 1500,
+        runtimes: 'html5,flash,silverlight,html4',
+        table: 'sc:' + gridIdx + '::sample_medium',
+        uploadScript: indiciaData.uploadSettings.uploadScript
+      });
+    };
     var beginMove = function () {
       var div = $(indiciaData.control_speciesmap_opts.mapDiv)[0];
       indiciaData.control_speciesmap_selectFeatureControl.deactivate();
@@ -217,12 +244,11 @@ var control_speciesmap_addcontrols;
     var doAddSref = function () {
       var div = $(indiciaData.control_speciesmap_opts.mapDiv)[0];
       var subsampleBlock;
-      var gridIdx;
       var sampleControlsDiv;
-      destroyAllFeatures(div.map.editLayer, 'clickPoint');
+      const gridIdx = indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id];
       indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id]++;
-      indiciaData.control_speciesmap_new_feature.attributes.subSampleIndex =
-        indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id];
+      destroyAllFeatures(div.map.editLayer, 'clickPoint');
+      indiciaData.control_speciesmap_new_feature.attributes.subSampleIndex = gridIdx;
       indiciaData.control_speciesmap_new_feature.attributes.sRef = $('#imp-sref').val();
       indiciaData.control_speciesmap_new_feature.attributes.count = 0;
       indiciaData.control_speciesmap_new_feature.style = null;
@@ -237,36 +263,38 @@ var control_speciesmap_addcontrols;
           $(field).val(indiciaData.control_speciesmap_new_feature.attributes.subSampleIndex);
         }
       );
-      subsampleBlock = $('<div class="new added scm-block" id="scm-' + indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id] + '-block"></div>')
+      subsampleBlock = $('<div class="new added scm-block" id="scm-' + gridIdx + '-block"></div>')
         .appendTo('#' + indiciaData.control_speciesmap_opts.id + '-blocks');
       $('<label>' + indiciaData.lang.speciesMap.SRefLabel + ':</label> ').appendTo(subsampleBlock);
-      $('<input type="text" name="sc:' + indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id] + '::sample:entered_sref" readonly="readonly" value="' + $('#imp-sref').val() + '" />')
+      $('<input type="text" name="sc:' + gridIdx + '::sample:entered_sref" readonly="readonly" value="' + $('#imp-sref').val() + '" />')
         .appendTo(subsampleBlock);
-      $('<input type="hidden" name="sc:' + indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id] + '::sample:geom" value="' + $('#imp-geom').val() + '" />')
+      $('<input type="hidden" name="sc:' + gridIdx + '::sample:geom" value="' + $('#imp-geom').val() + '" />')
         .appendTo(subsampleBlock);
       if (options.subSampleSampleMethodID) {
-        $('<input type="hidden" name="sc:' + indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id] +
-          '::sample:sample_method_id" value="' + options.subSampleSampleMethodID + '" />')
+        $('<input type="hidden" name="sc:' + gridIdx + '::sample:sample_method_id" value="' + options.subSampleSampleMethodID + '" />')
           .appendTo(subsampleBlock);
       }
       // new rows have no deleted field
       $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(indiciaData.lang.speciesMap.AddDataMessage);
       $('#' + indiciaData.control_speciesmap_opts.buttonsId).each(function () {window.scroll(0, $(this).offset().top); });
       showButtons(['cancel', 'finish']);
-      gridIdx = indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id];
       if (typeof indiciaData.control_speciesmap_opts.sampleMethodId !== "undefined" && indiciaData.control_speciesmap_opts.sampleMethodId !== '') {
-        $('<input type="hidden" name="sc:' + indiciaData['gridSampleCounter-' + indiciaData.control_speciesmap_opts.id] + '::sample:sample_method_id" value="' + indiciaData.control_speciesmap_opts.sampleMethodId + '" />')
+        $('<input type="hidden" name="sc:' + gridIdx + '::sample:sample_method_id" value="' + indiciaData.control_speciesmap_opts.sampleMethodId + '" />')
           .appendTo(subsampleBlock);
         sampleControlsDiv = $('#' + indiciaData.control_speciesmap_opts.id + '-subsample-ctrls')
           .clone(true, true)
           .appendTo(subsampleBlock)
           .show()
           .removeAttr('id');
-        // correct the IDs on the cloned block of sample controls
+        // Correct the IDs on the cloned block of sample controls
         $.each(sampleControlsDiv.find('*'), function(idx, elem) {
           if ($(elem).attr('id')) {
             $(elem).attr('id', $(elem).attr('id').replace(/^sc:n::/, 'sc:' + gridIdx + '::'));
             $(elem).attr('id', $(elem).attr('id').replace(/sc-n--/, 'sc-' + gridIdx + '--'));
+            // Also do the sample photos container.
+            if (opts.samplePhotos) {
+              $(elem).attr('id', $(elem).attr('id').replace(/-sc:n::/, '-sc:' + gridIdx + '::'));
+            }
           }
           if ($(elem).attr('name')) {
             $(elem).attr('name', $(elem).attr('name').replace(/^sc:n::/, 'sc:' + gridIdx + '::'));
@@ -275,6 +303,11 @@ var control_speciesmap_addcontrols;
             $(elem).attr('for', $(elem).attr('for').replace(/^sc:n::/, 'sc:' + gridIdx + '::'));
           }
         });
+        if (opts.samplePhotos) {
+          const photoCtrlId = 'container-sample_medium-' + gridIdx;
+          const photoCtrlCntr = $('<div id="' + photoCtrlId + '">').appendTo(sampleControlsDiv);
+          enableImageUploader(photoCtrlCntr, gridIdx);
+        }
       }
     };
     var featureAdded = function (a1) { // on editLayer
@@ -454,7 +487,6 @@ var control_speciesmap_addcontrols;
       // Switches off add button functionality - note this equivalent of 'Finishing'
       div.map.editLayer.clickControl.deactivate();
       destroyAllFeatures(div.map.editLayer, 'clickPoint');
-      $('#imp-sref,#imp-geom').val('');
       switchToOverviewMap();
       $('#' + indiciaData.control_speciesmap_opts.id + '-container').removeClass('new')
       showButtons(['add', 'mod', 'move', 'del']);
@@ -479,7 +511,6 @@ var control_speciesmap_addcontrols;
           indiciaData.control_speciesmap_selectFeatureControl.activate();
           break;
       }
-      $('#imp-sref,#imp-geom').val('');
       // don't fire map events on the sref hidden control, otherwise the map zooms in
       $('#imp-sref').unbind('change');
       indiciaData.control_speciesmap_mode = mode;

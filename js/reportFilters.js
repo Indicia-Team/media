@@ -233,19 +233,34 @@ jQuery(document).ready(function ($) {
     when: {
       getDescription: function (filterDef, sep) {
         var r = [];
-        var dateType = 'recorded';
+        var dateType = typeof filterDef.date_type === 'undefined' ? 'recorded' : filterDef.date_type;
         var dateFromField = 'date_from';
         var dateToField = 'date_to';
         var dateAgeField = 'date_age';
-        if (typeof filterDef.date_type !== 'undefined') {
-          dateType = filterDef.date_type;
-          if (dateType !== 'recorded') {
-            dateFromField = dateType + '_date_from';
-            dateToField = dateType + '_date_to';
-            dateAgeField = dateType + '_date_age';
+        if (filterDef.date_year_op && filterDef.date_year) {
+          if (filterDef.date_year_op === '=') {
+            dateFromField = 'date_year';
+            dateToField = 'date_year';
+          } else if (filterDef.date_year_op === '<=') {
+            // Disable the date from field.
+            dateFromField = 'not_used';
+            dateToField = 'date_year';
+          } else if (filterDef.date_year_op === '>=') {
+            dateFromField = 'date_year';
+            // Disable the date to field.
+            dateToField = 'not_used';
           }
         }
-        if (filterDef[dateFromField] && filterDef[dateToField]) {
+        if (dateType !== 'recorded') {
+          dateFromField = dateType + '_' + dateFromField;
+          dateToField = dateType + '_' + dateToField;
+          dateAgeField = dateType + '_' + dateAgeField;
+        }
+        if (filterDef[dateFromField] && filterDef[dateToField] && filterDef[dateFromField] === filterDef[dateToField]) {
+          // Correct grammar.
+          const inOrOn = filterDef.date_year_op && filterDef.date_year ? 'in' : 'on';
+          r.push('Records ' + dateType + ' ' + inOrOn + ' ' + filterDef[dateFromField]);
+        } else if (filterDef[dateFromField] && filterDef[dateToField]) {
           r.push('Records ' + dateType + ' between ' + filterDef[dateFromField] + ' and ' +
             filterDef[dateToField]);
         } else if (filterDef[dateFromField]) {
@@ -542,10 +557,10 @@ jQuery(document).ready(function ($) {
         if (typeof indiciaData.filter.def.date_type !== 'undefined' && indiciaData.filter.def.date_type !== 'recorded') {
           dateTypePrefix = indiciaData.filter.def.date_type + '_';
         }
-        if (context && (context.date_from || context.date_to || context.date_age ||
-          context.input_date_from || context.input_date_to || context.input_date_age ||
-          context.edited_date_from || context.edited_date_to || context.edited_date_age ||
-          context.verified_date_from || context.verified_date_to || context.verified_date_age)) {
+        if (context && (context.date_from || context.date_to || context.date_age || context.date_year ||
+          context.input_date_from || context.input_date_to || context.input_date_age || context.input_date_year ||
+          context.edited_date_from || context.edited_date_to || context.edited_date_age || context.edited_date_year ||
+          context.verified_date_from || context.verified_date_to || context.verified_date_age || context.verified_date_year)) {
           $('#controls-filter_when .context-instruct').show();
         }
         if (dateTypePrefix) {
@@ -559,6 +574,12 @@ jQuery(document).ready(function ($) {
           if (typeof indiciaData.filter.def[dateTypePrefix + 'date_age'] !== 'undefined') {
             $('#date_age').val(indiciaData.filter.def[dateTypePrefix + 'date_age']);
           }
+          if (typeof indiciaData.filter.def[dateTypePrefix + 'date_year'] !== 'undefined') {
+            $('#date_year').val(indiciaData.filter.def[dateTypePrefix + 'date_year']);
+          }
+          if (typeof indiciaData.filter.def[dateTypePrefix + 'date_year_op'] !== 'undefined') {
+            $('#date_year_op').val(indiciaData.filter.def[dateTypePrefix + 'date_year_op']);
+          }
         }
       },
       applyFormToDefinition: function () {
@@ -570,23 +591,33 @@ jQuery(document).ready(function ($) {
         delete indiciaData.filter.def.input_date_from;
         delete indiciaData.filter.def.input_date_to;
         delete indiciaData.filter.def.input_date_age;
+        delete indiciaData.filter.def.input_date_year;
+        delete indiciaData.filter.def.input_date_year_op;
         delete indiciaData.filter.def.edited_date_from;
         delete indiciaData.filter.def.edited_date_to;
         delete indiciaData.filter.def.edited_date_age;
+        delete indiciaData.filter.def.edited_date_year;
+        delete indiciaData.filter.def.edited_date_year_op;
         delete indiciaData.filter.def.verified_date_from;
         delete indiciaData.filter.def.verified_date_to;
         delete indiciaData.filter.def.verified_date_age;
+        delete indiciaData.filter.def.verified_date_year;
+        delete indiciaData.filter.def.verified_date_year_op;
         // if the date filter type needs a prefix on the parameter field names, then copy the values from the
         // date controls into the proper parameter field names
         if (dateTypePrefix) {
           indiciaData.filter.def[dateTypePrefix + 'date_from'] = indiciaData.filter.def.date_from;
           indiciaData.filter.def[dateTypePrefix + 'date_to'] = indiciaData.filter.def.date_to;
           indiciaData.filter.def[dateTypePrefix + 'date_age'] = indiciaData.filter.def.date_age;
+          indiciaData.filter.def[dateTypePrefix + 'date_year'] = indiciaData.filter.def.date_year;
+          indiciaData.filter.def[dateTypePrefix + 'date_year_op'] = indiciaData.filter.def.date_year_op;
           // the date control values must NOT apply to the field record date in this case - we are doing a different
           // type filter.
           delete indiciaData.filter.def.date_from;
           delete indiciaData.filter.def.date_to;
           delete indiciaData.filter.def.date_age;
+          delete indiciaData.filter.def.date_year;
+          delete indiciaData.filter.def.date_year_op;
         }
       }
     },
@@ -1511,6 +1542,16 @@ jQuery(document).ready(function ($) {
 
   $('.fb-close').click(function () {
     $.fancybox.close();
+  });
+
+  // Change the year date operation, fill in current year as default.
+  $('#date_year_op').change(function() {
+    if ($('#date_year_op option:selected').val() !== '' && $('#date_year').val() === '') {
+      $('#date_year').val(new Date().getFullYear());
+    } else if ($('#date_year_op option:selected').val() === '') {
+      // Blank the year if deselecting.
+      $('#date_year').val('');
+    }
   });
 
   // Select a named location - deactivate the drawFeature and hide modifyFeature controls.

@@ -46,6 +46,7 @@
 table.species-grid {
   width: 100%;
   /* Inside control button alignment. */
+  /* Tweak layout of extra row controls shown when using responsive Footable columns */
 }
 table.species-grid th button {
   padding: 0;
@@ -103,6 +104,12 @@ table.species-grid tr td input, table.species-grid tr td select {
   margin: 0;
   vertical-align: middle;
   padding: 3px 0;
+}
+table.species-grid .footable-row-detail-value {
+  padding: 8px 0;
+}
+table.species-grid .footable-row-detail-name {
+  padding-left: 0.5em;
 }
 
 #new-taxon-form {
@@ -776,6 +783,14 @@ body > .loading-spinner {
   /* Consistent height independent of border settings. */
   height: 18px;
 }
+.idc-cardGallery .es-card-gallery .card .multiselect-cntr {
+  position: absolute;
+  top: 6px;
+  right: 12px;
+}
+.idc-cardGallery .es-card-gallery .card .multiselect-cntr .multiselect {
+  transform: scale(1.4);
+}
 @media (min-width: 801px) {
   .idc-cardGallery .es-card-gallery .card:not(.show-max-size) {
     flex-basis: 48%;
@@ -968,7 +983,7 @@ table.es-data-grid.fixed-header thead, table.es-data-grid.fixed-header tbody tr 
   /* even columns width , fix width of table too*/
   table-layout: fixed;
 }
-table.es-data-grid.fixed-header .multiselect-cell {
+table.es-data-grid.fixed-header .multiselect-cntr {
   padding: 0;
   width: 12px;
 }
@@ -1121,15 +1136,14 @@ table.es-data-grid tfoot button span {
   margin-bottom: 8px;
 }
 
+.multiselect-mode .multiselect-switch {
+  color: black;
+}
 .multiselect-mode .multi-only {
   display: initial;
 }
 .multiselect-mode .multi-only button {
   margin: 0;
-}
-.multiselect-mode .multi-only button.active {
-  background: #cde;
-  border: #999;
 }
 .multiselect-mode .single-only {
   display: none;
@@ -1963,6 +1977,11 @@ progress.progress::-webkit-progress-value {
 progress.progress::-moz-progress-bar {
   background-color: #337ab7;
   border-radius: 4px;
+}
+
+.table {
+  width: 100%;
+  max-width: 100%;
 }
 
 /*# sourceMappingURL=theme-generic.css.map */
