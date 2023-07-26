@@ -1820,7 +1820,7 @@ jQuery(document).ready(function docReady() {
     // Callback needs to handle the geometry filters.
     onLocationSelectChange(this, function callback(data) {
       if (data.length === 0) {
-        $('.es-location-select-geom').val('');
+        $('#' + changedSelect.id + '-geom').val('');
       }
       else {
         // Empty the location select geom controls, then set the one at the
