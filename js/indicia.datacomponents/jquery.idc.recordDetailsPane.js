@@ -216,6 +216,13 @@
         indiciaData.thisRecordEmail = false;
         $(attrsDiv).html('');
         $.each(combined, function eachHeading(title, attrs) {
+          if (title === 'auth') {
+            // Use auth section to refresh token, not for display.
+            indiciaData.read.auth_token = attrs.auth_token;
+            indiciaData.read.nonce = attrs.nonce;
+            $('#redet-species\\:taxon').setExtraParams(attrs);
+            return;
+          }
           var table;
           var tbody;
           $(attrsDiv).append('<h3>' + title + '</h3>');
