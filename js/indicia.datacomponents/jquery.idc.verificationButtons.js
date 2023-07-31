@@ -223,7 +223,11 @@
       src: $('#redet-form'),
       type: 'html',
       opts: {
-        modal: true
+        modal: true,
+        beforeClose: function () {
+          // Hide the species search dropdown if left in open state
+          $('.ac_results').hide();
+        }
       }
     });
   }
