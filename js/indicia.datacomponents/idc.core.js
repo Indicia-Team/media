@@ -761,6 +761,30 @@
     },
 
     /**
+     * Return the value of the first field in the list which is not empty.
+     *
+     * Takes a comma separated list of field names in the parameter.
+     */
+    coalesce: function coalesce(doc, params) {
+      if (params.length === 1) {
+        const fields = params[0].split(',');
+        let result = '';
+        let value;
+        $.each(fields, function() {
+          value = indiciaFns.getValueForField(doc, this);
+          if (value !== '') {
+            result = value;
+            return false;
+          }
+        });
+        return result;
+      }
+      else {
+        return '';
+      }
+    },
+
+    /**
      * Output a constant.
      *
      * Pass the constant value to output which can be an empty string.
