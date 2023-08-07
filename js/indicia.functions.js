@@ -646,9 +646,11 @@ if (typeof window.indiciaData === 'undefined') {
             childSelect.append('<option value="">&lt;Please select&gt;</option>');
           }
           $.each(data, function eachData() {
-            var selected = typeof indiciaData['default' + options.escapedId] !== 'undefined' && indiciaData['default' + options.escapedId] === this[options.valueField] ? '" selected="selected' : '';
-            childSelect.append('<option value="' + this[options.valueField] + selected + '">' + this[options.captionField] + '</option>');
+            childSelect.append('<option value="' + this[options.valueField] + '">' + this[options.captionField] + '</option>');
           });
+          if (typeof indiciaData['default' + options.id] !== 'undefined') {
+            $(childSelect).find('option[value="' + indiciaData['default' + options.id] + '"]').attr('selected', true);
+          }
         } else {
           if (data.error) {
             ctrlLabel = $(childSelect).closest('.ctrl-wrap').find('label');
