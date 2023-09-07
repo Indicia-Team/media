@@ -1848,8 +1848,8 @@
           // to allow user to opt for master list instead.
           // A value of mainTaxonListId = 0 signifies there is no master list. 
           if (
-            doc.taxon.taxon_list.id === indiciaData.mainTaxonListId ||
-            indiciaData.mainTaxonListId === 0
+            parseInt(doc.taxon.taxon_list.id) === parseInt(indiciaData.mainTaxonListId) ||
+            parseInt(indiciaData.mainTaxonListId) === 0
           ) {
             $('.alt-taxon-list-controls').hide();
           }
