@@ -1866,7 +1866,11 @@
           $('#redet-species\\:taxon').setExtraParams({"taxon_list_id": doc.taxon.taxon_list.id});
           // If list used for search is not master list, then controls shown
           // to allow user to opt for master list instead.
-          if (doc.taxon.taxon_list.id === indiciaData.mainTaxonListId) {
+          // A value of mainTaxonListId = 0 signifies there is no master list. 
+          if (
+            doc.taxon.taxon_list.id === indiciaData.mainTaxonListId ||
+            indiciaData.mainTaxonListId === 0
+          ) {
             $('.alt-taxon-list-controls').hide();
           }
           else {
