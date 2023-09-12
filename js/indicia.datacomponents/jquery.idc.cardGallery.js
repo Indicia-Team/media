@@ -511,13 +511,15 @@
           '<p>' + indiciaData.lang.cardGallery.clickToSort + '<ul></ul>' +
           '<button class="sort-close ' + indiciaData.templates.buttonHighlightedClass + '">Close</button></div>').appendTo(el);
         $.each(el.settings.columns, function() {
-          const caption = this.caption ? this.caption : '<em>' + indiciaData.lang.cardGallery.noHeading + '</em>';
-          let li = $('<li data-field="' + this.field + '"><h4>' + caption + '</h4>' +
-            '<span class="fas fa-2x" display="none"></span></li>');
-          if (typeof indiciaData.gridMappingFields[this.field] !== 'undefined') {
-            li.append($('<p>' + indiciaData.gridMappingFields[this.field].description + '</p>'));
+          if (indiciaData.gridMappingFields[this.field]) {
+            const caption = this.caption ? this.caption : '<em>' + indiciaData.lang.cardGallery.noHeading + '</em>';
+            let li = $('<li data-field="' + this.field + '"><h4>' + caption + '</h4>' +
+              '<span class="fas fa-2x" display="none"></span></li>');
+            if (typeof indiciaData.gridMappingFields[this.field] !== 'undefined') {
+              li.append($('<p>' + indiciaData.gridMappingFields[this.field].description + '</p>'));
+            }
+            $('.sort-dropdown ul').append(li);
           }
-          $('.sort-dropdown ul').append(li);
         });
       }
       $('<div class="idc-tools">' + tools.join('<br/>') + '</div>').appendTo(el);
