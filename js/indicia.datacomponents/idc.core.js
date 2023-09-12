@@ -179,7 +179,8 @@
    * Takes a string and applies token replacement for field values.
    *
    * @param object el
-   *   The dataGrid element.
+   *   The dataGrid or cardGallery element. Optional. Enables use of normal
+   *   field names when using an aggregation source mode.
    * @param object doc
    *   The ES document for the row.
    * @param string text
@@ -205,8 +206,8 @@
       $.each(fieldOrList, function eachFieldName() {
         var fieldName = this;
         var fieldDef = {};
-        var srcSettings = el.settings.sourceObject.settings;
-        if ($.inArray(fieldName, el.settings.sourceObject.settings.fields) > -1) {
+        var srcSettings = el ? el.settings.sourceObject.settings : null;
+        if (el && $.inArray(fieldName, el.settings.sourceObject.settings.fields) > -1) {
           // Auto-locate aggregation fields in document.
           if (srcSettings.mode === 'termAggregation') {
             fieldDef.path = 'fieldlist.hits.hits.0._source';
@@ -1061,6 +1062,9 @@
       });
     },
 
+    /**
+     * A standardised label for the taxon.
+     */
     taxon_label: function taxonLabel(doc) {
       var acceptedName;
       if (doc.taxon.taxon_rank_sort_order >= 290) {
@@ -1073,6 +1077,24 @@
       } else {
         return '<h3>' + acceptedName + '</h3>';
       }
+    },
+
+    /**
+     * A templated output, where field tokens in square brackets are replaced by values.
+     */
+    template: function template(doc, params) {
+      let template = params[0];
+      let output = '';
+      if (params.length > 1) {
+        // 2nd parameter is a nested object path.
+        const objects = indiciaFns.getValueForField(doc, params[1]);
+        $.each(objects, function() {
+          output += indiciaFns.applyFieldReplacements(null, this, template);
+        });
+      } else {
+        output = template;
+      }
+      return indiciaFns.applyFieldReplacements(null, doc, output);
     }
   };
 
