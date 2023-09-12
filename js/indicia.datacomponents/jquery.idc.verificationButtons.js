@@ -333,6 +333,9 @@
         if (typeof response.error !== 'undefined') {
           alert(response.error);
         }
+        else if (response !== 'OK') {
+          alert(indiciaData.lang.verificationButtons.redetErrorMsg);
+        }
       }
     ).always(cleanupAfterAjaxUpdate);
     // Now post update to Elasticsearch. Remove the website ID to temporarily
