@@ -1297,6 +1297,10 @@ table.es-data-grid tfoot button span {
   opacity: 0.2;
 }
 
+#query-form .alert {
+  max-width: 600px;
+}
+
 .field-taxon--accepted-name, .field-taxon--species {
   font-style: italic;
 }

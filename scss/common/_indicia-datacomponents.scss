@@ -678,6 +678,12 @@ table.es-data-grid {
   }
 }
 
+#query-form {
+  .alert {
+    max-width: 600px;
+  }
+}
+
 .field-taxon--accepted-name, .field-taxon--species {
   font-style: italic;
 }
