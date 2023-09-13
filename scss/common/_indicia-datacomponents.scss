@@ -654,7 +654,7 @@ table.es-data-grid {
   }
 }
 
-#verification-form {
+#verification-form, #query-form {
   legend * {
     display: inline-block;
     vertical-align: baseline;
@@ -666,7 +666,7 @@ table.es-data-grid {
       font-style: italic;
     }
   }
-  #ctrl-wrap-verify-template {
+  .template-select {
     max-width: 400px;
     .fa-trash-alt {
       margin: 0;

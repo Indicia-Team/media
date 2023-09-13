@@ -1,4 +1,5 @@
-/* Theme extension to the default_site.css file which provides the default Indicia style output */ /* Accessible colour ranges from colorbrewer */
+/* Theme extension to the default_site.css file which provides the default Indicia style output */
+/* Accessible colour ranges from colorbrewer */
 .form-inline {
   margin-bottom: 8px;
 }
@@ -1274,25 +1275,25 @@ table.es-data-grid tfoot button span {
   min-width: 400px;
 }
 
-#verification-form legend * {
+#verification-form legend *, #query-form legend * {
   display: inline-block;
   vertical-align: baseline;
 }
-#verification-form legend *:first-child {
+#verification-form legend *:first-child, #query-form legend *:first-child {
   margin-right: 15px;
 }
-#verification-form legend *.status {
+#verification-form legend *.status, #query-form legend *.status {
   font-weight: bold;
   font-style: italic;
 }
-#verification-form #ctrl-wrap-verify-template {
+#verification-form .template-select, #query-form .template-select {
   max-width: 400px;
 }
-#verification-form #ctrl-wrap-verify-template .fa-trash-alt {
+#verification-form .template-select .fa-trash-alt, #query-form .template-select .fa-trash-alt {
   margin: 0;
   cursor: pointer;
 }
-#verification-form #ctrl-wrap-verify-template .fa-trash-alt.disabled {
+#verification-form .template-select .fa-trash-alt.disabled, #query-form .template-select .fa-trash-alt.disabled {
   opacity: 0.2;
 }
 
