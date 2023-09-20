@@ -622,7 +622,7 @@
       else if (feature._latlng) {
         bounds = L.latLngBounds(feature._latlng, feature._latlng);
       }
-      if (bounds && clickBounds.intersects(bounds) && feature.options.filterField && feature.options.filterField === filterField) {
+      if (feature.options.filterField && feature.options.filterField === filterField && bounds && bounds._northEast && clickBounds.intersects(bounds)) {
         // Intersects is using the outer bounding box of the square which is
         // only rough as square may be at an angle. So do an accurate point in
         // polygon test to confirm.
