@@ -306,7 +306,9 @@ if (typeof window.indiciaData === 'undefined') {
 
   /**
    * Utility function, equivalent to htmlspecialchars in PHP.
+   *
    * @param string text
+   *
    * @returns string
    */
   indiciaFns.escapeHtml = function (text) {
@@ -324,9 +326,12 @@ if (typeof window.indiciaData === 'undefined') {
   indiciaFns.locationControl = [];
 
   /**
-   * Function which uses the ID of the currently selected location ID to grab any previously input sample attribute
-   * values by the same user and populate them into the relevant controls.
-   * For example, a user picks their local nature reserve as a location and provides a habitat. The next time the
+   * Copies location related sample attributes to a new sample.
+   *
+   * Function which uses the ID of the currently selected location ID to grab
+   * any previously input sample attribute values by the same user and populate
+   * them into the relevant controls. For example, a user picks their local
+   * nature reserve as a location and provides a habitat. The next time the
    * same location is picked by that user, the same habitat is auto-filled in.
    */
   indiciaFns.locationControl.fetchLocationAttributesIntoSample = function (locCntrlId, warehouseUserId) {

@@ -179,7 +179,8 @@
    * Takes a string and applies token replacement for field values.
    *
    * @param object el
-   *   The dataGrid element.
+   *   The dataGrid or cardGallery element. Optional. Enables use of normal
+   *   field names when using an aggregation source mode.
    * @param object doc
    *   The ES document for the row.
    * @param string text
@@ -205,8 +206,8 @@
       $.each(fieldOrList, function eachFieldName() {
         var fieldName = this;
         var fieldDef = {};
-        var srcSettings = el.settings.sourceObject.settings;
-        if ($.inArray(fieldName, el.settings.sourceObject.settings.fields) > -1) {
+        var srcSettings = el ? el.settings.sourceObject.settings : null;
+        if (el && $.inArray(fieldName, el.settings.sourceObject.settings.fields) > -1) {
           // Auto-locate aggregation fields in document.
           if (srcSettings.mode === 'termAggregation') {
             fieldDef.path = 'fieldlist.hits.hits.0._source';
@@ -745,6 +746,11 @@
       var key = entity === 'parent_event' ? 'parent_attributes' : 'attributes';
       // Tolerate sample or event for entity parameter.
       entity = $.inArray(entity, ['sample', 'event', 'parent_event']) > -1 ? 'event' : 'occurrence';
+      // When requesting an event attribute, allow the parent event attribute
+      // value to be used if necessary.
+      if (entity === 'event' && key === 'attributes' && !doc[entity][key] && doc[entity]['parent_attributes']) {
+        key = 'parent_attributes';
+      }
       if (doc[entity] && doc[entity][key]) {
         $.each(doc[entity][key], function eachAttr() {
           if (this.id === params[1]) {
@@ -753,6 +759,30 @@
         });
       }
       return output.join('; ');
+    },
+
+    /**
+     * Return the value of the first field in the list which is not empty.
+     *
+     * Takes a comma separated list of field names in the parameter.
+     */
+    coalesce: function coalesce(doc, params) {
+      if (params.length === 1) {
+        const fields = params[0].split(',');
+        let result = '';
+        let value;
+        $.each(fields, function() {
+          value = indiciaFns.getValueForField(doc, this);
+          if (value !== '') {
+            result = value;
+            return false;
+          }
+        });
+        return result;
+      }
+      else {
+        return '';
+      }
     },
 
     /**
@@ -1032,6 +1062,9 @@
       });
     },
 
+    /**
+     * A standardised label for the taxon.
+     */
     taxon_label: function taxonLabel(doc) {
       var acceptedName;
       if (doc.taxon.taxon_rank_sort_order >= 290) {
@@ -1044,6 +1077,24 @@
       } else {
         return '<h3>' + acceptedName + '</h3>';
       }
+    },
+
+    /**
+     * A templated output, where field tokens in square brackets are replaced by values.
+     */
+    template: function template(doc, params) {
+      let template = params[0];
+      let output = '';
+      if (params.length > 1) {
+        // 2nd parameter is a nested object path.
+        const objects = indiciaFns.getValueForField(doc, params[1]);
+        $.each(objects, function() {
+          output += indiciaFns.applyFieldReplacements(null, this, template);
+        });
+      } else {
+        output = template;
+      }
+      return indiciaFns.applyFieldReplacements(null, doc, output);
     }
   };
 
@@ -1701,11 +1752,16 @@
       } else if (source.settings.mode === 'mapGeoHash' && mapToFilterTo) {
         // Set geohash_grid precision.
         // See https://gis.stackexchange.com/questions/231719/calculating-optimal-geohash-precision-from-bounding-box
-        var viewportAreaSqDegrees = (bounds.getEast() - bounds.getWest()) * (bounds.getNorth() - bounds.getSouth());
-        var hashPrecisionAreas = [2025, 63.281, 1.97754, 0.061799, 0.0019311904, 0.0000603497028, 0.000001885928, 0.0000000589352567];
-        var precision = 1;
+        // We use the viewport cropped to a max 2:1 ratio for our calculations,
+        // otherwise a very tall or very wide map selects an inappropriate
+        // square size.
+        const shortestEdge = Math.min(bounds.getEast() - bounds.getWest(), bounds.getNorth() - bounds.getSouth());
+        const longEdgeForCalc = Math.min(shortestEdge * 2, Math.max(bounds.getEast() - bounds.getWest(), bounds.getNorth() - bounds.getSouth()));
+        const viewportCroppedAreaSqDegrees = shortestEdge * longEdgeForCalc;
+        const hashPrecisionAreas = [2025, 63.281, 1.97754, 0.061799, 0.0019311904, 0.0000603497028, 0.000001885928, 0.0000000589352567];
+        let precision = 1;
         for (var i = 8; i >= 1; i--) {
-          if (viewportAreaSqDegrees / hashPrecisionAreas[i - 1] < 10000) {
+          if (viewportCroppedAreaSqDegrees / hashPrecisionAreas[i - 1] < 10000) {
             precision = i;
             break;
           }
@@ -1815,7 +1871,7 @@ jQuery(document).ready(function docReady() {
     // Callback needs to handle the geometry filters.
     onLocationSelectChange(this, function callback(data) {
       if (data.length === 0) {
-        $('.es-location-select-geom').val('');
+        $('#' + changedSelect.id + '-geom').val('');
       }
       else {
         // Empty the location select geom controls, then set the one at the

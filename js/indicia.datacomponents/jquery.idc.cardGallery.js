@@ -392,6 +392,23 @@
     });
 
     /**
+     * Multi-select switch toggle handler.
+     */
+    $(el).find('.multiselect-switch').click(function clickMultiselectSwitch(e) {
+      if ($(el).hasClass('multiselect-mode')) {
+        $(el).removeClass('multiselect-mode');
+        $(el).find('.multiselect-cntr').remove();
+        $('.selection-buttons-placeholder').append($('.all-selected-buttons'));
+      } else {
+        $(el).addClass('multiselect-mode');
+        $(el).find('.card').prepend('<div class="multiselect-cntr"><input type="checkbox" title="' + indiciaData.lang.cardGallery.checkToIncludeInList + '" class="multiselect" /></div>');
+        $(el).prepend(
+          $('.all-selected-buttons')
+        );
+      }
+    });
+
+    /**
      * Fullscreen tool.
      */
     $(el).find('.fullscreen-tool').click(function settingsIconClick() {
@@ -480,7 +497,10 @@
       if (el.settings.includePager) {
         $('<div class="footer">' + indiciaFns.getFooterControls(el) + '</div>').appendTo(el);
       }
-
+      // Add tool icons for full screen and multiselect mode.
+      if (el.settings.includeMultiSelectTool) {
+        tools.push('<span title="Enable multiple selection mode" class="fas fa-list multiselect-switch"></span>');
+      }
       if (el.settings.includeFullScreenTool &&
         (document.fullscreenEnabled || document.mozFullScreenEnabled || document.webkitFullscreenEnabled)) {
         tools.push('<span class="far fa-window-maximize fullscreen-tool" title="' + indiciaData.lang.cardGallery.fullScreenToolHint + '"></span>');
@@ -491,10 +511,15 @@
           '<p>' + indiciaData.lang.cardGallery.clickToSort + '<ul></ul>' +
           '<button class="sort-close ' + indiciaData.templates.buttonHighlightedClass + '">Close</button></div>').appendTo(el);
         $.each(el.settings.columns, function() {
-          var caption = this.caption ? this.caption : '<em>' + indiciaData.lang.cardGallery.noHeading + '</em>';
-          $('.sort-dropdown ul').append('<li data-field="' + this.field + '"><h4>' + caption + '</h4>' +
-            '<span class="fas fa-2x" display="none"></span>' +
-            '<p>' + indiciaData.gridMappingFields[this.field].description + '</p></li>');
+          if (indiciaData.gridMappingFields[this.field]) {
+            const caption = this.caption ? this.caption : '<em>' + indiciaData.lang.cardGallery.noHeading + '</em>';
+            let li = $('<li data-field="' + this.field + '"><h4>' + caption + '</h4>' +
+              '<span class="fas fa-2x" display="none"></span></li>');
+            if (typeof indiciaData.gridMappingFields[this.field] !== 'undefined') {
+              li.append($('<p>' + indiciaData.gridMappingFields[this.field].description + '</p>'));
+            }
+            $('.sort-dropdown ul').append(li);
+          }
         });
       }
       $('<div class="idc-tools">' + tools.join('<br/>') + '</div>').appendTo(el);
@@ -543,14 +568,21 @@
         var imageContainer;
         var dataContainer;
         var value;
+        // Add multiselect checkbox if required.
+        if ($(el).hasClass('multiselect-mode')) {
+          $(card).prepend('<div class="multiselect-cntr"><input type="checkbox" title="' + indiciaData.lang.cardGallery.checkToIncludeInList + '" class="multiselect" /></div>');
+        }
         // For keyboard navigation, need to enable row focus.
         if (el.settings.keyboardNavigation) {
           $(card).attr('tabindex', i);
         }
         if (doc.occurrence.media) {
           imageContainer = $('<div>').addClass('image-container').appendTo(card);
-          if (doc.occurrence.media.length > 1) {
-            // More than one photo needs a bigger card.
+          if (doc.occurrence.media.length > 2) {
+            // More than two photo needs a very large card.
+            classes.push('x-big');
+          } else if (doc.occurrence.media.length > 1) {
+            // More than one photo needs a large card.
             classes.push('big');
           }
           $.each(doc.occurrence.media, function() {
