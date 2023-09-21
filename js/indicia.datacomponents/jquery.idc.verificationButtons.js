@@ -542,7 +542,7 @@
       var textarea = ctrlWrap.find('textarea');
       var previewBox = ctrlWrap.find('.comment-preview');
       var status = $(this).closest('.verification-popup').data('status') || $(this).closest('.verification-popup').data('query');
-      previewBox.text(commentTemplateReplacements(textarea.val(), status));
+      previewBox.text(commentTemplateReplacements($(listOutputControl).find('.selected'), textarea.val(), status));
       // Hide whilst leaving in place to occupy space.
       textarea.css('opacity', 0);
       $(previewBox).css('top', $(textarea).position().top + 'px');
@@ -994,12 +994,14 @@
         }
       ).always(cleanupAfterAjaxUpdate);
     } else if (status.query) {
+      const unprocessedComment = pgUpdates['occurrence_comment:comment'];
       // No bulk API for query updates at the moment, so process one at a time.
-      // Using the standard data services API so comment template applied on
-      // client.
-      pgUpdates['occurrence_comment:comment'] = commentTemplateReplacements(pgUpdates['occurrence_comment:comment'], 'Q');
       $.each(occurrenceIds, function eachOccurrence() {
+        var item = $(listOutputControl).find('[data-row-id="' + indiciaData.idPrefix + this + '"],[data-row-id="' + indiciaData.idPrefix + this + '!"]');
         pgUpdates['occurrence_comment:occurrence_id'] = this;
+        // Using the standard data services API so comment template applied on
+        // client.
+        pgUpdates['occurrence_comment:comment'] = commentTemplateReplacements(item, unprocessedComment, 'Q');
         // Post update to Indicia.
         activeRequests++;
         $.post(
@@ -1724,6 +1726,8 @@
   /**
    * Replace tokens in a comment text.
    *
+   * @param object item
+   *   DOM item in the data grid or card gallery we are processing a comment for.
    * @param string text
    *   Comment text.
    * @param string status
@@ -1732,20 +1736,20 @@
    * @return string
    *   Text with tokens replaced by data values.
    */
-  function commentTemplateReplacements(text, status) {
-    var currentDoc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
+  function commentTemplateReplacements(item, text, status) {
+    const doc = JSON.parse(item.attr('data-doc-source'));
     // Action term can be overridden due to language construct, e.g. plausible should be "marked as plausible".
     var actionTerm = typeof indiciaData.lang.verificationButtons[status] !== 'undefined' ? indiciaData.lang.verificationButtons[status] : indiciaData.statusMsgs[status].toLowerCase();
     var conversions = {
-      date: indiciaFns.fieldConvertors.event_date(currentDoc),
-      sref: currentDoc.location.output_sref,
-      taxon: currentDoc.taxon.taxon_name,
-      'common name': [currentDoc.taxon.vernacular_name, currentDoc.taxon.accepted_name, currentDoc.taxon.taxon_name],
-      'preferred name': [currentDoc.taxon.accepted_name, currentDoc.taxon.taxon_name],
-      'taxon full name': getTaxonNameLabel(currentDoc),
-      'rank': currentDoc.taxon.taxon_rank.charAt(0).toLowerCase() +  currentDoc.taxon.taxon_rank.slice(1),
+      date: indiciaFns.fieldConvertors.event_date(doc),
+      sref: doc.location.output_sref,
+      taxon: doc.taxon.taxon_name,
+      'common name': [doc.taxon.vernacular_name, doc.taxon.accepted_name, doc.taxon.taxon_name],
+      'preferred name': [doc.taxon.accepted_name, doc.taxon.taxon_name],
+      'taxon full name': getTaxonNameLabel(doc),
+      'rank': doc.taxon.taxon_rank.charAt(0).toLowerCase() +  doc.taxon.taxon_rank.slice(1),
       action: actionTerm,
-      'location name': currentDoc.location.verbatim_locality
+      'location name': doc.location.verbatim_locality
     };
     if (redetToTaxon) {
       conversions['new taxon full name'] = getTaxonNameLabel({
