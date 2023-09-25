@@ -280,9 +280,12 @@ var checkSubmitInProgress = function () {
           {title : "Image files", extensions : fileTypes.join(',')}
         ],
         chunk_size: '1MB',
-        // limit the max file size to the Indicia limit, unless it is first resized.
-        max_file_size : resize ? '10mb' : plupload.formatSize(this.settings.maxUploadSize)
+        // Limit the max file size to the Indicia limit, unless it is first resized.
+        max_file_size : resize ? null : plupload.formatSize(this.settings.maxUploadSize)
       };
+      console.log('Resize');
+      console.log(resize);
+      console.log(uploadOpts);
       enableDropIfDesktop(this, uploadOpts);
       this.uploader = new plupload.Uploader(uploadOpts);
       this.uploader.bind('QueueChanged', function(up) {
