@@ -280,8 +280,8 @@ var checkSubmitInProgress = function () {
           {title : "Image files", extensions : fileTypes.join(',')}
         ],
         chunk_size: '1MB',
-        // limit the max file size to the Indicia limit, unless it is first resized.
-        max_file_size : resize ? '10mb' : plupload.formatSize(this.settings.maxUploadSize)
+        // Limit the max file size to the Indicia limit, unless it is first resized.
+        max_file_size : resize ? null : plupload.formatSize(this.settings.maxUploadSize)
       };
       enableDropIfDesktop(this, uploadOpts);
       this.uploader = new plupload.Uploader(uploadOpts);
@@ -360,7 +360,7 @@ var checkSubmitInProgress = function () {
                 .replace(/\{idField\}/g, div.settings.table + ':id:' + uniqueId)
                 .replace(/\{idValue\}/g, file.id) // If ID is set, the picture is uploaded to the server
                 .replace(/\{licenceIdField\}/g, div.settings.table + ':licence_id:' + uniqueId)
-                .replace(/\{licenceIdValue\}/g, file.licence_id)
+                .replace(/\{licenceIdValue\}/g, file.licence_id === null ? '' : file.licence_id)
           );
         } else {
           existing = div.settings.file_box_initial_link_infoTemplate
