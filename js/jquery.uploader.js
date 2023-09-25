@@ -283,9 +283,6 @@ var checkSubmitInProgress = function () {
         // Limit the max file size to the Indicia limit, unless it is first resized.
         max_file_size : resize ? null : plupload.formatSize(this.settings.maxUploadSize)
       };
-      console.log('Resize');
-      console.log(resize);
-      console.log(uploadOpts);
       enableDropIfDesktop(this, uploadOpts);
       this.uploader = new plupload.Uploader(uploadOpts);
       this.uploader.bind('QueueChanged', function(up) {
@@ -363,7 +360,7 @@ var checkSubmitInProgress = function () {
                 .replace(/\{idField\}/g, div.settings.table + ':id:' + uniqueId)
                 .replace(/\{idValue\}/g, file.id) // If ID is set, the picture is uploaded to the server
                 .replace(/\{licenceIdField\}/g, div.settings.table + ':licence_id:' + uniqueId)
-                .replace(/\{licenceIdValue\}/g, file.licence_id)
+                .replace(/\{licenceIdValue\}/g, file.licence_id === null ? '' : file.licence_id)
           );
         } else {
           existing = div.settings.file_box_initial_link_infoTemplate
