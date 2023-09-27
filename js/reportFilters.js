@@ -296,11 +296,17 @@ jQuery(document).ready(function ($) {
     },
     who: {
       getDescription: function (filterDef) {
-        if (filterDef.my_records) {
-          return indiciaData.lang.reportFilterParser.MyRecords;
-        } else {
-          return '';
+        let phrases = [];
+        if (filterDef.my_records && filterDef.my_records === '1') {
+          phrases.push(indiciaData.lang.reportFilterParser.MyRecords);
+        } else if (filterDef.my_records && filterDef.my_records === '0') {
+          phrases.push(indiciaData.lang.reportFilterParser.NotMyRecords);
         }
+        if (filterDef.recorder_name) {
+          let nameList = filterDef.recorder_name.replace(/\s+/g, indiciaData.lang.reportFilterParser.ListJoin);
+          phrases.push(indiciaData.lang.reportFilterParser.RecorderNameContains.replace('{1}', nameList));
+        }
+        return phrases.join('<br/>');
       },
     },
     occ_id: {
@@ -778,7 +784,6 @@ jQuery(document).ready(function ($) {
       },
       loadFilter: function () {
         var filter;
-        var map;
         var locationsToLoad;
         if (typeof indiciaData.mapdiv !== 'undefined') {
           filter = indiciaData.filter.def;
@@ -804,11 +809,13 @@ jQuery(document).ready(function ($) {
         if (context && context.my_records) {
           $('#my_records').prop('disabled', true);
           $('#controls-filter_who .context-instruct').show();
-          $('#controls-filter_who button').hide();
         } else {
           $('#my_records').prop('disabled', false);
-          $('#controls-filter_who button').show();
+          $('#controls-filter_who .context-instruct').hide();
         }
+      },
+      applyFormToDefinition: function () {
+        indiciaData.filter.def.my_records = $('#my_records input:checked').val();
       }
     },
     occ_id: {
@@ -1262,31 +1269,31 @@ jQuery(document).ready(function ($) {
           def = '{"quality": "all"}';
           break;
         case 'my-records':
-          def = '{"quality": "all", "my_records": 1}';
+          def = '{"quality": "all", "my_records": "1"}';
           break;
         case 'my-queried-records':
-          def = '{"quality": "D", "my_records": 1}';
+          def = '{"quality": "D", "my_records": "1"}';
           break;
         case 'my-queried-or-not-accepted-records':
         case 'my-queried-rejected-records':
-          def = '{"quality": "DR", "my_records": 1}';
+          def = '{"quality": "DR", "my_records": "1"}';
           break;
         case 'my-not-reviewed-records':
         case 'my-pending-records':
-          def = '{"quality": "P", "my_records": 1}';
+          def = '{"quality": "P", "my_records": "1"}';
           break;
         case 'my-accepted-records':
         case 'my-verified-records':
-          def = '{"quality": "V", "my_records": 1}';
+          def = '{"quality": "V", "my_records": "1"}';
           break;
         case 'my-groups':
-          def = '{"quality": "all", "my_records": 0, "taxon_group_list": ' + indiciaData.userPrefsTaxonGroups + '}';
+          def = '{"quality": "all", "my_records": "", "taxon_group_list": ' + indiciaData.userPrefsTaxonGroups + '}';
           break;
         case 'my-locality':
-          def = '{"quality": "all", "my_records": 0, "indexed_location_id": ' + indiciaData.userPrefsLocation + '}';
+          def = '{"quality": "all", "my_records": "", "indexed_location_id": ' + indiciaData.userPrefsLocation + '}';
           break;
         case 'my-groups-locality':
-          def = '{"quality": "all", "my_records": 0, "taxon_group_list": ' + indiciaData.userPrefsTaxonGroups +
+          def = '{"quality": "all", "my_records": "", "taxon_group_list": ' + indiciaData.userPrefsTaxonGroups +
             ', "indexed_location_id": ' + indiciaData.userPrefsLocation + '}';
           break;
         case 'queried-records':
@@ -1359,7 +1366,7 @@ jQuery(document).ready(function ($) {
     var attrName;
     var option;
     // regexp extracts the pane ID from the href. Loop through the controls in the pane
-    $.each(pane.find(':input').not('#imp-sref-system,:checkbox,[type=button],[name="location_list[]"],.precise-date-picker'),
+    $.each(pane.find(':input').not('#imp-sref-system,:checkbox,:radio,[type=button],[name="location_list[]"],.precise-date-picker'),
       function (idx, ctrl) {
         var value;
         // set control value to the stored filter setting
