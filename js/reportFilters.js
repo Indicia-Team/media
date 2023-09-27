@@ -147,8 +147,8 @@ jQuery(document).ready(function ($) {
             // Use the myGroups list to look them up
             $.each(indiciaData.myGroups, function () {
               if (this[0] === parseInt(groupId)) {
-                foundIds.push(this[0]);
-                foundNames.push(this[1]);
+                foundIds.push(this['id']);
+                foundNames.push(this['title']);
               }
             });
           });
@@ -956,6 +956,21 @@ jQuery(document).ready(function ($) {
     });
   });
 
+  // Show all taxon groups link.
+  $('#show-species-groups').click(function() {
+    $('.filter-controls').hide();
+    let cntr = $('<div>').insertAfter($('.filter-controls'));
+    let ul = $('<ul style="columns: 4">').appendTo(cntr);
+    $.each(indiciaData.allTaxonGroups, function() {
+      ul.append('<li>' + this.title + '</li>');
+    });
+    let btn = $('<button class="btn btn-primary">' + indiciaData.lang.reportFilters.Back + '</button>').appendTo(cntr);
+    btn.click(function() {
+      cntr.remove();
+      $('.filter-controls').show();
+    });
+  });
+
   function clearSites(all) {
     var map = indiciaData.mapdiv.map;
     $('#location_list\\:sublist').children().remove();
@@ -1062,9 +1077,9 @@ jQuery(document).ready(function ($) {
 
   $('#my_groups').click(function () {
     $.each(indiciaData.myGroups, function(idx, group) {
-      if ($('#taxon_group_list\\:sublist input[value=' + group[0] + ']').length === 0) {
-        $('#taxon_group_list\\:sublist').append('<li><span class="ind-delete-icon"> </span>' + group[1] +
-          '<input type="hidden" value="' + group[0] + '" name="taxon_group_list[]"></li>');
+      if ($('#taxon_group_list\\:sublist input[value=' + group['id'] + ']').length === 0) {
+        $('#taxon_group_list\\:sublist').append('<li><span class="ind-delete-icon"> </span>' + group['title'] +
+          '<input type="hidden" value="' + group['id'] + '" name="taxon_group_list[]"></li>');
       }
     });
   });
