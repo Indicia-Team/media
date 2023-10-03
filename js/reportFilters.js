@@ -1141,6 +1141,7 @@ jQuery(document).ready(function ($) {
     });
     //Ensure that any other quality-filter controls on the page are kept in line
     $('.standalone-quality-filter select').val(indiciaData.filter.def.quality);
+    $('.standalone-media-filter select').val(indiciaData.filter.def.has_photos);
   };
 
   function codeToSharingTerm(code) {
@@ -1773,15 +1774,28 @@ jQuery(document).ready(function ($) {
     );
   };
 
-  // Standalone quality filter select change event
-  $('.standalone-quality-filter select').change(function() {
-    indiciaData.filter.def.quality= $(this).val();
+  /**
+   * Refresh after a standalone filter control changed.
+   */
+  function updateStandaloneFilter() {
     // If there is a standard params control update the quality drop-down to reflect
     // the value selected in this control.
     indiciaFns.updateFilterDescriptions();
     filterParamsChanged();
     // Update reports
     indiciaFns.applyFilterToReports();
+  }
+
+  // Standalone quality status filters select change event.
+  $('.standalone-quality-filter select').change(function() {
+    indiciaData.filter.def.quality = $(this).val();
+    updateStandaloneFilter();
+  });
+
+  // Standalone quality media filters select change event.
+  $('.standalone-media-filter select').change(function() {
+    indiciaData.filter.def.has_photos = $(this).val();
+    updateStandaloneFilter();
   });
 
   // Interactions betweem mutually exclusive filters.
