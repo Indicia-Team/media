@@ -408,14 +408,6 @@ jQuery(document).ready(function($) {
     checkRequiredFields();
   }
 
-  function captureAllFieldOptionsInSelects() {
-    $.each($('select.mapped-field'), function() {
-      if ($(this).data('original-html') == undefined) {
-        $(this).data('original-html', $(this).html());
-      }
-    });
-  }
-
   /**
    * Either show just standard import fields, or also show advanced.
    *
@@ -436,10 +428,9 @@ jQuery(document).ready(function($) {
       });
     } else {
       $.each($('select.mapped-field'), function() {
-        let originalOptions = $(this).data('original-html');
-        if (originalOptions) {
+        if (typeof indiciaData.fullImportFieldOptionsHtml !== 'undefined') {
           let originalValue = $(this).val();
-          $(this).html(originalOptions);
+          $(this).html(indiciaData.fullImportFieldOptionsHtml );
           $(this).val(originalValue);
         }
       });
@@ -1216,7 +1207,8 @@ jQuery(document).ready(function($) {
     indiciaFns.on('click', '.apply-suggestion', {}, applySuggestion);
     checkRequiredFields();
     $('[name="field-type-toggle"]').change(showOrHideAdvancedFields);
-    captureAllFieldOptionsInSelects();
+    // Capture the full field option HTML so selects can be reset as required.
+    indiciaData.fullImportFieldOptionsHtml = $('select.mapped-field:first').html();
     showOrHideAdvancedFields();
   } else if (indiciaData.step === 'lookupMatchingForm') {
     // If on the lookup matching page, then trigger the process.
