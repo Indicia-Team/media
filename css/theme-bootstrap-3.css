@@ -1,5 +1,4 @@
-/* Theme extension to the default_site.css file which provides Bootstrap 3 optimised style output */
-/* Accessible colour ranges from colorbrewer */
+/* Theme extension to the default_site.css file which provides Bootstrap 3 optimised style output */ /* Accessible colour ranges from colorbrewer */
 .form-inline {
   margin-bottom: 8px;
 }
@@ -1796,6 +1795,17 @@ div.choice-card.active {
 }
 div.choice-card .card-name {
   font-weight: bold;
+}
+
+div.inline * {
+  vertical-align: middle;
+}
+div.inline label {
+  margin-left: 4px;
+  margin-right: 8px;
+}
+div.inline.disabled {
+  opacity: 0.7;
 }
 
 .fancy-dialog-button {

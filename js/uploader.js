@@ -388,6 +388,16 @@ jQuery(document).ready(function($) {
       }
     });
     $('input[type="submit"]').attr('disabled', $('.required-checkbox.fa-square:visible').length > 0);
+    // Also disable the standard/advanced selector.
+    const onlyStandardFieldsSelected = $('option.advanced:selected').length === 0;
+    if (onlyStandardFieldsSelected) {
+      $('[name="field-type-toggle"]').removeAttr('disabled');
+      $('.field-type-selector').removeClass('disabled');
+    } else {
+      $('[name="field-type-toggle"]').attr('disabled', true);
+      $('.field-type-selector').addClass('disabled');
+      $('[name="field-type-toggle"][value="advanced"]').attr('checked', true);
+    }
   }
 
   /**
@@ -396,6 +406,44 @@ jQuery(document).ready(function($) {
   function applySuggestion(e) {
     $(e.currentTarget).closest('td').find('option[value="' + $(e.currentTarget).data('value') + '"]').prop('selected', true);
     checkRequiredFields();
+  }
+
+  function captureAllFieldOptionsInSelects() {
+    $.each($('select.mapped-field'), function() {
+      if ($(this).data('original-html') == undefined) {
+        $(this).data('original-html', $(this).html());
+      }
+    });
+  }
+
+  /**
+   * Either show just standard import fields, or also show advanced.
+   *
+   * Depending on mode. If advanced fields are hidden, the original HTML for the
+   * columns set is stored in a data attribute so it can be reset.
+   */
+  function showOrHideAdvancedFields() {
+    const standardFieldsMode = $('[name="field-type-toggle"]:checked').val() === 'standard';
+    const onlyStandardFieldsSelected = $('option.advanced:selected').length === 0;
+    if (standardFieldsMode && onlyStandardFieldsSelected) {
+      let parents = $('option.advanced').parents();
+      $('option.advanced').remove();
+      // Also remove parent option groups if now empty.
+      $.each(parents, function() {
+        if ($(this).find('option').length === 0) {
+          $(this).remove();
+        }
+      });
+    } else {
+      $.each($('select.mapped-field'), function() {
+        let originalOptions = $(this).data('original-html');
+        if (originalOptions) {
+          let originalValue = $(this).val();
+          $(this).html(originalOptions);
+          $(this).val(originalValue);
+        }
+      });
+    }
   }
 
   /**
@@ -1167,6 +1215,9 @@ jQuery(document).ready(function($) {
     indiciaFns.on('change', '.mapped-field', {}, checkRequiredFields);
     indiciaFns.on('click', '.apply-suggestion', {}, applySuggestion);
     checkRequiredFields();
+    $('[name="field-type-toggle"]').change(showOrHideAdvancedFields);
+    captureAllFieldOptionsInSelects();
+    showOrHideAdvancedFields();
   } else if (indiciaData.step === 'lookupMatchingForm') {
     // If on the lookup matching page, then trigger the process.
     logBackgroundProcessingInfo(indiciaData.lang.import_helper_2.findingLookupFieldsThatNeedMatching);
