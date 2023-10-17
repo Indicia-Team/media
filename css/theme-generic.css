@@ -288,7 +288,7 @@ input:checked + .slider:before {
   padding: 8px;
   /* Include/Exclude inline */
 }
-.quality-cntr .quality-pane #quality_op li {
+.quality-cntr .quality-pane #quality_op li, .quality-cntr .quality-pane #quality_op--standalone li {
   display: inline-block;
 }
 .quality-cntr .quality-pane input.indent {

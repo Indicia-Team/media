@@ -16,8 +16,10 @@
     position: absolute;
     padding: 8px;
     /* Include/Exclude inline */
-    #quality_op li {
-      display: inline-block;
+    #quality_op, #quality_op--standalone {
+      li {
+        display: inline-block;
+      }
     }
     input.indent {
       margin-left: 30px !important;
