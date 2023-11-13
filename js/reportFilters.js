@@ -405,6 +405,11 @@ jQuery(document).ready(function ($) {
           filterDef.quality = 'D,R';
           filterDef.quality_op = 'in';
         }
+        // Autochecks and autocheck_rule now merged into 1.
+        if (filterDef.autocheck_rule) {
+          filterDef.autochecks = filterDef.autocheck_rule;
+          delete filterDef.autocheck_rule;
+        }
       },
       getDescription: function (filterDef, sep) {
         var r = [];
@@ -420,14 +425,7 @@ jQuery(document).ready(function ($) {
           r.push(indiciaData.lang.reportFilters.recorderCertaintyWas + ' ' + certainties.join(indiciaData.lang.reportFilters.orListJoin));
         }
         if (filterDef.autochecks) {
-          r.push(indiciaData.lang.reportFilterParser['Autochecks' + filterDef.autochecks]);
-        }
-        if (filterDef.autocheck_rule) {
-          if (typeof indiciaData.lang.reportFilterParser['Rule_' + filterDef.autocheck_rule] !== 'undefined') {
-            r.push(indiciaData.lang.reportFilterParser['Rule_' + filterDef.autocheck_rule]);
-          } else {
-            r.push(filterDef.autocheck_rule);
-          }
+          r.push(indiciaData.lang.reportFilterParser['Autochecks_' + filterDef.autochecks]);
         }
         if (filterDef.identification_difficulty) {
           op = typeof filterDef.identification_difficulty_op === 'undefined' ?
@@ -891,11 +889,8 @@ jQuery(document).ready(function ($) {
         }
         if (context && context.autochecks) {
           $('#autochecks').prop('disabled', true);
-          // Autocheck context also blocks use of individual rule filters.
-          $('#autocheck_rule').prop('disabled', true);
         } else {
           $('#autochecks').prop('disabled', false);
-          $('#autocheck_rule').prop('disabled', context && context.autocheck_rule);
         }
         if (context && context.identification_difficulty) {
           $('#identification_difficulty').prop('disabled', true);
@@ -911,10 +906,12 @@ jQuery(document).ready(function ($) {
         }
         if (context && ((context.quality && context.quality !== 'all') ||
             (context.certainty && context.certainty.split(',').length !== 4) ||
-            context.autochecks || context.autocheck_rule || context.identification_difficulty || context.has_photos
+            context.autochecks || context.identification_difficulty || context.has_photos
           )) {
           $('#controls-filter_quality .context-instruct').show();
         }
+        // Trigger change to update hidden controls in UI.
+        $('#autochecks').change();
       },
       applyFormToDefinition: function() {
         // Map the checked boxes to a comma-separated value.
@@ -2256,6 +2253,14 @@ jQuery(document).ready(function ($) {
       const pane = $(e.currentTarget).closest('.quality-pane');
       const allCheckbox = $(pane).find('input[type="checkbox"][value="all"]');
       $(allCheckbox).prop('checked', false);
+    }
+  });
+
+  $('#autochecks').change(function(e) {
+    if ($(e.currentTarget).val() === 'identification_difficulty') {
+      $('#id-diff-cntr').show();
+    } else {
+      $('#id-diff-cntr').hide();
     }
   });
 
