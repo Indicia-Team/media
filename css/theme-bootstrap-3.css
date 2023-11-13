@@ -300,6 +300,10 @@ input:checked + .slider:before {
   display: block;
 }
 
+.filter-popup button[type=submit] {
+  margin-left: 8px;
+}
+
 table.report-grid {
   /* Ensure height enough for spinner. For tables, height acts as min-height
   as long as display not altered from browser default. */

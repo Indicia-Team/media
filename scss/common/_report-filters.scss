@@ -31,3 +31,9 @@
 #filter-bar .quality-pane .ctrl-wrap {
   display: block;
 }
+
+.filter-popup {
+  button[type="submit"] {
+    margin-left: 8px;
+  }
+}
