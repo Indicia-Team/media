@@ -439,6 +439,21 @@ jQuery(document).ready(function ($) {
         } else if (filterDef.has_photos && filterDef.has_photos === '0') {
           r.push(indiciaData.lang.reportFilterParser.HasNoPhotos);
         }
+        if ($('#licences :checked').length > 0 && $('#licences :checked').length < 3) {
+          let licences = [];
+          $.each($('#licences :checked'), function() {
+            licences.push($('label[for="' + this.id + '"]').text().toLowerCase());
+          });
+          r.push(indiciaData.lang.reportFilters.licenceIs + ' ' + licences.join(indiciaData.lang.reportFilters.orListJoin));
+        }
+        if ($('#media_licences :checked').length > 0 && $('#media_licences :checked').length < 3) {
+          let licences = [];
+          $.each($('#media_licences :checked'), function() {
+            licences.push($('label[for="' + this.id + '"]').text().toLowerCase());
+          });
+          r.push(indiciaData.lang.reportFilters.mediaLicenceIs + ' ' + licences.join(indiciaData.lang.reportFilters.orListJoin));
+        }
+        // @todo Block saving a filter with zero licence boxes ticked
         return r.join(sep);
       },
     },
@@ -906,16 +921,25 @@ jQuery(document).ready(function ($) {
         }
         if (context && ((context.quality && context.quality !== 'all') ||
             (context.certainty && context.certainty.split(',').length !== 4) ||
-            context.autochecks || context.identification_difficulty || context.has_photos
+            context.autochecks || context.identification_difficulty || context.has_photos ||
+            context.licences || context.media_licences
           )) {
           $('#controls-filter_quality .context-instruct').show();
+        }
+        // If no licences are selected, tick them all as that's the unfiltered
+        // state.
+        if (!indiciaData.filter.def.licences) {
+          $('#licences :checkbox').prop('checked', true);
+        }
+        if (!indiciaData.filter.def.media_licences) {
+          $('#media_licences :checkbox').prop('checked', true);
         }
         // Trigger change to update hidden controls in UI.
         $('#autochecks').change();
       },
       applyFormToDefinition: function() {
         // Map the checked boxes to a comma-separated value.
-        const checkedStatuses = $('.filter-controls').find('input[type="checkbox"]:checked');
+        const checkedStatuses = $('.filter-controls .quality-pane input[type="checkbox"]:checked');
         let statusCodes = [];
         $.each(checkedStatuses, function () {
           statusCodes.push($(this).val());
@@ -2262,6 +2286,32 @@ jQuery(document).ready(function ($) {
     } else {
       $('#id-diff-cntr').hide();
     }
+  });
+
+  $('#controls-filter_quality form').validate({
+    rules: {
+      "licences[]": {
+        required: true,
+        minlength: 1
+      },
+      "media_licences[]": {
+        required: true,
+        minlength: 1
+      }
+    },
+    messages: {
+      "licences[]": indiciaData.lang.reportFilters.cannotDeselectAllLicences,
+      "media_licences[]": indiciaData.lang.reportFilters.cannotDeselectAllMediaLicences,
+    },
+    errorPlacement: function(error, element) {
+      var placement = $(element).closest('.control-box');
+      if (placement) {
+        $(placement).append(error)
+      } else {
+        error.insertAfter(element);
+      }
+    },
+    errorClass: indiciaData.templates.jQueryValidateErrorClass,
   });
 
   $('.quality-pane button.cancel').click(closeQualityPane);
