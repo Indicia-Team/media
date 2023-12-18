@@ -2048,4 +2048,18 @@ progress.progress::-moz-progress-bar {
   float: left;
 }
 
+#redet-form .helpText {
+  margin: 0;
+}
+#redet-form .form-control {
+  /* Allow space for required * */
+  width: 95%;
+}
+#redet-form label {
+  width: auto;
+}
+#redet-form input[type=checkbox] {
+  margin: 10px 8px;
+}
+
 /*# sourceMappingURL=theme-generic.css.map */
