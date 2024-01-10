@@ -453,6 +453,14 @@ jQuery(document).ready(function ($) {
           });
           r.push(indiciaData.lang.reportFilters.mediaLicenceIs + ' ' + licences.join(indiciaData.lang.reportFilters.orListJoin));
         }
+        if (filterDef.coordinate_precision) {
+          const op = {
+            '<=': indiciaData.lang.reportFilters.sameAsOrBetterThan,
+            '>': indiciaData.lang.reportFilters.worseThan,
+            '=': indiciaData.lang.reportFilters.equalTo,
+          }[filterDef.coordinate_precision_op ? filterDef.coordinate_precision_op : '<='];
+          r.push(indiciaData.lang.reportFilters.coordinatePrecisionIs + ' ' + op + ' ' + (filterDef.coordinate_precision / 1000) + 'km');
+        }
         // @todo Block saving a filter with zero licence boxes ticked
         return r.join(sep);
       },
@@ -894,37 +902,46 @@ jQuery(document).ready(function ($) {
         }
         $('.quality-filter').val(indiciaData.filterParser.quality.statusDescriptionFromFilter(
           indiciaData.filter.def.quality, indiciaData.filter.def.quality_op));
-        // If certainty context length is 4, all options are ticked so no need to disable.
-        if (context && context.certainty) {
-          if (context.certainty.split(',').length !== 4) {
-            $('[name="certainty\[\]"]').prop('disabled', true);
-          } else {
-            $('[name="certainty\[\]"]').prop('disabled', false);
+        if (context) {
+          // If certainty context length is 4, all options are ticked so no need to disable.
+          if (context.certainty) {
+            if (context.certainty.split(',').length !== 4) {
+              $('[name="certainty\[\]"]').prop('disabled', true);
+            } else {
+              $('[name="certainty\[\]"]').prop('disabled', false);
+            }
           }
-        }
-        if (context && context.autochecks) {
-          $('#autochecks').prop('disabled', true);
-        } else {
-          $('#autochecks').prop('disabled', false);
-        }
-        if (context && context.identification_difficulty) {
-          $('#identification_difficulty').prop('disabled', true);
-          $('#identification_difficulty_op').prop('disabled', true);
-        } else {
-          $('#identification_difficulty').prop('disabled', false);
-          $('#identification_difficulty_op').prop('disabled', false);
-        }
-        if (context && context.has_photos) {
-          $('#has_photos').prop('disabled', true);
-        } else {
-          $('#has_photos').prop('disabled', false);
-        }
-        if (context && ((context.quality && context.quality !== 'all') ||
-            (context.certainty && context.certainty.split(',').length !== 4) ||
-            context.autochecks || context.identification_difficulty || context.has_photos ||
-            context.licences || context.media_licences
-          )) {
-          $('#controls-filter_quality .context-instruct').show();
+          if (context.autochecks) {
+            $('#autochecks').prop('disabled', true);
+          } else {
+            $('#autochecks').prop('disabled', false);
+          }
+          if (context.identification_difficulty) {
+            $('#identification_difficulty').prop('disabled', true);
+            $('#identification_difficulty_op').prop('disabled', true);
+          } else {
+            $('#identification_difficulty').prop('disabled', false);
+            $('#identification_difficulty_op').prop('disabled', false);
+          }
+          if (context.has_photos) {
+            $('#has_photos').prop('disabled', true);
+          } else {
+            $('#has_photos').prop('disabled', false);
+          }
+          if (context.coordinate_precision) {
+            $('#coordinate_precision_op').prop('disabled', true);
+            $('#coordinate_precision').prop('disabled', true);
+          } else {
+            $('#coordinate_precision_op').prop('disabled', false);
+            $('#coordinate_precision').prop('disabled', false);
+          }
+          if ((context.quality && context.quality !== 'all') ||
+              (context.certainty && context.certainty.split(',').length !== 4) ||
+              context.autochecks || context.identification_difficulty || context.has_photos ||
+              context.licences || context.media_licences || context.coordinate_precision
+            ) {
+            $('#controls-filter_quality .context-instruct').show();
+          }
         }
         // If no licences are selected, tick them all as that's the unfiltered
         // state.
@@ -933,6 +950,15 @@ jQuery(document).ready(function ($) {
         }
         if (!indiciaData.filter.def.media_licences) {
           $('#media_licences :checkbox').prop('checked', true);
+        }
+        if (!indiciaData.filter.def.coordinate_precision) {
+          // If no coordinate precision selected, tick the not filtered option.
+          $('#coordinate_precision_op input').prop('checked', false);
+          $('#coordinate_precision input[value=""]').prop('checked', true);
+        }
+        else if (!indiciaData.filter.def.coordinate_precision) {
+          // Precision in filter, but not the op, so set a default.
+          $('#coordinate_precision_op input[value="<="]').prop('checked', true);
         }
         // Trigger change to update hidden controls in UI.
         $('#autochecks').change();
@@ -2280,13 +2306,33 @@ jQuery(document).ready(function ($) {
     }
   });
 
-  $('#autochecks').change(function(e) {
-    if ($(e.currentTarget).val() === 'identification_difficulty') {
-      $('#id-diff-cntr').show();
-    } else {
-      $('#id-diff-cntr').hide();
+  $('#identification_difficulty').change(function() {
+    if ($('#identification_difficulty').val() === '') {
+      // Unsetting the ID diff filter, so set the op to = as makes more sense.
+      $('#identification_difficulty_op').val('=');
     }
   });
+
+  $('#coordinate_precision_op').change(function() {
+    if ($('#coordinate_precision_op input:checked').length > 0 && $('#coordinate_precision input:checked').val() === '') {
+      // Setting a coordinate precision op, so set the default precision to 1km
+      // if not already set.
+      $('#coordinate_precision input[value="1000"]').prop('checked', true);
+    }
+  });
+
+  $('#coordinate_precision').change(function() {
+    if ($('#coordinate_precision input:checked').val() === '') {
+      // Unsetting the coord precision filter, so remove the op.
+      $('#coordinate_precision_op input').prop('checked', false);
+    }
+    else if ($('#coordinate_precision_op input:checked').length === 0) {
+      // Setting a coordinate precision, so set the default op to <= if not
+      // already set.
+      $('#coordinate_precision_op input[value="<="]').prop('checked', true);
+    }
+  });
+
 
   $('#controls-filter_quality form').validate({
     rules: {
