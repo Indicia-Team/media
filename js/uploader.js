@@ -1160,7 +1160,7 @@ jQuery(document).ready(function($) {
         $.each($(row).find('option[value!=""]'), function() {
           const option = this;
           const optGroupHeading = $(option).parent().attr('label').toLowerCase().replace(/[^a-z0-9]/g, '');
-          const label = $(option).data('untranslated').replace(/[^a-z0-9]/g, '');
+          const label = $(option).data('untranslated').toLowerCase().replace(/[^a-z0-9]/g, '');
           const labelExcludeBrackets = $(option).data('untranslated').toLowerCase().replace(/\(.+\)/, '').replace(/[^a-z0-9]/g, '');
           var altTerms;
           if (columnLabel === optGroupHeading + label) {
@@ -1193,7 +1193,7 @@ jQuery(document).ready(function($) {
         } else if (matches.headingPlusLabel.length + matches.label.length > 0) {
           // Any other match scenario isn't certain enough for automatic
           // selection so show suggestions.
-          $.extend(allMatches, matches.headingPlusLabel, matches.label)
+          $.extend(allMatches, matches.headingPlusLabel, matches.label);
           $.each(allMatches, function() {
             const suggestionLabel = $(this).parent().data('short-label') + ' - ' + this.text;
             suggestions.push('<a class="apply-suggestion ' + indiciaData.templates.buttonDefaultClass + ' ' + indiciaData.templates.buttonSmallClass + '" data-value="' + this.value + '">' + suggestionLabel + '</a>');
