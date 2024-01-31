@@ -1134,7 +1134,6 @@ jQuery(document).ready(function($) {
     $('.unrestricted-cntr :input').removeAttr('name');
   }
   else if (indiciaData.step === 'mappingsForm') {
-    var urlSep = indiciaData.getRequiredFieldsUrl.indexOf('?') === -1 ? '?' : '&';
     // On the mappings page.
     // Prepare the list of required fields.
     $('#required-fields').show();
