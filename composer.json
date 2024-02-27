@@ -1,5 +1,5 @@
 {
-    "name": "drupal/media",
+    "name": "indicia/media",
     "description": "Media module for Drupal integration with Indicia.",
     "type": "drupal-custom-module",
 	"require": {
