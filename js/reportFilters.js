@@ -900,8 +900,10 @@ jQuery(document).ready(function ($) {
         } else {
           $('.quality-filter').prop('disabled', false);
         }
-        $('.quality-filter').val(indiciaData.filterParser.quality.statusDescriptionFromFilter(
-          indiciaData.filter.def.quality, indiciaData.filter.def.quality_op));
+        if (indiciaData.filterEntity === 'occurrence') {
+          $('.quality-filter').val(indiciaData.filterParser.quality.statusDescriptionFromFilter(
+            indiciaData.filter.def.quality, indiciaData.filter.def.quality_op));
+        }
         if (context) {
           // If certainty context length is 4, all options are ticked so no need to disable.
           if (context.certainty) {
@@ -964,21 +966,23 @@ jQuery(document).ready(function ($) {
         $('#autochecks').change();
       },
       applyFormToDefinition: function() {
-        // Map the checked boxes to a comma-separated value.
-        const checkedStatuses = $('.filter-controls .quality-pane input[type="checkbox"]:checked');
-        let statusCodes = [];
-        $.each(checkedStatuses, function () {
-          statusCodes.push($(this).val());
-        });
-        indiciaData.filter.def.quality = statusCodes.filter(function(value) {
-          if (value !== 'all' & statusCodes.indexOf('all') >= 0) {
-            return false;
-          }
-          if (value.match(/^[RV][1245]$/) && statusCodes.indexOf(value.substring(0, 1)) >= 0) {
-            return false;
-          }
-          return true;
-        }).join(',');
+        if (indiciaData.filterEntity === 'occurrence') {
+          // Map the checked boxes to a comma-separated value.
+          const checkedStatuses = $('.filter-controls .quality-pane input[type="checkbox"]:checked');
+          let statusCodes = [];
+          $.each(checkedStatuses, function () {
+            statusCodes.push($(this).val());
+          });
+          indiciaData.filter.def.quality = statusCodes.filter(function(value) {
+            if (value !== 'all' & statusCodes.indexOf('all') >= 0) {
+              return false;
+            }
+            if (value.match(/^[RV][1245]$/) && statusCodes.indexOf(value.substring(0, 1)) >= 0) {
+              return false;
+            }
+            return true;
+          }).join(',');
+        }
       },
     },
     source: {
