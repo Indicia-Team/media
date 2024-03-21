@@ -2338,34 +2338,36 @@ jQuery(document).ready(function ($) {
   });
 
 
-  $('#controls-filter_quality form').validate({
-    rules: {
-      "licences[]": {
-        required: true,
-        minlength: 1
+  if ($('#controls-filter_quality').length) {
+    $('#controls-filter_quality form').validate({
+      rules: {
+        "licences[]": {
+          required: true,
+          minlength: 1
+        },
+        "media_licences[]": {
+          required: true,
+          minlength: 1
+        }
       },
-      "media_licences[]": {
-        required: true,
-        minlength: 1
-      }
-    },
-    messages: {
-      "licences[]": indiciaData.lang.reportFilters.cannotDeselectAllLicences,
-      "media_licences[]": indiciaData.lang.reportFilters.cannotDeselectAllMediaLicences,
-    },
-    errorPlacement: function(error, element) {
-      var placement = $(element).closest('.control-box');
-      if (placement) {
-        $(placement).append(error)
-      } else {
-        error.insertAfter(element);
-      }
-    },
-    errorClass: indiciaData.templates.jQueryValidateErrorClass,
-  });
+      messages: {
+        "licences[]": indiciaData.lang.reportFilters.cannotDeselectAllLicences,
+        "media_licences[]": indiciaData.lang.reportFilters.cannotDeselectAllMediaLicences,
+      },
+      errorPlacement: function(error, element) {
+        var placement = $(element).closest('.control-box');
+        if (placement) {
+          $(placement).append(error)
+        } else {
+          error.insertAfter(element);
+        }
+      },
+      errorClass: indiciaData.templates.jQueryValidateErrorClass,
+    });
 
-  $('.quality-pane button.cancel').click(closeQualityPane);
+    $('.quality-pane button.cancel').click(closeQualityPane);
 
-  $('.quality-pane button.ok').click(saveAndCloseQualityPane);
+    $('.quality-pane button.ok').click(saveAndCloseQualityPane);
+  }
 
 });
