@@ -363,6 +363,10 @@ jQuery(document).ready(function ($) {
         } else {
           quality = typeof quality === 'string' ? quality : quality.toString();
         }
+        if (quality === '') {
+          // No filter applied.
+          return '';
+        }
         if (typeof quality_op === 'undefined') {
           quality_op = 'in';
         }
@@ -1352,7 +1356,7 @@ jQuery(document).ready(function ($) {
     $('#filter-apply').addClass('disabled');
     // reset the filter label
     $('#active-filter-label').html('');
-    $('#standard-params .header span.changed').hide();
+    $('#standard-params span.changed').hide();
   }
 
   indiciaFns.updateFilterDescriptions = function() {
@@ -1363,8 +1367,11 @@ jQuery(document).ready(function ($) {
       description = indiciaData.filterParser[name].getDescription(indiciaData.filter.def, '<br/>');
       if (description === '') {
         description = indiciaData.lang.reportFiltersNoDescription[name];
+        $(pane).removeClass('active');
+      } else {
+        $(pane).addClass('active');
       }
-      $(pane).find('span.filter-desc').html(description);
+      $(pane).find('.filter-desc').html(description);
     });
   }
 
@@ -1399,7 +1406,7 @@ jQuery(document).ready(function ($) {
     });
     indiciaFns.updateFilterDescriptions();
     $('#filter-build').html(indiciaData.lang.reportFilters.modifyFilter);
-    $('#standard-params .header span.changed').hide();
+    $('#standard-params span.changed').hide();
     // can't delete a filter you didn't create.
     if (data[0].created_by_id === indiciaData.user_id || indiciaData.admin === "1") {
       $('#filter-delete').show();
@@ -1411,7 +1418,7 @@ jQuery(document).ready(function ($) {
   loadFilter = function (id, getParams) {
     var def;
     filterOverride = getParams;
-    if ($('#standard-params .header span.changed:visible').length === 0
+    if ($('#standard-params span.changed:visible').length === 0
         || confirm(indiciaData.lang.reportFilters.confirmFilterChangedLoad)) {
       def = false;
       switch (id) {
@@ -1506,7 +1513,7 @@ jQuery(document).ready(function ($) {
     // Don't proceed if change happens before doc ready done, as this will be
     // code changing values rather than the user.
     if (indiciaData.documentReady === 'done') {
-      $('#standard-params .header span.changed').show();
+      $('#standard-params span.changed').show();
       $('#filter-reset').removeClass('disabled');
     }
   }
@@ -1668,8 +1675,11 @@ jQuery(document).ready(function ($) {
       desc = obj.getDescription(indiciaData.filter.def, '<br/>');
       if (desc === '') {
         desc = indiciaData.lang.reportFiltersNoDescription[name];
+        $('#pane-filter_' + name).removeClass('active');
+      } else {
+        $('#pane-filter_' + name).addClass('active');
       }
-      $('#pane-filter_' + name + ' span.filter-desc').html(desc);
+      $('#pane-filter_' + name + ' .filter-desc').html(desc);
     });
     $('#filter-details').slideDown();
     $('#filter-build').addClass('disabled');
@@ -1856,7 +1866,7 @@ jQuery(document).ready(function ($) {
           indiciaData.filter.id = data.outer_id;
           indiciaData.filter.title = $('#filter\\:title').val();
           $('#active-filter-label').html('Active filter: ' + $('#filter\\:title').val());
-          $('#standard-params .header span.changed').hide();
+          $('#standard-params span.changed').hide();
           $('#select-filter').val(indiciaData.filter.id);
           if ($('#select-filter').val() === '') {
             // this is a new filter, so add to the select list
@@ -2227,8 +2237,11 @@ jQuery(document).ready(function ($) {
       let desc = indiciaData.filterParser.quality.getDescription(indiciaData.filter.def, '<br/>');
       if (desc === '') {
         desc = indiciaData.lang.reportFiltersNoDescription[name];
+        $('#pane-filter_quality').removeClass('active');
+      } else {
+        $('#pane-filter_quality').addClass('active');
       }
-      $('#pane-filter_quality span.filter-desc').html(desc);
+      $('#pane-filter_quality .filter-desc').html(desc);
       updateStandaloneFilter();
     }
     closeQualityPane(e);
@@ -2369,5 +2382,20 @@ jQuery(document).ready(function ($) {
 
     $('.quality-pane button.ok').click(saveAndCloseQualityPane);
   }
+
+  /**
+   * In vertical mode the panel descripts can be toggled on and off.
+   */
+  $('.toggle-description').click(function(e) {
+    if ($(e.currentTarget).hasClass('fa-caret-down')) {
+      $(e.currentTarget).removeClass('fa-caret-down');
+      $(e.currentTarget).addClass('fa-caret-up');
+      $(e.currentTarget).closest('.pane').find('.filter-desc').slideDown();
+    } else {
+      $(e.currentTarget).removeClass('fa-caret-up');
+      $(e.currentTarget).addClass('fa-caret-down');
+      $(e.currentTarget).closest('.pane').find('.filter-desc').slideUp();
+    }
+  });
 
 });
