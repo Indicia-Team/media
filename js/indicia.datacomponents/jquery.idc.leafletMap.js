@@ -488,12 +488,22 @@
    */
   function autoGridSquareKms(el) {
     var zoom = el.map.getZoom();
+    var kms;
     if (zoom > 10) {
-      return 1;
+      kms = 1;
     } else if (zoom > 8) {
-      return 2;
+      kms = 2;
     }
-    return 10;
+    else {
+      kms = 10;
+    }
+    if (el.settings.maxSqSizeKms) {
+      kms = Math.min(kms, el.settings.maxSqSizeKms);
+    }
+    if (el.settings.minSqSizeKms) {
+      kms = Math.max(kms, el.settings.minSqSizeKms);
+    }
+    return kms;
   }
 
   /**
