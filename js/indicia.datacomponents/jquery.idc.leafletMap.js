@@ -73,11 +73,17 @@
    */
   var selectedRowMarker = null;
 
-   /**
+  /**
    * Variable to hold the polygon used to highlight the currently selected
    * location boundary when relevant.
    */
   var selectedFeature = null;
+
+  /**
+   * Track the currently selected grid square, when this is being used as a
+   * temporary filter on other data sources.
+   */
+  var selectedGridSquare = null;
 
   /**
    * If filtering applied due to selected feature, remember which sources need
@@ -192,7 +198,8 @@
     var size = {};
     fillOpacity = fillOpacity === null || typeof fillOpacity === "undefined" ? 0.5 : fillOpacity;
     $.each(layerIds, function eachLayer() {
-      var layerConfig = el.settings.layerConfig[this];
+      var layerId = this;
+      var layerConfig = el.settings.layerConfig[layerId];
       var mapObject;
       config = {
         type: typeof layerConfig.type === 'undefined' ? 'marker' : layerConfig.type,
@@ -245,6 +252,7 @@
       // Store type so available in feature details.
       config.options.type = config.type;
       config.options.className = 'data-' + config.type;
+      config.options.layerId = layerId;
       // Store filter data to apply if feature clicked on.
       if (filterField && filterValue) {
         config.options.filterField = filterField;
@@ -665,6 +673,19 @@
   }
 
   /**
+   * Removes any previously selected grid square's selection style.
+   */
+  function clearSelectedGridSquare(el) {
+    if (selectedGridSquare) {
+      selectedGridSquare.setStyle({
+        color: el.settings.layerConfig[selectedGridSquare.options.layerId].style.color,
+        fillColor: el.settings.layerConfig[selectedGridSquare.options.layerId].style.fillColor
+      });
+      selectedGridSquare = null;
+    }
+  }
+
+  /**
    * Declare public methods.
    */
   methods = {
@@ -733,6 +754,7 @@
               src.populate(false);
             });
             sourcesToReloadOnMapClick = [];
+            clearSelectedGridSquare(el);
           }
           justClickedOnFeature = false;
         });
@@ -772,12 +794,16 @@
               // the filter reset to work at correct time.
               group.on('preclick', function clickFeature(e) {
                 if (e.layer.options.filterField && e.layer.options.filterValue) {
+                  e.layer.setStyle(el.settings.selectedFeatureStyle);
+                  clearSelectedGridSquare(el);
+                  selectedGridSquare = e.layer;
                   // Since we are applying a new set of filters, we can clear the
                   // list of sources that needed to be reloaded next time the map
                   // was clicked.
                   sourcesToReloadOnMapClick = [];
-                  $.each($('#' + el.settings.showSelectedRow)[0].settings.source, function eachSrc(src) {
-                    var source = indiciaData.esSourceObjects[src];
+                  const selectedRowOutputSelector = typeof el.settings.showSelectedRow === 'string' ? '#' + el.settings.showSelectedRow : '#' + el.settings.showSelectedRow.join(',#');
+                  $.each($(selectedRowOutputSelector), function() {
+                    var source = this.settings.sourceObject;
                     var origFilter;
                     let filterValues;
                     if (!source.settings.filterBoolClauses) {
@@ -805,7 +831,7 @@
                     });
                     // Temporarily populate just the linked grid with the
                     // filter to show the selected row.
-                    source.populate(false, origFilter, $('#' + el.settings.showSelectedRow)[0]);
+                    source.populate(false, origFilter, this);
                     // Map click will later clear this filter.
                     sourcesToReloadOnMapClick.push(source);
                     // Tell the map click not to clear this filter just yet.
@@ -934,15 +960,15 @@
       var settings = $(el)[0].settings;
       var controlClass;
       if (typeof settings.showSelectedRow !== 'undefined') {
-        if ($('#' + settings.showSelectedRow).length === 0) {
-          indiciaFns.controlFail(el, 'Invalid grid ID in @showSelectedRow parameter');
-        }
-        controlClass = $('#' + settings.showSelectedRow).data('idc-class');
-        $('#' + settings.showSelectedRow)[controlClass]('on', 'itemSelect', function onItemSelect(tr) {
-          rowSelected(el, tr, false);
-        });
-        $('#' + settings.showSelectedRow)[controlClass]('on', 'itemDblClick', function onItemDblClick(tr) {
-          rowSelected(el, tr, true);
+        const selectedRowOutputSelector = typeof el.settings.showSelectedRow === 'string' ? '#' + el.settings.showSelectedRow : '#' + el.settings.showSelectedRow.join(',#');
+        $.each($(selectedRowOutputSelector), function() {
+          controlClass = $(this).data('idc-class');
+          $(this)[controlClass]('on', 'itemSelect', function onItemSelect(tr) {
+            rowSelected(el, tr, false);
+          });
+          $(this)[controlClass]('on', 'itemDblClick', function onItemDblClick(tr) {
+            rowSelected(el, tr, true);
+          });
         });
       }
     },
