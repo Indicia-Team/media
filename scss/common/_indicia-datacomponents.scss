@@ -389,6 +389,29 @@ table.es-data-grid {
   }
 }
 
+/* idcGridSquareOpacityScale plugin */
+.idc-gridSquareOpacityScale {
+  font-size: 0.8em;
+  display: inline-block;
+  .scale {
+    span {
+      width: 16px;
+      height: 16px;
+      margin: 2px 2px 0 0;
+      display: inline-block;
+      vertical-align: top;
+      text-align: center;
+      &:last-child {
+        color: white;
+        margin-right: 0;
+      }
+    }
+  }
+  div {
+    text-align: center;
+  }
+}
+
 /* idcLeafletMap plugin */
 .idc-leafletMap {
   height: 500px;
