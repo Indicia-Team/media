@@ -1183,7 +1183,7 @@ table.es-data-grid tfoot button span {
   display: inline-block;
 }
 .idc-gridSquareOpacityScale .scale span {
-  width: 16px;
+  min-width: 16px;
   height: 16px;
   margin: 2px 2px 0 0;
   display: inline-block;
