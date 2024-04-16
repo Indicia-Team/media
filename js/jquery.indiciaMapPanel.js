@@ -3024,6 +3024,8 @@ var destroyAllFeatures;
         if ($.inArray('panZoom', this.settings.standardControls) ||
             $.inArray('panZoomBar', this.settings.standardControls)) {
           helptext.push(this.settings.hlpPanZoomButtons);
+        } else if ($.inArray('zoom', this.settings.standardControls)) {
+          helptext.push(this.settings.hlpZoomButtons);
         } else {
           helptext.push(this.settings.hlpPanZoom);
         }
@@ -3507,6 +3509,8 @@ var destroyAllFeatures;
           div.map.addControl(new OpenLayers.Control.PanZoom());
         } else if (ctrl=='panZoomBar') {
           div.map.addControl(new OpenLayers.Control.PanZoomBar());
+        } else if (ctrl=='zoom') {
+          div.map.addControl(new OpenLayers.Control.Zoom());
         } else if (ctrl=='drawPolygon' && div.settings.editLayer) {
           hint = div.settings.hintDrawPolygonHint;
           if (div.settings.reportGroup!==null) {
@@ -3914,6 +3918,8 @@ jQuery.fn.indiciaMapPanel.defaults = {
   hlpPanZoom: 'Pan and zoom the map to the required place by dragging the map and double clicking or Shift-dragging to zoom.',
   hlpPanZoomButtons: 'Pan and zoom the map to the required place using the navigation buttons or '+
       'by dragging the map and double clicking or Shift-dragging to zoom.',
+  hlpZoomButtons: 'Zoom the map to the required place using the +/- buttons or by double clicking or Shift-dragging to zoom. ' +
+      'Drag the map with the mouse to pan.',
   hlpZoomChangesPrecision: 'By zooming the map in or out before clicking you can alter the precision of the '+
       'selected grid square.',
   helpToPickPrecisionMin: false,
