@@ -1102,6 +1102,7 @@ jQuery(document).ready(function($) {
             } else {
               // Import is complete.
               $('#import-details-importing-done').show();
+              $('#import-details-import-another').show();
               // Update page title to import complete.
               $('#current-task').text(indiciaData.lang.import_helper_2.completeMessage);
               $('#file-progress').slideUp();
