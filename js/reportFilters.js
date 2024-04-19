@@ -1955,9 +1955,9 @@ jQuery(document).ready(function ($) {
    * Utility function to convert a form path alias to a control HTML ID.
    */
   function formPathToId(form) {
-    return 'check-input_form-' + form
+    return 'check-input_form-' + form.toLowerCase()
       .replace(/^'(.+)'$/, '$1')
-      .replace(/[^a-z0-9]/, '-');
+      .replace(/[^a-z0-9]/g, '-');
   }
 
   /**
@@ -2081,7 +2081,6 @@ jQuery(document).ready(function ($) {
     }
     $.each(inputFormsToRetick, function() {
       // If loaded from a filter def, the form names are wrapped in ''.
-      console.log(this + ' :: ' + formPathToId(this));
       $('#' + formPathToId(this)).prop('checked', true);
     });
 
