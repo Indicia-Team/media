@@ -1605,6 +1605,14 @@ jQuery(document).ready(function ($) {
             $(indiciaData.mapdiv).css('height', '100%');
             $('#filter-map-container').append(element);
           }
+          else {
+            // Leaflet map used for report output, so move OpenLayers to match.
+            if ($('.idc-leafletMap').length) {
+              const latLonCentre = $('.idc-leafletMap')[0].map.getCenter();
+              const webMercatorCentre = new OpenLayers.Geometry.Point(latLonCentre.lng, latLonCentre.lat).transform('epsg:4326', indiciaData.mapdiv.map.getProjection());
+              indiciaData.mapdiv.map.setCenter(new OpenLayers.LonLat(webMercatorCentre.x, webMercatorCentre.y), $('.idc-leafletMap')[0].map.getZoom());
+            }
+          }
           indiciaData.mapdiv.settings.drawObjectType = 'queryPolygon';
           if ($('#click-buffer').length > 0) {
             // Show tolerance control only if any draw control enabled.
