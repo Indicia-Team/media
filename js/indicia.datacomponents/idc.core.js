@@ -1886,6 +1886,11 @@ jQuery(document).ready(function docReady() {
 
   $('.es-location-select').change(function selectChange() {
     var changedSelect = this;
+    // Select a site will remove a drawn polygon.
+    delete indiciaData.filter.def.searchArea;
+    delete indiciaData.filter.def.bufferedSearchArea;
+    indiciaData.mapdiv.removeAllFeatures(indiciaData.mapdiv.map.editLayer, 'clickPoint', true)
+
     // Callback needs to handle the geometry filters.
     onLocationSelectChange(this, function callback(data) {
       if (data.length === 0) {
