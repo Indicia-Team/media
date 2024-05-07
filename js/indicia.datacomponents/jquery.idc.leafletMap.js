@@ -81,7 +81,7 @@
   /**
    * Variable to hold polygons by type (e.g. selection, buffer) that have been loaded onto the map.
    */
-  var managedFeatures = [];
+  var managedFeatures = {};
 
   /**
    * Track the currently selected grid square, when this is being used as a
@@ -1031,7 +1031,7 @@
      * Clears the selected feature boundary (e.g. a selected location).
      */
     clearFeature: function clearFeature(featureName) {
-      featureName === typeof featureType === 'undefined' ? 'selection' : '';
+      featureName = typeof featureName === 'undefined' ? 'selection' : '';
       if (managedFeatures[featureName]) {
         managedFeatures[featureName].removeFrom(this.map);
         delete managedFeatures[featureName];
@@ -1048,17 +1048,21 @@
     /**
      * Shows a selected feature boundary (e.g. a selected location).
      */
-    showFeature: function showFeature(geom, zoom, featureName) {
-      featureName === typeof featureName === 'undefined' ? 'selection' : '';
+    showFeature: function showFeature(geom, zoom, featureName, style) {
+      // Set default style.
+      if (typeof style === 'undefined') {
+        style = {
+          color: '#3333DD',
+          fillColor: '#4444CC',
+          fillOpacity: 0.05
+        };
+      }
+      featureName = typeof featureName === 'undefined' ? 'selection' : '';
       if (managedFeatures[featureName]) {
         managedFeatures[featureName].removeFrom(this.map);
         delete managedFeatures[featureName];
       }
-      managedFeatures[featureName] = showFeatureWkt(this, geom, 0, zoom, 14, {
-        color: '#3333DD',
-        fillColor: '#4444CC',
-        fillOpacity: 0.05
-      });
+      managedFeatures[featureName] = showFeatureWkt(this, geom, 0, zoom, 14, style);
     },
 
     /**
