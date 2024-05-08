@@ -88,6 +88,10 @@
 				$.inArray(locationId, indiciaData.allPossibleLocationIds) > -1;
 	}, 'The location is not in the chosen grid square.');
 
+	$.validator.addMethod('precisionConditionalMandatory', function (value, element) {
+		return /^[1-9][0-9]*$/.test(value)
+	}, '')
+
 	/**
 	* Return true, if the value is a valid vehicle identification number (VIN).
 	*
