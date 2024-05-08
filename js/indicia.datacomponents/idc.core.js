@@ -1867,7 +1867,7 @@ jQuery(document).ready(function docReady() {
           });
         });
       });
-    } else if (!$(select).hasClass('empty-option-does-nothing')) {
+    } else {
       // Not selected, so clear the current selection.
       if (callback) {
         callback([]);
