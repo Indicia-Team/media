@@ -680,7 +680,7 @@
         // Intersects is using the outer bounding box of the square which is
         // only rough as square may be at an angle. So do an accurate point in
         // polygon test to confirm.
-        if (!feature.getBounds || pointInPolygon(latlng, feature.toGeoJSON().geometry.coordinates[0])) {
+        if (!feature.getBounds || feature.toGeoJSON().geometry.type === 'Point' || pointInPolygon(latlng, feature.toGeoJSON().geometry.coordinates[0])) {
           filterValues.push(feature.options.filterValue);
         }
       }
