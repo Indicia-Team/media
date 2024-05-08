@@ -811,12 +811,12 @@ var addMediaRowOnClick;
       if (finerSrefIsPrecise) {
         precisionCtrl.removeAttr('disabled');
         precisionCtrl.removeAttr('placeholder');
-        precisionCtrl.addClass('grid-required {precisionConditionalMandatory:true}');
+        precisionCtrl.addClass('{pattern:/^[1-9][0-9]*$/, required:true}');
       } else {
         precisionCtrl.attr('disabled', 'disabled');
         precisionCtrl.attr('placeholder', 'n/a');
         precisionCtrl.val('');
-        precisionCtrl.removeClass('grid-required {precisionConditionalMandatory:true}');
+        precisionCtrl.removeClass('{pattern:/^[1-9][0-9]*$/, required:true}');
       }
     }
   }
