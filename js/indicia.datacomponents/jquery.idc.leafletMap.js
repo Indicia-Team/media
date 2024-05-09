@@ -128,6 +128,30 @@
   }
 
   /**
+   * When reporting on a filter boundary, add filter to limit coord precision.
+   *
+   * So that very imprecise records are excluded if much bigger than the
+   * reporting polygon.
+   */
+  function addPrecisionFilterForReportBoundary(bounds) {
+    const proj4326 = new Proj4js.Proj('EPSG:4326');
+    // Web mercator good enough for rough size estimate in metres.
+    const projWebMercator = new Proj4js.Proj('EPSG:3857');
+    // Find the diagonal of the bounding box.
+    const cornerNE = new Proj4js.Point(bounds.getEast(), bounds.getNorth());
+    const cornerSW = new Proj4js.Point(bounds.getWest(), bounds.getSouth  ());
+    // Transform to Web Mercator.
+    const cornerNEWM = Proj4js.transform(proj4326, projWebMercator, cornerNE);
+    const cornerSWWM = Proj4js.transform(proj4326, projWebMercator, cornerSW);
+    // Find the smallest dimension west->east or south-north.
+    const minDimension = Math.min(cornerNE.y - cornerSW.y, cornerNE.x - cornerSW.x);
+    // Double it to define a limit on the range of coordinate imprecisions, so
+    // records that are not likely to be in or near the boundary are excluded.
+    const maxImprecision = Math.round(minDimension * 2);
+    $('body').append('<input class="es-filter-param" type="hidden" data-es-bool-clause="must" data-es-query-type="query_string" value="location.coordinate_uncertainty_in_meters:[* TO ' + maxImprecision + ']" />');
+  }
+
+  /**
    * Convert an ES geohash to a WKT polygon.
    */
   function geohashToWkt(geohash) {
@@ -1018,13 +1042,14 @@
      */
     addBoundaryGroup: function addBoundaryGroup(geoms, style) {
       var featureList = [];
-      var group;
       geoms.forEach(function(geom) {
         featureList.push(getFeatureFromGeom(geom, style).obj);
       });
-      group = L.featureGroup(featureList)
+      const group = L.featureGroup(featureList)
         .addTo(this.map);
-      this.map.fitBounds(group.getBounds(), { maxZoom: 14 });
+      const bounds = group.getBounds();
+      this.map.fitBounds(bounds, { maxZoom: 14 });
+      addPrecisionFilterForReportBoundary(bounds);
     },
 
     /**
