@@ -1502,15 +1502,35 @@ table.es-data-grid tfoot button span {
   font-style: italic;
 }
 
-/* idcRecordsMover */
-.post-move-info .output {
+/* idcBulkEditor */
+.bulk-editor-dlg .pre-bulk-edit-info {
+  max-width: 500px;
+}
+.bulk-editor-dlg .pre-bulk-edit-info input[type=date] {
+  padding: 0 12px;
+}
+.bulk-editor-dlg .post-bulk-edit-info .output {
   border: solid silver 1px;
-  width: 350px;
-  min-height: 140px;
+  width: 100%;
+  min-width: 400px;
+  min-height: 200px;
   padding: 4px;
   margin-bottom: 8px;
 }
-.post-move-info .output p {
+.bulk-editor-dlg .post-bulk-edit-info .output p {
+  margin: 2px;
+}
+
+/* idcRecordsMover */
+.records-mover-dlg .post-move-info .output {
+  border: solid silver 1px;
+  width: 100%;
+  min-width: 400px;
+  min-height: 200px;
+  padding: 4px;
+  margin-bottom: 8px;
+}
+.records-mover-dlg .post-move-info .output p {
   margin: 2px;
 }
 

@@ -56,6 +56,18 @@ $file-box-icon-size: 30px;
   border-radius: 4px;
 }
 
+@mixin log-output {
+  border: solid silver 1px;
+  width: 100%;
+  min-width: 400px;
+  min-height: 200px;
+  padding: 4px;
+  margin-bottom: 8px;
+  p {
+    margin: 2px;
+  }
+}
+
 /* So we can absolute position the loading spinner */
 body {
   position: relative;
@@ -711,16 +723,26 @@ table.es-data-grid {
   font-style: italic;
 }
 
+/* idcBulkEditor */
+.bulk-editor-dlg {
+  .pre-bulk-edit-info {
+    max-width: 500px;
+    input[type="date"] {
+      padding: 0 12px;
+    }
+  }
+  .post-bulk-edit-info {
+    .output {
+      @include log-output;
+    }
+  }
+}
+
 /* idcRecordsMover */
-.post-move-info {
-  .output {
-    border: solid silver 1px;
-    width: 350px;
-    min-height: 140px;
-    padding: 4px;
-    margin-bottom: 8px;
-    p {
-      margin: 2px;
+.records-mover-dlg {
+  .post-move-info {
+    .output {
+      @include log-output;
     }
   }
 }
