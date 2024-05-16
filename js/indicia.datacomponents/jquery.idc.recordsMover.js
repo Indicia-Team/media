@@ -1,6 +1,6 @@
 /**
  * @file
- * Plugin for a details pane for verification of records.
+ * Plugin for a tool to move records between websites.
  *
  * Indicia, the OPAL Online Recording Toolkit.
  *
