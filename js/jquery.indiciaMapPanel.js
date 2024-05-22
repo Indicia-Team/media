@@ -2250,7 +2250,7 @@ var destroyAllFeatures;
           && wmPoint.x >= -1196000 && wmPoint.x <= -599200 && wmPoint.y >= 6687800 && wmPoint.y <= 7442470) {
         // Got a rough match, now transform to the correct system so we can do exact match. Note that we are not testing against
         // a pure rectangle now.
-        proj = new OpenLayers.Projection('EPSG:29901');
+        proj = new OpenLayers.Projection('EPSG:29903');
         testpoint = wmPoint.clone().transform(wmProj, proj);
         if (testpoint.x >= 10000 && testpoint.x <= 367300 && testpoint.y >= 10000 && testpoint.y <= 468100
             && (testpoint.x < 332000 || testpoint.y < 445900)) {
@@ -2319,7 +2319,7 @@ var destroyAllFeatures;
         if (wmPoint.x >= -1196000 && wmPoint.x <= -599200 && wmPoint.y >= 6687800 && wmPoint.y <= 7442470) {
           // Got a rough match, now transform to the correct system so we can do exact match. Note that we are not testing against
           // a pure rectangle now.
-          proj = new OpenLayers.Projection('EPSG:29901');
+          proj = new OpenLayers.Projection('EPSG:29903');
           testpoint = wmPoint.clone().transform(wmProj, proj);
           if (testpoint.x >= 10000 && testpoint.x <= 367300 && testpoint.y >= 10000 && testpoint.y <= 468100
               && (testpoint.x < 332000 || testpoint.y < 445900)) {
@@ -3860,7 +3860,7 @@ jQuery.fn.indiciaMapPanel.defaults = {
       intervals: [100000, 10000, 1000, 100]
     },
     'OSIE': {
-      projection: 29901,
+      projection: 29903,
       bounds: [0, 0, 400000, 500000],
       intervals: [100000, 10000, 1000, 100]
     },
