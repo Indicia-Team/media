@@ -2056,6 +2056,10 @@ div.inline.disabled {
   margin: 8px 15px 0 0;
 }
 
+div.fancy-dialog-content {
+  max-width: 600px;
+}
+
 /* Provide some basic Bootstrap style classes */
 .alert {
   padding: 4px;

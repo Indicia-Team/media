@@ -230,6 +230,25 @@
         dlg.find('.post-bulk-edit-info .close-bulk-edit-dlg').removeAttr('disabled');
         logOutput(dlg, indiciaData.lang.bulkEditor.done);
         // @todo Notify the user that it worked.
+      } else if (response.code === 409 && response.errorCode && response.errorCode === 'SAMPLES_CONTAIN_OTHER_OCCURRENCES') {
+        $.fancyDialog({
+          title: indiciaData.lang.bulkEditor.allowSampleSplitting,
+          message: indiciaData.lang.bulkEditor.promptAllowSampleSplit
+            .replace('{1}', response.errorData.sample_id)
+            .replace('{2}', response.errorData.included_occurrence_id)
+            .replace('{3}', response.errorData.excluded_occurrence_id),
+          okButton: indiciaData.lang.bulkEditor.confirm,
+          callbackOk: function() {
+            if (!data.options) {
+              data.options = {};
+            }
+            data.options.allowSampleSplits = true;
+            performBulkEdit(dlg, data, endpoint);
+          },
+          callbackCancel: function() {
+            $.fancybox.close();
+          }
+        });
       } else {
         logOutput(dlg, indiciaData.lang.bulkEditor.error);
         if (response.message) {
