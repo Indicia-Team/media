@@ -124,6 +124,23 @@
   }
 
   /**
+   * Encode text for use in HTML data.
+   *
+   * @param string text
+   *   Unencoded text.
+   *
+   * @return string
+   *   Encoded text.
+   */
+  function htmlEncode(text) {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/&/g, '&quot;');
+  }
+
+  /**
    * Adds the header cells to the table header.
    */
   function addColumnHeadings(el, header) {
@@ -180,7 +197,8 @@
       if (dataType) {
         footableExtras += ' data-type="' + dataType + '"';
       }
-      $('<th class="col-' + idx + '" data-field="' + this.field + '"' + footableExtras + '>' + heading + '</th>')
+      const fieldHtmlEncode = htmlEncode(this.field);
+      $('<th class="col-' + idx + '" data-field="' + fieldHtmlEncode + '"' + footableExtras + '>' + heading + '</th>')
         .appendTo(headerRow);
     });
     if (el.settings.actions.length) {
@@ -201,7 +219,8 @@
       $('<td class="footable-toggle-col"></td>').appendTo(filterRow);
     }
     $.each(el.settings.columns, function eachColumn(idx) {
-      var td = $('<td class="col-' + idx + '" data-field="' + this.field + '"></td>').appendTo(filterRow);
+      const fieldHtmlEncode = htmlEncode(this.field);
+      var td = $('<td class="col-' + idx + '" data-field="' + fieldHtmlEncode + '"></td>').appendTo(filterRow);
       var title;
       var caption = el.settings.availableColumnInfo[this.field].caption;
       // No filter input if this column has no mapping unless there is a
@@ -660,7 +679,7 @@
         maxCharsPerCol['col-' + idx] =
           Math.max(maxCharsPerCol['col-' + idx], longestWordLength($('<p>' + value + '</p>').text()) + extraSpace);
       }
-      classes.push('field-' + this.field.replace(/\./g, '--').replace(/_/g, '-'));
+      classes.push('field-' + this.field.replace(/\./g, '--').replace(/_/g, '-').replace(/[^a-z\-]/g, ''));
       // Copy across responsive hidden cols.
       if ($(el).find('table th.col-' + idx).css('display') === 'none') {
         style = ' style="display: none"';
