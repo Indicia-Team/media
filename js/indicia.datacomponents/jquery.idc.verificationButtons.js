@@ -1107,7 +1107,7 @@
       heading = status.status
         ? 'Set status to <span class="status">' + indiciaData.statusMsgs[overallStatus].toLowerCase() + '</span>'
         : 'Query this record';
-      $('#verification-form .multiple-warning').html('<i class="fas fa-exclamation-triangle"></i>').hide();
+      $('#verification-form .multiple-warning').hide();
       if ($(el).find('.apply-to-parent-sample-contents:enabled').hasClass('active')) {
         // Accept all of this taxon in same parent sample is enabled, so warn.
         // We need a count of affected records for the warning.
