@@ -1810,6 +1810,8 @@
         var doc;
         var key;
         var keyParts;
+        var editPath = '';
+        var editFormOnSameWebsite;
         const buttonEl = $('#' + el.settings.id + '-buttons');
         resetCommentForm('verification-form', '');
         $('.external-record-link').remove();
@@ -1824,7 +1826,19 @@
           $('.idc-verificationButtons').show();
           sep = el.settings.viewPath.indexOf('?') === -1 ? '?' : '&';
           $(buttonEl).find('.view').attr('href', el.settings.viewPath + sep + 'occurrence_id=' + doc.id);
-          $(buttonEl).find('.edit').attr('href', el.settings.editPath + sep + 'occurrence_id=' + doc.id);
+          editFormOnSameWebsite = doc.metadata.website.id == indiciaData.website_id && doc.metadata.input_form;
+          if (el.settings.useLocalFormPaths && editFormOnSameWebsite) {
+            editPath = doc.metadata.input_form;
+          } else if (el.settings.editPath) {
+            editPath = el.settings.editPath;
+          }
+          console.log('path: ' + editPath);
+          if (editPath) {
+            $(buttonEl).find('.edit').attr('href', editPath + sep + 'occurrence_id=' + doc.id);
+            $(buttonEl).find('.edit').show();
+          } else {
+            $(buttonEl).find('.edit').hide();
+          }
           $(buttonEl).find('.species').attr('href', el.settings.speciesPath + sep + 'taxon_meaning_id=' + doc.taxon.taxon_meaning_id);
           // Deprecated doc field mappings had occurrence_external_key instead
           // of occurrence.source_system_key. This line can be removed if the
