@@ -412,6 +412,42 @@ input:checked + .slider:before {
   font-size: 1.2em;
 }
 
+/* Source filter checkboxes */
+#controls-filter_source {
+  width: 800px;
+}
+#controls-filter_source .filter-popup-columns {
+  width: 250px;
+  border-right: solid silver 1px;
+}
+#controls-filter_source .filter-popup-columns:last-child {
+  border: none;
+}
+#controls-filter_source .filter-popup-columns ul {
+  overflow-x: auto;
+  height: 450px;
+  padding: 0 0 0 22px;
+}
+#controls-filter_source .filter-popup-columns ul li {
+  list-style-type: none;
+  background: none;
+  border-bottom: 1px solid #F0F0F0;
+  padding: 0.2em 0;
+}
+#controls-filter_source .filter-popup-columns ul li:last-child {
+  border: none;
+}
+#controls-filter_source .filter-popup-columns ul li label {
+  margin-left: 6px;
+}
+#controls-filter_source .filter-popup-columns ul li input[type=checkbox] {
+  margin-left: -20px;
+}
+#controls-filter_source .filter-popup-columns .ctrl-wrap {
+  font-size: 90%;
+  margin-bottom: 4px;
+}
+
 /* Quality filter custom select */
 .quality-cntr {
   /* Drop down quality pane */
@@ -425,7 +461,7 @@ input:checked + .slider:before {
   border: solid silver 1px;
   border-radius: 4px;
   background: white;
-  z-index: 9999;
+  z-index: 1000;
   position: absolute;
   padding: 8px;
   /* Include/Exclude inline */
