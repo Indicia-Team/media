@@ -105,15 +105,35 @@ body {
       display: none;
     }
   }
+  &.flexgrid {
+    .es-card-gallery {
+      display: flex;
+      flex-wrap: wrap;
+      .card {
+        flex-basis: 98%;
+        flex-grow: 1;
+        width: 90%;
+      }
+    }
+  }
+  &.horizontal {
+    .es-card-gallery {
+      overflow-x: auto;
+      white-space: nowrap;
+      .card {
+        display: inline-block;
+        img.med {
+          width: 150px;
+          height: 150px;
+          object-fit: cover;
+        }
+      }
+    }
+  }
   .es-card-gallery {
-    display: flex;
-    flex-wrap: wrap;
     margin: 0 auto;
     .card {
-      flex-basis: 98%;
-      flex-grow: 1;
       margin: 1%;
-      width: 90%;
       box-sizing: border-box;
       background-color: $colour-even-row;
       position: relative;

@@ -857,16 +857,32 @@ body > .loading-spinner {
 .idc-cardGallery.max-size-mode .card:not(.show-max-size) {
   display: none;
 }
-.idc-cardGallery .es-card-gallery {
+.idc-cardGallery.flexgrid .es-card-gallery {
   display: flex;
   flex-wrap: wrap;
+}
+.idc-cardGallery.flexgrid .es-card-gallery .card {
+  flex-basis: 98%;
+  flex-grow: 1;
+  width: 90%;
+}
+.idc-cardGallery.horizontal .es-card-gallery {
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.idc-cardGallery.horizontal .es-card-gallery .card {
+  display: inline-block;
+}
+.idc-cardGallery.horizontal .es-card-gallery .card img.med {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+}
+.idc-cardGallery .es-card-gallery {
   margin: 0 auto;
 }
 .idc-cardGallery .es-card-gallery .card {
-  flex-basis: 98%;
-  flex-grow: 1;
   margin: 1%;
-  width: 90%;
   box-sizing: border-box;
   background-color: #f7f7f7;
   position: relative;
