@@ -1098,7 +1098,99 @@ body > .loading-spinner {
   /* Ensure height enough for spinner. */
   min-height: 140px;
 }
-.idc-dataGrid .data-grid-settings {
+.idc-dataGrid.layout-align-bottom table.es-data-grid {
+  /* Remove margin so controlLayout can anchor to bottom of page. */
+  margin-bottom: 0;
+}
+.idc-dataGrid table.es-data-grid {
+  background-color: #ffffff;
+}
+.idc-dataGrid table.es-data-grid thead tr th, .idc-dataGrid table.es-data-grid thead tr td {
+  padding: 4px 2px;
+  word-wrap: break-word;
+}
+.idc-dataGrid table.es-data-grid thead tr.es-filter-row {
+  /* Position search value warning icon over input. */
+}
+.idc-dataGrid table.es-data-grid thead tr.es-filter-row input {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+}
+.idc-dataGrid table.es-data-grid thead tr.es-filter-row .fa-exclamation-circle {
+  margin-left: -20px;
+}
+.idc-dataGrid table.es-data-grid thead tr .fa-sort {
+  opacity: 0.3;
+}
+.idc-dataGrid table.es-data-grid thead tr .fa-sort:hover {
+  opacity: 1;
+}
+.idc-dataGrid table.es-data-grid tbody tr {
+  /* Alternate row colouration */
+  /* Disable hover highlight for row shown when no data available */
+}
+.idc-dataGrid table.es-data-grid tbody tr th, .idc-dataGrid table.es-data-grid tbody tr td {
+  padding: 4px 2px;
+  word-wrap: break-word;
+}
+.idc-dataGrid table.es-data-grid tbody tr:nth-child(even), .idc-dataGrid table.es-data-grid tbody tr:nth-child(even) td {
+  background-color: #f7f7f7;
+}
+.idc-dataGrid table.es-data-grid tbody tr:nth-child(odd), .idc-dataGrid table.es-data-grid tbody tr:nth-child(odd) td {
+  background-color: #ffffff;
+}
+.idc-dataGrid table.es-data-grid tbody tr.disabled td:not(.footable-toggle-col) {
+  opacity: 0.3;
+}
+.idc-dataGrid table.es-data-grid tbody tr:hover:not(.disabled), .idc-dataGrid table.es-data-grid tbody tr:hover:not(.disabled) td {
+  color: #333333;
+  background-color: #fffbcc;
+}
+.idc-dataGrid table.es-data-grid tbody tr.empty-row, .idc-dataGrid table.es-data-grid tbody tr.empty-row:hover, .idc-dataGrid table.es-data-grid tbody tr.empty-row td, .idc-dataGrid table.es-data-grid tbody tr.empty-row:hover td {
+  background-color: #f7f7f7;
+}
+.idc-dataGrid table.es-data-grid tbody tr.selected:not(.disabled), .idc-dataGrid table.es-data-grid tbody tr.selected:not(.disabled) td {
+  color: #ffffff;
+  background-color: #2c7bb6;
+}
+.idc-dataGrid table.es-data-grid tbody tr.zero-abundance, .idc-dataGrid table.es-data-grid tbody tr.zero-t {
+  text-decoration: line-through;
+}
+.idc-dataGrid table.es-data-grid tbody tr img {
+  max-height: 60px;
+  border-radius: 4px;
+  margin: 2px;
+  -webkit-box-shadow: 3px 3px 6px #a7a7a7;
+  -moz-box-shadow: 3px 3px 6px #a7a7a7;
+  box-shadow: 3px 3px 6px #a7a7a7;
+}
+.idc-dataGrid table.es-data-grid tbody tr img.multi {
+  max-height: 45px;
+}
+.idc-dataGrid table.es-data-grid.fixed-header tbody {
+  display: block;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.idc-dataGrid table.es-data-grid.fixed-header thead, .idc-dataGrid table.es-data-grid.fixed-header tbody tr {
+  display: table;
+  width: 100%;
+  /* even columns width , fix width of table too*/
+  table-layout: fixed;
+}
+.idc-dataGrid table.es-data-grid.fixed-header .multiselect-cntr {
+  padding: 0;
+  width: 12px;
+}
+.idc-dataGrid table.es-data-grid tfoot span {
+  margin: 0 1em;
+}
+.idc-dataGrid table.es-data-grid tfoot button span {
+  margin: 0 0 0 8px;
+}
+
+.data-grid-settings {
   position: absolute;
   top: 0;
   left: 0;
@@ -1109,124 +1201,32 @@ body > .loading-spinner {
   border: solid silver 1px;
   z-index: 1;
   border-radius: 4px;
-  bottom: 0;
   min-height: 500px;
 }
-.idc-dataGrid .data-grid-settings ol {
+.data-grid-settings ol {
   overflow: auto;
+  max-height: 600px;
 }
-.idc-dataGrid .data-grid-settings ol li {
+.data-grid-settings ol li {
   background: #e7e7e7;
   border: solid #777 1px;
   padding: 4px;
   margin: 2px 4px;
   list-style-position: inside;
 }
-.idc-dataGrid .data-grid-settings ol li .checkbox {
+.data-grid-settings ol li .checkbox {
   display: inline-block;
   vertical-align: middle;
 }
-.idc-dataGrid .data-grid-settings ol li .checkbox label {
+.data-grid-settings ol li .checkbox label {
   margin: 0;
   width: auto;
 }
-.idc-dataGrid .data-grid-settings ol li .checkbox input[type=checkbox] {
+.data-grid-settings ol li .checkbox input[type=checkbox] {
   margin-right: 8px;
 }
-.idc-dataGrid .data-grid-settings ol li p {
+.data-grid-settings ol li p {
   margin: 0;
-}
-.idc-dataGrid.layout-align-bottom table.es-data-grid {
-  /* Remove margin so controlLayout can anchor to bottom of page. */
-  margin-bottom: 0;
-}
-
-table.es-data-grid {
-  background-color: #ffffff;
-}
-table.es-data-grid thead tr th, table.es-data-grid thead tr td {
-  padding: 4px 2px;
-  word-wrap: break-word;
-}
-table.es-data-grid thead tr.es-filter-row {
-  /* Position search value warning icon over input. */
-}
-table.es-data-grid thead tr.es-filter-row input {
-  width: 100%;
-  box-sizing: border-box;
-  margin: 0;
-}
-table.es-data-grid thead tr.es-filter-row .fa-exclamation-circle {
-  margin-left: -20px;
-}
-table.es-data-grid thead tr .fa-sort {
-  opacity: 0.3;
-}
-table.es-data-grid thead tr .fa-sort:hover {
-  opacity: 1;
-}
-table.es-data-grid tbody tr {
-  /* Alternate row colouration */
-  /* Disable hover highlight for row shown when no data available */
-}
-table.es-data-grid tbody tr th, table.es-data-grid tbody tr td {
-  padding: 4px 2px;
-  word-wrap: break-word;
-}
-table.es-data-grid tbody tr:nth-child(even), table.es-data-grid tbody tr:nth-child(even) td {
-  background-color: #f7f7f7;
-}
-table.es-data-grid tbody tr:nth-child(odd), table.es-data-grid tbody tr:nth-child(odd) td {
-  background-color: #ffffff;
-}
-table.es-data-grid tbody tr.disabled td:not(.footable-toggle-col) {
-  opacity: 0.3;
-}
-table.es-data-grid tbody tr:hover:not(.disabled), table.es-data-grid tbody tr:hover:not(.disabled) td {
-  color: #333333;
-  background-color: #fffbcc;
-}
-table.es-data-grid tbody tr.empty-row, table.es-data-grid tbody tr.empty-row:hover, table.es-data-grid tbody tr.empty-row td, table.es-data-grid tbody tr.empty-row:hover td {
-  background-color: #f7f7f7;
-}
-table.es-data-grid tbody tr.selected:not(.disabled), table.es-data-grid tbody tr.selected:not(.disabled) td {
-  color: #ffffff;
-  background-color: #2c7bb6;
-}
-table.es-data-grid tbody tr.zero-abundance, table.es-data-grid tbody tr.zero-t {
-  text-decoration: line-through;
-}
-table.es-data-grid tbody tr img {
-  max-height: 60px;
-  border-radius: 4px;
-  margin: 2px;
-  -webkit-box-shadow: 3px 3px 6px #a7a7a7;
-  -moz-box-shadow: 3px 3px 6px #a7a7a7;
-  box-shadow: 3px 3px 6px #a7a7a7;
-}
-table.es-data-grid tbody tr img.multi {
-  max-height: 45px;
-}
-table.es-data-grid.fixed-header tbody {
-  display: block;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-table.es-data-grid.fixed-header thead, table.es-data-grid.fixed-header tbody tr {
-  display: table;
-  width: 100%;
-  /* even columns width , fix width of table too*/
-  table-layout: fixed;
-}
-table.es-data-grid.fixed-header .multiselect-cntr {
-  padding: 0;
-  width: 12px;
-}
-table.es-data-grid tfoot span {
-  margin: 0 1em;
-}
-table.es-data-grid tfoot button span {
-  margin: 0 0 0 8px;
 }
 
 /* idcGridSquareOpacityScale plugin */
