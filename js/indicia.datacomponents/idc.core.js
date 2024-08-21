@@ -1073,27 +1073,28 @@
     sitename: function sitename(doc, params) {
       const format = params.length > 0 ? params[0] : '';
       const value = typeof doc.location.verbatim_locality === 'undefined' ? '' : doc.location.verbatim_locality;
+      const shouldBlur = doc.metadata.sensitive === 'true' || doc.metadata.private === 'true';
       switch (format) {
-        case 'all':
+        case 'obscureifsensitive':
+          if (shouldBlur && value !== '') {
+            return '[sensitive record, location hidden]';
+          }
           return value;
 
-        case 'sensitive':
-          if (doc.metadata.sensitive === 'true') {
+        case 'showifsensitive':
+          if (shouldBlur) {
             return value;
           }
           return '';
 
         case 'mapmate':
-          if (doc.metadata.sensitive === 'true' && value !== '') {
-            return '[sensitive record, location_hidden]';
+          if (shouldBlur && value !== '') {
+            return '[sensitive record, location hidden]';
           }
           // Truncation to 62 characters required for MapMate.
           return value === '' ? 'unnamed site' : value.substring(0, 62);
 
         default:
-          if (doc.metadata.sensitive === 'true' && value !== '') {
-            return '[sensitive record, location_hidden]';
-          }
           return value;
       }
     },
