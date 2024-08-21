@@ -1070,6 +1070,34 @@
       });
     },
 
+    sitename: function sitename(doc, params) {
+      const format = params.length > 0 ? params[0] : '';
+      const value = typeof doc.location.verbatim_locality === 'undefined' ? '' : doc.location.verbatim_locality;
+      switch (format) {
+        case 'all':
+          return value;
+
+        case 'sensitive':
+          if (doc.metadata.sensitive === 'true') {
+            return value;
+          }
+          return '';
+
+        case 'mapmate':
+          if (doc.metadata.sensitive === 'true' && value !== '') {
+            return '[sensitive record, location_hidden]';
+          }
+          // Truncation to 62 characters required for MapMate.
+          return value === '' ? 'unnamed site' : value.substring(0, 62);
+
+        default:
+          if (doc.metadata.sensitive === 'true' && value !== '') {
+            return '[sensitive record, location_hidden]';
+          }
+          return value;
+      }
+    },
+
     /**
      * A standardised label for the taxon.
      */
@@ -1296,6 +1324,7 @@
         unit: 'km'
       }
     },
+    sitename: ['location.verbatim_locality.keyword'],
     status_icons: [
       'identification.verification_status',
       'identification.verification_substatus',
