@@ -674,6 +674,9 @@
         maxCharsPerCol['col-' + idx] =
           Math.max(maxCharsPerCol['col-' + idx], longestWordLength($('<p>' + value + '</p>').text()) + extraSpace);
       }
+      if (value === '!' && (field.substr(0, 9) === '#sitename' || field === 'location.verbatim_locality')) {
+        value = '<i class="fas fa-eye-slash" title="' + indiciaData.lang.dataGrid.siteNameWitheld + '"></i>';
+      }
       classes.push('field-' + this.field.replace(/\./g, '--').replace(/_/g, '-').replace(/[^a-z\-]/g, ''));
       // Copy across responsive hidden cols.
       if ($(el).find('table th.col-' + idx).css('display') === 'none') {
