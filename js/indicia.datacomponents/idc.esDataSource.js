@@ -289,8 +289,8 @@ var IdcEsDataSource;
           aggs: subAggs
         }
       };
-      if (settings.shard_size) {
-        settings.aggregation._idfield.terms.shard_size = settings.shard_size;
+      if (settings.shardSize) {
+        settings.aggregation._idfield.terms.shard_size = settings.shardSize;
       }
       settings.aggregation._idfield.terms.order[sortField] = sortDir;
       // Add a count agg only if filter changed.
