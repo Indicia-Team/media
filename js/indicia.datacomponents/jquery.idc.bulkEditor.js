@@ -169,28 +169,6 @@
   }
 
   /**
-   * Checks the response from the server is status 200 OK.
-   *
-   * If not, adds a message to the log output and returns false.
-   *
-   * @param DOM dlg
-   *   Dialog element.
-   * @param object response
-   *   API request response object.
-   *
-   * @returns bool
-   *   True if status is 200 OK.
-   */
-  function checkResponseCode(dlg, response) {
-    if (response.code !== 200 && response.code !== 204) {
-      logOutput(dlg, indiciaData.lang.bulkEditor.error);
-      logOutput(dlg, response.message);
-      return false;
-    }
-    return true;
-  }
-
-  /**
    * Resest the dialog before doing a bulk edit.
    *
    * @param DOM dlg
@@ -216,7 +194,7 @@
    */
   function performBulkEdit(dlg, data, endpoint) {
     $.post(indiciaData.esProxyAjaxUrl + '/' + endpoint + '/' + indiciaData.nid, data, null, 'json')
-    .done(function(response, textStatus, jqXHR) {
+    .done(function(response) {
       if (response.code === 200 && response.search_after) {
         // Paging through a set of records, send the same request again, but
         // with search_after set.
