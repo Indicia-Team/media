@@ -719,10 +719,25 @@
   function setColWidths(el, maxCharsPerCol) {
     var maxCharsPerRow = 0;
     var tbody = $(el).find('tbody');
+    var hiddenContainer;
+    var hiddenContainerOrigStyle;
+    if ($(el).is(':hidden')) {
+      // If on a hidden tab, clientWidth is broken, so we need to temporarily
+      // show the container with opacity 0 in order for calculations to work.
+      hiddenContainer = $(el).closest('.indicia-lazy-load');
+      hiddenContainerOrigStyle = hiddenContainer.attr('style');
+      hiddenContainer
+        .css('opacity', 0)
+        .css('position', 'absolute')
+        .css('display', 'block');
+    }
     var pixelsAvailable = tbody[0].clientWidth;
     var scrollbarWidth = tbody[0].offsetWidth - tbody[0].clientWidth;
     var scrollBarInnerWidth;
     var outerSpacing = $(el).find('.col-0').outerWidth() - $(el).find('.col-0').width();
+    if (hiddenContainer) {
+      hiddenContainer.attr('style', hiddenContainerOrigStyle)
+    }
     // Column resizing needs to be done manually when tbody has scroll bar.
     if (el.settings.tbodyHasScrollBar) {
       if (el.settings.responsive) {
