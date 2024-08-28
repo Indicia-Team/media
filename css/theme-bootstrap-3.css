@@ -372,7 +372,7 @@ input:checked + .slider:before {
 }
 #standard-params.standard-params-horizontal .pane {
   display: flex;
-  height: 80px;
+  min-height: 80px;
 }
 #standard-params.standard-params-horizontal #filter\:title {
   min-width: 250px;

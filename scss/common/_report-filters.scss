@@ -112,7 +112,7 @@
     }
     .pane {
       display: flex;
-      height: 80px;
+      min-height: 80px;
     }
     #filter\:title {
       min-width: 250px;
