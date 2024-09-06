@@ -92,7 +92,7 @@
     if (response.total) {
       rowsToDownload = response.total;
     } else if (el.settings.linkToDataControl) {
-      rowsToDownload = $('#' + el.settings.linkToDataControl)[0].settings.lastCount;
+      rowsToDownload = $('#' + el.settings.linkToDataControl)[0].settings.sourceObject.settings.total.value;
     }
     // ES V7 seems to overshoot, reporting whole rather than partial last page size.
     rowsDone = Math.min(rowsDone, rowsToDownload);
