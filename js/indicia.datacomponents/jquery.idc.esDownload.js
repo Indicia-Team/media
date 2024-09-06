@@ -284,6 +284,7 @@
       var columnSettings;
       var srcSettings;
       var tab;
+      var origSort;
       // If possibly not on outputs tab, switch.
       if (el.settings.buttonContainerElement) {
         tab = $(el).closest('.ui-tabs-panel');
@@ -293,10 +294,23 @@
       }
       initSource(el);
       srcSettings = el.settings.sourceObject.settings;
+      // The download can specify it's own preferred sort order.
+      if (el.settings.sort) {
+        origSort = typeof srcSettings.sort === 'undefined' ? null : srcSettings.sort;
+        srcSettings.sort = el.settings.sort;
+      }
       // Prepare the source aggregations in composite mode if using automatic
       // aggregation as it supports scrolling and is faster.
       el.settings.sourceObject.prepare(srcSettings.mode.match(/Aggregation$/)
         ? 'compositeAggregation' : srcSettings.mode);
+      // Now reset the original sort so we don't mess with other controls using
+      // the same source.
+      if (origSort === null) {
+        delete srcSettings.sort;
+      }
+      else {
+        srcSettings.sort = origSort;
+      }
       columnSettings = getColumnSettings(el);
       $(el).find('.progress-circle-container').removeClass('download-done');
       $(el).find('.progress-circle-container').show();
