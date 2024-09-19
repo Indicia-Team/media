@@ -1592,16 +1592,13 @@
    * Apply group reporting filter, e.g. group_id=n?implicit=f in URL.
    */
   function applyGroupFilter(data) {
-    if (indiciaData.filter_group_id) {
-      if (typeof indiciaData.filter_group_implicit === 'undefined') {
+    if (indiciaData.applyGroupFilter) {
+      if (typeof indiciaData.applyGroupFilter.implicit === 'undefined') {
         // Apply default, strictest mode.
-        indiciaData.filter_group_implicit = false;
+        indiciaData.applyGroupFilter.implicit = false;
       }
       // Proxy will be responsible for filter setup.
-      data.group_filter = {
-        id: indiciaData.filter_group_id,
-        implicit: indiciaData.filter_group_implicit
-      };
+      data.group_filter = indiciaData.applyGroupFilter;
     }
   }
 
