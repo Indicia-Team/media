@@ -745,7 +745,12 @@ body {
 
 /* idcBulkEditor */
 .bulk-editor-dlg {
-  .pre-bulk-edit-info {
+  .message {
+    span {
+      font-weight: bold;
+    }
+  }
+  .bulk-edit-form-controls {
     max-width: 500px;
     input[type="date"] {
       padding: 0 12px;
@@ -755,6 +760,10 @@ body {
     .output {
       @include log-output;
     }
+  }
+  .old-value {
+    text-decoration: line-through;
+    color: red;
   }
 }
 
