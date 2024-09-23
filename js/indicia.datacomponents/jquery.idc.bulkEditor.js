@@ -276,10 +276,18 @@
    */
   function previewClickHandler(el) {
     const dlg = $('#' + $(el)[0].settings.id + '-dlg');
+    const updates = getUpdates(dlg);
+    if (Object.keys(updates).length === 0) {
+      $.fancyDialog({
+        title: indiciaData.lang.bulkEditor.cannotProceed,
+        message: indiciaData.lang.bulkEditor.noUpdatesSpecified,
+        cancelButton: null
+      });
+      return;
+    }
     $(dlg).find('.preview-output').show();
     $(dlg).find('.bulk-edit-form-controls').hide();
     $(dlg).find('.preview-bulk-edit').attr('disabled', true);
-    const updates = getUpdates(dlg);
     let previewRequest = {
       updates: updates,
       website_id: indiciaData.website_id,
@@ -293,7 +301,6 @@
     }
     $.post(indiciaData.esProxyAjaxUrl + '/bulkeditpreview/' + indiciaData.nid, previewRequest, null, 'json')
       .done(function(response) {
-        console.log(response);
         $.each(response, function() {
           const tr = $('<tr>').appendTo($(dlg).find('.preview-output tbody'));
           let date = this._source.event.date_start;
@@ -375,8 +382,6 @@
     dlg.find('.preview-output tbody tr').remove();
     dlg.find('.proceed-bulk-edit').attr('disabled', true);
     dlg.find('.preview-bulk-edit').removeAttr('disabled');
-    // Reset date picker so that placeholder works.
-    dlg.find('[name="edit-date"]')[0].type='text';
     dlg.find('.ctrl-wrap input').val('');
 
     // Now open it.
@@ -388,7 +393,6 @@
       }
     });
   }
-
   /**
    * Register the various user interface event handlers.
    */
@@ -405,13 +409,6 @@
 
     $(el).find('.close-bulk-edit-dlg').click(() => {
       $.fancybox.close();
-    });
-
-    // For custom placeholder, only switch to date when focused.
-    $(el).find('[name="edit-date"]').mouseover((e) => {
-      if (e.currentTarget.type === 'text') {
-        e.currentTarget.type = 'date';
-      }
     });
   }
 
