@@ -970,8 +970,8 @@
           data: { location_id: el.settings.boundaryLocationId },
         })
         .done(function success(response) {
-          if (response.status === 200) {
-            showFeatureWkt(el, Proj4js.transform(new Proj4js.Proj('EPSG:900913'), new Proj4js.Proj('EPSG:4326'), response.boundary_geom), 0, 0, 0);
+          if (response.boundary_geom) {
+            showFeatureWkt(el, Proj4js.transform(new Proj4js.Proj('EPSG:900913'), new Proj4js.Proj('EPSG:4326'), response.boundary_geom), 0, 0, 0, {fillOpacity: 0});
           }
         });
       }
