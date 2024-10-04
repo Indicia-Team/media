@@ -2051,7 +2051,7 @@ var destroyAllFeatures;
           evt.feature.style = new Style('boundary', div.settings);
           if(this.map.div.settings.autoFillInCentroid) {
             var centroid = evt.feature.geometry.getCentroid();
-            $('#imp-geom').val(centroid.toString());
+            $('#' + div.settings.geomId).val(centroid.toString());
             pointToSref(this.map.div, centroid, _getSystem(), function (data) {
               if (typeof data.sref !== 'undefined') {
                 $('#' + map.div.settings.srefId).val(data.sref);
@@ -2060,7 +2060,7 @@ var destroyAllFeatures;
           }
           map.editLayer.redraw();
         } else {
-          $('#imp-geom').val(geom.toString());
+          $('#' + div.settings.geomId).val(geom.toString());
           map.div.removeAllFeatures(evt.feature.layer, 'clickPoint');
           if (div.settings.helpDiv) {
             $('#' + div.settings.helpDiv).html(map.div.settings.hlpCustomPolygon);
@@ -2102,7 +2102,7 @@ var destroyAllFeatures;
       });
 
       // Put the geometry in the input control
-      $('#imp-geom').val(feature.geometry.toString());
+      $(('#' + map.div.settings.geomId).val(feature.geometry.toString());
       $('#imp-boundary-geom').val(feature.geometry.toString());
       // Get the sref of the swVertex and show in control
       pointToSref(map.div, swVertex, _getSystem(), function(data) {
@@ -3285,7 +3285,7 @@ var destroyAllFeatures;
         if (this.settings.initialFeatureWkt === null && $('#' + this.settings.geomId).length > 0) {
           // if no initial feature specified, but there is a populated imp-geom hidden input,
           // use the value from the hidden geom
-          this.settings.initialFeatureWkt = $('#' + this.settings.geomId).val();
+          this.settings.initialFeatureWkt = $('#' + div.settings.geomId).val();
         }
         if (this.settings.initialBoundaryWkt === null && $('#' + this.settings.boundaryGeomId).length > 0) {
           // same again for the boundary
@@ -3479,7 +3479,7 @@ var destroyAllFeatures;
             $('#' + div.settings.boundaryGeomId).val(evt.feature.geometry.toString());
             if(div.settings.autoFillInCentroid) {
               var centroid = evt.feature.geometry.getCentroid();
-              $('#imp-geom').val(centroid.toString());
+              $('#' + div.settings.geomId).val(centroid.toString());
               pointToSref(div, centroid, _getSystem(), function(data) {
                 if (typeof data.sref !== 'undefined') {
                   $('#'+div.settings.srefId).val(data.sref);
