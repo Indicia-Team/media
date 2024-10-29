@@ -1310,11 +1310,13 @@ jQuery(document).ready(function($) {
     }
   });
   $('#run-reverse').on('click', function() {
-    if (confirm(indiciaData.lang.import_helper_2.are_you_sure_reverse) == true) {
-      return true;
-    } else {
-      return false;
+    // No need to confirm if aborting, as easy to go back
+    if ($(this).val() != indiciaData.lang.import_helper_2.abort) {
+      if (confirm(indiciaData.lang.import_helper_2.are_you_sure_reverse) == true) {
+        return true;
+      } else {
+        return false;
+      }
     }
   });
-
 });
