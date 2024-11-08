@@ -521,9 +521,10 @@ jQuery(document).ready(function($) {
         '<td><select class="form-control" required data-value="' + this.replace('"', '&quot;') + '" name="' + controlName + '">' + options + '</select></td></tr>')
         .appendTo(tbody);
     });
-    $('<button type="button" class="btn btn-primary save-matches" ' +
+    $('<p>Once you have specified the terms that you wish to use when matching values from the "' + result.columnLabel + '" column, click the button below to apply the matched taxa to the current import.</p>' +
+      '<button type="button" class="btn btn-primary save-matches" ' +
       'data-source-field="' + result.sourceField + '"' +
-      '>Save matches for ' + result.columnLabel + ' <i class="far fa-check"></i></button>')
+      '>Apply matches</button>')
       .appendTo($('<div class="panel-body">').appendTo(matchingPanelBody));
   }
 
@@ -708,9 +709,10 @@ jQuery(document).ready(function($) {
       idx++;
     });
     // Save button
-    $('<button type="button" class="btn btn-primary save-matches" ' +
+    $('<p>Once you have specified the taxa that you wish to use when matching values from the "' + result.columnLabel + '" column, click the button below to apply the matched terms to the current import.</p>' +
+      '<button type="button" class="btn btn-primary save-matches" ' +
       'data-source-field="' + result.sourceField + '"' +
-      '>Save matches for ' + result.columnLabel + ' <i class="far fa-check"></i></button>')
+      '>Apply matches</button>')
       .appendTo($('<div class="panel-body">').appendTo(matchingPanelBody));
     // Enable species search autocomplete for the matching inputs.
     $('.taxon-search').autocomplete(indiciaData.warehouseUrl+'index.php/services/data/taxa_search', getTaxonAutocompleteSettings(result.unmatchedInfo.taxonFilters));
@@ -772,9 +774,10 @@ jQuery(document).ready(function($) {
       idx++;
     });
     // Save button
-    $('<button type="button" class="btn btn-primary save-matches" ' +
+    $('<p>Once you have specified the locations that you wish to use when matching values from the "' + result.columnLabel + '" column, click the button below to apply the matched names to the current import.</p>' +
+      '<a class="save-matches" ' +
       'data-source-field="' + result.sourceField + '"' +
-      '>Save matches for ' + result.columnLabel + ' <i class="far fa-check"></i></button>')
+      '>Apply matches</a>')
       .appendTo($('<div class="panel-body">').appendTo(matchingPanelBody));
 
     // Enable location search autocomplete for the matching inputs.
