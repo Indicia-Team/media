@@ -1288,5 +1288,38 @@ jQuery(document).ready(function($) {
   } else if (indiciaData.step === 'doImportPage') {
     importNextChunk('startPrecheck');
   }
-
+  // Code for import reverser
+  // Change the button label depending if user has chosen to abort.
+  // Also change the next import step to be the first step again.
+  $('[name=\"reverse-mode\"').on('change', function() {
+    if ($(this).val() == 'abort_reverse') {
+      $('[name=\"next-import-step\"').val('fileSelectForm');
+      $('#run-reverse').prop('value', indiciaData.lang.import_helper_2.abort);
+    }
+    else {
+      $('[name=\"next-import-step\"').val('reversalResult');
+      $('#run-reverse').prop('value', indiciaData.lang.import_helper_2.continue);
+    };
+  });
+  // Don't allow reverse to be run until an import has been selected.
+  $('#reverse-guid').on('change', function() {
+    if ($(this).val()) {
+      $('#run-reverse').prop('disabled', false);
+      $('.reverse-instructions-1').show();
+    }
+    else {
+      $('#run-reverse').prop('disabled', true);
+      $('.reverse-instructions-1').hide();
+    }
+  });
+  $('#run-reverse').on('click', function() {
+    // No need to confirm if aborting, as easy to go back
+    if ($(this).val() != indiciaData.lang.import_helper_2.abort) {
+      if (confirm(indiciaData.lang.import_helper_2.are_you_sure_reverse) == true) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  });
 });
