@@ -12,12 +12,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/gpl.html.
  *
- * @package Client
- * @subpackage PrebuiltForms
- * @author  Indicia Team
  * @license http://www.gnu.org/licenses/gpl.html GPL 3.0
  * @link    http://code.google.com/p/indicia/
  */
+
+/**
+ * Add a function in indiciaFns.speciesMapModeChangeHooks to trigger any custom
+ * action when the map mode is changed.
+ */
+indiciaFns.speciesMapModeChangeHooks = [];
 
 var control_speciesmap_addcontrols;
 
@@ -220,6 +223,9 @@ var control_speciesmap_addcontrols;
       div.map.editLayer.clickControl.activate(); // to allow user to select new position.
       $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(indiciaData.lang.speciesMap.MoveMessage2);
       showButtons(['move', 'cancel']);
+      $.each(indiciaFns.speciesMapModeChangeHooks, function() {
+        this('Move', 'begin');
+      });
     };
     var endMove = function () {
       var div = $(indiciaData.control_speciesmap_opts.mapDiv)[0];
@@ -240,6 +246,9 @@ var control_speciesmap_addcontrols;
       showButtons(['add', 'mod', 'move', 'del']);
       indiciaData.control_speciesmap_existing_feature = null;
       indiciaData.control_speciesmap_new_feature = null;
+      $.each(indiciaFns.speciesMapModeChangeHooks, function() {
+        this('Move', 'end');
+      });
     };
     var doAddSref = function () {
       var div = $(indiciaData.control_speciesmap_opts.mapDiv)[0];
@@ -309,6 +318,9 @@ var control_speciesmap_addcontrols;
           enableImageUploader(photoCtrlCntr, gridIdx);
         }
       }
+      $.each(indiciaFns.speciesMapModeChangeHooks, function() {
+        this('Add', 'start');
+      });
     };
     var featureAdded = function (a1) { // on editLayer
       if (a1.feature.attributes.type !== 'clickPoint' ) {
@@ -513,10 +525,15 @@ var control_speciesmap_addcontrols;
       }
       // don't fire map events on the sref hidden control, otherwise the map zooms in
       $('#imp-sref').unbind('change');
+      // Reset when selecting new mode.
+      $('#imp-sref,#imp-geom').val('');
       indiciaData.control_speciesmap_mode = mode;
       // In case user has activated a control from a context where clustering disabled
       // (e.g. selecting from a cluster)
       setClusteringOn(true);
+      $.each(indiciaFns.speciesMapModeChangeHooks, function() {
+        this(mode, null);
+      });
     };
     var controlSpeciesmapAddbutton = function () {
       activate(this, 'Add', indiciaData.lang.speciesMap.AddMessage);
@@ -561,6 +578,9 @@ var control_speciesmap_addcontrols;
           setClusteringOn(true);
           break;
       }
+      $.each(indiciaFns.speciesMapModeChangeHooks, function() {
+        this(null, null);
+      });
     };
     var controlSpeciesmapFinishbutton = function () {
       // first check that any filled in species grid rows pass validation.
