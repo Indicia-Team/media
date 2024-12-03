@@ -1137,6 +1137,7 @@ jQuery(document).ready(function($) {
               $('#import-details-precheck-done').show();
               if (result.errorsCount) {
                 showErrorInfo(result, state);
+                $('#import-details-import-another').show();
               }
               else {
                 // Update page title to importing.
