@@ -104,7 +104,7 @@ table.species-grid tr td input, table.species-grid tr td select {
   width: 100%;
   margin: 0;
   vertical-align: middle;
-  padding: 3px 0;
+  padding: 6px;
 }
 table.species-grid .footable-row-detail-value {
   padding: 8px 0;
