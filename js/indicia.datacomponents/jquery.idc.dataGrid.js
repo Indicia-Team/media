@@ -958,6 +958,7 @@
           $(table).trigger('footable_expand_all');
         });
       }
+      indiciaFns.updateControlLayout();
       window.addEventListener('resize', function resize() { setTableHeight(el); });
     },
 

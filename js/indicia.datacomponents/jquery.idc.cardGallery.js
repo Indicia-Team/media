@@ -492,7 +492,6 @@
         ];
       }
 
-      $('<div class="es-card-gallery">').appendTo(el);
       if (el.settings.includePager) {
         $('<div class="footer form-inline">' + indiciaFns.getFooterControls(el) + '</div>').appendTo(el);
       }
@@ -525,6 +524,7 @@
       // Add overlay for loading.
       $('<div class="loading-spinner" style="display: block"><div>Loading...</div></div>').appendTo(el);
       initHandlers(el);
+      indiciaFns.updateControlLayout();
     },
 
     /**
