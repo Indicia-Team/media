@@ -1050,7 +1050,7 @@ body > .loading-spinner {
     flex-basis: 98%;
   }
 }
-.idc-cardGallery .pager {
+.idc-cardGallery .footer {
   background-color: #eee;
   padding: 8px;
 }
