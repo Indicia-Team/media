@@ -1294,6 +1294,9 @@ body > .loading-spinner {
 .idc-verificationButtons-row button:focus:active, .idc-verificationButtons-row a:focus:active {
   background: #fbdbdb;
 }
+.idc-verificationButtons-row .apply-to {
+  margin-right: 8px;
+}
 .idc-verificationButtons-row .multi-only {
   display: none;
 }

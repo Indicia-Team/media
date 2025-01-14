@@ -700,6 +700,16 @@
       $(e.currentTarget).addClass('active');
     });
 
+    /**
+     * Select all checkboxes event handler.
+     */
+    $(el).find('.multiselect-all').click(function selectAllClick(e) {
+      const el = $(e.currentTarget).closest('.idc-control');
+      const checkboxes = $(el).find('.multiselect:checkbox');
+      var anyUnchecked = $(checkboxes).filter(':not(:checked)').length > 0;
+      $(checkboxes).prop('checked', anyUnchecked);
+    });
+
   }
 
   /**

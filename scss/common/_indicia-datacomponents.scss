@@ -468,6 +468,9 @@ body {
   button, a {
     @include verification-button;
   }
+  .apply-to {
+    margin-right: 8px;
+  }
   .multi-only {
     display: none;
   }

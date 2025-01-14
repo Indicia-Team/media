@@ -494,24 +494,12 @@
         $(table).find('thead tr').prepend(
           '<th class="multiselect-cntr" />'
         );
-        $(table).find('thead tr:first-child th:first-child').append(
-          '<input type="checkbox" class="multiselect-all" />'
-        );
         $(table).find('tbody tr').prepend('<td class="multiselect-cntr"><input type="checkbox" title="' + indiciaData.lang.dataGrid.checkToIncludeInList + '" class="multiselect" /></td>');
         $(table).closest('div').prepend(
           $('.all-selected-buttons')
         );
       }
       setTableHeight(el);
-    });
-
-    /**
-     * Select all checkboxes event handler.
-     */
-    indiciaFns.on('click', '#' + el.id + ' .multiselect-all', {}, function onClick(e) {
-      $(e.currentTarget).closest('table')
-        .find('.multiselect')
-        .prop('checked', $(e.currentTarget).is(':checked'));
     });
 
     /**
