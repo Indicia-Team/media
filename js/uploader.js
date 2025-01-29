@@ -1081,6 +1081,7 @@ jQuery(document).ready(function($) {
     if (!indiciaData.importOneOffFieldsToSaveDone) {
       postData.description = indiciaData.importDescription;
       postData.importTemplateTitle = indiciaData.importTemplateTitle;
+      postData.training = indiciaData.training;
       // If user has confirmed overwrite OK.
       if (forceTemplateOverwrite) {
         postData.forceTemplateOverwrite = true;
