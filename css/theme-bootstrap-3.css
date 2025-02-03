@@ -831,6 +831,9 @@ body > .loading-spinner {
   position: fixed;
 }
 
+.idc-control {
+  /* Multiselect checkboxes for grids and card galleries. */
+}
 .idc-control .idc-tools {
   position: absolute;
   top: 0;
@@ -847,6 +850,10 @@ body > .loading-spinner {
 }
 .idc-control .idc-tools span:hover {
   color: #333;
+}
+.idc-control .multiselect-cntr input[type=checkbox] {
+  width: 18px;
+  height: 18px;
 }
 
 /* idcCardGallery plugin */
@@ -1016,9 +1023,6 @@ body > .loading-spinner {
   position: absolute;
   top: 6px;
   right: 12px;
-}
-.idc-cardGallery .es-card-gallery .card .multiselect-cntr .multiselect {
-  transform: scale(1.4);
 }
 @media (min-width: 801px) {
   .idc-cardGallery .es-card-gallery .card:not(.show-max-size) {

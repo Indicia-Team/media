@@ -94,6 +94,13 @@ body {
       color: #333;
     }
   }
+  /* Multiselect checkboxes for grids and card galleries. */
+  .multiselect-cntr {
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+    }
+  }
 }
 
 /* idcCardGallery plugin */
@@ -239,9 +246,6 @@ body {
         position: absolute;
         top: 6px;
         right: 12px;
-        .multiselect {
-          transform: scale(1.4);
-        }
       }
     }
     @media (min-width: 801px) {
