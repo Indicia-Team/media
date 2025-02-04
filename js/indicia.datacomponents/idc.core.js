@@ -127,14 +127,25 @@
    * Font Awesome icon classes for verification automatic check rules.
    */
   indiciaData.ruleClasses = {
-    WithoutPolygon: 'fas fa-globe',
-    PeriodWithinYear: 'far fa-calendar-times',
     IdentificationDifficulty: 'fas fa-microscope',
+    Period: 'far fa-calendar-alt',
+    PeriodWithinYear: 'far fa-calendar-times',
+    WithoutPolygon: 'fas fa-globe',
     default: 'fas fa-ruler',
     pass: 'fas fa-thumbs-up',
     fail: 'fas fa-thumbs-down',
     pending: 'fas fa-cog',
     checksDisabled: 'fas fa-eye-slash'
+  };
+
+  /**
+   * Also icons for where the Record Cleaner
+   */
+  indiciaData.recordCleanerRuleClasses = {
+    tenkm: 'fas fa-globe',
+    period: 'far fa-calendar-alt',
+    phenology: 'far fa-calendar-times',
+    difficulty: 'fas fa-microscope',
   };
 
   /**
@@ -833,10 +844,17 @@
           icons = ['<span title="The following automatic rule checks were triggered for this record." class="' + indiciaData.ruleClasses.fail + '"></span>'];
           // Add an icon for each rule violation.
           $.each(autoChecks.output, function eachViolation() {
-            // Set a default for any other rules.
-            var icon = Object.prototype.hasOwnProperty.call(indiciaData.ruleClasses, this.rule_type)
-              ? indiciaData.ruleClasses[this.rule_type] : indiciaData.ruleClasses.default;
-            icons.push('<span title="' + this.message + '" class="' + icon + '"></span>');
+            var icon;
+            let message = this.message;
+            if (this.rule_type.match(/^RecordCleaner/)) {
+              const rule = this.rule_type.replace(/^RecordCleaner/, '').toLowerCase();
+              icon = Object.prototype.hasOwnProperty.call(indiciaData.recordCleanerRuleClasses, rule)
+                ? indiciaData.recordCleanerRuleClasses[rule] : indiciaData.ruleClasses.default;
+            } else {
+              icon = Object.prototype.hasOwnProperty.call(indiciaData.ruleClasses, this.rule_type)
+                ? indiciaData.ruleClasses[this.rule_type] : indiciaData.ruleClasses.default;
+            }
+            icons.push('<span title="' + message + '" class="' + icon + '"></span>');
           });
         }
       } else {
