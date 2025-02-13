@@ -569,6 +569,27 @@
       $(panel).find('ol li :checkbox').prop('checked', anyUnchecked);
     });
 
+    /**
+     * On text entry into the search box, filter the visible columns.
+     */
+    $('#' + el.id + ' .grid-settings-search').keyup(function(e) {
+      // Retrieve the search text from the input element and convert it to lowercase
+      const searchText = $(e.currentTarget).val().toLowerCase();
+
+      // Iterate over each list item within the element with class 'data-grid-settings'
+      $.each($('.data-grid-settings li'), function() {
+        const li = this;
+        // Check if the list item's text content contains the search text
+        if (li.textContent.toLowerCase().indexOf(searchText) === -1) {
+          // Hide the list item if it does not contain the search text
+          $(li).hide();
+        } else {
+          // Show the list item if it contains the search text
+          $(li).show();
+        }
+      });
+    });
+
     // Public function so it can be called from bindControls event handlers.
     el.loadSelectedRow = loadSelectedRow;
   }
