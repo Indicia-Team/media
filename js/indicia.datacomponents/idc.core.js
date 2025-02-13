@@ -384,6 +384,10 @@
       'event.sampling_protocol',
       'identification.auto_checks.output.message',
       'identification.auto_checks.output.rule_type',
+      'identification.classifier.current_determination.taxon_name_given',
+      'identification.classifier.suggestions.classifier',
+      'identification.classifier.suggestions.classifier_version',
+      'identification.classifier.suggestions.taxon_name_given',
       'identification.identified_by',
       'identification.query',
       'identification.recorder_certainty',
@@ -969,6 +973,36 @@
     },
 
     /**
+     * Retrieve HTML representing classifier agreement with current det.
+     */
+    identification_classifier_agreement: function identificationClassifierAgreemenent(doc) {
+      if (doc.identification.classifier) {
+        return doc.identification.classifier.current_determination.classifier_chosen === 'true'
+          ? '<i class="fas fa-check-circle"></i>'
+          : '<i class="fas fa-times-circle"></i>';
+      }
+      return '';
+    },
+
+    /**
+     * Retrieve HTML representing classifier agreement with current det.
+     */
+    identification_classifier_suggestion: function identificationClassifierSuggestion(doc) {
+      if (doc.identification.classifier && doc.identification.classifier.suggestions) {
+        let topSuggestion = '';
+        let topProbability = 0;
+        $.each(doc.identification.classifier.suggestions, function() {
+          if (this.probability_given > topProbability) {
+            topProbability = this.probability_given;
+            topSuggestion = this.taxon_name_given;
+          }
+        });
+        return topSuggestion;
+      }
+      return '';
+    },
+
+    /**
      * A formatted latitude.
      */
     lat: function lat(doc, params) {
@@ -1291,6 +1325,54 @@
     },
 
     /**
+     * Build a term query to filter on image classifier agreement.
+     *
+     * Pass Y or N to filter to image classifier top suggestion matching or not
+     * matching the current determination.
+     */
+    identification_classifier_agreement: function identificationClassifierAgreement(text) {
+      const query = {
+        term: {
+          'identification.classifier.current_determination.classifier_chosen': text.toLowerCase() === 'y'
+        }
+      };
+      return {
+        bool_clause: 'must',
+        value: '',
+        query: JSON.stringify(query)
+      };
+    },
+
+    /**
+     * Build a query on words used in the classifier's suggestions.
+     */
+    identification_classifier_suggestion: function identificationClassifierSuggestion(text) {
+      const query = {
+        nested: {
+          path: 'identification.classifier.suggestions',
+          query: {
+            bool: {
+              must: [
+                {
+                  simple_query_string: {
+                    query: text,
+                    fields: ['identification.classifier.suggestions.taxon_name_given'],
+                    default_operator: 'AND'
+                  }
+                }
+              ]
+            }
+          }
+        }
+      };
+      return {
+        bool_clause: 'must',
+        value: '',
+        query: JSON.stringify(query)
+      };
+    },
+
+    /**
      * Implement a filter for records near a lat long point.
      */
     lat_lon: function latLon(text) {
@@ -1323,6 +1405,8 @@
    * Allow special fields to provide custom hints for their filter row inputs.
    */
   indiciaFns.fieldConvertorQueryDescriptions = {
+    identification_classifier_agreement: 'Enter Y to filter to records where the current determination matches the image classifiers top suggestion, or N to filter to records where the determination and top suggestion do not match.',
+    identification_classifier_suggestion: 'Search for any word used in one of the suggested taxon names given by an image classifier. All suggested names given are searched, not just the most likely one.',
     lat_lon: 'Enter a latitude and longitude value to filter to records in the vicinity.',
     event_date: 'Enter a date in dd/mm/yyyy or yyyy-mm-dd format. Filtering to a year or range or years is possible ' +
       'using yyyy or yyyy-yyyy format.'
@@ -1339,6 +1423,8 @@
     data_cleaner_icons: ['identification.auto_checks.result'],
     datasource_code: ['metadata.website.id', 'metadata.survey.id'],
     event_date: ['event.date_start'],
+    identification_classifier_agreement: ['identification.classifier.current_determination.classifier_chosen'],
+    // identification_classifier_suggestion: [],
     // higher_geography: [],
     // locality: [],
     // Do a distance sort from the North Pole
