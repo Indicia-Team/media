@@ -596,7 +596,8 @@
         } else {
           dataContainer = $('<ul>');
         }
-        dataContainer.addClass('data-container panel-body').appendTo(card);
+        const cardFooter = $('<div class="card-footer" />').appendTo(card);
+        dataContainer.addClass('data-container panel-body').appendTo(cardFooter);
         $.each(el.settings.columns, function() {
           value = indiciaFns.getValueForField(doc, this.field);
           var valueClass = 'field-' + this.field.replace(/\./g, '--').replace(/_/g, '-');
@@ -617,6 +618,10 @@
           } else {
             $('<li>' + value + '</li>').appendTo(dataContainer);
           }
+        }
+        if (doc.identification.classifier) {
+          $(indiciaFns.getImageClassifierAgreementHtml(doc)).appendTo(cardFooter);
+          $(indiciaFns.getImageClassifierSuggestionsHtml(doc)).appendTo(cardFooter);
         }
         $('<button type="button" title="' + indiciaData.lang.cardGallery.expandCard + '" class="expand-card ' + indiciaData.templates.buttonDefaultClass + ' ' + indiciaData.templates.buttonSmallClass + '">' +
           '<i class="fas fa-expand-arrows-alt"></i></i></button>')

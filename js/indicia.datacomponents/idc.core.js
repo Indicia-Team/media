@@ -306,6 +306,83 @@
   }
 
   /**
+   * Obtain HTML to display if the image classifier agrees with the record ID.
+   */
+  indiciaFns.getImageClassifierAgreementHtml = function getImageClassifierAgreementHtml(doc) {
+    // Check if the document has classifier information.
+    if (doc.identification.classifier) {
+      // Determine if the classifier agrees with the current determination.
+      const agreement = doc.identification.classifier.current_determination.classifier_chosen === 'true';
+      const iconClass = agreement ? 'fa-check-circle' : 'fa-times-circle';
+      const msg = agreement ? indiciaData.lang.classifier.imageClassifierAgrees : indiciaData.lang.classifier.imageClassifierDisagrees;
+      return `<div class="classifier-agreement"><i class="fas ${iconClass} fa-2x"></i>${msg}</div>`;
+    }
+    return '';
+  }
+
+  /**
+   * Obtain HTML to display the suggestions made by image classifiers for a record.
+   *
+   * @param object doc
+   *   Elasticsearch occurrence document.
+   *
+   * @returns string
+   *   HTML to explain image classifier results for this occurrence.
+   */
+  indiciaFns.getImageClassifierSuggestionsHtml = function getImageClassifierSuggestionsHtml(doc) {
+    var html = '';
+    var selection;
+    var probabilityPercent;
+    var probabilityClass;
+    // Check if the document has classifier information.
+    if (doc.identification.classifier) {
+      // Output a panel for each suggestion.
+      if (doc.identification.classifier.suggestions) {
+        $.each(doc.identification.classifier.suggestions, function() {
+          if (this.human_chosen === 'true' || this.classifier_chosen === 'true') {
+            let choiceInfo = [];
+            if (this.human_chosen === 'true') {
+              choiceInfo.push(indiciaData.lang.classifier.suggestionHumanChosen);
+            }
+            if (this.classifier_chosen === 'true') {
+              choiceInfo.push(indiciaData.lang.classifier.suggestionClassifierChosen);
+            }
+            selection = choiceInfo.join(' | ');
+          } else {
+            selection = indiciaData.lang.classifier.suggestionNotChosen;
+          }
+          probabilityPercent = this.probability_given * 100;
+          if (probabilityPercent > 90) {
+            probabilityClass = 'high';
+          }
+          else if (probabilityPercent > 60) {
+            probabilityClass = 'med';
+          }
+          else if (probabilityPercent > 20) {
+            probabilityClass = 'low';
+          }
+          else {
+            probabilityClass = 'vlow';
+          }
+          html += `<div class="classifier-suggestion" data-taxa_taxon_list_id="${this.taxa_taxon_list_id}" data-occurrence_id="${doc.id}">
+            <span class="taxon">${this.taxon_name_given}</span>
+            <span class="probability ${probabilityClass}-probability">${probabilityPercent}%</span>
+            <span class="classifier-name">${this.classifier} ${this.classifier_version}</span>
+            <span class="classifier-selection">${selection}</span>
+          </div>`;
+        });
+      }
+    } else {
+      // No classifier information available
+      html = indiciaData.templates.messageBox.replace('{message}', indiciaData.lang.classifier.noClassifierInfoAvailable);
+    }
+    return `<div class="classifier-suggestions">
+      <h3>${indiciaData.lang.classifier.classifierSuggestions}</h3>
+      ${html}
+    </div>`;
+  }
+
+  /**
    * Instantiate the data sources.
    */
   indiciaFns.initDataSources = function initDataSources() {
