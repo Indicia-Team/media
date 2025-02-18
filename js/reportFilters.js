@@ -443,6 +443,8 @@ jQuery(document).ready(function ($) {
             r.push(indiciaData.lang.reportFilterParser.ClassifierAgrees);
           } else if (filterDef.classifier_agreement.toLowerCase() === 'n') {
             r.push(indiciaData.lang.reportFilterParser.ClassifierDisagrees);
+          } else if (filterDef.classifier_agreement.toLowerCase() === 'c') {
+            r.push(indiciaData.lang.reportFilterParser.ClassifierUsed);
           }
         }
         if (filterDef.has_photos && filterDef.has_photos === '1') {
