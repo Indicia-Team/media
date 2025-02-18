@@ -205,12 +205,12 @@ body {
       .image-container {
         display: flex;
         padding: 4px;
+        justify-content: center;
         > * {
           max-width: 98%;
-          flex-basis: 0;
-          flex-grow: 1;
-          flex-shrink: 0;
+          flex-basis: auto;
           margin-right: 4px;
+          margin-bottom: 8px;
           img {
             max-width: 100%;
           }

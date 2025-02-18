@@ -1031,13 +1031,13 @@ body > .loading-spinner {
 .idc-cardGallery .es-card-gallery .card .image-container {
   display: flex;
   padding: 4px;
+  justify-content: center;
 }
 .idc-cardGallery .es-card-gallery .card .image-container > * {
   max-width: 98%;
-  flex-basis: 0;
-  flex-grow: 1;
-  flex-shrink: 0;
+  flex-basis: auto;
   margin-right: 4px;
+  margin-bottom: 8px;
 }
 .idc-cardGallery .es-card-gallery .card .image-container > * img {
   max-width: 100%;
