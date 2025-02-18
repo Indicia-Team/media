@@ -46,6 +46,7 @@
     actions: [],
     includeFieldCaptions: false,
     includeFullScreenTool: true,
+    includeImageClassifierInfo: false,
     includePager: true,
     includeSortTool: true,
     keyboardNavigation: false
@@ -619,7 +620,7 @@
             $('<li>' + value + '</li>').appendTo(dataContainer);
           }
         }
-        if (doc.identification.classifier) {
+        if (el.settings.includeImageClassifierInfo && doc.identification.classifier) {
           $(indiciaFns.getImageClassifierAgreementHtml(doc)).appendTo(cardFooter);
           $(indiciaFns.getImageClassifierSuggestionsHtml(doc)).appendTo(cardFooter);
         }

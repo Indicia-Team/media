@@ -51,7 +51,8 @@
    * Declare default settings.
    */
   var defaults = {
-    controlLayoutDone: false
+    controlLayoutDone: false,
+    includeImageClassifierInfo: false
   };
 
   var callbacks = {
@@ -558,7 +559,7 @@
         }
       }
       $(el).find('.empty-message').hide();
-      if (doc.identification.classifier) {
+      if (el.settings.includeImageClassifierInfo && doc.identification.classifier) {
         $('#classifier-info-tab').show();
       } else {
         $('#classifier-info-tab').hide();
