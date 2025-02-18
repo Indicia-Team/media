@@ -338,6 +338,10 @@
     if (doc.identification.classifier) {
       // Output a panel for each suggestion.
       if (doc.identification.classifier.suggestions) {
+        // If verification buttons on the page, then clicking a suggestion
+        // triggers redetermination, so create a hint for the suggestion
+        // panels.
+        const clickHint = $('.verification-buttons-cntr').length > 0 ? ` title="${indiciaData.lang.classifier.clickToRedetermineAs}" ` : '';
         $.each(doc.identification.classifier.suggestions, function() {
           if (this.human_chosen === 'true' || this.classifier_chosen === 'true') {
             let choiceInfo = [];
@@ -364,7 +368,7 @@
           else {
             probabilityClass = 'vlow';
           }
-          html += `<div class="classifier-suggestion" data-taxa_taxon_list_id="${this.taxa_taxon_list_id}" data-occurrence_id="${doc.id}">
+          html += `<div class="classifier-suggestion" data-taxa_taxon_list_id="${this.taxa_taxon_list_id}" data-occurrence_id="${doc.id}" ${clickHint}>
             <span class="taxon">${this.taxon_name_given}</span>
             <span class="probability ${probabilityClass}-probability">${probabilityPercent}%</span>
             <span class="classifier-name">${this.classifier} ${this.classifier_version}</span>
