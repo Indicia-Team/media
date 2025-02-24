@@ -280,7 +280,8 @@
       // in the response document defined.
       $.each(el.settings.availableColumnInfo, function eachCol(field, colDef) {
         // Everything not in the aggregations list must be a field.
-        if (!sourceSettings.suppliedAggregation[field] && field !== 'doc_count') {
+        const fieldRoot = field.split('.')[0];
+        if (!sourceSettings.suppliedAggregation[fieldRoot] && field !== 'doc_count') {
           colDef.path = pathsPerMode[sourceSettings.mode];
         }
       });
@@ -939,7 +940,7 @@
         totalCols = el.settings.columns.length
           + (el.settings.responsive ? 1 : 0)
           + (el.settings.actions.length > 0 ? 1 : 0);
-        $('<tfoot><tr class="footer form-inline"><td colspan="' + totalCols + '">' + indiciaFns.getFooterControls(el) + '</td></tr></tfoot>').appendTo(table);
+        $('<tfoot><tr class="footer"><td colspan="' + totalCols + '"><div class="form-inline">' + indiciaFns.getFooterControls(el) + '</div></td></tr></tfoot>').appendTo(table);
       }
       setTableHeight(el);
       // Add tool icons for table settings, full screen and multiselect mode.
