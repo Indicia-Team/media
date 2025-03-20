@@ -2053,7 +2053,7 @@ jQuery(document).ready(function docReady() {
     const isHigherGeoSelect = $(this).hasClass('es-higher-geography-select');
     var thisSelect;
     var baseId;
-    var selectToLoadFilterFor;
+    var selectToLoadFilterFor = select;
     let locIdToLoad = '';
     let idx = 0;
     // Find the most specific polyon in the series of linked selects.
@@ -2061,11 +2061,14 @@ jQuery(document).ready(function docReady() {
       baseId = select.id.replace(/\-\d+$/, '');
       thisSelect = $('#' + baseId + '-' + idx);
       while (thisSelect.length) {
+        // If value filled in, grab it, though it might get replaced by a more
+        // specific select in the hierarchy as we continue in the loop.
         if ($(thisSelect).val() && $(thisSelect).val().match(/^\d+$/)) {
           locIdToLoad = $(thisSelect).val();
           selectToLoadFilterFor = thisSelect;
         }
         idx++;
+        // Move to the next linked select.
         thisSelect = $('#' + baseId + '-' + idx);
       }
     } else {
