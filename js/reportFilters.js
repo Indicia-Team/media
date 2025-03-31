@@ -1765,6 +1765,12 @@ jQuery(document).ready(function ($) {
       $('#date_year').val('');
     }
   });
+  // Change the year date, fill in equals as operation default.
+  $('#date_year').change(function() {
+    if ($('#date_year_op option:selected').val() === '') {
+      $('#date_year_op').val('=');
+    }
+  });
 
   // Select a named location - deactivate the drawFeature and hide modifyFeature controls.
   $('#location_list\\:search\\:name').change(function () {
