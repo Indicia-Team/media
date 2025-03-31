@@ -1816,15 +1816,20 @@ jQuery(document).ready(function ($) {
     $.each($(e.currentTarget).find(':input[name]').not('.filter-exclude'), function (idx, ctrl) {
       // Skip open layers switcher.
       if (!$(ctrl).hasClass('olButton')) {
-        // Skip radio/checkboxes unless checked.
+        // If an array control, store the name of the array ready to populate
+        // with values of the checked checkboxes.
+        if ($(ctrl).attr('name').match(/\[\]$/)) {
+          arrayName = $(ctrl).attr('name').substring(0, $(ctrl).attr('name').length-2);
+          if (typeof arrays[arrayName] === 'undefined') {
+            arrays[arrayName] = [];
+          }
+        }
+        // Get control value - ensuring that only checked radio's/checkboxes
+        // are included.
         if (($(ctrl).attr('type') !== 'checkbox' && $(ctrl).attr('type') !== 'radio') || $(ctrl).is(':checked')) {
           // array control?
           if ($(ctrl).attr('name').match(/\[\]$/)) {
             // store array control data to handle later
-            arrayName = $(ctrl).attr('name').substring(0, $(ctrl).attr('name').length-2);
-            if (typeof arrays[arrayName] === 'undefined') {
-              arrays[arrayName] = [];
-            }
             arrays[arrayName].push($(ctrl).val());
           } else {
             // normal control
