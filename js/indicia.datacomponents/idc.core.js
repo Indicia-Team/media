@@ -481,6 +481,7 @@
       'location.verbatim_locality',
       'message',
       'metadata.group.title',
+      'metadata.import_guid',
       'metadata.licence_code',
       'metadata.query',
       'metadata.survey.title',
