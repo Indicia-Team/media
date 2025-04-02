@@ -322,6 +322,9 @@ window.indiciaFns = {};
    * @returns string
    */
   indiciaFns.escapeHtml = function (text) {
+    if (text === null || typeof text === 'undefined') {
+      return '';
+    }
     var map = {
       '&': '&amp;',
       '<': '&lt;',

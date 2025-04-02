@@ -632,7 +632,7 @@
                     value = getActions(div, row, col.actions, queryParams);
                     tdclasses.push('col-actions');
                   } else {
-                    value = row[col.fieldname];
+                    value = indiciaFns.escapeHtml(row[col.fieldname]);
                     tdclasses.push('data');
                   }
                   if (col.fieldname) {
