@@ -1491,7 +1491,7 @@
     identification_classifier_suggestion: 'Search for any word used in one of the suggested taxon names given by an image classifier. All suggested names given are searched, not just the most likely one.',
     lat_lon: 'Enter a latitude and longitude value to filter to records in the vicinity.',
     'location.input_sref': 'Search against the map reference as it was originally input. Use * at the end of map references to find references starting with the provided text. Use | between map references to request either/or searches',
-    'location.output_sref': 'Search against the output map reference. Use * at the end of map references to find references starting with the provided text. Use | between map references to request either/or searches',
+    'location.output_sref': 'Search against the output map reference. Use * at the end of map references to find references starting with the provided text. Use | between map references to request either/or searches.',
     event_date: 'Enter a date in dd/mm/yyyy or yyyy-mm-dd format. Filtering to a year or range or years is possible ' +
       'using yyyy or yyyy-yyyy format.'
   };
