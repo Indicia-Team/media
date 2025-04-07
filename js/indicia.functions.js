@@ -31,6 +31,7 @@ window.indiciaData.lang = [];
 window.indiciaData.ctrlPressed = false;
 window.indiciaData.shiftPressed = false;
 window.indiciaData.linkedSelects = [];
+window.indiciaData.filter = { def: {}, id: null, title: null };
 // A namespace for Indicia related functions.
 window.indiciaFns = {};
 

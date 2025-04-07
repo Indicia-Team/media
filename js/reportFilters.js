@@ -38,8 +38,6 @@ jQuery(document).ready(function ($) {
     return origRemove.apply(this, arguments).trigger('remove');
   };
 
-  indiciaData.filter = { def: {}, id: null, title: null };
-
   function removeSite() {
     var idToRemove = $(this).find('input[name="location_list[]"]').val();
     var toRemove = [];
@@ -1715,7 +1713,11 @@ jQuery(document).ready(function ($) {
       }
       $('#pane-filter_' + name + ' .filter-desc').html(desc);
     });
-    $('#filter-details').slideDown();
+    $('#filter-details').slideDown(400, function() {
+      if (indiciaFns.updateControlLayout) {
+        indiciaFns.updateControlLayout();
+      }
+    });
     $('#filter-build').addClass('disabled');
   });
 
@@ -1748,7 +1750,11 @@ jQuery(document).ready(function ($) {
   });
 
   $('#filter-done').click(function () {
-    $('#filter-details').slideUp();
+    $('#filter-details').slideUp(400, function() {
+      if (indiciaFns.updateControlLayout) {
+        indiciaFns.updateControlLayout();
+      }
+    });
     $('#filter-build').removeClass('disabled');
   });
 
