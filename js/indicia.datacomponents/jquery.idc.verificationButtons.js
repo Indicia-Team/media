@@ -1896,7 +1896,7 @@
       'common name': [doc.taxon.vernacular_name, doc.taxon.accepted_name, doc.taxon.taxon_name],
       'preferred name': [doc.taxon.accepted_name, doc.taxon.taxon_name],
       'taxon full name': getTaxonNameLabel(doc),
-      'rank': doc.taxon.taxon_rank.charAt(0).toLowerCase() +  doc.taxon.taxon_rank.slice(1),
+      'rank': doc.taxon.taxon_rank ? doc.taxon.taxon_rank.charAt(0).toLowerCase() +  doc.taxon.taxon_rank.slice(1) : indiciaData.lang.verificationButtons.unknown,
       action: actionTerm,
       'location name': doc.location.verbatim_locality
     };
