@@ -213,7 +213,7 @@ var destroyAllFeatures;
               }
               // If the sref is in two parts, then we might need to split it across 2 input fields for lat and long
               if (data[0].centroid_sref.indexOf(' ') !== -1) {
-                var parts = $.trim(data[0].centroid_sref).split(' ');
+                var parts = data[0].centroid_sref.trim().split(' ');
                 // part 1 may have a comma at the end, so remove
                 var part1 = parts.shift().split(',')[0];
                 $('#' + div.settings.srefLatId).val(part1);
@@ -463,17 +463,17 @@ var destroyAllFeatures;
       // If the spatial ref latitude or longitude input control exists, bind it to the map, so entering a ref updates the map
       $('#' + opts.srefLatId).change(function () {
         // Only do something if both the lat and long are populated
-        if ($.trim($(this).val()) !== '' && $.trim($('#' + opts.srefLongId).val()) !== '') {
+        if ($(this).val().trim() !== '' && $('#' + opts.srefLongId).val().trim() !== '') {
           // copy the complete sref into the sref field
-          $('#' + opts.srefId).val($.trim($(this).val()) + ', ' + $.trim($('#' + opts.srefLongId).val()));
+          $('#' + opts.srefId).val($(this).val().trim() + ', ' + $('#' + opts.srefLongId).val().trim());
           _handleEnteredSref($('#' + opts.srefId).val(), div);
         }
       });
       $('#' + opts.srefLongId).change(function () {
         // Only do something if both the lat and long are populated
-        if ($.trim($('#'+opts.srefLatId).val()) !== '' && $.trim($(this).val()) !== '') {
+        if ($('#'+opts.srefLatId).val().trim() !== '' && $(this).val().trim() !== '') {
           // copy the complete sref into the sref field
-          $('#' + opts.srefId).val($.trim($('#' + opts.srefLatId).val()) + ', ' + $.trim($(this).val()));
+          $('#' + opts.srefId).val($('#' + opts.srefLatId).val().trim()) + ', ' + $(this).val().trim();
           _handleEnteredSref($('#' + opts.srefId).val(), div);
         }
       });
@@ -814,7 +814,7 @@ var destroyAllFeatures;
       $('#' + opts.geomId).val(data.wkt).change();
       // If the sref is in two parts, then we might need to split it across 2 input fields for lat and long
       if (data.sref.indexOf(' ') !== -1) {
-        var parts = $.trim(data.sref).split(' ');
+        var parts = data.sref.trim().split(' ');
         // part 1 may have a comma at the end, so remove
         var part1 = parts.shift().split(',')[0];
         $('#' + opts.srefLatId).val(part1);
@@ -988,7 +988,7 @@ var destroyAllFeatures;
                 $('#' + opts.geomId).val(dataref);
                 // If the sref is in two parts, then we might need to split it across 2 input fields for lat and long
                 if (data.sref.indexOf(' ') !== -1) {
-                  var parts = $.trim(data.sref).split(' ');
+                  var parts = data.sref.trim().split(' ');
                   // part 1 may have a comma at the end, so remove
                   var part1 = parts.shift().split(',')[0];
                   $('#' + opts.srefLatId).val(part1);
@@ -999,8 +999,8 @@ var destroyAllFeatures;
           );
         } else {
           $('#' + opts.srefId).val(ref);
-          $('#' + opts.srefLatId).val($.trim(refxy[0]));
-          $('#' + opts.srefLongId).val($.trim(refxy[1]));
+          $('#' + opts.srefLatId).val(refxy[0].trim());
+          $('#' + opts.srefLongId).val(refxy[1].trim());
           $('#' + opts.geomId).val(dataref);
         }
       } else {

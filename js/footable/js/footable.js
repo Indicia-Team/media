@@ -21,7 +21,7 @@
             },
             parsers: {  // The default parser to parse the value out of a cell (values are used in building up row detail)
                 alpha: function (cell) {
-                    return $(cell).data('value') || $.trim($(cell).text());
+                    return $(cell).data('value') || $(cell).text().trim();
                 },
                 numeric: function (cell) {
                     var val = $(cell).data('value') || $(cell).text().replace(/[^0-9.\-]/g, '');
@@ -449,13 +449,13 @@
             var $th = $(th), hide = $th.data('hide'), index = $th.index();
             hide = hide || '';
             hide = jQuery.map(hide.split(','), function (a) {
-                return jQuery.trim(a);
+                return a.trim();
             });
             var data = {
                 'index': index,
                 'hide': { },
                 'type': $th.data('type') || 'alpha',
-                'name': $th.data('name') || $.trim($th.text()),
+                'name': $th.data('name') || $th.text().trim(),
                 'ignore': $th.data('ignore') || false,
                 'toggle': $th.data('toggle') || false,
                 'className': $th.data('class') || null,
@@ -648,13 +648,13 @@
                             // Move bound inputs to where they will be visible.
                             ft.toggleInput(this);
                         });
-                    }              
+                    }
                 })
                 .end()
                 .find('> tbody > tr.' + cls.detailShow).each(function () {
                     ft.createOrUpdateDetailRow(this);
                 });
-                
+
             $table.find('> tbody > tr.' + cls.detailShow + ':visible').each(function () {
                 var $next = $(this).next();
                 if ($next.hasClass(cls.detail)) {
