@@ -397,7 +397,7 @@ var addMediaRowOnClick;
       $(taxonCell).parent().removeClass('scClonableRow');
       $(taxonCell).parent().find('input,select,textarea').removeClass('inactive');
       // Do we use a JavaScript fn, or a standard template, to format the species label?
-      if ($.isFunction(formatter)) {
+      if (typeof formatter === 'function') {
         $(taxonCell).html(formatter(data));
       } else {
         // Just a simple PHP template
@@ -489,7 +489,7 @@ var addMediaRowOnClick;
       }
     }
 
-    if (typeof formatter === 'undefined' || !$.isFunction(formatter)) {
+    if (typeof formatter === 'undefined' || !typeof formatter === 'function') {
       // provide a default format function
       formatter = function (item) {
         return item.taxon;

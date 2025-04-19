@@ -146,7 +146,7 @@
                 ///<summary>Simple validation of the <paramref name="plugin"/> to make sure any members called by FooTable actually exist.</summary>
                 ///<param name="plugin">The object defining the plugin, this should implement a string property called "name" and a function called "init".</param>
 
-                if (!$.isFunction(plugin)) {
+                if (!typeof plugin === 'function') {
                   if (w.footable.options.debug === true) console.error('Validation failed, expected type "function", received type "{0}".', typeof plugin);
                   return false;
                 }
@@ -155,7 +155,7 @@
                     if (w.footable.options.debug === true) console.error('Validation failed, plugin does not implement a string property called "name".', p);
                     return false;
                 }
-                if (!$.isFunction(p['init'])) {
+                if (!typeof p['init'] === 'function') {
                     if (w.footable.options.debug === true) console.error('Validation failed, plugin "' + p['name'] + '" does not implement a function called "init".', p);
                     return false;
                 }
@@ -503,7 +503,7 @@
         };
 
         ft.calculateWidth = function ($table, info) {
-            if (jQuery.isFunction(opt.calculateWidthOverride)) {
+            if (typeof opt.calculateWidthOverride === 'function') {
                 return opt.calculateWidthOverride($table, info);
             }
             if (info.viewportWidth < info.width) info.width = info.viewportWidth;
@@ -783,7 +783,7 @@
 
         ft.raise = function (eventName, args) {
 
-            if (ft.options.debug === true && $.isFunction(ft.options.log)) ft.options.log(eventName, 'event');
+            if (ft.options.debug === true && typeof ft.options.log === 'function') ft.options.log(eventName, 'event');
 
             args = args || { };
             var def = { 'ft': ft };

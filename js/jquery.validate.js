@@ -874,7 +874,7 @@ $.extend($.validator, {
 
 		// evaluate parameters
 		$.each(rules, function(rule, parameter) {
-			rules[rule] = $.isFunction(parameter) ? parameter(element) : parameter;
+			rules[rule] = typeof parameter === 'function' ? parameter(element) : parameter;
 		});
 
 		// clean number parameters
@@ -997,7 +997,7 @@ $.extend($.validator, {
 					} else {
 						var errors = {};
 						var message = response || validator.defaultMessage( element, "remote" );
-						errors[element.name] = previous.message = $.isFunction(message) ? message(value) : message;
+						errors[element.name] = previous.message = typeof message === 'function' ? message(value) : message;
 						validator.showErrors(errors);
 					}
 					previous.valid = valid;

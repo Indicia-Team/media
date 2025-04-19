@@ -250,7 +250,7 @@
     grid._makeRow = function(item, index) {
       var options = grid.footable.options.grid;
       var $row;
-      if ($.isFunction(options.template)) {
+      if (typeof options.template === 'function') {
         $row = $(options.template($.extend({}, {
           __index: index
         }, item)));
