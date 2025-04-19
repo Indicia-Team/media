@@ -384,7 +384,7 @@
       // were any predefined parameter values supplied?
       if (typeof div.settings.filters !== 'undefined') {
         $.each(div.settings.filters, function (name, value) {
-          if ($.isArray(value)) {
+          if (Array.isArray(value)) {
             if (typeof query.in === 'undefined') {
               query.in = {};
             }

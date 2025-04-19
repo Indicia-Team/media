@@ -476,7 +476,7 @@
     var rez = $.extend(true, {}, opts1, opts2);
 
     $.each(opts2, function (key, value) {
-      if ($.isArray(value)) {
+      if (Array.isArray(value)) {
         rez[key] = value;
       }
     });
@@ -701,7 +701,7 @@
         obj.opts = $.extend(true, {}, self.opts, opts);
 
         // Do not merge buttons array
-        if ($.isArray(opts.buttons)) {
+        if (Array.isArray(opts.buttons)) {
           obj.opts.buttons = opts.buttons;
         }
 

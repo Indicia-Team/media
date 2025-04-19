@@ -795,7 +795,7 @@
     if (sort) {
       $.each(sort, function eachSortField(field, dir) {
         if (indiciaData.fieldConvertorSortFields[field.simpleFieldName()] &&
-            $.isArray(indiciaData.fieldConvertorSortFields[field.simpleFieldName()])) {
+            Array.isArray(indiciaData.fieldConvertorSortFields[field.simpleFieldName()])) {
           $.each(indiciaData.fieldConvertorSortFields[field.simpleFieldName()], function eachUnderlyingField() {
             sortInfo[this] = dir;
           });

@@ -297,7 +297,7 @@ var destroyAllFeatures;
       if (wkt) {
         feature = parser.read(wkt);
         // this could be an array of features for a GEOMETRYCOLLECTION
-        if ($.isArray(feature) === false) {
+        if (Array.isArray(feature) === false) {
           feature = [feature];
         }
         styletype = (typeof type !== 'undefined') ? type : 'default';
@@ -2668,7 +2668,7 @@ var destroyAllFeatures;
       if (!lSwitch) {
         availableLayers = _getPresetLayers(div.settings);
         if (availableLayers[id]) {
-          if ($.isArray(availableLayers[id])) {
+          if (Array.isArray(availableLayers[id])) {
             // Dynamic layers defined as an array of sub-layers. If index to
             // load not specified, load the first.
             lSwitch = availableLayers[id][dynamicLayerIndex || 0]();
@@ -2677,7 +2677,7 @@ var destroyAllFeatures;
           }
           div.map.addLayer(lSwitch);
           // Ensure layer inserts at correct position.
-          if ($.isArray(availableLayers[id])) {
+          if (Array.isArray(availableLayers[id])) {
             //For dynamic layers, search for the default layer - index 0 - and use that
             //for the insertion position
             div.map.setLayerIndex(lSwitch, div.map.getLayerIndex(div.map.getLayersBy('layerId', availableLayers[id][0]().layerId)[0]));
@@ -2848,7 +2848,7 @@ var destroyAllFeatures;
         if (presetLayers.hasOwnProperty(item)) {
           // Load each predefined layer. If a layer group (i.e. a dynamic
           // layer) only initially load the first.
-          layer = $.isArray(presetLayers[item]) ? presetLayers[item][0]() : presetLayers[item]();
+          layer = Array.isArray(presetLayers[item]) ? presetLayers[item][0]() : presetLayers[item]();
           div.map.addLayer(layer);
           if (typeof layer.mapObject !== 'undefined') {
             layer.mapObject.setTilt(0);
