@@ -3601,10 +3601,11 @@ var destroyAllFeatures;
                 // If only 1 then auto-select it.
                 if (featuresToSelect.length === 1) {
                   this.selectFeature(featuresToSelect[0]);
-                  this.moveLayerToTop();
-                  this.handlers.drag.activate();
-                  this.handlers.keyboard.activate();
                 }
+                this.moveLayerToTop();
+                this.handlers.drag.activate();
+                this.handlers.keyboard.activate();
+
                 OpenLayers.Control.prototype.activate.call(this);
               }
             }
