@@ -88,6 +88,17 @@
 				$.inArray(locationId, indiciaData.allPossibleLocationIds) > -1;
 	}, 'The location is not in the chosen grid square.');
 
+	$.validator.addMethod('autocompleteRequired', function (value, element) {
+		if (value === '') {
+			return true;
+		}
+		// Custom validation for autocompletes so we check the lookup succeeded
+		// and a value is stored in the hidden input..
+		if ($(element).data('hiddenvalueinput')) {
+			return $('#' + $(element).data('hiddenvalueinput').replace(':', '\\:')).val() !== '';
+		}
+	});
+
 	/**
 	* Return true, if the value is a valid vehicle identification number (VIN).
 	*
