@@ -1827,11 +1827,14 @@
    *
    * @param bounds bounds
    *   Bounds object.
+   * @param float buffer
+   *  Buffer to apply to the bounds as a fraction of the viewport dimension
+   *  being buffered.
    *
    * @return object
    *   Bounds data buffered.
    */
-  function getBufferedBBforQuery(bounds) {
+  function getBufferedBBforQuery(bounds, buffer) {
     var width;
     var height;
     if (typeof indiciaData.lastBufferedBB === 'undefined'
@@ -1839,14 +1842,15 @@
         || bounds.getSouth() < indiciaData.lastBufferedBB.south
         || bounds.getEast() > indiciaData.lastBufferedBB.east
         || bounds.getWest() < indiciaData.lastBufferedBB.west) {
-      // Need a new query bounding box. Build one with a wide buffer.
+      // Need a new query bounding box.
       width = bounds.getEast() - bounds.getWest();
       height = bounds.getNorth() - bounds.getSouth();
+      // Buffer the bounding box to reduce ES hits if the map is panned.
       indiciaData.lastBufferedBB = {
-        north: Math.max(-90, Math.min(90, bounds.getNorth() + height * 2)),
-        south: Math.max(-90, Math.min(90, bounds.getSouth() - height * 2)),
-        east: Math.max(-180, Math.min(180, bounds.getEast() + width * 2)),
-        west: Math.max(-180, Math.min(180, bounds.getWest() - width * 2))
+        north: Math.max(-90, Math.min(90, bounds.getNorth() + height * buffer)),
+        south: Math.max(-90, Math.min(90, bounds.getSouth() - height * buffer)),
+        east: Math.max(-180, Math.min(180, bounds.getEast() + width * buffer)),
+        west: Math.max(-180, Math.min(180, bounds.getWest() - width * buffer))
       };
     }
     return indiciaData.lastBufferedBB;
@@ -1943,7 +1947,10 @@
         alert('Data source incorrectly configured. @filterBoundsUsingMap does not point to a valid map.');
       } else if (!doingCount && !source.settings.initialMapBounds || mapToFilterTo[0].settings.initialBoundsSet) {
         if (bounds.getNorth() !== bounds.getSouth() && bounds.getEast() !== bounds.getWest()) {
-          bufferedBB = getBufferedBBforQuery(bounds);
+          // Get bounding box with buffer. Increase buffer for verification so
+          // that small pans between close records do not trigger multiple
+          // queries.
+          bufferedBB = getBufferedBBforQuery(bounds, indiciaData.esScope === 'verification' ? 2 : 0.1);
           data.bool_queries.push({
             bool_clause: 'must',
             query_type: 'geo_bounding_box',
