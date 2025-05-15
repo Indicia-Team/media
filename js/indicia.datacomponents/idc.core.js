@@ -264,6 +264,7 @@
       var item;
       var link;
       var params = [];
+      var target;
       if (this.hideIfFromOtherWebsite && doc.metadata.website.id != indiciaData.website_id) {
         // Skip this action.
         return true;
@@ -279,7 +280,7 @@
         html += '<span class="fas fa-times-circle error" title="Invalid action definition - missing title"></span>';
       } else {
         if (this.iconClass) {
-          item = '<span class="' + this.iconClass + '" title="' + this.title + '"></span>';
+          item = `<span class="${this.iconClass}" title="${this.title}"></span>`;
         } else {
           item = this.title;
         }
@@ -294,7 +295,8 @@
             });
             link += params.join('&');
           }
-          item = '<a href="' + indiciaFns.applyFieldReplacements(el, doc, link, this.tokenDefaults) + '" title="' + this.title + '">' + item + '</a>';
+          target = this.target || '_self';
+          item = `<a href="${indiciaFns.applyFieldReplacements(el, doc, link, this.tokenDefaults)}" title="${this.title}" target="${target}">${item}</a>`
         }
         else if (this.onClickFn) {
           item = '<a onclick="indiciaFns.' + this.onClickFn + '(JSON.parse(jQuery(this).closest(\'tr\').attr(\'data-doc-source\')), jQuery(this).closest(\'tr\')[0]);" title="' + this.title + '">' + item + '</a>';
