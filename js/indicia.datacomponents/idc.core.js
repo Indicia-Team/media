@@ -1600,9 +1600,9 @@
     // Path might be to an aggregation response object, in which case we just
     // want the value (or value_as_string if aggregation format specified).
     if (valuePath && typeof (valuePath.value_as_string || valuePath.value) !== 'undefined') {
-      return valuePath.value_as_string || valuePath.value;
+      return indiciaFns.escapeHtml(valuePath.value_as_string || valuePath.value);
     }
-    return valuePath;
+    return indiciaFns.escapeHtml(valuePath);
   };
 
   /**
