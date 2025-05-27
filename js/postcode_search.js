@@ -20,7 +20,7 @@
   function usePointFromPostcode(postcode, callbackFunction) {
     $.ajax({
       dataType: 'json',
-      url: indiciaData.proxyUrl,
+      url: indiciaData.placeSearchProxyUrl,
       data: {
         url: 'https://maps.googleapis.com/maps/api/place/textsearch/json',
         key: indiciaData.google_api_key,
