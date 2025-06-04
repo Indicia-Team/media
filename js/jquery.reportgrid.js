@@ -454,13 +454,13 @@
     /**
      * For columns where img=true, return the images and media as HTML.
      */
-    function getImagesFromValue(value, div) {
+    function getImagesFromValue(value, div, rowIdValue) {
       if (value) {
         var imgs = value.split(',');
         var match;
         var r = '';
         var imgclass = imgs.length > 1 ? 'multi' : 'single';
-        var group = imgs.length > 1 && div.settings.rowId !== '' ? 'group-' + row[div.settings.rowId] + '"' : '';
+        var group = imgs.length > 1 && rowIdValue ? 'group-' + rowIdValue + '"' : '';
         $.each(imgs, function(idx, img) {
           var mediaInfo;
           var mediaInfoAttr = '';
@@ -478,7 +478,7 @@
             mediaInfo = {
               path: img
             };
-            mediaInfo[entity + '_id'] = row[div.settings.rowId];
+            mediaInfo[entity + '_id'] = rowIdValue;
             mediaInfoAttr = 'data-media-info="' + indiciaFns.escapeHtml(JSON.stringify(mediaInfo)) + '" ';
           }
           match = img.match(/^http(s)?:\/\/(www\.)?([a-z]+(\.kr)?)/);
@@ -639,7 +639,7 @@
                   } else {
                     if (col.img === true || col.img === 'true') {
                       tdclasses.push('table-gallery');
-                      value = getImagesFromValue(row[col.fieldname], div);
+                      value = getImagesFromValue(row[col.fieldname], div, div.settings.rowId ? row[div.settings.rowId] : null);
                     } else if (col.html_safe && col.html_safe === 'true') {
                       // HTML output from report column so no escaping.
                       value = row[col.fieldname];
