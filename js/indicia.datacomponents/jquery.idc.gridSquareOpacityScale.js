@@ -68,7 +68,8 @@
     const rgb = hexToRgb(hex);
     const savedOpacityCookieValue = indiciaFns.cookie('leafletMapDataLayerOpacity');
     for (let i = 0; i <= 10; i++) {
-      const dataValue = i / 10;
+      // Scale is 0.2 to 0.7.
+      const dataValue = i / 20 + 0.2;
       const opacity = indiciaFns.calculateFeatureOpacity(savedOpacityCookieValue ? savedOpacityCookieValue : 0.5, dataValue);
       // Ensure text legible according to background.
       const fontColour = opacity > 0.35 ? '#ffffff' : '#000000';

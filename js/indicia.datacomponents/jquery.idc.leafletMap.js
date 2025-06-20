@@ -516,15 +516,16 @@
   function mapGridSquareAggregation(el, response, sourceSettings) {
     var buckets = indiciaFns.findValue(response.aggregations, 'buckets');
     var subBuckets;
+    // Set a minimum of 10 for calculating opacity.
     var maxMetric = Math.sqrt(10);
-    var maxCount = 0;
+    var maxCount = 10;
     var filterField = $(el).idcLeafletMap('getAutoSquareField');
     if (typeof buckets !== 'undefined') {
       $.each(buckets, function eachBucket() {
         subBuckets = indiciaFns.findValue(this, 'buckets');
         if (typeof subBuckets !== 'undefined') {
           $.each(subBuckets, function eachSubBucket() {
-            maxMetric = Math.max(Math.sqrt(this.doc_count), maxMetric);
+            //maxMetric = Math.max(Math.sqrt(this.doc_count), maxMetric);
             maxCount = Math.max(this.doc_count, maxCount);
           });
         }
@@ -539,7 +540,9 @@
               coords = this.key.split(' ');
               // On a scale of 0 to 20000 (the range allowed for metrics), we
               // want 20% to 70% opacity according to number of records.
-              metric = Math.round((Math.sqrt(this.doc_count) / maxMetric) * 10000) + 2000;
+              metric = Math.round(Math.sqrt(this.doc_count / maxCount) * 10000) + 4000;
+              maxMetric = Math.max(metric, maxMetric);
+              console.log(`feature metric for ${this.doc_count} is ${metric}`);
               if (typeof location !== 'undefined') {
                 addFeature(el, sourceSettings.id, { lat: coords[1], lon: coords[0] }, null, metric, null, filterField, this.key);
               }
