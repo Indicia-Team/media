@@ -37,10 +37,6 @@
    * Declare default settings.
    */
   var defaults = {
-    initialBoundsSet: false,
-    initialLat: 54.093409,
-    initialLng: -2.89479,
-    initialZoom: 5,
     baseLayer: 'OpenStreetMap',
     baseLayerConfig: {
       OpenStreetMap: {
@@ -53,10 +49,22 @@
       }
     },
     cookies: true,
+    initialBoundsSet: false,
+    initialLat: 54.093409,
+    initialLng: -2.89479,
+    initialZoom: 5,
     selectedFeatureStyle: {
       color: '#FF0000',
       fillColor: '#FF0000',
-    }
+    },
+    tools: [
+      'baseLayers',
+      'overlayLayers',
+      // Following are disabled by default.
+      // 'dataLayerOpacity',
+      // 'gridSquareSize',
+      // 'queryLimitTo1kmOrBetter',
+    ],
   };
 
   /**
@@ -542,7 +550,6 @@
               // want 20% to 70% opacity according to number of records.
               metric = Math.round(Math.sqrt(this.doc_count / maxCount) * 10000) + 4000;
               maxMetric = Math.max(metric, maxMetric);
-              console.log(`feature metric for ${this.doc_count} is ${metric}`);
               if (typeof location !== 'undefined') {
                 addFeature(el, sourceSettings.id, { lat: coords[1], lon: coords[0] }, null, metric, null, filterField, this.key);
               }
@@ -755,6 +762,28 @@
   }
 
   /**
+   * Adds tool controls to the map.
+   */
+  function addTools(el, baseLayers, overlays) {
+    const baseLayersInTool = el.settings.tools.indexOf('baseLayers') === -1 ? [] : baseLayers;
+    const overlaysInTool = el.settings.tools.indexOf('overlayLayers') === -1 ? [] : overlays;
+    if (baseLayersInTool || overlaysInTool) {
+      const layersControl = L.control.layers(baseLayersInTool, overlaysInTool);
+      layersControl.addTo(el.map);
+    }
+    // Add the tools control if requested.
+    const availableTools = ['dataLayerOpacity', 'gridSquareSize', 'queryLimitTo1kmOrBetter'];
+    const enabledTools = el.settings.tools.filter(tool => availableTools.includes(tool));
+    if (enabledTools.length) {
+      const toolsControl = new idcLeafletTools({
+        mapEl: el,
+        tools: enabledTools
+      });
+      toolsControl.addTo(el.map);
+    }
+  }
+
+  /**
    * Declare public methods.
    */
   methods = {
@@ -947,12 +976,7 @@
           group.addTo(el.map);
         }
       });
-      const layersControl = L.control.layers(baseMaps, overlays);
-      layersControl.addTo(el.map);
-      const toolsControl = new idcLeafletTools({
-        mapEl: el,
-      });
-      toolsControl.addTo(el.map);
+      addTools(el, baseMaps, overlays);
       el.map.on('zoomend', function zoomEnd() {
         $.each(callbacks.zoomEnd, function eachCallback() {
           this(el);
