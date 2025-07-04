@@ -64,6 +64,10 @@ var idcLeafletTools;
     getCtrl_gridSquareSize: function(ctrlId, label, options) {
       const savedGridSquareSizeValue = indiciaFns.cookie('leafletMapGridSquareSize');
       options.mapEl.settings.overrideGridSquareSize = savedGridSquareSizeValue;
+      if (savedGridSquareSizeValue !== 'autoGridSquareSize') {
+        // Less than 10km squares should not be zoomed out too far due to data volumes.
+        options.mapEl.map.setMinZoom(Math.max(0, 10 - (savedGridSquareSizeValue / 1000)));
+      }
       const select = $('<select>', {
         id: ctrlId,
         class: 'form-control'
@@ -78,9 +82,13 @@ var idcLeafletTools;
         if (sqSize === 'autoGridSquareSize') {
           delete options.mapEl.settings.maxSqSizeKms;
           delete options.mapEl.settings.minSqSizeKms;
+          options.mapEl.map.setMinZoom(0);
         }  else {
-          options.mapEl.settings.maxSqSizeKms = sqSize / 1000;
-          options.mapEl.settings.minSqSizeKms = sqSize / 1000;
+          const sqSizeInKms = sqSize / 1000;
+          options.mapEl.settings.maxSqSizeKms = sqSizeInKms;
+          options.mapEl.settings.minSqSizeKms = sqSizeInKms;
+          // Less than 10km squares should not be zoomed out too far due to data volumes.
+          options.mapEl.map.setMinZoom(Math.max(0, 10 - sqSizeInKms));
         }
         $.each(options.mapEl.settings.layerConfig, function() {
           let sqFieldName;
