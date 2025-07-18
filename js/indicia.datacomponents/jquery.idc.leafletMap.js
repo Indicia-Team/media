@@ -238,7 +238,7 @@
     let defaultFillOpacity = fillOpacity === null || typeof fillOpacity === "undefined" ? 0.5 : fillOpacity;
     defaultFillOpacity = indiciaFns.calculateFeatureOpacity(savedOpacityCookieValue ? savedOpacityCookieValue : 0.5, defaultFillOpacity);
     // Read square size user setting cookie if it exists.
-    const userSettingSqSize = indiciaFns.cookie('leafletMapGridSquareSize');
+    const userSettingSqSize = el.settings.tools.gridSquareSize ? el.settings.tools. indiciaFns.cookie('leafletMapGridSquareSize') : null;
     $.each(layerIds, function eachLayer() {
       var layerId = this;
       var layerConfig = el.settings.layerConfig[layerId];
@@ -765,9 +765,9 @@
    * Adds tool controls to the map.
    */
   function addTools(el, baseLayers, overlays) {
-    const baseLayersInTool = el.settings.tools.indexOf('baseLayers') === -1 ? [] : baseLayers;
-    const overlaysInTool = el.settings.tools.indexOf('overlayLayers') === -1 ? [] : overlays;
-    if (baseLayersInTool || overlaysInTool) {
+    const baseLayersInTool = el.settings.tools.indexOf('baseLayers') === -1 ? {} : baseLayers;
+    const overlaysInTool = el.settings.tools.indexOf('overlayLayers') === -1 ? {} : overlays;
+    if (Object.keys(baseLayersInTool).length + Object.keys(overlaysInTool).length > 0) {
       const layersControl = L.control.layers(baseLayersInTool, overlaysInTool);
       layersControl.addTo(el.map);
     }

@@ -62,10 +62,24 @@ var idcLeafletTools;
     },
 
     getCtrl_gridSquareSize: function(ctrlId, label, options) {
+      let foundValidLayer = false;
+      $.each(options.mapEl.settings.layerConfig, function() {
+        if ((this.type === 'circle' || this.type === 'square')
+          && indiciaData.esSourceObjects[this.source].settings.aggregation
+          && indiciaData.esSourceObjects[this.source].settings.aggregation.by_srid
+        ) {
+          foundValidLayer = true;
+        }
+      });
+      if (!foundValidLayer) {
+        console.log('The grid square size control is not available because no layers are configured to use it.');
+        return '';
+      }
       const savedGridSquareSizeValue = indiciaFns.cookie('leafletMapGridSquareSize');
       options.mapEl.settings.overrideGridSquareSize = savedGridSquareSizeValue;
       if (savedGridSquareSizeValue && savedGridSquareSizeValue !== 'autoGridSquareSize') {
-        // Less than 10km squares should not be zoomed out too far due to data volumes.
+        // Less than 10 km squares should not be zoomed out too far due to data
+        // volumes.
         options.mapEl.map.setMinZoom(Math.max(0, 10 - (savedGridSquareSizeValue / 1000)));
       }
       const select = $('<select>', {
@@ -73,9 +87,9 @@ var idcLeafletTools;
         class: 'form-control'
       });
       $(`<option value="autoGridSquareSize">${indiciaData.lang.leafletTools.autoLayerTitle}</option>`).appendTo(select);
-      $('<option value="10000">10km</option>').appendTo(select);
-      $('<option value="2000">2km</option>').appendTo(select);
-      $('<option value="1000">1km</option>').appendTo(select);
+      $('<option value="10000">10 km</option>').appendTo(select);
+      $('<option value="2000">2 km</option>').appendTo(select);
+      $('<option value="1000">1 km</option>').appendTo(select);
       select.on('change', function() {
         const sqSize = $(this).val();
         indiciaFns.cookie('leafletMapGridSquareSize', sqSize);
@@ -87,12 +101,15 @@ var idcLeafletTools;
           const sqSizeInKms = sqSize / 1000;
           options.mapEl.settings.maxSqSizeKms = sqSizeInKms;
           options.mapEl.settings.minSqSizeKms = sqSizeInKms;
-          // Less than 10km squares should not be zoomed out too far due to data volumes.
+          // Less than 10 km squares should not be zoomed out too far due to data volumes.
           options.mapEl.map.setMinZoom(Math.max(0, 10 - sqSizeInKms));
         }
         $.each(options.mapEl.settings.layerConfig, function() {
           let sqFieldName;
-          if (this.type === 'circle' || this.type === 'square') {
+          if ((this.type === 'circle' || this.type === 'square')
+            && indiciaData.esSourceObjects[this.source].settings.aggregation
+            && indiciaData.esSourceObjects[this.source].settings.aggregation.by_srid
+          ) {
             sqFieldName = sqSize === 'autoGridSquareSize' ? 'autoGridSquareField' : $(options.mapEl).idcLeafletMap('getAutoSquareField');
             indiciaFns.findAndSetValue(indiciaData.esSourceObjects[this.source].settings.aggregation.by_srid.aggs.by_square, 'field', sqFieldName);
             indiciaData.esSourceObjects[this.source].populate();
