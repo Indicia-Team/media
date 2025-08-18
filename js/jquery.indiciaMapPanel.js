@@ -2548,7 +2548,7 @@ var destroyAllFeatures;
             indiciaData.fetchingGoogleApiScript = true;
             indiciaData.layersToReplaceAfterGoogleApiLoaded = [layerToReplace];
             $.getScript('https://maps.google.com/maps/api/js?v=3' + key, function() {
-              $.unique(indiciaData.layersToReplaceAfterGoogleApiLoaded);
+              $.uniqueSort(indiciaData.layersToReplaceAfterGoogleApiLoaded);
               indiciaData.layersToReplaceAfterGoogleApiLoaded.forEach(function(layer) {
                 replaceGoogleBaseLayer(layer);
               });
