@@ -1730,7 +1730,7 @@
       // Ensure media and comments are loaded.
       $.ajax({
         url: indiciaData.esProxyAjaxUrl + '/mediaAndComments/' + indiciaData.nid + urlSep +
-        'occurrence_id=' + occurrenceId + '&sample_id=' + sampleId,
+        'include_info=f&occurrence_id=' + occurrenceId + '&sample_id=' + sampleId,
         dataType: 'json'
       })
       .done(function handleResponse(response) {
