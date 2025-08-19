@@ -685,7 +685,7 @@
     /**
      * Redetermination dialog select template change handler.
      */
-    $('.comment-template').change(onSelectCommentTemplate);
+    $('.comment-template').on('change', onSelectCommentTemplate);
 
     /**
      * Redetermination dialog submit form handler.
@@ -1448,7 +1448,7 @@
   /**
    * Selecting a force linked location enables the submit button.
    */
-  $('#force-linked-location').change(function() {
+  $('#force-linked-location').on('change', function() {
     $('#force-linked-location-form button[type="submit"]').prop('disabled', $('#force-linked-location').val() === '');
   });
 
@@ -2031,7 +2031,7 @@
         $('.idc-verificationButtons').hide();
       });
       // Redet form use main taxon list checkbox.
-      $('#redet-from-full-list').change(function(e) {
+      $('#redet-from-full-list').on('change', function(e) {
         if ($(e.currentTarget).prop('checked')) {
           $('#redet-species\\:taxon').setExtraParams({ taxon_list_id: indiciaData.mainTaxonListId });
         } else {

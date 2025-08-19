@@ -299,7 +299,7 @@
       }
     });
 
-    $('.filter-status').change(function (e) {
+    $('.filter-status').on('change', function (e) {
       e.preventDefault();
       var $parent = $(this).closest('p');
       if ($parent.find('#filter1').length > 0) {

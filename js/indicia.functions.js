@@ -460,7 +460,7 @@ window.indiciaFns = {};
             popupHtml += '<button id="resolveLocationOk" disabled="disabled">Ok</button>';
             popupHtml += '<button id="resolveLocationCancel">Cancel</button>';
             $.fancybox.open('<div id="resolveLocationPopup">' + popupHtml + '</div>');
-            $('#resolveLocationPopup input[type="radio"]').change(function () {
+            $('#resolveLocationPopup input[type="radio"]').on('change', function () {
               $('#resolveLocationOk').removeAttr('disabled');
             });
             $('#resolveLocationOk').on('click', function () {
@@ -683,14 +683,14 @@ window.indiciaFns = {};
           }
           childSelect.addClass('ui-state-disabled').html('<option disabled>' + options.instruct + '</option>');
         }
-        childSelect.change();
+        childSelect.trigger('change');
       });
     } else {
       if (options.hideChildrenUntilLoaded) {
         childSelect.hide();
       }
       childSelect.addClass('ui-state-disabled').html('<option disabled>' + options.instruct + '</option>');
-      childSelect.change();
+      childSelect.trigger('change');
     }
   };
 
@@ -782,7 +782,7 @@ window.indiciaFns = {};
    */
   indiciaFns.enableScratchpadBlurList = function enableScratchpadBlurList() {
     if (indiciaData.scratchpadBlurList && $('#occurrence\\:taxa_taxon_list_id').length > 0) {
-      $('#occurrence\\:taxa_taxon_list_id').change(checkIfSingleTaxonSensitive);
+      $('#occurrence\\:taxa_taxon_list_id').on('change', checkIfSingleTaxonSensitive);
     }
     if (indiciaData.scratchpadBlurList && typeof hook_species_checklist_new_row !== 'undefined') {
       hook_species_checklist_new_row.push(checkAddedSpeciesSensitive);
@@ -955,7 +955,7 @@ jQuery(document).ready(function ($) {
     $.each(indiciaData.enableControlIf, function(ctrlId, otherControls) {
       $('#' + ctrlId.replace(':', '\\:')).attr('disabled', true);
       $.each(otherControls, function(otherCtrlId, otherControlValues) {
-        $('#' + otherCtrlId.replace(':', '\\:')).change(function(e) {
+        $('#' + otherCtrlId.replace(':', '\\:')).on('change', function(e) {
           var ctrl = $(e.currentTarget);
           var val = !$(ctrl).is(':checkbox') || $(ctrl).is(':checked') ? $(ctrl).val() : '';
           if (otherControlValues.indexOf(val) === -1) {

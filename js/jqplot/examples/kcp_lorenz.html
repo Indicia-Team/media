@@ -376,12 +376,12 @@ $(document).ready(function(){
 
     // attach event handlers to form elements
 
-    $("input[type=radio][name=backgroundColor]").change(function(){
+    $("input[type=radio][name=backgroundColor]").on('change', function(){
         plot1.grid.background = $(this).val();
         plot1.replot();
     });
 
-    $("input.dataSeries-checkbox").change(function(){
+    $("input.dataSeries-checkbox").on('change', function(){
 
         plot1.series[0].show = false;
         plot1.series[1].show = false;
@@ -408,17 +408,17 @@ $(document).ready(function(){
         plot1.replot();
     });
 
-    $("input[type=checkbox][name=gridsVertical]").change(function(){
+    $("input[type=checkbox][name=gridsVertical]").on('change', function(){
         plot1.axes.xaxis.tickOptions.showGridline = this.checked;
         plot1.replot();
     });
 
-    $("input[type=checkbox][name=gridsHorizontal]").change(function(){
+    $("input[type=checkbox][name=gridsHorizontal]").on('change', function(){
         plot1.axes.yaxis.tickOptions.showGridline = this.checked;
         plot1.replot();
     });
 
-    $("input[type=checkbox][name=cutoffLines]").change(function(){
+    $("input[type=checkbox][name=cutoffLines]").on('change', function(){
         var co = plot1.plugins.canvasOverlay;
         if (this.checked) {
             co.get('line1').options.show = true;
@@ -463,7 +463,7 @@ $(document).ready(function(){
         plot1.replot();
     });
 
-    $("input[type=radio][name=lineWidth]").change(function(){
+    $("input[type=radio][name=lineWidth]").on('change', function(){
         var val = parseFloat($(this).val()), shadowOffset;
         plot1.series[0].renderer.shapeRenderer.lineWidth = val;
         plot1.series[0].renderer.shadowRenderer.lineWidth = val;

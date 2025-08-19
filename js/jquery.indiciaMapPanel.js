@@ -459,9 +459,9 @@ var destroyAllFeatures;
 
       // If the spatial ref input control exists, bind it to the map, so
       // entering a ref updates the map.
-      $('#' + opts.srefId).change(userChangedSref);
+      $('#' + opts.srefId).on('change', userChangedSref);
       // If the spatial ref latitude or longitude input control exists, bind it to the map, so entering a ref updates the map
-      $('#' + opts.srefLatId).change(function () {
+      $('#' + opts.srefLatId).on('change', function () {
         // Only do something if both the lat and long are populated
         if ($(this).val().trim() !== '' && $('#' + opts.srefLongId).val().trim() !== '') {
           // copy the complete sref into the sref field
@@ -469,7 +469,7 @@ var destroyAllFeatures;
           _handleEnteredSref($('#' + opts.srefId).val(), div);
         }
       });
-      $('#' + opts.srefLongId).change(function () {
+      $('#' + opts.srefLongId).on('change', function () {
         // Only do something if both the lat and long are populated
         if ($('#'+opts.srefLatId).val().trim() !== '' && $(this).val().trim() !== '') {
           // copy the complete sref into the sref field
@@ -477,7 +477,7 @@ var destroyAllFeatures;
           _handleEnteredSref($('#' + opts.srefId).val(), div);
         }
       });
-      $('#' + opts.srefSystemId).change(function () {
+      $('#' + opts.srefSystemId).on('change', function () {
         // When Spatial reference system is changed then do the following....
         // -If the spatial referece has already been changed by the user since the page was loaded
         // then use that last position to provide the position to switch the spatial reference system for
@@ -539,7 +539,7 @@ var destroyAllFeatures;
         var locChange = function () {
           locationSelectedInInput(div, $('#imp-location').val());
         };
-        $('#imp-location').change(locChange);
+        $('#imp-location').on('change', locChange);
         // trigger change event, incase imp-location was already populated when the map loaded
         locationSelectedInInput(div, $('#imp-location').val(), true);
       }
@@ -681,7 +681,7 @@ var destroyAllFeatures;
                   }
                 }
               }
-              $('#' + opts.geomId).val(data.wkt).change();
+              $('#' + opts.geomId).val(data.wkt).trigger('change');
             }
           }
         });
@@ -776,7 +776,7 @@ var destroyAllFeatures;
       var gridId;
       // Fetching grid ref for a grid row is active.
       $('.scSpatialRefFromMap.active').parent().find('.scSpatialRef').val(data.sref);
-      $('.scSpatialRefFromMap.active').parent().find('.scSpatialRef').change();
+      $('.scSpatialRefFromMap.active').parent().find('.scSpatialRef').trigger('change');
       gridId = $('.scSpatialRefFromMap.active').closest('table').attr('id');
       if (indiciaData['spatialRefPerRowUseFullscreenMap-' + gridId] &&
           ((document.fullscreenElement && document.fullscreenElement !== null) ||    // alternative standard methods
@@ -811,7 +811,7 @@ var destroyAllFeatures;
       }
       // Update the spatial reference control
       $('#' + opts.srefId).val(data.sref);
-      $('#' + opts.geomId).val(data.wkt).change();
+      $('#' + opts.geomId).val(data.wkt).trigger('change');
       // If the sref is in two parts, then we might need to split it across 2 input fields for lat and long
       if (data.sref.indexOf(' ') !== -1) {
         var parts = data.sref.trim().split(' ');
@@ -1699,7 +1699,7 @@ var destroyAllFeatures;
           evt.preventDefault();
         }
       });
-      $('#click-buffer input').change(function () {
+      $('#click-buffer input').on('change', function () {
         bufferRoundSelectedRecord(div, $('#click-buffer input').val());
       });
     }
@@ -3449,7 +3449,7 @@ var destroyAllFeatures;
 
           onResponse: function(response) {
             if (response.features.length>0) {
-              $('#imp-location').val(response.features[0].data.id).change();
+              $('#imp-location').val(response.features[0].data.id).trigger('change');
               $('#imp-location\\:name').val(response.features[0].data.name);
             }
           }

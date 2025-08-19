@@ -838,7 +838,7 @@ var addMediaRowOnClick;
         } else {
           $('#' + div.settings.srefId).val(data.sref);
           indiciaData.lastAutosetSref = data.sref;
-          $('#' + div.settings.geomId).val(data.wkt).change();
+          $('#' + div.settings.geomId).val(data.wkt).trigger('change');
           div.addWkt(data.wkt, div.map.editLayer, 'clickPoint');
         }
       });
@@ -1068,7 +1068,7 @@ var addMediaRowOnClick;
         // First ensure sample date in vague date mode to accept a range.
         if (!vagueDateSetting.is(':checked')) {
           vagueDateSetting.prop('checked', true);
-          vagueDateSetting.change();
+          vagueDateSetting.trigger('change');
         }
         if ($('#sample\\:date').val() === '') {
           $('#sample\\:date').val(formatDate(inputDate) + ' - ' + formatDate(inputDate));

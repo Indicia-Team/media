@@ -115,7 +115,7 @@ jQuery(document).ready(function($) {
     rememberVagueDatesEnabled = $.cookie('vagueDatesEnabled');
     if (rememberVagueDatesEnabled === 'true' || typeof indiciaData.enableVagueDateToggle !== 'undefined') {
       $('.date-mode-toggle').prop('checked', true);
-      $('.date-mode-toggle').change();
+      $('.date-mode-toggle').trigger('change');
     }
   }
 
@@ -126,7 +126,7 @@ jQuery(document).ready(function($) {
     var vague_date = $('#' + rootId).val();
     if (precise_date === '' && vague_date !== '') {
       $(this).prop('checked', true);
-      $(this).change();
+      $(this).trigger('change');
     }
   });
 });

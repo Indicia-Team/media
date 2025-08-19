@@ -2225,14 +2225,14 @@ jQuery(document).ready(function docReady() {
   }
 
   // Hook up event handler to location select controls.
-  $('.es-higher-geography-select,.es-location-select').change(function selectChange() {
+  $('.es-higher-geography-select,.es-location-select').on('change', function selectChange() {
     onLocationSelectChange(this);
   });
 
   /**
    * Change event handlers on filter inputs.
    */
-  $('.es-filter-param, .user-filter, .permissions-filter').change(function eachFilter() {
+  $('.es-filter-param, .user-filter, .permissions-filter').on('change', function eachFilter() {
     // Force map to update viewport for new data.
     $.each($('.idc-leafletMap'), function eachMap() {
       this.settings.initialBoundsSet = false;

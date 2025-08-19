@@ -347,7 +347,7 @@
             }
         }
 
-        $('select[name=axisPosition]').change(function(){
+        $('select[name=axisPosition]').on('change', function(){
             // this refers to the html element we are binding to.
             // $(this) is jQuery object on that element.
 
@@ -387,7 +387,7 @@
             checkContour();
         });
 
-        $('input[type=radio][name=backgroundColor]').change(function(){
+        $('input[type=radio][name=backgroundColor]').on('change', function(){
             // this refers to the html element we are binding to.
             // $(this) is jQuery object on that element.
             plot1.grid.background = $(this).val();
@@ -397,7 +397,7 @@
             checkContour();
         });
 
-        $('input[type=radio][name=seriesColor]').change(function(){
+        $('input[type=radio][name=seriesColor]').on('change', function(){
             // this refers to the html element we are binding to.
             // $(this) is jQuery object on that element.
             if ($(this).val() === 'blue') {
@@ -431,7 +431,7 @@
             checkContour();
         });
 
-        $('input[type=checkbox][name=gridsVertical]').change(function(){
+        $('input[type=checkbox][name=gridsVertical]').on('change', function(){
             // this refers to the html element we are binding to.
             // $(this) is jQuery object on that element.
             plot1.axes.xaxis.tickOptions.showGridline = this.checked;
@@ -441,7 +441,7 @@
             checkContour();
         });
 
-        $('input[type=checkbox][name=gridsHorizontal]').change(function(){
+        $('input[type=checkbox][name=gridsHorizontal]').on('change', function(){
             // this refers to the html element we are binding to.
             // $(this) is jQuery object on that element.
             plot1.axes.yaxis.tickOptions.showGridline = this.checked;
@@ -455,7 +455,7 @@
             checkContour();
         });
 
-        $('input[type=checkbox][name=showMinorTicks]').change(function(){
+        $('input[type=checkbox][name=showMinorTicks]').on('change', function(){
             // this refers to the html element we are binding to.
             // $(this) is jQuery object on that element.
             plot1.axes.yaxis.showMinorTicks = !this.checked;
@@ -469,7 +469,7 @@
             checkContour();
         });
 
-        $('input[type=checkbox][name=plotBands]').change(function(){
+        $('input[type=checkbox][name=plotBands]').on('change', function(){
             // this refers to the html element we are binding to.
             // $(this) is jQuery object on that element.
             plot1.grid.plotBands.show = this.checked;
@@ -479,7 +479,7 @@
             checkContour();
         });
 
-        $('input[type=checkbox][name=showContour]').change(function(){
+        $('input[type=checkbox][name=showContour]').on('change', function(){
             // this refers to the html element we are binding to.
             // $(this) is jQuery object on that element.
             var speed = $(this).val();
@@ -497,7 +497,7 @@
             }
         });
 
-        $('input[type=checkbox][name=barPadding]').change(function(){
+        $('input[type=checkbox][name=barPadding]').on('change', function(){
             // this refers to the html element we are binding to.
             // $(this) is jQuery object on that element.
             if (this.checked) {

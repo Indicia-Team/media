@@ -322,7 +322,7 @@ let hook_image_classifier_new_occurrence = [];
         value++;;
       }
       // Update the value and trigger any change handlers which may be attached.
-      $count.val(value).change();
+      $count.val(value).trigger('change');
 
       // Prepare suggestions for saving.
       // The taxon_name_given cannot be null but the Drupal classification

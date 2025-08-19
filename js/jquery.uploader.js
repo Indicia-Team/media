@@ -149,7 +149,7 @@ var checkSubmitInProgress = function () {
         $(this).parent().find("button:eq(0)").trigger("click");
       }
     });
-    $("#add-link-form input").change(function(e) {
+    $("#add-link-form input").on('change', function(e) {
       $("#add-link-form ." + indiciaData.inlineErrorClass).remove();
     });
   });

@@ -269,7 +269,7 @@ jQuery(document).ready(function($) {
         // the main value.
         $('input[id*=' + escControlId + '\\:]')
           .val(caption)
-          .change()
+          .trigger('change')
           .trigger('blur');
       }
       if ($('#' + escControlId).attr('type')=='checkbox'){
@@ -280,7 +280,7 @@ jQuery(document).ready(function($) {
         $('#' + escControlId).val(value);
       }
       // trigger change and blur events, may have to be selective about this?
-      $('#' + escControlId).change().trigger('blur');
+      $('#' + escControlId).trigger('change').trigger('blur');
     } else {
       var control$;
       control$ = $('input[name^=' + escControlId + ']');

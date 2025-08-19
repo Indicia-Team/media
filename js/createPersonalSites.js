@@ -26,7 +26,7 @@ allowCreateSites=function() {
     }
   };
 
-  $('#imp-location\\:name,#imp-location,#imp-sref').change(indiciaFns.showHideRememberSiteButton);
+  $('#imp-location\\:name,#imp-location,#imp-sref').on('change', indiciaFns.showHideRememberSiteButton);
   $('#save-site').on('click', function() {
     if ($('#save-site').hasClass('ui-state-highlight')) {
       $('#save-site').removeClass('ui-state-highlight');

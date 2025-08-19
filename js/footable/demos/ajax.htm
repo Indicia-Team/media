@@ -114,7 +114,7 @@
 				$('.filter-status').val('');
             });
 
-            $('.filter-status').change(function (e) {
+            $('.filter-status').on('change', function (e) {
                 e.preventDefault();
 				var filter = $(this).val();
                 $('#filter').val('');

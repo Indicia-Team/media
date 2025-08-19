@@ -263,7 +263,7 @@ jQuery(document).ready(function($) {
 
     // Required fields state change handler - disables next step button if not
     // filled in.
-    $('#settings-form').find(':input.\\{required\\:true\\}').change(setImportSettingsNextStepState);
+    $('#settings-form').find(':input.\\{required\\:true\\}').on('change', setImportSettingsNextStepState);
     setImportSettingsNextStepState();
 
     /**
@@ -755,7 +755,7 @@ jQuery(document).ready(function($) {
       .appendTo($('<div class="panel-body">').appendTo(matchingPanelBody));
     // Enable species search autocomplete for the matching inputs.
     $('.taxon-search').autocomplete(indiciaData.warehouseUrl+'index.php/services/data/taxa_search', getTaxonAutocompleteSettings(result.unmatchedInfo.taxonFilters));
-    $('.taxon-search').change(function() {
+    $('.taxon-search').on('change', function() {
       // Clear when changed, unless value is correct for the current search string.
       if ($('[name="match-taxon-' + $(this).data('index') + '"]').data('set-for') !== $(this).val()) {
         $('[name="match-taxon-' + $(this).data('index') + '"]').val('');
@@ -821,7 +821,7 @@ jQuery(document).ready(function($) {
 
     // Enable location search autocomplete for the matching inputs.
     $(matchingPanelBody).find('.location-search').autocomplete(indiciaData.warehouseUrl+'index.php/services/report/requestReport', getLocationAutocompleteSettings(result.unmatchedInfo.locationFilters));
-    $(matchingPanelBody).find('.location-search').change(function() {
+    $(matchingPanelBody).find('.location-search').on('change', function() {
       // Clear when changed, unless value is correct for the current search string.
       if ($('[name="match-location-' + $(this).data('index') + '"]').data('set-for') !== $(this).val()) {
         $('[name="match-location-' + $(this).data('index') + '"]').val('');
@@ -1324,7 +1324,7 @@ jQuery(document).ready(function($) {
     indiciaFns.on('change', '.mapped-field', {}, checkSelectedFields);
     indiciaFns.on('click', '.apply-suggestion', {}, applySuggestion);
     checkSelectedFields();
-    $('[name="field-type-toggle"]').change(showOrHideAdvancedFields);
+    $('[name="field-type-toggle"]').on('change', showOrHideAdvancedFields);
     // Capture the full field option HTML so selects can be reset as required.
     indiciaData.fullImportFieldOptionsHtml = $('select.mapped-field:first').html();
     showOrHideAdvancedFields();

@@ -204,7 +204,7 @@ $(&#39;.filter-api&#39;).on('click', function (e) {
       $('table.demo').trigger('footable_clear_filter');
     });
 
-    $('.filter-status').change(function (e) {
+    $('.filter-status').on('change', function (e) {
       e.preventDefault();
       $('table.demo').trigger('footable_filter', {filter: $('#filter').val()});
     });

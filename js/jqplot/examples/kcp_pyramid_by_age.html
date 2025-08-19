@@ -569,7 +569,7 @@
         // it clear exactly which elements they are binging to/operating on
         //////
 
-        $("select[name=axisPosition]").change(function(){
+        $("select[name=axisPosition]").on('change', function(){
             // this refers to the html element we are binding to.
             // $(this) is jQuery object on that element.
 
@@ -644,7 +644,7 @@
         });
 
 
-        $("input[type=checkbox][name=gridsVertical]").change(function(){
+        $("input[type=checkbox][name=gridsVertical]").on('change', function(){
             // this refers to the html element we are binding to.
             // $(this) is jQuery object on that element.
             var opts = {axes: {xaxis: {tickOptions: {showGridline: this.checked}}}};
@@ -652,7 +652,7 @@
         });
 
 
-        $("input[type=checkbox][name=gridsHorizontal]").change(function(){
+        $("input[type=checkbox][name=gridsHorizontal]").on('change', function(){
             // this refers to the html element we are binding to.
             // $(this) is jQuery object on that element.
             var opts = {
@@ -671,7 +671,7 @@
             plot1.replot(opts);
         });
 
-        $("input[type=checkbox][name=plotBands]").change(function(){
+        $("input[type=checkbox][name=plotBands]").on('change', function(){
             // this refers to the html element we are binding to.
             // $(this) is jQuery object on that element.
             var opts = {grid:{ rendererOptions: {plotBands: { show: this.checked}}}};
@@ -686,7 +686,7 @@
         // have to adjust ticks to do show minor.
         // make like kcp_pyramid.html
         ////
-        $("input[type=checkbox][name=showMinorTicks]").change(function(){
+        $("input[type=checkbox][name=showMinorTicks]").on('change', function(){
             // this refers to the html element we are binding to.
             // $(this) is jQuery object on that element.
             var opts = {
@@ -705,7 +705,7 @@
             plot1.replot(opts);
         });
 
-        $("input[type=checkbox][name=barPadding]").change(function(){
+        $("input[type=checkbox][name=barPadding]").on('change', function(){
             // this refers to the html element we are binding to.
             // $(this) is jQuery object on that element.
             if (this.checked) {

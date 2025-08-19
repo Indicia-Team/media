@@ -405,7 +405,7 @@
     /**
      * Rows per page change.
      */
-    $(el).find('.rows-per-page select').change(function changeRowsPerPage() {
+    $(el).find('.rows-per-page select').on('change', function changeRowsPerPage() {
       indiciaFns.rowsPerPageChange(el);
     });
 

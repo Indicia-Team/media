@@ -129,7 +129,7 @@
       });
     });
 
-    $(el).find('[name="ruleset-list"]').change(function() {
+    $(el).find('[name="ruleset-list"]').on('change', function() {
       $('#' + el.settings.id + '-dlg-cntr .run-custom-verification-ruleset').removeAttr('disabled');
     });
 

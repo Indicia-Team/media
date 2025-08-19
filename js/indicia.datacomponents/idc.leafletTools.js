@@ -154,7 +154,7 @@ var idcLeafletTools;
       });
       select.val(savedGridSquareSizeValue ? savedGridSquareSizeValue : 'autoGridSquareSize');
       // Apply initial settings.
-      select.change();
+      select.trigger('change');
       let row = $('<div>')
         .append($(`<label for="${ctrlId}">${label}:</label>`))
         .append(select)

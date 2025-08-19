@@ -984,7 +984,7 @@ jQuery(document).ready(function ($) {
           $('#coordinate_precision_op input[value="<="]').prop('checked', true);
         }
         // Trigger change to update hidden controls in UI.
-        $('#autochecks').change();
+        $('#autochecks').trigger('change');
       },
       applyFormToDefinition: function() {
         if (indiciaData.filterEntity === 'occurrence') {
@@ -1065,7 +1065,7 @@ jQuery(document).ready(function ($) {
   }
 
   // Ensure that pane controls that are exclusive of others are only filled in one at a time.
-  $('.filter-controls fieldset :input').change(function (e) {
+  $('.filter-controls fieldset :input').on('change', function (e) {
     var formDiv = $(e.currentTarget).parents('.filter-popup');
     var thisFieldset = $(e.currentTarget).parents('fieldset')[0];
     if ($(this).val() !== '') {
@@ -1219,7 +1219,7 @@ jQuery(document).ready(function ($) {
     indiciaData.mapdiv.map.updateSize();
   }
 
-  $('#site-type').change(function () {
+  $('#site-type').on('change', function () {
     changeSiteType();
   });
 
@@ -1242,7 +1242,7 @@ jQuery(document).ready(function ($) {
   };
 
   // Hook the above event handler to the select filter dropdown.
-  $('#select-filter').change(filterChange);
+  $('#select-filter').on('change', filterChange);
 
   /**
    * If a context is loaded, need to limit the filter to the records in the context
@@ -1689,7 +1689,7 @@ jQuery(document).ready(function ($) {
     });
   }
 
-  $('form.filter-controls :input').change(function () {
+  $('form.filter-controls :input').on('change', function () {
     filterParamsChanged();
   });
 
@@ -1763,7 +1763,7 @@ jQuery(document).ready(function ($) {
   });
 
   // Change the year date operation, fill in current year as default.
-  $('#date_year_op').change(function() {
+  $('#date_year_op').on('change', function() {
     if ($('#date_year_op option:selected').val() !== '' && $('#date_year').val() === '') {
       $('#date_year').val(new Date().getFullYear());
     } else if ($('#date_year_op option:selected').val() === '') {
@@ -1772,14 +1772,14 @@ jQuery(document).ready(function ($) {
     }
   });
   // Change the year date, fill in equals as operation default.
-  $('#date_year').change(function() {
+  $('#date_year').on('change', function() {
     if ($('#date_year_op option:selected').val() === '') {
       $('#date_year_op').val('=');
     }
   });
 
   // Select a named location - deactivate the drawFeature and hide modifyFeature controls.
-  $('#location_list\\:search\\:name').change(function () {
+  $('#location_list\\:search\\:name').on('change', function () {
     $.each(indiciaData.mapdiv.map.controls, function () {
       if (this.CLASS_NAME === 'OpenLayers.Control.DrawFeature') {
         this.deactivate();
@@ -1994,18 +1994,18 @@ jQuery(document).ready(function ($) {
   }
 
   // Standalone quality media filters select change event.
-  $('.standalone-media-filter select').change(function() {
+  $('.standalone-media-filter select').on('change', function() {
     indiciaData.filter.def.has_photos = $(this).val();
     updateStandaloneFilter();
   });
 
   // Interactions betweem mutually exclusive filters.
-  $('#occ_id').change(function() {
+  $('#occ_id').on('change', function() {
     if ($('#occ_id').val().trim() !== '') {
       $('#occurrence_external_key').val('');
     }
   });
-  $('#occurrence_external_key').change(function() {
+  $('#occurrence_external_key').on('change', function() {
     if ($('#occurrence_external_key').val().trim() !== '') {
       $('#occ_id').val('');
     }
@@ -2013,10 +2013,10 @@ jQuery(document).ready(function ($) {
 
   $('#location_list\\:box').hide();
   $('#filter-save').on('click', saveFilter);
-  $('#context-filter').change(resetFilter);
+  $('#context-filter').on('change', resetFilter);
 
   filterChange();
-  $('#imp-sref').change(function () {
+  $('#imp-sref').on('change', function () {
     window.setTimeout(function () { clearSites(); }, 500);
   });
 
@@ -2355,7 +2355,7 @@ jQuery(document).ready(function ($) {
 
   // Indent level 2 verification items hierarchical behaviour.
   $('.quality-pane').find('input[value="V1"], input[value="V2"], input[value="R4"], input[value="R5"]').addClass('indent');
-  $('.quality-pane input.indent').change((e) => {
+  $('.quality-pane input.indent').on('change', (e) => {
     const pane = $(e.currentTarget).closest('.quality-pane');
     const status = $(e.currentTarget).val().substring(0, 1);
     const l1Checkbox = $(pane).find('input[value="' + status + '"]');
@@ -2367,7 +2367,7 @@ jQuery(document).ready(function ($) {
   /**
    * Cascade level-1 status checkboxes to level 2, e.g. V ticks V1 and V2.
    */
-  $('.quality-pane').find('input[value="V"], input[value="R"]').change((e) => {
+  $('.quality-pane').find('input[value="V"], input[value="R"]').on('change', (e) => {
     const pane = $(e.currentTarget).closest('.quality-pane');
     const status = $(e.currentTarget).val();
     const l1Checkbox = $(pane).find('input[value="' + status + '"]');
@@ -2378,7 +2378,7 @@ jQuery(document).ready(function ($) {
   /**
    * Cascade ticking all to the other checkboxes.
    */
-  $('.quality-pane').find('input[value="all"]').change((e) => {
+  $('.quality-pane').find('input[value="all"]').on('change', (e) => {
     const pane = $(e.currentTarget).closest('.quality-pane');
     const checkboxes = $(pane).find('input[type="checkbox"]').not('[value="all"]');
     checkboxes.prop('checked', $(e.currentTarget).is(':checked'));
@@ -2387,7 +2387,7 @@ jQuery(document).ready(function ($) {
   /**
    * Uncheck all if another checkbox is unchecked.
    */
-  $('.quality-pane').find('input[type="checkbox"]').not('[value="all"]').change((e) => {
+  $('.quality-pane').find('input[type="checkbox"]').not('[value="all"]').on('change', (e) => {
     if (!$(e.currentTarget).is(':checked')) {
       const pane = $(e.currentTarget).closest('.quality-pane');
       const allCheckbox = $(pane).find('input[type="checkbox"][value="all"]');
@@ -2395,14 +2395,14 @@ jQuery(document).ready(function ($) {
     }
   });
 
-  $('#identification_difficulty').change(function() {
+  $('#identification_difficulty').on('change', function() {
     if ($('#identification_difficulty').val() === '') {
       // Unsetting the ID diff filter, so set the op to = as makes more sense.
       $('#identification_difficulty_op').val('=');
     }
   });
 
-  $('#coordinate_precision_op').change(function() {
+  $('#coordinate_precision_op').on('change', function() {
     if ($('#coordinate_precision_op input:checked').length > 0 && $('#coordinate_precision input:checked').val() === '') {
       // Setting a coordinate precision op, so set the default precision to 1
       // km if not already set.
@@ -2410,7 +2410,7 @@ jQuery(document).ready(function ($) {
     }
   });
 
-  $('#coordinate_precision').change(function() {
+  $('#coordinate_precision').on('change', function() {
     if ($('#coordinate_precision input:checked').val() === '') {
       // Unsetting the coord precision filter, so remove the op.
       $('#coordinate_precision_op input').prop('checked', false);

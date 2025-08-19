@@ -203,7 +203,7 @@
             $('.row-count').html('');
         });
 
-        $('.filter-status').change(function (e) {
+        $('.filter-status').on('change', function (e) {
             e.preventDefault();
             $('table.demo').data('footable-filter').filter( $('#filter').val() );
         });

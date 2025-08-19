@@ -541,7 +541,7 @@
             $(this).get(0).checked = false;
 
             // bind to change event event on the checkbox.
-            $(this).change(function(evt){
+            $(this).on('change', function(evt){
 
                 // if check box is checked.
                 if (this.checked) {

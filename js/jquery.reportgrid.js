@@ -1420,7 +1420,7 @@
       $(this).find('th .col-filter').focus(function(e) {
         e.target.hasChanged = false;
       });
-      $(this).find('th .col-filter').change(function(e) {
+      $(this).find('th .col-filter').on('change', function(e) {
         e.target.hasChanged = true;
       });
       $(this).find('th .col-filter').on('blur', doFilter);
