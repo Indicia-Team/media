@@ -277,13 +277,13 @@ $(document).ready(function(){
         plot1.replot();
     });
 
-    $("input[type=text][name=userLine1]").keyup(function(){
+    $("input[type=text][name=userLine1]").on('keyup', function(){
         var val = parseFloat($(this).val());
         plot1.plugins.canvasOverlay.get("line1").options.x = val;
         plot1.replot();
     });
 
-    $("input[type=text][name=userLine2]").keyup(function(){
+    $("input[type=text][name=userLine2]").on('keyup', function(){
         var val = parseFloat($(this).val());
         plot1.plugins.canvasOverlay.get("line2").options.x = val;
         plot1.replot();

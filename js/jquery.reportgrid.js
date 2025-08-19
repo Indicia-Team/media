@@ -1424,7 +1424,7 @@
         e.target.hasChanged = true;
       });
       $(this).find('th .col-filter').on('blur', doFilter);
-      $(this).find('th .col-filter').keypress(function(e) {
+      $(this).find('th .col-filter').on('keypress', function(e) {
         e.target.hasChanged = true;
         if (e.keyCode === 13) {
           doFilter(e);

@@ -1835,7 +1835,7 @@
       $('.email-expert').attr('title', $('.email-expert').attr('title') + ' (X)');
       $('button.redet').attr('title', $('button.redet').attr('title') + ' (R)');
       // Keystroke handler for verification action shortcuts.
-      $(document).keypress(function onKeypress(e) {
+      $(document).on('keypress', function onKeypress(e) {
         // Abort if focus on an input control (as the event bubbles to the
         // container, or fancybox already visible).
         if ($(':input:focus').length || $.fancybox.getInstance()) {

@@ -519,7 +519,7 @@ var destroyAllFeatures;
       });
 
       // If a place search (georeference) control exists, bind it to the map.
-      $('#' + div.georefOpts.georefSearchId).keypress(function (e) {
+      $('#' + div.georefOpts.georefSearchId).on('keypress', function (e) {
         if (e.which === 13) {
           _georeference(div);
           return false;
@@ -1693,7 +1693,7 @@ var destroyAllFeatures;
       $(div).append(
         '<label id="click-buffer" class="olButton" style="display: none">Tolerance:<input type="text" value="1000"/>m</label>');
       $('#click-buffer').css('right', $('.olControlEditingToolbar').outerWidth() + 10);
-      $('#click-buffer input').keypress(function (evt) {
+      $('#click-buffer input').on('keypress', function (evt) {
         // Only accept numeric input.
         if (evt.which < 48 || evt.which > 57) {
           evt.preventDefault();
@@ -3072,7 +3072,7 @@ var destroyAllFeatures;
       div.map = new OpenLayers.Map($(this)[0], olOptions);
 
       // track plus and minus key presses, which influence selected grid square size
-      $(document).keydown(function (evt) {
+      $(document).on('keydown', function (evt) {
         var change = false;
         if (!overMap) {
           return;
@@ -3104,7 +3104,7 @@ var destroyAllFeatures;
         }
       });
 
-      $(document).keyup(function(evt) {
+      $(document).on('keyup', function(evt) {
         var change = false;
         switch (evt.which) {
           case 61: case 107: case 187:

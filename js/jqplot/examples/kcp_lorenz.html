@@ -435,7 +435,7 @@ $(document).ready(function(){
         plot1.replot();
     });
 
-    $("input[type=text][name=userLine1]").keyup(function(){
+    $("input[type=text][name=userLine1]").on('keyup', function(){
         var val = parseFloat($(this).val());
 
         var co = plot1.plugins.canvasOverlay;
@@ -449,7 +449,7 @@ $(document).ready(function(){
         plot1.replot();
     });
 
-    $("input[type=text][name=userLine2]").keyup(function(){
+    $("input[type=text][name=userLine2]").on('keyup', function(){
         var val = parseFloat($(this).val());
 
         var co = plot1.plugins.canvasOverlay;

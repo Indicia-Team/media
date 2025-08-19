@@ -144,7 +144,7 @@ var checkSubmitInProgress = function () {
   }
 
   $(document).ready(function() {
-    $("#add-link-form").keypress(function(e) {
+    $("#add-link-form").on('keypress', function(e) {
       if (e.keyCode == $.ui.keyCode.ENTER) {
         $(this).parent().find("button:eq(0)").trigger("click");
       }

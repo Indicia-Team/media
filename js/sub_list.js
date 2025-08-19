@@ -83,7 +83,7 @@
    */
   indiciaFns.initSubList = function (escapedId, escapedCaptionField, fieldname, itemTemplate) {
     var searchInput = $('#' + escapedId + '\\:search\\:' + escapedCaptionField);
-    searchInput.keypress(
+    searchInput.on('keypress',
       function (e) {
         searchInput.closest('.ctrl-wrap').removeClass(indiciaData.controlWrapErrorClass);
         searchInput.removeClass('ui-state-error');

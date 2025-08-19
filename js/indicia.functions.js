@@ -48,13 +48,13 @@ window.indiciaFns = {};
   /**
    * Keep track of modifier keys such as shift anc ctrl as generally useful.
    */
-  $(document).keydown(function keyDown(evt) {
+  $(document).on('keydown', function keyDown(evt) {
     if (evt.keyCode === 17) { // ctrl
       indiciaData.ctrlPressed = true;
     } else if (evt.keyCode === 16) {
       indiciaData.shiftPressed = true;
     }
-  }).keyup(function keyUp(evt) {
+  }).on('keyup', function keyUp(evt) {
     if (evt.keyCode === 17) { // ctrl
       indiciaData.ctrlPressed = false;
     } else if (evt.keyCode === 16) {

@@ -1093,7 +1093,7 @@ jQuery(document).ready(function ($) {
   };
   $.each(taxonSelectionMethods, function (idx, method) {
     fieldname = this === 'taxon_group_list' ? 'q' : 'searchterm';
-    $('#' + this + '\\:search\\:' + fieldname).keypress(function (e) {
+    $('#' + this + '\\:search\\:' + fieldname).on('keypress', function (e) {
       if (e.which === 13) {
         keep(method);
       }
@@ -2270,9 +2270,9 @@ jQuery(document).ready(function ($) {
   }
 
   // Link source filter boxes handler to keyup for inputs.
-  $('#websites-search').keyup(sourceListFilterKeyHandler);
-  $('#surveys-search').keyup(sourceListFilterKeyHandler);
-  $('#input_forms-search').keyup(sourceListFilterKeyHandler);
+  $('#websites-search').on('keyup', sourceListFilterKeyHandler);
+  $('#surveys-search').on('keyup', sourceListFilterKeyHandler);
+  $('#input_forms-search').on('keyup', sourceListFilterKeyHandler);
 
   /* Code for the custom quality filter select control. */
   function closeQualityPane(e) {

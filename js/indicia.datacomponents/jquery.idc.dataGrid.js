@@ -571,7 +571,7 @@
     /**
      * On text entry into the search box, filter the visible columns.
      */
-    $('#' + el.id + ' .grid-settings-search').keyup(function(e) {
+    $('#' + el.id + ' .grid-settings-search').on('keyup', function(e) {
       // Retrieve the search text from the input element and convert it to lowercase
       const searchText = $(e.currentTarget).val().toLowerCase();
 

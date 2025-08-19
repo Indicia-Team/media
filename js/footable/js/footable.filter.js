@@ -44,7 +44,7 @@
                                 'disableEnter': $table.data('filter-disable-enter') || ft.options.filter.disableEnter
                             };
                             if (data.disableEnter) {
-                                $(data.input).keypress(function (event) {
+                                $(data.input).on('keypress', function (event) {
                                     if (window.event)
                                         return (window.event.keyCode !== 13);
                                     else
@@ -58,7 +58,7 @@
                             $table.on('footable_filter', function (event, args) {
                                 p.filter(args.filter);
                             });
-                            $(data.input).keyup(function (eve) {
+                            $(data.input).on('keyup', function (eve) {
                                 ft.timers.filter.stop();
                                 if (eve.which === 27) {
                                     $(data.input).val('');
