@@ -40,13 +40,13 @@ $.extend($.fn, {
 			var inputsAndButtons = this.find("input, button");
 
 			// allow suppresing validation by adding a cancel class to the submit button
-			inputsAndButtons.filter(".cancel").click(function () {
+			inputsAndButtons.filter(".cancel").on('click', function () {
 				validator.cancelSubmit = true;
 			});
 
 			// when a submitHandler is used, capture the submitting button
 			if (validator.settings.submitHandler) {
-				inputsAndButtons.filter(":submit").click(function () {
+				inputsAndButtons.filter(":submit").on('click', function () {
 					validator.submitButton = this;
 				});
 			}

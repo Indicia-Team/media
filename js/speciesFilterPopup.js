@@ -155,8 +155,8 @@
       $('#filter-mode-selected').attr('checked','checked');
     });
     // Button handlers
-    $('#filter-popup-apply').click(function() { applyButtonClicked(gridId); });
-    $('#filter-popup-cancel').click(function() {
+    $('#filter-popup-apply').on('click', function() { applyButtonClicked(gridId); });
+    $('#filter-popup-cancel').on('click', function() {
       $.fancybox.close();
     });
   }
@@ -182,7 +182,7 @@
    * @param string gridId Element ID of the grid
    */
   indiciaFns.setupSpeciesFilterPopup = function(gridId) {
-    $('#' + gridId + ' .species-filter').click(speciesFilterButtonClicked);
+    $('#' + gridId + ' .species-filter').on('click', speciesFilterButtonClicked);
   };
 
 }(jQuery));

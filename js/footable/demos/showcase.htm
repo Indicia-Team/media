@@ -196,7 +196,7 @@
             }
         });
 
-        $('.clear-filter').click(function (e) {
+        $('.clear-filter').on('click', function (e) {
             e.preventDefault();
             $('.filter-status').val('');
             $('table.demo').trigger('footable_clear_filter');

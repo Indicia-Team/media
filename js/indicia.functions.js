@@ -96,7 +96,7 @@ window.indiciaFns = {};
     else {
       $('input.findme').after('<span id="findme-icon" title="' + hint + '">&nbsp;</span>');
     }
-    $('#findme-icon').click(indiciaFns.findMe);
+    $('#findme-icon').on('click', indiciaFns.findMe);
   };
 
   indiciaFns.findMe = function () {
@@ -463,14 +463,14 @@ window.indiciaFns = {};
             $('#resolveLocationPopup input[type="radio"]').change(function () {
               $('#resolveLocationOk').removeAttr('disabled');
             });
-            $('#resolveLocationOk').click(function () {
+            $('#resolveLocationOk').on('click', function () {
               checkedRadio = $('#resolveLocationPopup input[type="radio"]:checked');
               $('#' + locCntrlIdEscaped).val(checkedRadio.val());
               $('#' + locCntrlIdEscaped + '\\:name').val(checkedRadio.closest('label').text());
               $.fancybox.close();
               addLinkedLocationBoundary(data[$(checkedRadio).attr('data-idx')].geom);
             });
-            $('#resolveLocationCancel').click(function () {
+            $('#resolveLocationCancel').on('click', function () {
               $.fancybox.close();
             });
           }

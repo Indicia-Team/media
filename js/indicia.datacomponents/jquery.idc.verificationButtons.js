@@ -197,7 +197,7 @@
     $('#' + formId + ' input[type="text"]').val('');
     $('#' + formId + '.template-save-cntr').hide();
     $('#template-help-cntr').hide();
-    $('#' + formId + ' .comment-edit').click();
+    $('#' + formId + ' .comment-edit').trigger('click');
     $('#' + formId + ' .comment-tools button').removeAttr('disabled');
     $('#' + formId + ' .form-buttons button').removeAttr('disabled');
   }
@@ -545,19 +545,19 @@
     /**
      * Click handler for the button which starts the upload decisions process off.
      */
-    $('#upload-decisions-file').click(uploadDecisionsFile);
+    $('#upload-decisions-file').on('click', uploadDecisionsFile);
 
     /**
      * Redetermination button click handler.
      */
-    $(el).find('button.redet').click(() => {
+    $(el).find('button.redet').on('click', () => {
       showRedetForm(el);
     });
 
     /**
      * Show on the redetermination comment preview.
      */
-    $('.comment-show-preview').click(function buttonClick() {
+    $('.comment-show-preview').on('click', function buttonClick() {
       var ctrlWrap = $(this).closest('.comment-cntr');
       var textarea = ctrlWrap.find('textarea');
       var previewBox = ctrlWrap.find('.comment-preview');
@@ -574,7 +574,7 @@
     /**
      * Toggle off the redetermination comment preview.
      */
-    $('.comment-edit').click(function buttonClick() {
+    $('.comment-edit').on('click', function buttonClick() {
       var ctrlWrap = $(this).closest('.comment-cntr');
       var textarea = ctrlWrap.find('textarea');
       var previewBox = ctrlWrap.find('.comment-preview');
@@ -590,10 +590,10 @@
      * Displays the input controls for naming and saving the current comment as
      * a template.
      */
-    $('.comment-save-template').click(function() {
+    $('.comment-save-template').on('click', function() {
       const popupEl = $(this).closest('.verification-popup');
       // Revert to edit mode so you can see the template you are editing.
-      $(popupEl).find('.comment-edit').click();
+      $(popupEl).find('.comment-edit').trigger('click');
       $(popupEl).find('.template-save-cntr input[type="text"]').val($(popupEl).find('select.comment-template').val() ? $(popupEl).find('select.comment-template option:selected').text() : '');
       $(popupEl).find('.template-save-cntr').slideDown();
       $(popupEl).find('.comment-tools button').attr('disabled', true);
@@ -603,7 +603,7 @@
     /**
      * Click handler for the button which saves the template.
      */
-    $('.save-template').click(function() {
+    $('.save-template').on('click', function() {
       const ctrlWrap = $(this).closest('.comment-cntr');
       const popupEl = $(ctrlWrap).closest('.verification-popup');
       const status = $(popupEl).data('status') || $(popupEl).data('query');
@@ -630,7 +630,7 @@
     /**
      * Click handler for the button which deletes a template.
      */
-    $('.delete-template').click(function() {
+    $('.delete-template').on('click', function() {
       const ctrlWrap = $(this).closest('.ctrl-wrap');
       const popupEl = $(ctrlWrap).closest('.verification-popup');
       let option = $(ctrlWrap).find('select option:selected');
@@ -652,7 +652,7 @@
     /**
      * Save template cancel button click handler.
      */
-    $('.cancel-save-template').click(function() {
+    $('.cancel-save-template').on('click', function() {
       const popupEl = $(this).closest('.verification-popup');
       closeSaveTemplateControl(popupEl);
     });
@@ -660,7 +660,7 @@
     /**
      * Click handler for the template help button.
      */
-    $('.comment-help').click(function () {
+    $('.comment-help').on('click', function () {
       const popupEl = $(this).closest('.verification-popup');
       $('#template-help-cntr').appendTo(popupEl);
       $('#template-help-cntr').show();
@@ -669,7 +669,7 @@
     /**
      * Click handler for the help close button.
      */
-    $('.help-close').click(function() {
+    $('.help-close').on('click', function() {
       $('#template-help-cntr').fadeOut();
     })
 
@@ -690,7 +690,7 @@
     /**
      * Redetermination dialog submit form handler.
      */
-    $('#apply-redet').click((e) => {
+    $('#apply-redet').on('click', (e) => {
       redetFormSubmit(el);
     });
 
@@ -709,12 +709,12 @@
     /**
      * Status buttons level mode toggle click handler.
      */
-    $(el).find('.toggle').click(toggleStatusButtonLevelMode);
+    $(el).find('.toggle').on('click', toggleStatusButtonLevelMode);
 
     /**
      * Toggle the apply to selected|table mode buttons.
      */
-    $(el).find('.apply-to button').click(function modeClick(e) {
+    $(el).find('.apply-to button').on('click', function modeClick(e) {
       var div = $(e.currentTarget).closest('.idc-verificationButtons-row');
       div.find('.apply-to button').not(e.currentTarget).removeClass('active');
       $(e.currentTarget).addClass('active');
@@ -723,7 +723,7 @@
     /**
      * Select all checkboxes event handler.
      */
-    $(el).find('.multiselect-all').click(function selectAllClick(e) {
+    $(el).find('.multiselect-all').on('click', function selectAllClick(e) {
       const el = $(e.currentTarget).closest('.idc-control');
       const checkboxes = $(el).find('.multiselect:checkbox');
       var anyUnchecked = $(checkboxes).filter(':not(:checked)').length > 0;
@@ -2040,23 +2040,23 @@
       });
 
       // Verify button click handler pop's up dialog.
-      $(el).find('button.verify').click(function buttonClick(e) {
+      $(el).find('button.verify').on('click', function buttonClick(e) {
         var status = $(e.currentTarget).attr('data-status');
         commentPopup(el, { status: status });
       });
 
       // Query button click handler pop's up dialog.
-      $(el).find('button.query').click(function buttonClick() {
+      $(el).find('button.query').on('click', function buttonClick() {
         queryPopup(el);
       });
 
       // Force linked location button click handler pop's up dialog.
-      $(el).find('button.force-linked-location').click(function buttonClick() {
+      $(el).find('button.force-linked-location').on('click', function buttonClick() {
         forceLinkedLocationPopup(el);
       });
 
       // Apply to parent sample click toggles active state.
-      $(el).find('button.apply-to-parent-sample-contents').click(function buttonClick() {
+      $(el).find('button.apply-to-parent-sample-contents').on('click', function buttonClick() {
         if ($(this).hasClass('active')) {
           $(this).removeClass('active');
         } else {
@@ -2065,14 +2065,14 @@
       });
 
       // Email expert button click handler pop's up dialog.
-      $(el).find('button.email-expert').click(function buttonClick() {
+      $(el).find('button.email-expert').on('click', function buttonClick() {
         emailExpertPopup();
       });
 
       // If we have an upload decisions spreadsheet button, set it up.
       if ($(el).find('button.upload-decisions').length) {
         // Click handler.
-        $(el).find('button.upload-decisions').click(function buttonClick() {
+        $(el).find('button.upload-decisions').on('click', function buttonClick() {
           uploadDecisions();
         });
         // Move to correct parent.
@@ -2090,7 +2090,7 @@
         $(this).after(' <i class="far fa-copy" title="' + indiciaData.lang.verificationButtons.copyPlaceholder.replace('{{ placeholder }}', $(this).text())  + '"></i>');
       });
       // Click handler for copy button.
-      $('#template-help-cntr .fa-copy').click(function() {
+      $('#template-help-cntr .fa-copy').on('click', function() {
         navigator.clipboard.writeText($(this).prev('code').text());
         // Animation to show it worked.
         $(this).animate({

@@ -222,7 +222,7 @@ var checkSubmitInProgress = function () {
           .replace('{helpTextClass}', this.settings.helpTextClass)
       );
       if (hasLinks) {
-        $('#link-select-btn-' + id).click(function(el) {
+        $('#link-select-btn-' + id).on('click', function(el) {
           // store things that will be needed on OK click
           currentDiv = div;
           $('#link_url').val('');
@@ -524,7 +524,7 @@ var checkSubmitInProgress = function () {
         indiciaFns.on('click', '.filelist a.fancybox', null, function() {
           jQuery("body").after('<a id="link_fancybox" style="display: hidden;" href="'+jQuery(this).attr('href')+'"></a>');
           jQuery('#link_fancybox').fancybox();
-          jQuery('#link_fancybox').click();
+          jQuery('#link_fancybox').trigger('click');
           jQuery('#link_fancybox').remove();
           return false;
         });

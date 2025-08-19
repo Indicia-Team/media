@@ -408,7 +408,7 @@ jQuery(document).ready(function($) {
    */
   indicia.locks.unlockRegion = function(region) {
     $('.locked-icon', region).each(function(n) {
-      $(this).click();
+      $(this).trigger('click');
     });
   };
 

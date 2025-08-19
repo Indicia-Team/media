@@ -139,7 +139,7 @@
   };
 
   indiciaFns.storeGeomsInFormOnSubmit = function storeGeomsInFormOnSubmit() {
-    $('#run-report').click(function runClick(evt) {
+    $('#run-report').on('click', function runClick(evt) {
       // rebuild the buffer if the user is changing it.
       if (document.activeElement.id === 'geom_buffer') {
         rebuildBuffer();

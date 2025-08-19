@@ -80,7 +80,7 @@ jQuery(document).ready(function($) {
     });
   }
 
-  $('#picker-more').click(showMoreInfo);
+  $('#picker-more').on('click', showMoreInfo);
 
   $('#picker-more').hide();
 

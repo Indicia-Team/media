@@ -639,7 +639,7 @@
             });
         });
 
-        $('.ui-icon-print').click(function(){
+        $('.ui-icon-print').on('click', function(){
             $(this).parent().next().print();
         });
 
@@ -744,7 +744,7 @@
             });
         });
 
-        $('div.overlay-chart-container-header div.ui-icon-closethick').click(function(){
+        $('div.overlay-chart-container-header div.ui-icon-closethick').on('click', function(){
             var div = $('div.overlay-chart-container-content');
             div.parent().fadeOut(600);
             $('div.overlay-shadow').fadeOut(1000);

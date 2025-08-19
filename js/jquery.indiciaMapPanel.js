@@ -527,11 +527,11 @@ var destroyAllFeatures;
         return true;
       });
 
-      $('#' + div.georefOpts.georefSearchBtnId).click(function () {
+      $('#' + div.georefOpts.georefSearchBtnId).on('click', function () {
         _georeference(div);
       });
 
-      $('#' + div.georefOpts.georefCloseBtnId).click(function (e) {
+      $('#' + div.georefOpts.georefCloseBtnId).on('click', function (e) {
         $('#' + div.georefOpts.georefDivId).hide('fast', function () { div.map.updateSize(); });
         e.preventDefault();
       });
@@ -924,10 +924,10 @@ var destroyAllFeatures;
 
             ol.append($('<li>').append(
               $("<a href='#'>" + placename + '</a>')
-                .click(function (e) {
+                .on('click', function (e) {
                   e.preventDefault();
                 })
-                .click((
+                .on('click', (
                   // use closures to persist the values of ref, corner1, etc, admin1, admin2
                   function (ref, corner1, corner2, epsg, placename, obj) {
                     return function () {
@@ -1776,7 +1776,7 @@ var destroyAllFeatures;
             } else {
               // allow click or bounding box actions
               this.handlers = {
-                click: new OpenLayers.Handler.Click(this, {
+                click: new OpenLayers.Handler.on('click', this, {
                   click: this.onGetInfo
                 }, handlerOptions)
               };
@@ -3005,7 +3005,7 @@ var destroyAllFeatures;
       // if the validator exists, stop map clicks bubbling up to its event handler as IE can't
       // get the attributes of some map items and errors arise.
       if (typeof $.validator !== 'undefined') {
-        $(this).parent().click(function () {
+        $(this).parent().on('click', function () {
           return false;
         });
       }
@@ -3413,7 +3413,7 @@ var destroyAllFeatures;
               stopSingle: false,
               stopDouble: false
             };
-            this.handler = new OpenLayers.Handler.Click(this, {
+            this.handler = new OpenLayers.Handler.on('click', this, {
               click: this.onClick
             }, handlerOptions);
             this.protocol = new OpenLayers.Protocol.HTTP({
@@ -3471,7 +3471,7 @@ var destroyAllFeatures;
           {
             this.handlerOptions = OpenLayers.Util.extend({}, this.defaultHandlerOptions);
             OpenLayers.Control.prototype.initialize.apply(this, arguments);
-            this.handler = new OpenLayers.Handler.Click( this, {'click': this.trigger}, this.handlerOptions );
+            this.handler = new OpenLayers.Handler.on('click',  this, {'click': this.trigger}, this.handlerOptions );
           }
         });
       }
@@ -3681,7 +3681,7 @@ var destroyAllFeatures;
       });
       var click=false;
       if (div.settings.editLayer && (div.settings.clickForSpatialRef || div.settings.clickForPlot)) {
-        click=new OpenLayers.Control.Click({'displayClass':align + 'olControlClickSref'});
+        click=new OpenLayers.Control.on('click', {'displayClass':align + 'olControlClickSref'});
         div.map.editLayer.clickControl = click;
       }
       if (clickInfoCtrl !== null) {

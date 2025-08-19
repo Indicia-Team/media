@@ -1098,13 +1098,13 @@ jQuery(document).ready(function ($) {
         keep(method);
       }
     });
-    $('#' + this + '\\:add').click(function () {
+    $('#' + this + '\\:add').on('click', function () {
       keep(method);
     });
   });
 
   // Show all taxon groups link.
-  $('#show-species-groups').click(function() {
+  $('#show-species-groups').on('click', function() {
     $('.filter-controls').hide();
     let cntr = $('<div>').insertAfter($('.filter-controls'));
     let ul = $('<ul style="columns: 4">').appendTo(cntr);
@@ -1112,7 +1112,7 @@ jQuery(document).ready(function ($) {
       ul.append('<li>' + this.title + '</li>');
     });
     let btn = $('<button class="btn btn-primary">' + indiciaData.lang.reportFilters.back + '</button>').appendTo(cntr);
-    btn.click(function() {
+    btn.on('click', function() {
       cntr.remove();
       $('.filter-controls').show();
     });
@@ -1223,7 +1223,7 @@ jQuery(document).ready(function ($) {
     changeSiteType();
   });
 
-  $('#my_groups').click(function () {
+  $('#my_groups').on('click', function () {
     $.each(indiciaData.myGroups, function(idx, group) {
       if ($('#taxon_group_list\\:sublist input[value=' + group['id'] + ']').length === 0) {
         $('#taxon_group_list\\:sublist').append('<li><span class="ind-delete-icon"> </span>' + group['title'] +
@@ -1693,15 +1693,15 @@ jQuery(document).ready(function ($) {
     filterParamsChanged();
   });
 
-  $('#filter-apply').click(function () {
+  $('#filter-apply').on('click', function () {
     loadFilter($('#select-filter').val(), {});
   });
 
-  $('#filter-reset').click(function () {
+  $('#filter-reset').on('click', function () {
     resetFilter();
   });
 
-  $('#filter-build').click(function () {
+  $('#filter-build').on('click', function () {
     var desc;
     $.each(indiciaData.filterParser, function (name, obj) {
       desc = obj.getDescription(indiciaData.filter.def, '<br/>');
@@ -1721,7 +1721,7 @@ jQuery(document).ready(function ($) {
     $('#filter-build').addClass('disabled');
   });
 
-  $('#filter-delete').click(function (e) {
+  $('#filter-delete').on('click', function (e) {
     var filter;
     if ($(e.currentTarget).hasClass('disabled')) {
       return;
@@ -1749,7 +1749,7 @@ jQuery(document).ready(function ($) {
     }
   });
 
-  $('#filter-done').click(function () {
+  $('#filter-done').on('click', function () {
     $('#filter-details').slideUp(400, function() {
       if (indiciaFns.updateControlLayout) {
         indiciaFns.updateControlLayout();
@@ -1758,7 +1758,7 @@ jQuery(document).ready(function ($) {
     $('#filter-build').removeClass('disabled');
   });
 
-  $('.fb-close').click(function () {
+  $('.fb-close').on('click', function () {
     $.fancybox.close();
   });
 
@@ -2012,7 +2012,7 @@ jQuery(document).ready(function ($) {
   });
 
   $('#location_list\\:box').hide();
-  $('#filter-save').click(saveFilter);
+  $('#filter-save').on('click', saveFilter);
   $('#context-filter').change(resetFilter);
 
   filterChange();
@@ -2320,7 +2320,7 @@ jQuery(document).ready(function ($) {
   }
 
   // Show the custom quality panel drop-down div.
-  $('.quality-filter').click(function(e) {
+  $('.quality-filter').on('click', function(e) {
     var wrap = $(e.currentTarget).closest('.quality-cntr');
     var pane = wrap.find('.quality-pane');
     var input = wrap.find('.quality-filter');
@@ -2450,15 +2450,15 @@ jQuery(document).ready(function ($) {
       errorClass: indiciaData.templates.jQueryValidateErrorClass,
     });
 
-    $('.quality-pane button.cancel').click(closeQualityPane);
+    $('.quality-pane button.cancel').on('click', closeQualityPane);
 
-    $('.quality-pane button.ok').click(saveAndCloseQualityPane);
+    $('.quality-pane button.ok').on('click', saveAndCloseQualityPane);
   }
 
   /**
    * In vertical mode the panel descripts can be toggled on and off.
    */
-  $('.toggle-description').click(function(e) {
+  $('.toggle-description').on('click', function(e) {
     if ($(e.currentTarget).hasClass('fa-caret-down')) {
       $(e.currentTarget).removeClass('fa-caret-down');
       $(e.currentTarget).addClass('fa-caret-up');

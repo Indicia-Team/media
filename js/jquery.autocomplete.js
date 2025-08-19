@@ -132,7 +132,7 @@ $.Autocompleter = function(input, options) {
       }
       }
     });
-    btn.click(function() {
+    btn.on('click', function() {
       if (select.visible()) {
         hideResultsNow(false);
       } else {
@@ -235,7 +235,7 @@ $.Autocompleter = function(input, options) {
     if (!config.mouseDownOnSelect && !options.continueOnBlur) {
       hideResults();
     }
-  }).click(function() {
+  }).on('click', function() {
     // show select when clicking in a focused field
     var hasFocus = $input[0].id===document.activeElement.id;
     if ( hasFocus && !select.visible() ) {
@@ -732,7 +732,7 @@ $.Autocompleter.Select = function (options, input, select, config) {
               active = $("li", list).removeClass(CLASSES.ACTIVE).index(target(event));
           $(target(event)).addClass(CLASSES.ACTIVE);
           }
-    }).click(function(event) {
+    }).on('click', function(event) {
       $(target(event)).addClass(CLASSES.ACTIVE);
       // If in a species grid, selecting an item should move input focus to next input.
       var sg = $(input).closest('.species-grid');
@@ -825,7 +825,7 @@ $.Autocompleter.Select = function (options, input, select, config) {
     }
     if (options.tooMuch & !options.doneMore) {
       list.append('<li class="ac_more"><span title="' + options.langMoreDetails + '">' + options.langMore + '...</span></li>');
-      list.find('.ac_more').click(function() {
+      list.find('.ac_more').on('click', function() {
         $(input).trigger('moreClick');
       });
     } else if (options.tooMuch) {

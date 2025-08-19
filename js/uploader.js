@@ -272,7 +272,7 @@ jQuery(document).ready(function($) {
      * Appears if the settings list several options, plus a special option *
      * which triggers the extra unrestricted control.
      */
-    $('.show-unrestricted').click(function() {
+    $('.show-unrestricted').on('click', function() {
       const cntrRestricted = $(this).closest('.ctrl-cntr');
       const inputRestricted = $(cntrRestricted).find('select');
       const inputUnrestricted = $('.unrestricted [name="' + $(inputRestricted).attr('name') + '"]');
@@ -286,7 +286,7 @@ jQuery(document).ready(function($) {
     /**
      * Button handler to return to the restricted version of a global values control.
      */
-    $('.show-restricted').click(function() {
+    $('.show-restricted').on('click', function() {
       const cntrUnrestricted = $(this).closest('.ctrl-cntr');
       const inputUnrestricted = $(cntrUnrestricted).find('select');
       const inputRestricted = $('.restricted [name="' + $(inputUnrestricted).attr('name') + '"]');
@@ -766,7 +766,7 @@ jQuery(document).ready(function($) {
       // Remember the string it was set for to prevent it being cleared.
       $('input[name="match-taxon-' + $(e.currentTarget).data('index')).data('set-for', $(e.currentTarget).val());
     });
-    $(matchingPanelBody).find('.taxon-card').click(function(e) {
+    $(matchingPanelBody).find('.taxon-card').on('click', function(e) {
       var id = $(e.currentTarget).data('id');
       var taxon = $(e.currentTarget).data('taxon');
       var tr = $(e.currentTarget).closest('tr');
@@ -832,7 +832,7 @@ jQuery(document).ready(function($) {
       // Remember the string it was set for to prevent it being cleared.
       $('input[name="match-location-' + $(e.currentTarget).data('index')).data('set-for', $(e.currentTarget).val());
     });
-    $(matchingPanelBody).find('.location-card').click(function(e) {
+    $(matchingPanelBody).find('.location-card').on('click', function(e) {
       var id = $(e.currentTarget).data('id');
       var name = $(e.currentTarget).data('name');
       var tr = $(e.currentTarget).closest('tr');
@@ -1046,7 +1046,7 @@ jQuery(document).ready(function($) {
         nextPreprocessingStep();
       }
       else {
-        $('#next-step').click();
+        $('#next-step').trigger('click');
       }
     })
     .fail(function(jqXHR, textStatus, errorThrown) {

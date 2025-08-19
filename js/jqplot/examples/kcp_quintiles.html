@@ -517,7 +517,7 @@
 
         // Open and close the plot container.
         $('.quintile-toggle').each(function() {
-            $(this).click(function(e) {
+            $(this).on('click', function(e) {
                 if ($(this).hasClass('ui-icon-arrowthickstop-1-n')) {
                     $(this).parent().next('.quintile-content').effect('blind', {mode:'hide'}, 600);
                     // $('.quintile-content').jqplotEffect('blind', {mode: 'hide'}, 600);
@@ -590,7 +590,7 @@
             })
         });
 
-        $('.ui-icon-print').click(function(){
+        $('.ui-icon-print').on('click', function(){
             $(this).parent().next().print();
         });
 
@@ -616,7 +616,7 @@
             });
         });
 
-        $('div.overlay-chart-container-header div.ui-icon-closethick').click(function(){
+        $('div.overlay-chart-container-header div.ui-icon-closethick').on('click', function(){
             var div = $('div.overlay-chart-container-content');
             div.parent().fadeOut(600);
             $('div.overlay-shadow').fadeOut(1000);

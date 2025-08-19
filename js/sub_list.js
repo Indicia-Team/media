@@ -93,7 +93,7 @@
       }
     );
 
-    $('#' + escapedId + '\\:add').click(function () {
+    $('#' + escapedId + '\\:add').on('click', function () {
       indiciaFns.addSublistItem(escapedId, escapedCaptionField, fieldname, itemTemplate);
       searchInput.focus();
     });

@@ -41,7 +41,7 @@ setupButtons = function (tabs, index) {
   $.merge(nextLi, nextLi.next());
   var enabledLis = $($.merge( $.merge([],prevLi), nextLi));
 
-  enabledLis.click(function(e){
+  enabledLis.on('click', function(e){
     var wizList = $(this).parent();
     var tabs = wizList.parent();
     // first, validate
@@ -55,7 +55,7 @@ setupButtons = function (tabs, index) {
 
     //transfer the click to the tab anchor
     var tabAnchor = $("ul.ui-tabs-nav a", tabs)[index/2]; // /2 because there is an arrow header li after every li
-    $(tabAnchor).click();
+    $(tabAnchor).trigger('click');
   });
   enabledLis.addClass('wiz-enabled');
   enabledLis.hover(
@@ -78,7 +78,7 @@ setupButtons = function (tabs, index) {
   if (nextLi.length===0) {
     // got to the end of thw wizard, so (re)bind an event for clicking the submit in the progress
     $('.wiz-complete').off('click');
-    $('.wiz-complete').click(function() {
+    $('.wiz-complete').on('click', function() {
       var wizList = $(this).parent();
       var tabs = wizList.parent();
       // first, validate
@@ -208,16 +208,16 @@ setupTabsNextPreviousButtons=function(divId, topSelector) {
   function selectTab(relativeIdx) {
     var current=indiciaFns.activeTab($div),
         a = $('ul.ui-tabs-nav a', $div)[current+relativeIdx];
-    $(a).click();
+    $(a).trigger('click');
     // scroll top of selected tab into view
     scrollTopIntoView(topSelector);
   }
 
-  $('.tab-prev', $div).click(function() {
+  $('.tab-prev', $div).on('click', function() {
     selectTab(-1);
   });
 
-  $('.tab-next', $div).click(function() {
+  $('.tab-next', $div).on('click', function() {
      selectTab(1);
   });
 

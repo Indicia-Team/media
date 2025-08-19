@@ -77,7 +77,7 @@ $(document).ready(function(){
             close.addClass('jqplot-image-container-close');
             close.html('Close');
             close.attr('href', '#');
-            close.click(function() {
+            close.on('click', function() {
                 $(this).parents('div.jqplot-image-container').hide(500);
             })
             header.append(close);
