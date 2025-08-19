@@ -1524,7 +1524,7 @@
             $(tr).addClass('selected');
           }
         });
-        $(div).find('tbody').dblclick(function (e) {
+        $(div).find('tbody').on('dblclick', function (e) {
           var tr = $(e.target).parents('tr')[0];
           var featureId = tr.id.substr(3);
           highlightFeatureById(featureId, true, div);

@@ -1278,7 +1278,7 @@ $.widget("ui.plupload", {
 	_enableRenaming: function() {
 		var self = this;
 
-		this.filelist.dblclick(function(e) {
+		this.filelist.on('dblclick', function(e) {
 			var nameInput, fileContainer, file, parts, name, ext = "";
 			var nameSpan = $(e.target);
 
