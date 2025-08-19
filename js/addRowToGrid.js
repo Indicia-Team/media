@@ -287,8 +287,8 @@ var addMediaRowOnClick;
       autocompleteSettings.width = 200;
     }
     ctrl = $(selector).autocomplete(indiciaData.read.url + '/index.php/services/data/taxa_search', autocompleteSettings);
-    ctrl.bind('result', handleSelectedTaxon);
-    ctrl.bind('return', returnPressedInAutocomplete);
+    ctrl.on('result', handleSelectedTaxon);
+    ctrl.on('return', returnPressedInAutocomplete);
     return ctrl;
   }
 
@@ -370,8 +370,8 @@ var addMediaRowOnClick;
       mainSpeciesValue = value;
       // on picking a result in the autocomplete, ensure we have a spare row
       // clear the event handlers
-      $(e.target).unbind('result', handleSelectedTaxon);
-      $(e.target).unbind('return', returnPressedInAutocomplete);
+      $(e.target).off('result', handleSelectedTaxon);
+      $(e.target).off('return', returnPressedInAutocomplete);
       taxonCell = e.target.parentNode;
       /* Create edit icons for taxon cells. Only add the edit icon if the user has this functionality available on the
       edit tab. Also create Notes and Delete icons when required */
@@ -605,8 +605,8 @@ var addMediaRowOnClick;
       $('#' + selectorId).val($('#' + selectorId).val().slice(0, -1));
       // Bind function so that when user loses focus on the taxon cell immediately after clicking edit, we can reset
       // the cell back to read-only label
-      //ctrl.bind('blur', resetSpeciesText);
-      ctrl.bind('keydown', resetSpeciesTextOnEscape);
+      //ctrl.on('blur', resetSpeciesText);
+      ctrl.on('keydown', resetSpeciesTextOnEscape);
     });
   };
 
@@ -1399,14 +1399,14 @@ function species_checklist_add_another_row(gridId) {
     //Only continue if the column is part of the user's options.
     if (classToUse  && (jQuery.inArray(classToUse.toLowerCase(), columnsToCopyFromPrevRow)>-1)) {
       //Bind the cell in the previous cell so that when it is changed the new row will update
-      $previousRow.find('.' + classToUse).bind('change', changeIn2ndToLastRowProxy);
+      $previousRow.find('.' + classToUse).on('change', changeIn2ndToLastRowProxy);
       //We set the value for the new row from the previous row if there is a value set on the previous row cell
       //and the user has included that column in their options. (inArray reurns -1 for items not found)
       if ($previousRow.find('.' + classToUse).val() && (jQuery.inArray(classToUse.toLowerCase(), columnsToCopyFromPrevRow)>-1)) {
         jQuery(this).val($previousRow.find('.' + classToUse).filter(':visible').val());
       }
       //We need to unbind the 3rd last row as we no longer what changes for that cell to affect the last row.
-      $previousRow.prevAll(".added-row:first").find('.' + classToUse).unbind('change', changeIn2ndToLastRowProxy);
+      $previousRow.prevAll(".added-row:first").find('.' + classToUse).off('change', changeIn2ndToLastRowProxy);
     }
 
   });

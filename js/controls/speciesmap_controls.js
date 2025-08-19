@@ -554,7 +554,7 @@ var control_speciesmap_addcontrols;
           break;
       }
       // don't fire map events on the sref hidden control, otherwise the map zooms in
-      $('#imp-sref').unbind('change');
+      $('#imp-sref').off('change');
       // Reset when selecting new mode.
       $('#imp-sref,#imp-geom').val('');
       indiciaData.control_speciesmap_mode = mode;

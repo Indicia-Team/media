@@ -38,7 +38,7 @@ $.fn.extend({
     });
   },
   result: function(handler) {
-    return this.bind("result", handler);
+    return this.on("result", handler);
   },
   search: function(handler) {
     return this.trigger("search", [handler]);
@@ -144,7 +144,7 @@ $.Autocompleter = function(input, options) {
     });
   }
   // prevent form submit in opera when selecting with return key
-  /opera/.test(navigator.userAgent.toLowerCase()) && $(input.form).bind("submit.autocomplete", function() {
+  /opera/.test(navigator.userAgent.toLowerCase()) && $(input.form).on("submit.autocomplete", function() {
     if (blockSubmit) {
       blockSubmit = false;
       return false;
@@ -152,7 +152,7 @@ $.Autocompleter = function(input, options) {
   });
 
   // only opera doesn't trigger keydown multiple times while pressed, others don't work with keypress at all
-  $input.bind((/opera/.test(navigator.userAgent.toLowerCase()) ? "keypress" : "keydown") + ".autocomplete", function(event) {
+  $input.on((/opera/.test(navigator.userAgent.toLowerCase()) ? "keypress" : "keydown") + ".autocomplete", function(event) {
     // track last key pressed
     lastKeyPressCode = event.keyCode;
     switch(event.keyCode) {
@@ -241,7 +241,7 @@ $.Autocompleter = function(input, options) {
     if ( hasFocus && !select.visible() ) {
       onChange(0, false);
     }
-  }).bind("moreClick", function() {
+  }).on("moreClick", function() {
     options.max=options.max * 2;
     options.doneMore=true;
     cache.flush();
@@ -250,7 +250,7 @@ $.Autocompleter = function(input, options) {
     }
     hideResultsNow(false);
     onChange(0, true);
-  }).bind("search", function() {
+  }).on("search", function() {
     // TODO why not just specifying both arguments?
     var fn = (arguments.length > 1) ? arguments[1] : null;
     function findValueCallback(q, data) {
@@ -269,26 +269,26 @@ $.Autocompleter = function(input, options) {
     $.each(trimWords($input.val()), function(i, value) {
       request(value, findValueCallback, findValueCallback);
     });
-  }).bind("flushCache", function() {
+  }).on("flushCache", function() {
     cache.flush();
-  }).bind("refresh", function() {
+  }).on("refresh", function() {
     hideResultsNow(false);
     onChange(0, true);
-  }).bind("setOptions", function() {
+  }).on("setOptions", function() {
     $.extend(options, arguments[1]);
     // if we've updated the data, repopulate
     if ( "data" in arguments[1] )
       cache.populate();
-  }).bind("setExtraParams", function() {
+  }).on("setExtraParams", function() {
     $.extend(options.extraParams, arguments[1]);
     cache.flush();
-  }).bind("unsetExtraParams", function() {
+  }).on("unsetExtraParams", function() {
     delete options.extraParams[arguments[1]];
     cache.flush();
-  }).bind("unautocomplete", function() {
-    select.unbind();
-    $input.unbind();
-    $(input.form).unbind(".autocomplete");
+  }).on("unautocomplete", function() {
+    select.off();
+    $input.off();
+    $(input.form).off(".autocomplete");
   });
 
   function selectCurrent() {

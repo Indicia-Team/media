@@ -325,7 +325,7 @@ $.extend($.validator, {
 				.validateDelegate("[type='radio'], [type='checkbox'], select, option", "click", delegate);
 
 			if (this.settings.invalidHandler)
-				$(this.currentForm).bind("invalid-form.validate", this.settings.invalidHandler);
+				$(this.currentForm).on("invalid-form.validate", this.settings.invalidHandler);
 		},
 
 		// http://docs.jquery.com/Plugins/Validation/Validator/form
@@ -1108,7 +1108,7 @@ $.extend($.validator, {
 		equalTo: function(value, element, param) {
 			// bind to the blur event of the target in order to revalidate whenever the target field is updated
 			// TODO find a way to bind the event just once, avoiding the unbind-rebind overhead
-			var target = $(param).unbind(".validate-equalTo").bind("blur.validate-equalTo", function() {
+			var target = $(param).off(".validate-equalTo").on("blur.validate-equalTo", function() {
 				$(element).valid();
 			});
 			return value == target.val();
@@ -1191,7 +1191,7 @@ $.format = $.validator.format;
 	};
 	$.extend($.fn, {
 		validateDelegate: function(delegate, type, handler) {
-			return this.bind(type, function(event) {
+			return this.on(type, function(event) {
 				var target = $(event.target);
 				if (target.is(delegate)) {
 					return handler.apply(target, arguments);

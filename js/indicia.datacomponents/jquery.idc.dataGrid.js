@@ -962,7 +962,7 @@
         // Auto-expand the extra details row if cols hidden because below a
         // breakpoint.
         $(table).trigger('footable_expand_all');
-        $(table).bind('footable_breakpoint', function onBreak() {
+        $(table).on('footable_breakpoint', function onBreak() {
           $(table).trigger('footable_expand_all');
         });
       }

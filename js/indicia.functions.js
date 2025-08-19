@@ -221,7 +221,7 @@ window.indiciaFns = {};
   indiciaFns.bindTabsActivate = function (tabs, fn) {
     var version = $.ui.version.split('.');
     var evtname = (version[0] === '1' && version[1] < 10) ? 'tabsshow' : 'tabsactivate';
-    return tabs.bind(evtname, fn);
+    return tabs.on(evtname, fn);
   };
 
   /**
@@ -231,7 +231,7 @@ window.indiciaFns = {};
   indiciaFns.unbindTabsActivate = function (tabs, fn) {
     var version = $.ui.version.split('.');
     var evtname = (version[0] === '1' && version[1] < 10) ? 'tabsshow' : 'tabsactivate';
-    return tabs.unbind(evtname, fn);
+    return tabs.off(evtname, fn);
   };
 
   /**
@@ -922,11 +922,11 @@ jQuery(document).ready(function ($) {
     detectInput = function () {
       if (indiciaData.documentReady === 'done') {
         window.onbeforeunload = confirmOnPageExit;
-        $(iform).find(':input').unbind('change', detectInput);
+        $(iform).find(':input').off('change', detectInput);
       }
     };
     // any data input, need to confirm if navigating away
-    $(iform).find(':input').bind('change', detectInput);
+    $(iform).find(':input').on('change', detectInput);
     $(iform).submit(function () {
       // allowed to leave page on form submit
       window.onbeforeunload = null;

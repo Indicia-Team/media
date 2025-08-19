@@ -2069,7 +2069,7 @@
           $(this)
             .find("iframe")
             .hide()
-            .unbind()
+            .off()
             .attr("src", "//about:blank");
         } catch (ignore) {}
 

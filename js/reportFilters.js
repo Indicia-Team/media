@@ -50,13 +50,13 @@ jQuery(document).ready(function ($) {
     layer.removeFeatures(toRemove, {});
   }
 
-  $('#location_list\\:sublist').bind('append', function () {
+  $('#location_list\\:sublist').on('append', function () {
     if (!loadingSites) {
       loadSites($(this).find('li input[name="location_list[]"]').last().val(), false);
       // remove all non-site boundaries, i.e. grid squares
       indiciaData.mapdiv.removeAllFeatures(indiciaData.mapdiv.map.editLayer, 'boundary', true);
     }
-    $('#location_list\\:sublist li:last-child').bind('remove', removeSite);
+    $('#location_list\\:sublist li:last-child').on('remove', removeSite);
   });
 
   /**

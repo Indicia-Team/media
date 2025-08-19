@@ -930,7 +930,7 @@
           var panel = typeof ui.newPanel === 'undefined' ? ui.panel : ui.newPanel[0];
           if (panel.id === $(report).parents('.ui-tabs-panel')[0].id) {
             report.reload(doRecount);
-            $(this).unbind(evt);
+            $(this).off(evt);
           }
         });
       } else {

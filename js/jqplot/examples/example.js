@@ -91,7 +91,7 @@ $(document).ready(function(){
                 var btn = $(document.createElement('button'));
                 btn.text('View Plot Image');
                 btn.addClass('jqplot-image-button');
-                btn.bind('click', {chart: $(this)}, function(evt) {
+                btn.on('click', {chart: $(this)}, function(evt) {
                     var imgelem = evt.data.chart.jqplotToImageElem();
                     var div = $(this).nextAll('div.jqplot-image-container').first();
                     div.children('div.jqplot-image-container-content').empty();
@@ -110,5 +110,5 @@ $(document).ready(function(){
     SyntaxHighlighter.defaults['toolbar'] = true;
     SyntaxHighlighter.all();
 
-    $(document).unload(function() {$('*').unbind(); });
+    $(document).unload(function() {$('*').off(); });
 });
