@@ -98,7 +98,7 @@
       searchInput.focus();
     });
 
-    searchInput.blur(function () {
+    searchInput.on('blur', function () {
       if ($(this).val().trim() !== '') {
         if ($('[name="' + escapedId + '\\:allowTermCreationLang"]').length > 0) {
           // Term entered has not been linked to a term in db, but we are

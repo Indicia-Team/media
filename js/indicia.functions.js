@@ -60,7 +60,7 @@ window.indiciaFns = {};
     } else if (evt.keyCode === 16) {
       indiciaData.shiftPressed = false;
     }
-  }).blur(function blur() {
+  }).on('blur', function blur() {
     indiciaData.ctrlPressed = false;
   });
 

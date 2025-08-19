@@ -122,7 +122,7 @@ $.Autocompleter = function(input, options) {
     function hideList() {
         hideResultsNow(false);
     }
-    $input.blur(function() {
+    $input.on('blur', function() {
       //Make sure the select list is already displayed before we hide it onBlur, if we don't do this, if the user is focussed
       //in the input box and clicks the arrow to expand the list, then it is hidden straight away as soon as it opens.
   if (overSelectList!==true) {
@@ -231,7 +231,7 @@ $.Autocompleter = function(input, options) {
         timeout = setTimeout(onChange, options.delay);
         break;
     }
-  }).blur(function() {
+  }).on('blur', function() {
     if (!config.mouseDownOnSelect && !options.continueOnBlur) {
       hideResults();
     }

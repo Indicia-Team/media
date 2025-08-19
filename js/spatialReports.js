@@ -132,7 +132,7 @@
         indiciaData.bufferLayer.removeFeatures(buffers);
       });
       // When exiting the buffer input, recreate all the buffer polygons.
-      $('#geom_buffer').blur(function blurBuffer() {
+      $('#geom_buffer').on('blur', function blurBuffer() {
         rebuildBuffer();
       });
     });
