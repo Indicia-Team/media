@@ -3354,7 +3354,7 @@ var destroyAllFeatures;
               }
             }
           });
-          $('#map').mouseleave(function () {
+          $('#map').on('mouseleave', function () {
             // clear ghost hover markers when mouse leaves the map
             removeAllFeatures(div.map.editLayer, 'ghost');
           });

@@ -1648,7 +1648,7 @@ jQuery(document).ready(function ($) {
           }
           indiciaData.mapdiv.map.updateSize();
           // Ensure that if FancyBox container scrolls, mouse position remains accurate.
-          $(indiciaData.mapdiv).parents().scroll(function() {
+          $(indiciaData.mapdiv).parents().on('scroll', function() {
             indiciaData.mapdiv.map.events.clearMouseCache();
           });
         }

@@ -39,7 +39,7 @@
       }
 
       if ($(this).attr('title') !== '' && typeof $(this).attr('title') !== 'undefined') {
-        $(this).removeAttr('title').mouseover(function () {
+        $(this).removeAttr('title').on('mouseover', function () {
           var inputRect = this.getBoundingClientRect();
           var tooltipRect = myTooltip[0].getBoundingClientRect();
           var leftPos = Math.min(inputRect.left, $(window).width() - tooltipRect.width);
@@ -54,7 +54,7 @@
             $(this).closest('tr').removeAttr('title');
           }
         })
-        .mouseout(function () {
+        .on('mouseout', function () {
           myTooltip.css({ left: '-9999px' });
         });
       }

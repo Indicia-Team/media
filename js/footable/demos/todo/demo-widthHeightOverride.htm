@@ -27,7 +27,7 @@
 				$('a.resize').on('click', function() {
 					var w = $(this).data('size');
 					$('.footable-container').css({width:w});
-					$('table')[0].footable.resize();
+					$('table')[0].footable.trigger('resize');
 				});
       });
     </script>

@@ -490,7 +490,7 @@ $(document).ready(function(){
         plot1.replot();
     });
 
-    $(".jqplot-target").mouseleave(function(){ $('.jqplot-canvasOverlay-tooltip, .jqplot-highlighter-tooltip, .jqpot-cursor-tooltip').hide(); });
+    $(".jqplot-target").on('mouseleave', function(){ $('.jqplot-canvasOverlay-tooltip, .jqplot-highlighter-tooltip, .jqpot-cursor-tooltip').hide(); });
 });
 
 </script>

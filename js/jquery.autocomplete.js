@@ -727,7 +727,7 @@ $.Autocompleter.Select = function (options, input, select, config) {
     .css("position", "absolute")
     .appendTo(document.body);
 
-    list = $("<ul/>").appendTo(element).mouseover( function(event) {
+    list = $("<ul/>").appendTo(element).on('mouseover',  function(event) {
       if(target(event).nodeName && target(event).nodeName.toUpperCase() == 'LI') {
               active = $("li", list).removeClass(CLASSES.ACTIVE).index(target(event));
           $(target(event)).addClass(CLASSES.ACTIVE);
@@ -750,9 +750,9 @@ $.Autocompleter.Select = function (options, input, select, config) {
         $(input).focus();
       }
       return false;
-    }).mousedown(function() {
+    }).on('mousedown', function() {
       config.mouseDownOnSelect = true;
-    }).mouseup(function() {
+    }).on('mouseup', function() {
       config.mouseDownOnSelect = false;
     });
 

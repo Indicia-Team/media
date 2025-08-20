@@ -345,7 +345,7 @@
                 .off(trg.resize)
                 //bind to FooTable resize trigger
                 .on(trg.resize, function () {
-                    ft.resize();
+                    ft.trigger('resize');
                 })
                 .off(trg.expandFirstRow)
                 //bind to FooTable expandFirstRow trigger
