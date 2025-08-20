@@ -510,9 +510,10 @@
       $(div).css('max-height', $(window).height() - $(div).offset().top + $(window).scrollTop() - 20);
       div.settings.populated = true;
       $.ajax({
-        dataType: 'json',
+        dataType: 'jsonp',
         url: request,
         data: null,
+        crossDomain: true,
         success: function(response) {
           var tbody = $(div).find('tbody');
           var rows;
@@ -775,7 +776,8 @@
             request = getFullRequestPathWithoutPaging(div, true, true);
             request += '&wantCount=1&wantRecords=0';
             $.ajax({
-              dataType: 'json',
+              dataType: 'jsonp',
+              crossDomain: true,
               url: request,
               data: null,
               success: function countSuccess(countResponse) {
@@ -972,10 +974,11 @@
 
     function _internalMapRecords(div, request, offset, callback, recordCount) {
       $('#map-loading').show();
-      var matchString, feature, url;
+      var matchString, feature;
       // first call- get the record count
       $.ajax({
-        dataType: "json",
+        dataType: "jsonp",
+        crossDomain: true,
         url: request + '&offset=' + offset + (typeof recordCount === 'undefined' ? '&wantCount=1' : ''),
         success: function(response) {
           if (typeof response.error !== 'undefined') {
