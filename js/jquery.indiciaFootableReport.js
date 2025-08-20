@@ -90,7 +90,7 @@
               var ft;
               $table = $(this);
               ft = $table.data('footable');
-              ft.trigger('resize');
+              ft.resize();
             });
           }
         });
