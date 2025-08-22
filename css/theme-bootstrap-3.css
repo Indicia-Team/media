@@ -631,6 +631,10 @@ table.report-grid .multi img {
 }
 .filelist .delete-file {
   float: right;
+  color: #444;
+}
+.filelist .delete-file:hover {
+  color: #000;
 }
 
 .media-gallery ul {

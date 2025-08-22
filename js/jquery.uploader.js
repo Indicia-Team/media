@@ -599,10 +599,10 @@ jQuery.fn.uploader.defaults = {
     '<div class="filelist"></div>' +
     '</fieldset>\n<p class="{helpTextClass}">{helpText}</p>',
   file_box_initial_link_infoTemplate : '<div id="link-{linkRequestId}" class="ui-widget-content ui-corner-all link"><div class="ui-widget-header ui-corner-all ui-helper-clearfix"><span id="link-title-{linkRequestId}">Loading...</span> ' +
-          '<span class="delete-file ind-delete-icon" id="del-{id}"></span></div>'+
+          '<span class="delete-file fas fa-trash-alt" id="del-{id}"></span></div>'+
           '<div id="link-embed-{linkRequestId}"></div></div>',
   file_box_initial_file_infoTemplate : '<div id="{id}" class="ui-widget-content ui-corner-all mediafile"><div class="ui-widget-header ui-corner-all ui-helper-clearfix"><span>{filename}</span> ' +
-          '<span class="delete-file ind-delete-icon" id="del-{id}"></span></div><div class="progress-wrapper"><progress class="progress" value="0" max="100">0 %</progress>'+
+          '<span class="delete-file fas fa-trash-alt" id="del-{id}"></span></div><div class="progress-wrapper"><progress class="progress" value="0" max="100">0 %</progress>'+
           '<div class="progress-percent"></div><div class="progress-gif"></div></div><div class="media-wrapper"></div></div>',
   file_box_uploaded_extra_fieldsTemplate : '<input type="hidden" name="{idField}" id="{idField}" value="{idValue}" />' +
       '<input type="hidden" name="{pathField}" id="{pathField}" value="{pathValue}" />' +
