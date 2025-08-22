@@ -1776,7 +1776,7 @@ var destroyAllFeatures;
             } else {
               // allow click or bounding box actions
               this.handlers = {
-                click: new OpenLayers.Handler.on('click', this, {
+                click: new OpenLayers.Handler.Click(this, {
                   click: this.onGetInfo
                 }, handlerOptions)
               };
@@ -3413,7 +3413,7 @@ var destroyAllFeatures;
               stopSingle: false,
               stopDouble: false
             };
-            this.handler = new OpenLayers.Handler.on('click', this, {
+            this.handler = new OpenLayers.Handler.Click(this, {
               click: this.onClick
             }, handlerOptions);
             this.protocol = new OpenLayers.Protocol.HTTP({
@@ -3471,7 +3471,7 @@ var destroyAllFeatures;
           {
             this.handlerOptions = OpenLayers.Util.extend({}, this.defaultHandlerOptions);
             OpenLayers.Control.prototype.initialize.apply(this, arguments);
-            this.handler = new OpenLayers.Handler.on('click',  this, {'click': this.trigger}, this.handlerOptions );
+            this.handler = new OpenLayers.Handler.Click( this, {'click': this.trigger}, this.handlerOptions );
           }
         });
       }
@@ -3681,7 +3681,7 @@ var destroyAllFeatures;
       });
       var click=false;
       if (div.settings.editLayer && (div.settings.clickForSpatialRef || div.settings.clickForPlot)) {
-        click=new OpenLayers.Control.on('click', {'displayClass':align + 'olControlClickSref'});
+        click = new OpenLayers.Control.Click({'displayClass':align + 'olControlClickSref'});
         div.map.editLayer.clickControl = click;
       }
       if (clickInfoCtrl !== null) {
