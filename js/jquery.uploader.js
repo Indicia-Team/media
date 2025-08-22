@@ -592,7 +592,7 @@ jQuery.fn.uploader.defaults = {
   resizeHeight: 0,
   resizeQuality: 90,
   upload : true,
-  maxFileCount : 4,
+  maxFileCount : 8,
   existingFiles : [],
   buttonTemplate : '<button id="{id}" type="button"{class} title="{title}">{caption}</button>',
   file_boxTemplate : '<fieldset class="ui-corner-all">\n<legend class={captionClass}>{caption}</legend>\n{uploadSelectBtn}\n{linkSelectBtn}\n' +
