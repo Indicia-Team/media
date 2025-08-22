@@ -283,7 +283,7 @@ var checkSubmitInProgress = function () {
       };
       enableDropIfDesktop(this, uploadOpts);
       this.uploader = new plupload.Uploader(uploadOpts);
-      this.uploader.on('QueueChanged', function(up) {
+      this.uploader.bind('QueueChanged', function(up) {
         up.start();
       });
 
@@ -370,7 +370,7 @@ var checkSubmitInProgress = function () {
       });
 
       // Add a box to indicate a file that is added to the list to upload, but not yet uploaded.
-      this.uploader.on('FilesAdded', function(up, files) {
+      this.uploader.bind('FilesAdded', function(up, files) {
         $(div).parents('form').on('submit', checkSubmitInProgress);
         // Hide the drop here hint once we have something, so it doesn't occupy space.
         $(div).find('.drop-instruct').remove();
@@ -406,13 +406,13 @@ var checkSubmitInProgress = function () {
       });
 
       // As a file uploads, update the progress bar and percentage indicator
-      this.uploader.on('UploadProgress', function(up, file) {
+      this.uploader.bind('UploadProgress', function(up, file) {
         $('#' + file.id + ' .progress').val(file.percent);
         $('#' + file.id + ' .progress').text(file.percent + ' %');
         $('#' + file.id + ' .progress-percent').html('<span>' + file.percent + '% Uploaded...</span>');
       });
 
-      this.uploader.on('Error', function(up, error) {
+      this.uploader.bind('Error', function(up, error) {
         if (error.code==-600) {
           alert(div.settings.msgFileTooBig);
         } else {
@@ -424,7 +424,7 @@ var checkSubmitInProgress = function () {
       });
 
       // On upload completion, check for errors, and show the uploaded file if OK.
-      this.uploader.on('FileUploaded', function(uploader, file, response) {
+      this.uploader.bind('FileUploaded', function(uploader, file, response) {
         $('#' + file.id + ' .progress-wrapper').remove();
         // check the JSON for errors
         var resp = eval('['+response.response+']'), filepath, uniqueId,
