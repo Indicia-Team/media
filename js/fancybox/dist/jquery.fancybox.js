@@ -1102,7 +1102,7 @@
       // Validate duration length
       current.forcedDuration = undefined;
 
-      if ($.isNumeric(duration)) {
+      if (!Number.isNaN(duration)) {
         current.forcedDuration = duration;
       } else {
         duration = current.opts[firstRun ? "animationDuration" : "transitionDuration"];
@@ -2775,7 +2775,7 @@
 
       $content = current.$content;
       effect = current.opts.animationEffect;
-      duration = $.isNumeric(d) ? d : effect ? current.opts.animationDuration : 0;
+      duration = !Number.isNaN(d) ? d : effect ? current.opts.animationDuration : 0;
 
       current.$slide.removeClass("fancybox-slide--complete fancybox-slide--next fancybox-slide--previous fancybox-animated");
 
@@ -3234,7 +3234,7 @@
 
         self.stop($el);
 
-        if ($.isNumeric(duration)) {
+        if (!Number.isNaN(duration)) {
           $el.css("transition-duration", "");
         }
 
@@ -3258,7 +3258,7 @@
         }
       });
 
-      if ($.isNumeric(duration)) {
+      if (!Number.isNaN(duration)) {
         $el.css("transition-duration", duration + "ms");
       }
 
