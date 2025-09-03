@@ -123,10 +123,19 @@
     popupFormHtml = buildPopupFormHtml(userFilter);
     $.fancybox.open(popupFormHtml);
     // Fill in the list of available taxon groups to choose from.
-    $.getJSON(indiciaData.warehouseUrl +
-        'index.php/services/report/requestReport?report=library/taxon_groups/taxon_groups_used_in_checklist.xml&reportSource=local&mode=json' +
-        '&taxon_list_id=' + indiciaData.speciesChecklistFilterOpts.taxon_list_id +
-        '&auth_token=' + indiciaData.read.auth_token + '&nonce=' + indiciaData.read.nonce + '&callback=?', function(data) {
+    $.ajax({
+      url: indiciaData.warehouseUrl + 'index.php/services/report/requestReport?report=library/taxon_groups/taxon_groups_used_in_checklist.xml',
+      data: {
+        reportSource: 'local',
+        mode: 'json',
+        taxon_list_id: indiciaData.speciesChecklistFilterOpts.taxon_list_id,
+        auth_token: indiciaData.read.auth_token,
+        nonce: indiciaData.read.nonce
+      },
+      dataType: 'jsonp',
+      crossDomain: true
+    })
+    .done(function(data) {
       $.each(data, function(idx, item) {
         var selected = userFilter!==null && (item.id===userFilter.group_id) ? ' selected="selected"' : '';
         $('#filter-group').append('<option value="'+item.id+'"' + selected + '>'+item.title+'</option>');

@@ -185,8 +185,18 @@ var destroyAllFeatures;
       }
       if (!isNaN(intValue)) {
         // Change the location control requests the location's geometry to place on the map.
-        $.getJSON(div.settings.indiciaSvc + 'index.php/services/data/location/' + val +
-            '?mode=json&view=detail' + div.settings.readAuth + '&callback=?', function (data) {
+        $.ajax({
+          url: div.settings.indiciaSvc + 'index.php/services/data/location/' + intValue,
+          data: {
+            mode: 'json',
+            view: 'detail',
+            auth_token: indiciaData.read.auth_token,
+            nonce: indiciaData.read.nonce
+          },
+          dataType: 'jsonp',
+          crossDomain: true
+        })
+        .done(function (data) {
           // store value in saved field?
           if (data.length > 0) {
             // TODO not sure best way of doing this using the services, we don't really want

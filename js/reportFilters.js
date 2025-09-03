@@ -1153,39 +1153,46 @@ jQuery(document).ready(function ($) {
     idQuery = '{"in":{"id":[' + idsToSelect + ']}}';
     loadingSites = true;
     $.ajax({
-      dataType: 'json',
       url: indiciaData.read.url + 'index.php/services/data/location',
-      data: 'mode=json&view=list&orderby=name&auth_token=' + indiciaData.read.auth_token +
-      '&nonce=' + indiciaData.read.nonce + '&query=' + idQuery + '&view=detail&callback=?',
-      success: function (data) {
-        // @todo Update this code to also work with the ES Leaflet map.
-        var features = [];
-        var feature;
-        var geomwkt;
-        var parser;
-        if (data.length) {
-          $.each(data, function (idx, loc) {
-            if ($('input[name="location_list[]"][value="' + loc.id + '"]').length === 0) {
-              $('#location_list\\:sublist').append('<li class="ui-widget-content ui-corner-all"><span class="ind-delete-icon">' +
-                '&nbsp;</span>' + loc.name + '<input type="hidden" name="location_list[]" value="' + loc.id + '"/></li>');
+      data: {
+        mode: 'json',
+        view: 'detail',
+        orderby: 'name',
+        auth_token: indiciaData.read.auth_token,
+        nonce: indiciaData.read.nonce,
+        query: idQuery,
+      },
+      dataType: 'jsonp',
+      crossDomain: true
+    })
+    .done(function (data) {
+      // @todo Update this code to also work with the ES Leaflet map.
+      var features = [];
+      var feature;
+      var geomwkt;
+      var parser;
+      if (data.length) {
+        $.each(data, function (idx, loc) {
+          if ($('input[name="location_list[]"][value="' + loc.id + '"]').length === 0) {
+            $('#location_list\\:sublist').append('<li class="ui-widget-content ui-corner-all"><span class="ind-delete-icon">' +
+              '&nbsp;</span>' + loc.name + '<input type="hidden" name="location_list[]" value="' + loc.id + '"/></li>');
+          }
+          if (loc.boundary_geom || loc.centroid_geom) {
+            geomwkt = loc.boundary_geom || loc.centroid_geom;
+            parser = new OpenLayers.Format.WKT();
+            if (indiciaData.mapdiv.map.projection.getCode() !== indiciaData.mapdiv.indiciaProjection.getCode()) {
+              geomwkt = parser.read(geomwkt).geometry.transform(indiciaData.mapdiv.indiciaProjection, indiciaData.mapdiv.map.projection).toString();
             }
-            if (loc.boundary_geom || loc.centroid_geom) {
-              geomwkt = loc.boundary_geom || loc.centroid_geom;
-              parser = new OpenLayers.Format.WKT();
-              if (indiciaData.mapdiv.map.projection.getCode() !== indiciaData.mapdiv.indiciaProjection.getCode()) {
-                geomwkt = parser.read(geomwkt).geometry.transform(indiciaData.mapdiv.indiciaProjection, indiciaData.mapdiv.map.projection).toString();
-              }
-              feature = parser.read(geomwkt);
-              feature.attributes.type = 'boundary';
-              feature.attributes.id = loc.id;
-              features.push(feature);
-            }
-          });
-          indiciaData.mapdiv.map.editLayer.addFeatures(features);
-          indiciaData.mapdiv.map.zoomToExtent(indiciaData.mapdiv.map.editLayer.getDataExtent());
-        }
-        loadingSites = false;
+            feature = parser.read(geomwkt);
+            feature.attributes.type = 'boundary';
+            feature.attributes.id = loc.id;
+            features.push(feature);
+          }
+        });
+        indiciaData.mapdiv.map.editLayer.addFeatures(features);
+        indiciaData.mapdiv.map.zoomToExtent(indiciaData.mapdiv.map.editLayer.getDataExtent());
       }
+      loadingSites = false;
     });
   }
 
@@ -1505,12 +1512,16 @@ jQuery(document).ready(function ($) {
         }]);
       } else {
         $.ajax({
-          dataType: 'json',
           url: indiciaData.read.url + 'index.php/services/data/filter/' + id,
-          data: 'mode=json&view=list&auth_token=' + indiciaData.read.auth_token +
-          '&nonce=' + indiciaData.read.nonce + '&callback=?',
-          success: filterLoaded
-        });
+          data: {
+            mode: 'json',
+            view: 'list',
+            auth_token: indiciaData.read.auth_token,
+            nonce: indiciaData.read.nonce
+          },
+          dataType: 'jsonp',
+          crossDomain: true
+        }).done(filterLoaded);
       }
     }
   };
@@ -1956,10 +1967,21 @@ jQuery(document).ready(function ($) {
               if (msg.indexOf('duplicate') > -1) {
                 if (confirm(indiciaData.lang.reportFilters.filterExistsOverwrite)) {
                   // need to load the existing filter to get it's ID, then resave
-                  $.getJSON(indiciaData.read.url + 'index.php/services/data/filter?created_by_id=' +
-                    indiciaData.user_id + '&title=' + encodeURIComponent($('#filter\\:title').val()) + '&sharing=' +
-                    indiciaData.filterSharing + '&mode=json&view=list&auth_token=' + indiciaData.read.auth_token +
-                    '&nonce=' + indiciaData.read.nonce + '&callback=?', function (response) {
+                  $.ajax({
+                    url: indiciaData.read.url + 'index.php/services/data/filter/' + indiciaData.filter.id,
+                    data: {
+                      created_by_id: indiciaData.user_id,
+                      title: $('#filter\\:title').val(),
+                      sharing: indiciaData.filterSharing,
+                      mode: 'json',
+                      view: 'list',
+                      auth_token: indiciaData.read.auth_token,
+                      nonce: indiciaData.read.nonce
+                    },
+                    dataType: 'jsonp',
+                    crossDomain: true
+                  })
+                  .done(function (response) {
                     indiciaData.filter.id = response[0].id;
                     indiciaData.filter.title = $('#filter\\:title').val();
                     saveFilter();
@@ -2099,11 +2121,20 @@ jQuery(document).ready(function ($) {
     if (loadSurveysUsingWebsites.length) {
       // We have some selected websites to load surveys for.
       if (indiciaData.lastLoadedSurveysUsingWebsites.join(',') !== loadSurveysUsingWebsites.join(',')) {
-        $.getJSON(indiciaData.warehouseUrl + 'index.php/services/report/requestReport?' +
-          'report=library/surveys/surveys_list.xml' +
-          '&reportSource=local&orderby=fulltitle&website_ids=' + loadSurveysUsingWebsites.join(',') +
-          '&nonce=' + indiciaData.read.nonce + '&auth_token=' + indiciaData.read.auth_token +
-          '&mode=json&callback=?')
+        $.ajax({
+          url: indiciaData.warehouseUrl + 'index.php/services/report/requestReport',
+          data: {
+            report: 'library/surveys/surveys_list.xml',
+            reportSource: 'local',
+            orderby: 'fulltitle',
+            website_ids: loadSurveysUsingWebsites.join(','),
+            nonce: indiciaData.read.nonce,
+            auth_token: indiciaData.read.auth_token,
+            mode: 'json'
+          },
+          dataType: 'jsonp',
+          crossDomain: true
+        })
         .done(function(data) {
           $('#survey-list-checklist li').remove();
           // Load the list of surveys into the UI.
@@ -2219,11 +2250,20 @@ jQuery(document).ready(function ($) {
             updateInputFormList(forms, inputFormsToRetick);
           });
         } else {
-          $.getJSON(indiciaData.warehouseUrl + 'index.php/services/report/requestReport?' +
-            'report=library/input_forms/input_forms_list.xml' +
-            '&reportSource=local&orderby=input_form&survey_ids=' + loadInputFormsUsingSurveys.join(',') +
-            '&nonce=' + indiciaData.read.nonce + '&auth_token=' + indiciaData.read.auth_token +
-            '&mode=json&callback=?')
+          $.ajax({
+            url: indiciaData.warehouseUrl + 'index.php/services/report/requestReport',
+            data: {
+              report: 'library/input_forms/input_forms_list.xml',
+              reportSource: 'local',
+              orderby: 'input_form',
+              survey_ids: loadInputFormsUsingSurveys.join(','),
+              nonce: indiciaData.read.nonce,
+              auth_token: indiciaData.read.auth_token,
+              mode: 'json'
+            },
+            dataType: 'jsonp',
+            crossDomain: true
+          })
           .done(function(data) {
             let forms = [];
             $.each(data, function() {

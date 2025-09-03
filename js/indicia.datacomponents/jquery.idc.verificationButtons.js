@@ -733,17 +733,19 @@
     indiciaFns.on('click', '.classifier-suggestion', [], (e) => {
       $('#redet-form .multiple-warning').hide();
       showRedetFormForOccurrenceIds(el, [$(e.currentTarget).data('occurrence_id')]);
-      $.getJSON(indiciaData.warehouseUrl + 'index.php/services/data/taxa_search' +
-        '?mode=json' +
-        '&nonce=' + indiciaData.read.nonce +
-        '&auth_token=' + indiciaData.read.auth_token +
-
-        // @todo Correct the list ID? Can we get away without it?
-        '&taxon_list_id=1' +
-
-        '&taxa_taxon_list_id=' + $(e.currentTarget).data('taxa_taxon_list_id') +
-        '&callback=?'
-      ).done(function(data) {
+      $.ajax({
+        url: indiciaData.warehouseUrl + 'index.php/services/data/taxa_search',
+        data: {
+          mode: 'json',
+          nonce: indiciaData.read.nonce,
+          auth_token: indiciaData.read.auth_token,
+          taxon_list_id: 1,
+          taxa_taxon_list_id: $(e.currentTarget).data('taxa_taxon_list_id')
+        },
+        dataType: 'jsonp',
+        crossDomain: true
+      })
+      .done(function(data) {
         if (data.length > 0) {
           $('#redet-species').val(data[0].taxa_taxon_list_id);
           $('#redet-species\\:taxon').val(data[0].taxon);
@@ -1163,15 +1165,22 @@
         // Accept all of this taxon in same parent sample is enabled, so warn.
         // We need a count of affected records for the warning.
         doc = JSON.parse($(listOutputControl).find('.selected').attr('data-doc-source'));
-        request = indiciaData.warehouseUrl + 'index.php/services/report/requestReport' +
-          '?mode=json' +
-          '&nonce=' + indiciaData.read.nonce +
-          '&auth_token=' + indiciaData.read.auth_token +
-          '&report=reports_for_prebuilt_forms/elasticsearch_verification/count_occurrences_in_parent_sample.xml' +
-          '&parent_sample_id=' + doc.event.parent_event_id +
-          '&wantRecords=0&wantCount=1' +
-          '&reportSource=local&callback=?';
-        $.getJSON(request).done(function(data) {
+        $.ajax({
+          url: indiciaData.warehouseUrl + 'index.php/services/report/requestReport',
+          data: {
+            mode: 'json',
+            nonce: indiciaData.read.nonce,
+            auth_token: indiciaData.read.auth_token,
+            report: 'reports_for_prebuilt_forms/elasticsearch_verification/count_occurrences_in_parent_sample.xml',
+            parent_sample_id: doc.event.parent_event_id,
+            wantRecords: 0,
+            wantCount: 1,
+            reportSource: 'local'
+          },
+          dataType: 'jsonp',
+          crossDomain: true
+        })
+        .done(function(data) {
           $('#verification-form .multiple-in-parent-sample-warning')
             .html('<i class="fas fa-exclamation-triangle"></i> ' + indiciaData.lang.verificationButtons.updatingMultipleInParentSampleWarning.replace('{1}', data.count))
             .show();
@@ -1786,8 +1795,9 @@
    *   Selector for the <select> element to add them to.
    */
   function loadVerificationTemplates(statusCode, select) {
-    var getTemplatesReport = indiciaData.read.url + '/index.php/services/report/requestReport?report=library/verification_templates/verification_templates.xml&mode=json&mode=json&callback=?';
+    var getTemplatesReportUrl = indiciaData.read.url + '/index.php/services/report/requestReport?report=library/verification_templates/verification_templates.xml';
     var getTemplatesReportParameters = {
+      mode: 'json',
       auth_token: indiciaData.read.auth_token,
       nonce: indiciaData.read.nonce,
       reportSource: 'local',
@@ -1796,14 +1806,16 @@
       website_id: indiciaData.website_id
     };
     if (typeof commentTemplatesLoaded[statusCode] === 'undefined') {
-      $.getJSON(
-        getTemplatesReport,
-        getTemplatesReportParameters,
-        function (data) {
-          commentTemplatesLoaded[statusCode] = data;
-          populateVerificationTemplates(select, commentTemplatesLoaded[statusCode]);
-        }
-      );
+      $.ajax({
+        url: getTemplatesReportUrl,
+        data: getTemplatesReportParameters,
+        dataType: 'jsonp',
+        crossDomain: true
+      })
+      .done(function (data) {
+        commentTemplatesLoaded[statusCode] = data;
+        populateVerificationTemplates(select, commentTemplatesLoaded[statusCode]);
+      });
     } else {
       populateVerificationTemplates(select, commentTemplatesLoaded[statusCode]);
     }

@@ -2203,11 +2203,20 @@ jQuery(document).ready(function docReady() {
       // A selected location which differs from the previously loaded one.
       // Remember which one we are loading so we don't reload the same one.
       indiciaData.loadedFilterLocationId = locIdToLoad;
-      $.getJSON(indiciaData.warehouseUrl + 'index.php/services/report/requestReport?' +
-          'report=library/locations/location_boundary_projected.xml' +
-          '&reportSource=local&srid=4326&location_id=' + locIdToLoad +
-          '&nonce=' + indiciaData.read.nonce + '&auth_token=' + indiciaData.read.auth_token +
-          '&mode=json&callback=?', function(data) {
+      $.ajax({
+        url: indiciaData.warehouseUrl + 'index.php/services/report/requestReport?report=library/locations/location_boundary_projected.xml',
+        data: {
+          reportSource: 'local',
+          srid: 4326,
+          location_id: locIdToLoad,
+          nonce: indiciaData.read.nonce,
+          auth_token: indiciaData.read.auth_token,
+          mode: 'json'
+        },
+        dataType: 'jsonp',
+        crossDomain: true,
+      })
+      .done(function(data) {
         if (data.length > 0) {
           if (!isHigherGeoSelect) {
             // Clear any other filter geoms.
