@@ -51,9 +51,11 @@
     if (showVagueDates) {
       $('#' + rootId).show();
       $('#' + rootId + '\\:date').hide();
+      $('#' + rootId).insertBefore($('#' + rootId + '\\:date'));
     } else {
       $('#' + rootId).hide();
       $('#' + rootId + '\\:date').show();
+      $('#' + rootId).insertAfter($('#' + rootId + '\\:date'));
     }
     indiciaFns.cookie('vagueDatesEnabled', showVagueDates);
   });
