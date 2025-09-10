@@ -1891,6 +1891,13 @@ body > .loading-spinner {
   fill: #B1E5DB;
 }
 
+/* Shim for supporting Bootstrap 3 inline forms */
+.form-inline .form-control, .form-inline * {
+  display: inline-block;
+  width: auto;
+  vertical-align: middle;
+}
+
 .alert {
   /* Fix AAA accessibility in Bootstrap alerts */
 }
@@ -1948,13 +1955,13 @@ do need to do something.
   width: 100%;
 }
 
-.input-group-addon.ctrl-addons button {
+.input-group-text.ctrl-addons button {
   background: none;
   border: none;
   padding: 0;
   outline: none;
 }
-.input-group-addon.ctrl-addons button:hover, .input-group-addon.ctrl-addons button:focus, .input-group-addon.ctrl-addons button:active {
+.input-group-text.ctrl-addons button:hover, .input-group-text.ctrl-addons button:focus, .input-group-text.ctrl-addons button:active {
   background: none;
   border: none;
   padding: 0;
@@ -1987,13 +1994,13 @@ input.precise-date-picker {
   }
 }
 /* Verification buttons control */
-.verification-popup #ctrl-wrap-template-name .input-group-addon.ctrl-addons {
+.verification-popup #ctrl-wrap-template-name .input-group-text.ctrl-addons {
   padding: 0;
 }
-.verification-popup #ctrl-wrap-template-name .input-group-addon.ctrl-addons button {
+.verification-popup #ctrl-wrap-template-name .input-group-text.ctrl-addons button {
   padding: 5px;
 }
-.verification-popup #ctrl-wrap-template-name .input-group-addon.ctrl-addons button:hover {
+.verification-popup #ctrl-wrap-template-name .input-group-text.ctrl-addons button:hover {
   background: white;
 }
 
@@ -2334,4 +2341,4 @@ div.fancy-dialog-content {
   max-width: 600px;
 }
 
-/*# sourceMappingURL=theme-bootstrap-3.css.map */
+/*# sourceMappingURL=theme-bootstrap-5.css.map */
