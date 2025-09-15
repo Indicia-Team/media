@@ -1234,11 +1234,8 @@ var destroyAllFeatures;
         osm: function osm() {
         // OpenStreetMap standard tile layer
           return new OpenLayers.Layer.OSM('OpenStreetMap',
-            [
-              'https://a.tile.openstreetmap.org/${z}/${x}/${y}.png',
-              'https://b.tile.openstreetmap.org/${z}/${x}/${y}.png',
-              'https://c.tile.openstreetmap.org/${z}/${x}/${y}.png'
-            ], {
+            'https://tile.openstreetmap.org/${z}/${x}/${y}.png',
+            {
               layerId: 'osm.0'
             }
           );
@@ -1246,11 +1243,7 @@ var destroyAllFeatures;
         otm: function otm() {
           // OpenTopoMap standard tile layer
           return new OpenLayers.Layer.OSM('OpenTopoMap',
-            [
-              'https://a.tile.opentopomap.org/${z}/${x}/${y}.png',
-              'https://b.tile.opentopomap.org/${z}/${x}/${y}.png',
-              'https://c.tile.opentopomap.org/${z}/${x}/${y}.png'
-            ],
+            'https://tile.opentopomap.org/${z}/${x}/${y}.png',
             {
               tileOptions: { crossOriginKeyword: null },
               layerId: 'otm.0'
@@ -1350,11 +1343,8 @@ var destroyAllFeatures;
           function dynamicOSGoogleSat0() {
             // OpenStreetMap standard tile layer
             return new OpenLayers.Layer.OSM('Dynamic (*OpenStreetMap* > Ordnance Survey Leisure > Google Satellite)',
-              [
-                'https://a.tile.openstreetmap.org/${z}/${x}/${y}.png',
-                'https://b.tile.openstreetmap.org/${z}/${x}/${y}.png',
-                'https://c.tile.openstreetmap.org/${z}/${x}/${y}.png'
-              ], {
+              'https://tile.openstreetmap.org/${z}/${x}/${y}.png',
+              {
                 layerId: 'dynamicOSGoogleSat.0',
                 maxZoom: 5,
                 dynamicLayerIndex: 0
@@ -1408,11 +1398,8 @@ var destroyAllFeatures;
           function dynamicOSMGoogleSat0() {
             // OpenStreetMap standard tile layer
             return new OpenLayers.Layer.OSM('Dynamic (*OpenStreetMap* > Google Satellite)',
-              [
-                'https://a.tile.openstreetmap.org/${z}/${x}/${y}.png',
-                'https://b.tile.openstreetmap.org/${z}/${x}/${y}.png',
-                'https://c.tile.openstreetmap.org/${z}/${x}/${y}.png'
-              ], {
+              'https://tile.openstreetmap.org/${z}/${x}/${y}.png',
+              {
                 layerId: 'dynamicOSMGoogleSat.0',
                 maxZoom: 18,
                 dynamicLayerIndex: 0
