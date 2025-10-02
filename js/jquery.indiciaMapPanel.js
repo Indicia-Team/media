@@ -1597,33 +1597,9 @@ var destroyAllFeatures;
       // now filter the report, highlight rows, or display output in a popup or div depending on settings.
       if (div.settings.clickableLayersOutputMode === 'report' && div.settings.reportGroup !== null &&
           typeof indiciaData.reports !== 'undefined') {
-        // grab the feature ids
-        $.each(features, function eachFeature() {
-          if (len > 1500) { // approaching 2K IE limit
-            alert('Too many records have been selected to show them all in the grid. Trying zooming in and selecting fewer records.');
-            return false;
-          }
-          if (typeof this.attributes[div.settings.featureIdField] !== 'undefined') {
-            ids.push(this.attributes[div.settings.featureIdField]);
-            len += this.attributes[div.settings.featureIdField].length;
-          } else if (typeof this.attributes[div.settings.featureIdField + 's'] !== 'undefined') {
-            // allow for plural, list fields
-            ids.push(this.attributes[div.settings.featureIdField + 's']);
-            len += this.attributes[div.settings.featureIdField + 's'].length;
-          }
-          return true;
-        });
-        $('.' + div.settings.reportGroup + '-idlist-param').val(ids.join(','));
-        // find the associated reports, charts etc and reload them to show the selected data. No need to if we started with no selection
-        // and still have no selection.
-        if (origfeatures.length !== 0 || features.length !== 0) {
-          $.each(indiciaData.reports[div.settings.reportGroup], function () {
-            this[0].settings.offset = 0;
-            // force the param in, in case there is no params form.
-            this[0].settings.extraParams.idlist = ids.join(',');
-            this.reload(true);
-          });
-        }
+        prepareIdsToFilterAssociatedReportBy(origfeatures, features, ids, len, div);
+      // Note that for reportHighlight we don't ever call prepareIdsToFilterAssociatedReportBy
+      // as we don't want to filter the grid rows as that defeats the purpose of the highlight
       } else if (div.settings.clickableLayersOutputMode === 'reportHighlight' && typeof indiciaData.reports !== 'undefined') {
         // deselect existing selection in grid as well as on feature layer
         $('table.report-grid tr').removeClass('selected');
@@ -1632,9 +1608,21 @@ var destroyAllFeatures;
           $('table.report-grid tr#row' + this.id).addClass('selected');
         });
       } else if (div.settings.clickableLayersOutputMode === 'div') {
+        // If the rowId is supplied as an option to the grid, then we know
+        // the user intends the grid to filter to map clicks, so run the
+        // prepareIdsToFilterAssociatedReportBy function.
+        if (indiciaData.dataGridRowIdOption) {
+          prepareIdsToFilterAssociatedReportBy(origfeatures, features, ids, len, div);
+        }
         $('#'+div.settings.clickableLayersOutputDiv).html(div.settings.clickableLayersOutputFn(features, div));
         //allows a custom function to be run when a user clicks on a map
       } else if (div.settings.clickableLayersOutputMode === 'customFunction') {
+        // If the rowId is supplied as an option to the grid, then we know
+        // the user intends the grid to filter to map clicks, so run the
+        // prepareIdsToFilterAssociatedReportBy function.
+        if (indiciaData.dataGridRowIdOption) {
+          prepareIdsToFilterAssociatedReportBy(origfeatures, features, ids, len, div);
+        }
         // features is already the list of clicked on objects, div.setting's.customClickFn must be a function passed to the map as a param.
         div.settings.customClickFn(features, geom);
       } else {
@@ -1657,6 +1645,49 @@ var destroyAllFeatures;
               true
           ));
         }
+      }
+    }
+    
+    /**
+     * Get the IDs from selected map features to filter another report by.
+     *
+     * @param object origfeatures
+     * @param object features
+     *   Map features
+     * @param object ids
+     *   IDs to filter down to
+     * @param number len
+     *   Number of items selected on map
+     * @param object div
+     *   Map and settings div
+   */
+    function prepareIdsToFilterAssociatedReportBy(origfeatures, features, ids, len, div) {
+      // grab the feature ids
+      $.each(features, function eachFeature() {
+        if (len > 1500) { // approaching 2K IE limit
+          alert('Too many records have been selected to show them all in the grid. Trying zooming in and selecting fewer records.');
+          return false;
+        }
+        if (typeof this.attributes[div.settings.featureIdField] !== 'undefined') {
+          ids.push(this.attributes[div.settings.featureIdField]);
+          len += this.attributes[div.settings.featureIdField].length;
+        } else if (typeof this.attributes[div.settings.featureIdField + 's'] !== 'undefined') {
+          // allow for plural, list fields
+          ids.push(this.attributes[div.settings.featureIdField + 's']);
+          len += this.attributes[div.settings.featureIdField + 's'].length;
+        }
+        return true;
+      });
+      $('.' + div.settings.reportGroup + '-idlist-param').val(ids.join(','));
+      // find the associated reports, charts etc and reload them to show the selected data. No need to if we started with no selection
+      // and still have no selection.
+      if (origfeatures.length !== 0 || features.length !== 0) {
+        $.each(indiciaData.reports[div.settings.reportGroup], function () {
+          this[0].settings.offset = 0;
+          // force the param in, in case there is no params form.
+          this[0].settings.extraParams.idlist = ids.join(',');
+          this.reload(true);
+        });
       }
     }
 
