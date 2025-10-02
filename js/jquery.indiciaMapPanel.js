@@ -1656,16 +1656,16 @@ var destroyAllFeatures;
      *
      * @param object origfeatures
      * @param object features
-     *   Map features
+     *   Map features.
      * @param object ids
-     *   IDs to filter down to
+     *   IDs to filter down to.
      * @param number len
-     *   Number of items selected on map
+     *   Number of items selected on map.
      * @param object div
-     *   Map and settings div
-   */
+     *   Map and settings div.
+     */
     function prepareIdsToFilterAssociatedReportBy(origfeatures, features, ids, len, div) {
-      // grab the feature ids
+      // Grab the feature ids.
       $.each(features, function eachFeature() {
         if (len > 1500) { // approaching 2K IE limit
           alert('Too many records have been selected to show them all in the grid. Trying zooming in and selecting fewer records.');
@@ -1682,8 +1682,9 @@ var destroyAllFeatures;
         return true;
       });
       $('.' + div.settings.reportGroup + '-idlist-param').val(ids.join(','));
-      // find the associated reports, charts etc and reload them to show the selected data. No need to if we started with no selection
-      // and still have no selection.
+      // Find the associated reports, charts etc and
+      // reload them to show the selected data. 
+      // No need to if we started with no selection and still have no selection.
       if (origfeatures.length !== 0 || features.length !== 0) {
         $.each(indiciaData.reports[div.settings.reportGroup], function () {
           this[0].settings.offset = 0;
