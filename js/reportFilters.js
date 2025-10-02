@@ -1346,6 +1346,9 @@ jQuery(document).ready(function ($) {
     }
     // Integrate with Elasticsearch reports as well.
     if (indiciaData.esSourceObjects) {
+      // Track duplicate errors so only show one alert even if multiple ES
+      // reports have problems.
+      indiciaData.sourceErrorsShown = [];
       $.each(indiciaData.esSourceObjects, function eachSource() {
         // Reset to first page.
         this.settings.from = 0;
