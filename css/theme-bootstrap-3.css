@@ -4,7 +4,7 @@
   margin-bottom: 8px;
 }
 
-.input-group-addon > * {
+.input-group-text > *, .input-group-addon > * {
   display: inline-block;
   vertical-align: middle;
 }
@@ -631,6 +631,10 @@ table.report-grid .multi img {
 }
 .filelist .delete-file {
   float: right;
+  color: #444;
+}
+.filelist .delete-file:hover {
+  color: #000;
 }
 
 .media-gallery ul {
