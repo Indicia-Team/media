@@ -25,3 +25,9 @@
     text-decoration: line-through;
   }
 }
+
+@mixin drop-shadow($size:4px) {
+  -webkit-box-shadow: $size $size calc($size*2) $shadow-colour;
+  -moz-box-shadow: $size $size calc($size*2) $shadow-colour;
+  box-shadow: $size $size calc($size*2) $shadow-colour;
+}
