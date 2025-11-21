@@ -631,7 +631,7 @@ table.report-grid .multi img {
 }
 .filelist .delete-file {
   float: right;
-  color: #444;
+  color: #ffffff;
 }
 .filelist .delete-file:hover {
   color: #000;
@@ -2331,6 +2331,25 @@ div.inline.disabled {
 
 div.fancy-dialog-content {
   max-width: 600px;
+}
+
+.non-blocking-msg {
+  -webkit-box-shadow: 4px 4px 8px #a7a7a7;
+  -moz-box-shadow: 4px 4px 8px #a7a7a7;
+  box-shadow: 4px 4px 8px #a7a7a7;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #333333;
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 4px;
+  z-index: 10000;
+  display: none;
+  max-width: 90%;
+  text-align: center;
+  pointer-events: none;
 }
 
 /*# sourceMappingURL=theme-bootstrap-3.css.map */

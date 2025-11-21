@@ -357,7 +357,7 @@
           } else {
             selection = indiciaData.lang.classifier.suggestionNotChosen;
           }
-          probabilityPercent = this.probability_given * 100;
+          probabilityPercent = round(this.probability_given * 100);
           if (probabilityPercent > 90) {
             probabilityClass = 'high';
           }
