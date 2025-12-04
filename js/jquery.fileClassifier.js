@@ -219,13 +219,19 @@ let hook_image_classifier_new_occurrence = [];
         showDialog(div, 'dialogEnd');
       }
     };
+    let failedPost = function(error) {
+      console.log(error);
+      showDialog(div, 'classifierRequestFailed')
+      nrPosts--;
+      nrFail++;
+    }
 
     // Post the files to the classifier.
     if (div.settings.mode.includes('single')) {
       // All the files are classified to give one result.
       nrPosts = 1;
       doPost(div, files)
-      .then(donePost)
+      .then(donePost, failedPost)
       .catch(donePost);
     }
     else {
@@ -233,7 +239,7 @@ let hook_image_classifier_new_occurrence = [];
       nrPosts = files.length;
       files.forEach((file) => {
         doPost(div, [file])
-        .then(donePost)
+        .then(donePost, failedPost)
         .catch(donePost);
        });
     }
@@ -258,9 +264,10 @@ let hook_image_classifier_new_occurrence = [];
         handleResponse(div, files, response);
         resolve(response);
       })
-      .fail(function(){
+      .fail(function(jqXHR) {
+        console.log(jqXHR.responseText);
         handleResponse(div, files, null)
-        reject(false);
+        reject('Error posting to classifier');
       });
 
     })
