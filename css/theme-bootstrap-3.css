@@ -1372,7 +1372,6 @@ body > .loading-spinner {
 
 /* idcLeafletMap plugin */
 .idc-leafletMap {
-  height: 500px;
   /* Map tooltips */
 }
 .idc-leafletMap .leaflet-tooltip h3 {
@@ -1729,6 +1728,10 @@ body > .loading-spinner {
   box-shadow: 3px 3px 6px #a7a7a7;
   border-color: blue;
   cursor: pointer;
+}
+
+.idc-cardGallery .classifier-suggestions .classifier-suggestion span.classifier-name {
+  display: none;
 }
 
 @keyframes fadeIn {
