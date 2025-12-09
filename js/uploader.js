@@ -42,7 +42,6 @@ jQuery(document).ready(function($) {
       url: indiciaData.uploadFileUrl,
       multiple: true,
       extFilter: ['csv','xls','xlsx','zip'],
-      headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
       onDragEnter: function() {
         // Happens when dragging something over the DnD area
         this.addClass('active');
@@ -129,7 +128,6 @@ jQuery(document).ready(function($) {
         url: indiciaData.initServerConfigUrl,
         dataType: 'json',
         data: data,
-        headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce}
       })
       .done(function(response) {
         configId = response.configId;
@@ -198,7 +196,6 @@ jQuery(document).ready(function($) {
         data: {
           'interim-file': indiciaData.processUploadedInterimFiles[idx],
         },
-        headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
         success: function(sendFileResult) {
           if (sendFileResult.status === 'ok') {
             logBackgroundProcessingInfo(indiciaData.lang.import_helper_2.uploadedFile.replace('{1}', indiciaData.processUploadedInterimFiles[idx]));
@@ -240,7 +237,6 @@ jQuery(document).ready(function($) {
           'uploaded-file': lastFileName
         },
         dataType: 'json',
-        headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
         success: function(extractResult) {
           if (extractResult.status === 'ok') {
             logBackgroundProcessingInfo(indiciaData.lang.import_helper_2.extractedFile.replace('{1}', indiciaData.processUploadedInterimFiles[idx]));
@@ -308,8 +304,7 @@ jQuery(document).ready(function($) {
           'data-file': uploadedFiles[fileIndex],
           'config-id': configId,
         },
-        dataType: 'json',
-        headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce}
+        dataType: 'json'
       }).done(function(transferResult) {
         var msg = indiciaData.lang.import_helper_2[transferResult.msgKey];
         if (transferResult.progress) {
@@ -958,8 +953,7 @@ jQuery(document).ready(function($) {
         'config-id': indiciaData.configId,
         'index': indiciaData.processLookupIndex
       },
-      dataType: 'json',
-      headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce}
+      dataType: 'json'
     })
     .done(function(result) {
         if (result.status==='error') {
@@ -995,6 +989,7 @@ jQuery(document).ready(function($) {
             nextLookupProcessingStep();
           }
           else if (result.msgKey === 'findLookupFieldsDone') {
+            indiciaData.findLookupFieldsDone = true;
             $('.background-processing .panel-heading span').text(indiciaData.lang.import_helper_2.backgroundProcessingDone);
             if ($('.save-matches:enabled').length === 0) {
               // Nothing to match.
@@ -1071,7 +1066,6 @@ jQuery(document).ready(function($) {
       dataType: 'json',
       method: 'POST',
       data: matches,
-      headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce},
       success: function(result) {
         logBackgroundProcessingInfo(indiciaData.lang.import_helper_2.savedMatches);
         $('#matching-area tr.unmatched').removeClass('unmatched');
@@ -1081,7 +1075,7 @@ jQuery(document).ready(function($) {
             .find('i')
               // Tick the box;
               .addClass('fas').removeClass('far');
-          if ($('.save-matches:enabled').length === 0) {
+        if ($('.save-matches:enabled').length === 0 && indiciaData.findLookupFieldsDone) {
             // All done
             $('#next-step').attr('disabled', false);
           }
@@ -1122,8 +1116,7 @@ jQuery(document).ready(function($) {
         'config-id': indiciaData.configId,
         'index': indiciaData.preprocessIndex
       },
-      dataType: 'json',
-      headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce}
+      dataType: 'json'
     })
     .done(function(result) {
       console.log(result);
@@ -1240,7 +1233,6 @@ jQuery(document).ready(function($) {
       dataType: 'json',
       method: 'POST',
       data: postData,
-      headers: {'Authorization': 'IndiciaTokens ' + indiciaData.write.auth_token + '|' + indiciaData.write.nonce}
     }).done(
       function(result) {
         var msg;
@@ -1447,6 +1439,7 @@ jQuery(document).ready(function($) {
     // Requesting one lookup column at a time, so track which we are asking
     // for.
     indiciaData.processLookupIndex = 0;
+    indiciaData.findLookupFieldsDone = false;
     nextLookupProcessingStep();
   } else if (indiciaData.step === 'preprocessPage') {
     // If on the lookup matching page, then trigger the process.
