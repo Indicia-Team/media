@@ -310,14 +310,14 @@
   /**
    * Obtain HTML to display if the image classifier agrees with the record ID.
    */
-  indiciaFns.getImageClassifierAgreementHtml = function getImageClassifierAgreementHtml(doc) {
+  function getImageClassifierAgreementHtml(doc) {
     // Check if the document has classifier information.
     if (doc.identification.classifier) {
       // Determine if the classifier agrees with the current determination.
       const agreement = doc.identification.classifier.current_determination.classifier_chosen === 'true';
       const iconClass = agreement ? 'fa-check-circle' : 'fa-times-circle';
       const msg = agreement ? indiciaData.lang.classifier.imageClassifierAgrees : indiciaData.lang.classifier.imageClassifierDisagrees;
-      return `<div class="classifier-agreement"><i class="fas ${iconClass} fa-2x"></i>${msg}</div>`;
+      return `<i class="fas ${iconClass}" title="${msg}"></i>`;
     }
     return '';
   }
@@ -357,24 +357,23 @@
           } else {
             selection = indiciaData.lang.classifier.suggestionNotChosen;
           }
-          probabilityPercent = round(this.probability_given * 100);
-          if (probabilityPercent > 90) {
+          if (this.probability_given > 0.7) {
             probabilityClass = 'high';
           }
-          else if (probabilityPercent > 60) {
+          else if (this.probability_given > 0.2) {
             probabilityClass = 'med';
           }
-          else if (probabilityPercent > 20) {
+          else {
             probabilityClass = 'low';
           }
-          else {
-            probabilityClass = 'vlow';
-          }
+          probabilityPercent = Math.round(this.probability_given * 100);
           html += `<div class="classifier-suggestion" data-taxa_taxon_list_id="${this.taxa_taxon_list_id}" data-occurrence_id="${doc.id}" ${clickHint}>
-            <span class="taxon">${this.taxon_name_given}</span>
-            <span class="probability ${probabilityClass}-probability">${probabilityPercent}%</span>
-            <span class="classifier-name">${this.classifier} ${this.classifier_version}</span>
-            <span class="classifier-selection">${selection}</span>
+            <span class="probability ${probabilityClass}-probability" title="${indiciaData.lang.classifier.probability}: ${probabilityPercent}%"></span>
+            <div class="details">
+              <span class="taxon">${this.taxon_name_given}</span>
+              <span class="classifier-name">${this.classifier} ${this.classifier_version}</span>
+              <span class="classifier-selection">${selection}</span>
+            </div>
           </div>`;
         });
       }
@@ -382,9 +381,12 @@
       // No classifier information available
       html = indiciaData.templates.messageBox.replace('{message}', indiciaData.lang.classifier.noClassifierInfoAvailable);
     }
+    const agreementIcon = getImageClassifierAgreementHtml(doc);
     return `<div class="classifier-suggestions">
-      <h3>${indiciaData.lang.classifier.classifierSuggestions}</h3>
-      ${html}
+      <h3>${agreementIcon} ${indiciaData.lang.classifier.classifierSuggestions}</h3>
+      <div class="suggestions-list">
+        ${html}
+      </div>
     </div>`;
   }
 

@@ -1,3 +1,11 @@
+/* Global colours */
+:root {
+  /* Colours matched to iRecord app */
+  --colour-success: #91A71C;
+  --colour-warning: #FF9C5E;
+  --colour-danger: #F04141;
+}
+
 .scTaxonCell {
   padding-right: 1em;
   background-color: #e3e3e3;
