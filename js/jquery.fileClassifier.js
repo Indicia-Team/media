@@ -376,7 +376,7 @@ indiciaData.queuedClassificationResponses = [];
       } else {
         if (suggestions.length === 1) {
           // A single suggestion was made so can select it immediately.
-          let prediction = Object.assign({}, response.suggestions[0]);
+          let prediction = Object.assign({}, suggestions[0]);
           // Copy the suggestion to prediction so we can modify it without
           // changing response.
           if(typeof prediction.taxa_taxon_list_id === 'undefined'){
@@ -416,7 +416,8 @@ indiciaData.queuedClassificationResponses = [];
         // The taxon_name_given cannot be null but the Drupal classification
         // module currently returns nothing if there is no match to a taxon in the
         // warehouse.
-        // Initially assume the human agrees with the classifier.
+        // Initially assume the human agrees with the classifier, but if the user
+        // has forced that then we can compare the taxon ids.
         let suggestionsToSave = [];
         for (let i = 0; i < response.suggestions.length; i++) {
           let suggestion = response.suggestions[i];
@@ -425,7 +426,8 @@ indiciaData.queuedClassificationResponses = [];
             'taxa_taxon_list_id': suggestion.taxa_taxon_list_id,
             'probability_given': suggestion.probability,
             'classifier_chosen': i == 0 ? 't' : 'f',
-            'human_chosen': i == 0 ? 't' : 'f'
+            'human_chosen': (typeof forceSuggestion === 'undefined' ? i == 0 : forceSuggestion.taxa_taxon_list_id === suggestion.taxa_taxon_list_id)
+              ? 't' : 'f'
           });
         }
 
