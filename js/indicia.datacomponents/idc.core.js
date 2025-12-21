@@ -99,7 +99,8 @@
     Sensitive: 'fas fa-exclamation-circle',
     Confidential: 'fas fa-exclamation-triangle',
     ZeroAbundance: 'fas fa-ban',
-    Anonymous: 'fas fa-user-slash'
+    Anonymous: 'fas fa-user-slash',
+    DnaDerived: 'fas fa-dna',
   };
 
   /**
@@ -120,7 +121,8 @@
     Sensitive: 'Sensitive',
     Confidential: 'Confidential',
     ZeroAbundance: 'Absence record',
-    Anonymous: 'Entered by a user who was not logged in'
+    Anonymous: 'Entered by a user who was not logged in',
+    DnaDerived: 'DNA derived'
   };
 
   /**
@@ -753,6 +755,8 @@
    *   * query
    *   * sensitive
    *   * confidential
+   *   * anonymous
+   *   * dna_derived
    * @param string iconClass
    *   Additional class to add to the icons, e.g. fa-2x.
    *
@@ -793,6 +797,9 @@
     }
     if (flags.anonymous && flags.anonymous !== 'false') {
       addIcon('Anonymous');
+    }
+    if (flags.dna_derived && flags.dna_derived !== 'false') {
+      addIcon('DnaDerived');
     }
     return html;
   };
@@ -1276,7 +1283,8 @@
         sensitive: doc.metadata.sensitive,
         confidential: doc.metadata.confidential,
         zero_abundance: doc.occurrence.zero_abundance,
-        anonymous: doc.metadata.created_by_id === "1"
+        anonymous: doc.metadata.created_by_id === "1",
+        dna_derived: doc.occurrence.dna_derived
       });
     },
 
