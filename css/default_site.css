@@ -218,6 +218,7 @@ li.ui-state-error {
 
 .control-box label {
   width: auto;
+  display: inline;
 }
 
 .tree-browser {
@@ -295,6 +296,7 @@ td.row-buttons img {
 
 .control-box li {
   background: none;
+  display: flex;
 }
 
 .control-box li * {
@@ -302,10 +304,7 @@ td.row-buttons img {
 }
 
 .control-box.inline li {
-  display:-moz-inline-stack;
-  display:inline-block;
-  zoom:1;
-  *display:inline;
+  display: inline;
 }
 
 .species-checklist-select-species {
@@ -676,9 +675,6 @@ div.note-fail, p.note-fail {
   label {
     display: block;
     width: auto;
-  }
-  .control-box label{
-    display: inline;
   }
   textarea  {
     width: 80%;
