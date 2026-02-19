@@ -653,11 +653,20 @@ jQuery(document).ready(function($) {
       options += '<option value="' + id + '">' + term + '</option>';
     });
     $.each(result.unmatchedInfo.values, function(idx) {
-      var controlName;
-      controlName = 'match-' + result.unmatchedInfo.attrType + '-' + result.unmatchedInfo.attrId + '-' + idx;
-      $('<tr><th scope="row" data-value="' + this + '">' + this + '</th>' +
-        '<td><select class="form-control" required data-value="' + this.replace('"', '&quot;') + '" name="' + controlName + '">' + options + '</select></td></tr>')
-        .appendTo(tbody);
+      var token = this;
+      var controlName = 'match-' + result.unmatchedInfo.attrType + '-' + result.unmatchedInfo.attrId + '-' + idx;
+      var tr = $('<tr />').appendTo(tbody);
+      $('<th scope="row" />')
+        .text(token)
+        .attr('data-value', token)
+        .appendTo(tr);
+      var td = $('<td />').appendTo(tr);
+      var select = $('<select class="form-control" required />')
+        .attr('name', controlName)
+        .html(options)
+        .appendTo(td);
+      // Store the exact token value for saving/highlighting.
+      $(select).data('value', token);
     });
     $('<p>Once you have specified the terms that you wish to use when matching values from the "' + result.columnLabel + '" column, click the button below to apply the matched taxa to the current import.</p>' +
       '<button type="button" class="btn btn-primary save-matches" ' +
