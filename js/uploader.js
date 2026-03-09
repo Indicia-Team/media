@@ -482,21 +482,23 @@ jQuery(document).ready(function($) {
    */
   function checkGroupsOfRelatedFields() {
     // Regexes for fields where if one mapping is present, others are required.
-    const groupedFields = [
-      '^occurrence:fk_taxa_taxon_list:(genus|specific)$',
-      ':date_(type|start|end)$'
-    ];
+    const groupedFields = {
+      '^occurrence:fk_taxa_taxon_list:(genus|specific)$': '^occurrence:fk_taxa_taxon_list:(genus|specific)$',
+      ':date_(type|start|end)$': ':date_(type|start|end)$',
+      '^dna_occurrence:': '^dna_occurrence:(dna_sequence|target_gene|pcr_primer_reference|dna_extraction_method|dna_occurrence:fk_occurrence)$',
+    };
     let messages = [];
     // First, check if any required checkbox is for a field in a field
     // group where checking 1 means the others are also required.
-    $.each(groupedFields, function() {
-      let matchExpr = new RegExp(this);
+    $.each(groupedFields, function(matchRegexp, requiredRegexp) {
+      let matchExpr = new RegExp(matchRegexp);
+      let requiredFieldsExpr = new RegExp(requiredRegexp);
       const ticked = $('.mapped-field option:selected').filter(function() {
         return this.value.match(matchExpr);
       });
       if (ticked.length > 0) {
         const shouldTick = $('.mapped-field:first option').filter(function() {
-          return this.value.match(matchExpr);
+          return this.value.match(requiredFieldsExpr);
         });
         if (shouldTick.length > ticked.length) {
           const tickedArr = $.map(ticked, el => [el.text]);
