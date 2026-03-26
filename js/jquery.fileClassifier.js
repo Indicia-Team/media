@@ -297,6 +297,11 @@ indiciaData.queuedClassificationResponses = [];
     const imageListHtml = images.join('');
     let possibilityOptions = [];
     response.suggestions.forEach((suggestion) => {
+      if (typeof suggestion.taxa_taxon_list_id === 'undefined') {
+        // Failed to match taxon to list on warehouse side, so skip this
+        // suggestion as it cannot be used.
+        return;
+      }
       let optionText = `<em>${suggestion.taxon}</em>`;
       if (suggestion.default_common_name) {
         optionText += '<br/>' + suggestion.default_common_name;
@@ -312,6 +317,11 @@ indiciaData.queuedClassificationResponses = [];
           <div>${optionText}</div>
         </li>`);
     });
+    if (possibilityOptions.length === 0) {
+      // No valid suggestions, so treat as unknown.
+      handleResponse(div, files, null);
+      return;
+    }
     const possibilityListHtml = possibilityOptions.join('');
     $.fancybox.close();
     let message = `
