@@ -3590,12 +3590,13 @@ var destroyAllFeatures;
       }
       if (div.settings.editLayer && div.settings.allowPolygonRecording) {
         div.map.editLayer.events.on({'featuremodified': function(evt) {
-          if ($('#' + div.settings.boundaryGeomId).length>0) {
+          const geomControl = $('#' + indiciaData.mapdiv.settings.boundaryGeomId + ',[name="sample:geom"]');
+          if (geomControl.length > 0) {
             var geom = evt.feature.geometry.clone();
             if (div.map.projection.getCode() !== div.indiciaProjection.getCode()) {
               geom.transform(div.map.projection, div.indiciaProjection);
             }
-            $('#' + div.settings.boundaryGeomId).val(geom.toString());
+            geomControl.val(geom.toString());
             if (div.settings.autoFillInCentroid) {
               var centroid = geom.getCentroid();
               pointToSref(div, centroid, _getSystem(), function(data) {
