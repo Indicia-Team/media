@@ -347,16 +347,16 @@
         // panels.
         const clickHint = $('.verification-buttons-cntr').length > 0 ? ` title="${indiciaData.lang.classifier.clickToRedetermineAs}" ` : '';
         $.each(doc.identification.classifier.suggestions, function() {
-          if (this.human_chosen === 'true' || this.classifier_chosen === 'true') {
-            let choiceInfo = [];
-            if (this.human_chosen === 'true') {
-              choiceInfo.push(indiciaData.lang.classifier.suggestionHumanChosen);
-            }
-            if (this.classifier_chosen === 'true') {
-              choiceInfo.push(indiciaData.lang.classifier.suggestionClassifierChosen);
-            }
-            selection = choiceInfo.join(' | ');
-          } else {
+
+          let choiceInfo = [];
+          if (this.human_chosen === 'true') {
+            choiceInfo.push(indiciaData.lang.classifier.suggestionHumanChosen);
+          }
+          if (this.classifier_chosen === 'true') {
+            choiceInfo.push(indiciaData.lang.classifier.suggestionClassifierChosen);
+          } else if (this.human_chosen !== 'true') {
+            // Display classifier not chosen label but only if not human
+            // chosen.
             selection = indiciaData.lang.classifier.suggestionNotChosen;
           }
           if (this.probability_given > 0.7) {
