@@ -3093,6 +3093,7 @@ var destroyAllFeatures;
           proj,
           recalcGhost = ghost === null || !ghost.atPoint(ll, 0, 0);
         if (
+          ll &
           $.inArray('precisions', handler.returns) !== -1 &&
           $.inArray('gridNotation', handler.returns) !== -1
         ) {
