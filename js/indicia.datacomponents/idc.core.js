@@ -82,6 +82,22 @@
   indiciaData.esUserFiltersLoaded = [];
 
   /**
+   * Keep track of user-filter overlay features plotted on each Leaflet map.
+   */
+  indiciaData.userFilterOverlayFeatureNames = {};
+
+  /**
+   * Cache overlay payloads keyed by user-filter IDs.
+   */
+  indiciaData.userFilterOverlayCache = {};
+
+  /**
+   * State of current user-filter map overlay request.
+   */
+  indiciaData.userFilterOverlayRequestId = 0;
+  indiciaData.userFilterOverlayStateKey = '';
+
+  /**
    * Font Awesome icon and other classes for record statuses and flags.
    */
   indiciaData.statusClasses = {
@@ -411,6 +427,7 @@
     $.each(indiciaData.esSourceObjects, function eachSource() {
       this.hookup();
     });
+    indiciaFns.updateUserFilterMapOverlays(true);
   };
 
   /**
@@ -431,6 +448,190 @@
         this.settings.from = 0;
       }
       this.populate();
+    });
+  };
+
+  /**
+   * Get selected user and permissions filter selections for map overlays.
+   */
+  function getSelectedMapOverlayFilterIds() {
+    var filterSelections = [];
+    $.each($('.user-filter'), function eachFilter() {
+      var value = $(this).val();
+      var sourceType = $(this).hasClass('defines-permissions') ? 'permission' : 'user';
+      if (value) {
+        filterSelections.push(sourceType + '|' + value);
+      }
+    });
+    // Dedicated permissions filter controls can coexist with user-filter
+    // controls, so include them as independent boundary overlays.
+    $.each($('.permissions-filter'), function eachPermissionFilter() {
+      if ($(this).val()) {
+        filterSelections.push('permission|' + $(this).val());
+      }
+    });
+    return Array.from(new Set(filterSelections)).sort();
+  }
+
+  /**
+   * Build list of Leaflet maps linked to Elasticsearch sources.
+   */
+  function getLinkedLeafletMapTargets() {
+    var targets = [];
+    var seen = {};
+    $.each(indiciaData.esSourceObjects, function eachSource(sourceId) {
+      if (this.outputs && this.outputs.idcLeafletMap) {
+        $.each(this.outputs.idcLeafletMap, function eachMap() {
+          var mapId = this.id;
+          var key = sourceId + '::' + mapId;
+          if (mapId && !seen[key]) {
+            seen[key] = true;
+            targets.push({
+              sourceId: sourceId,
+              mapId: mapId,
+              mapEl: this,
+            });
+          }
+        });
+      }
+    });
+    return targets;
+  }
+
+  /**
+   * Build a stable key for current user-filter overlay state.
+   */
+  function getUserFilterOverlayStateKey(filterIds, mapTargets) {
+    var mapKeys = [];
+    $.each(mapTargets, function eachMap() {
+      mapKeys.push(this.sourceId + '::' + this.mapId);
+    });
+    mapKeys.sort();
+    return filterIds.join(',') + '|' + mapKeys.join(',');
+  }
+
+  /**
+   * Clear any user-filter overlay features tracked for a map.
+   */
+  function clearUserFilterOverlaysForMap(mapId) {
+    var mapEl = $('#' + mapId);
+    if (mapEl.length && indiciaData.userFilterOverlayFeatureNames[mapId]) {
+      $.each(indiciaData.userFilterOverlayFeatureNames[mapId], function eachFeature() {
+        mapEl.idcLeafletMap('clearFeature', this);
+      });
+    }
+    delete indiciaData.userFilterOverlayFeatureNames[mapId];
+  }
+
+  /**
+   * Clear all currently plotted user-filter overlays.
+   */
+  function clearAllUserFilterMapOverlays() {
+    $.each(Object.keys(indiciaData.userFilterOverlayFeatureNames), function eachMap() {
+      clearUserFilterOverlaysForMap(this);
+    });
+  }
+
+  /**
+   * Track a feature name so it can be removed when overlays are refreshed.
+   */
+  function registerUserFilterOverlayFeature(mapId, featureName) {
+    if (!indiciaData.userFilterOverlayFeatureNames[mapId]) {
+      indiciaData.userFilterOverlayFeatureNames[mapId] = [];
+    }
+    if ($.inArray(featureName, indiciaData.userFilterOverlayFeatureNames[mapId]) === -1) {
+      indiciaData.userFilterOverlayFeatureNames[mapId].push(featureName);
+    }
+  }
+
+  /**
+   * Draw user-filter search area and location boundaries on linked maps.
+   */
+  function drawUserFilterMapOverlays(overlays, mapTargets) {
+    var seenFeatures = {};
+    $.each(mapTargets, function eachTarget() {
+      var target = this;
+      var map = $('#' + target.mapId);
+      if (map.length === 0) {
+        return;
+      }
+      $.each(overlays, function eachOverlay() {
+        var overlay = this;
+        var searchAreaFeature;
+        var locationFeature;
+        var mapSettings = target.mapEl.settings || {};
+        var locationStyle = mapSettings.userFilterLocationBoundaryStyle || {};
+        var searchAreaStyle = mapSettings.userFilterSearchAreaStyle || {};
+        if (overlay.search_area) {
+          searchAreaFeature = 'userFilterSearchArea-' + target.sourceId + '-' + overlay.source_type + '-' + overlay.selection_key;
+          if (!seenFeatures[target.mapId + '::' + searchAreaFeature]) {
+            seenFeatures[target.mapId + '::' + searchAreaFeature] = true;
+            if (overlay.source_type === 'permission') {
+              searchAreaStyle = mapSettings.permissionFilterSearchAreaStyle || searchAreaStyle;
+            }
+            map.idcLeafletMap('showFeature', overlay.search_area, false, searchAreaFeature, searchAreaStyle);
+            registerUserFilterOverlayFeature(target.mapId, searchAreaFeature);
+          }
+        }
+        $.each(overlay.location_geoms || [], function eachGeom() {
+          if (this.geom) {
+            locationFeature = 'userFilterLocation-' + target.sourceId + '-' + overlay.source_type + '-' + overlay.selection_key + '-' + this.id;
+            if (!seenFeatures[target.mapId + '::' + locationFeature]) {
+              seenFeatures[target.mapId + '::' + locationFeature] = true;
+              if (overlay.source_type === 'permission') {
+                locationStyle = mapSettings.permissionFilterLocationBoundaryStyle || locationStyle;
+              }
+              map.idcLeafletMap('showFeature', this.geom, false, locationFeature, locationStyle);
+              registerUserFilterOverlayFeature(target.mapId, locationFeature);
+            }
+          }
+        });
+      });
+    });
+  }
+
+  /**
+   * Refresh user-filter map overlays if selected filters or linked maps change.
+   */
+  indiciaFns.updateUserFilterMapOverlays = function updateUserFilterMapOverlays(force) {
+    var filterIds = getSelectedMapOverlayFilterIds();
+    var mapTargets = getLinkedLeafletMapTargets();
+    var stateKey = getUserFilterOverlayStateKey(filterIds, mapTargets);
+    var requestId;
+    var cacheKey;
+    if (!force && indiciaData.userFilterOverlayStateKey === stateKey) {
+      return;
+    }
+    indiciaData.userFilterOverlayStateKey = stateKey;
+    clearAllUserFilterMapOverlays();
+    if (filterIds.length === 0 || mapTargets.length === 0 || !indiciaData.esProxyAjaxUrl) {
+      return;
+    }
+    cacheKey = filterIds.join(',');
+    if (indiciaData.userFilterOverlayCache[cacheKey]) {
+      drawUserFilterMapOverlays(indiciaData.userFilterOverlayCache[cacheKey].overlays || [], mapTargets);
+      return;
+    }
+    requestId = ++indiciaData.userFilterOverlayRequestId;
+    $.ajax({
+      url: indiciaData.esProxyAjaxUrl + '/getUserFilterMapOverlays/' + (indiciaData.nid ? indiciaData.nid : 0),
+      data: {
+        overlay_keys: filterIds,
+      },
+      dataType: 'json',
+    })
+    .done(function onLoadOverlays(response) {
+      if (requestId !== indiciaData.userFilterOverlayRequestId) {
+        return;
+      }
+      indiciaData.userFilterOverlayCache[cacheKey] = response;
+      drawUserFilterMapOverlays(response.overlays || [], mapTargets);
+    })
+    .fail(function onLoadOverlaysFailed() {
+      if (requestId !== indiciaData.userFilterOverlayRequestId) {
+        return;
+      }
+      clearAllUserFilterMapOverlays();
     });
   };
 
@@ -2252,10 +2453,14 @@ jQuery(document).ready(function docReady() {
    * Change event handlers on filter inputs.
    */
   $('.es-filter-param, .user-filter, .permissions-filter').on('change', function eachFilter() {
+    indiciaFns.updateUserFilterMapOverlays();
     // Force map to update viewport for new data.
     $.each($('.idc-leafletMap'), function eachMap() {
       this.settings.initialBoundsSet = false;
     });
     indiciaFns.populateDataSources(true);
   });
+
+  // Apply overlays for any preselected user filters once controls are ready.
+  indiciaFns.updateUserFilterMapOverlays(true);
 });
