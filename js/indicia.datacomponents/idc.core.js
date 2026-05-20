@@ -96,6 +96,7 @@
    */
   indiciaData.userFilterOverlayRequestId = 0;
   indiciaData.userFilterOverlayStateKey = '';
+  indiciaData.permissionOverlayInitialViewportDone = false;
 
   /**
    * Font Awesome icon and other classes for record statuses and flags.
@@ -611,8 +612,10 @@
   /**
    * Draw user-filter search area and location boundaries on linked maps.
    */
-  function drawUserFilterMapOverlays(overlays, mapTargets) {
+  function drawUserFilterMapOverlays(overlays, mapTargets, zoomPermissionOnLoad) {
     var seenFeatures = {};
+    var mapZoomed = {};
+    var zoomedToPermissionBoundary = false;
     $.each(mapTargets, function eachTarget() {
       var target = this;
       var map = $('#' + target.mapId);
@@ -623,6 +626,7 @@
         var overlay = this;
         var searchAreaFeature;
         var locationFeature;
+        var zoomFeature;
         var mapSettings = target.mapEl.settings || {};
         var locationStyle = mapSettings.userFilterLocationBoundaryStyle || {};
         var searchAreaStyle = mapSettings.userFilterSearchAreaStyle || {};
@@ -633,7 +637,12 @@
             if (overlay.source_type === 'permission') {
               searchAreaStyle = mapSettings.permissionFilterSearchAreaStyle || searchAreaStyle;
             }
-            map.idcLeafletMap('showFeature', overlay.search_area, false, searchAreaFeature, searchAreaStyle);
+            zoomFeature = !!zoomPermissionOnLoad && overlay.source_type === 'permission' && !mapZoomed[target.mapId];
+            map.idcLeafletMap('showFeature', overlay.search_area, zoomFeature, searchAreaFeature, searchAreaStyle);
+            if (zoomFeature) {
+              mapZoomed[target.mapId] = true;
+              zoomedToPermissionBoundary = true;
+            }
             registerUserFilterOverlayFeature(target.mapId, searchAreaFeature);
           }
         }
@@ -645,13 +654,19 @@
               if (overlay.source_type === 'permission') {
                 locationStyle = mapSettings.permissionFilterLocationBoundaryStyle || locationStyle;
               }
-              map.idcLeafletMap('showFeature', this.geom, false, locationFeature, locationStyle);
+              zoomFeature = !!zoomPermissionOnLoad && overlay.source_type === 'permission' && !mapZoomed[target.mapId];
+              map.idcLeafletMap('showFeature', this.geom, zoomFeature, locationFeature, locationStyle);
+              if (zoomFeature) {
+                mapZoomed[target.mapId] = true;
+                zoomedToPermissionBoundary = true;
+              }
               registerUserFilterOverlayFeature(target.mapId, locationFeature);
             }
           }
         });
       });
     });
+    return zoomedToPermissionBoundary;
   }
 
   /**
@@ -662,6 +677,10 @@
     var mapTargets = getLinkedLeafletMapTargets();
     var standardOverlay = getStandardParamsFilterOverlayData();
     var stateKey = getUserFilterOverlayStateKey(filterIds, mapTargets, standardOverlay);
+    var allowInitialPermissionZoom = force && !indiciaData.permissionOverlayInitialViewportDone &&
+      filterIds.some(function eachFilterId(filterId) {
+        return filterId.indexOf('permission|') === 0;
+      });
     var requestId;
     var cacheKey;
     if (!force && indiciaData.userFilterOverlayStateKey === stateKey) {
@@ -674,7 +693,9 @@
     }
     cacheKey = filterIds.join(',') + '|' + (standardOverlay.searchArea || '') + '|' + standardOverlay.locationIds.join(',');
     if (indiciaData.userFilterOverlayCache[cacheKey]) {
-      drawUserFilterMapOverlays(indiciaData.userFilterOverlayCache[cacheKey].overlays || [], mapTargets);
+      if (drawUserFilterMapOverlays(indiciaData.userFilterOverlayCache[cacheKey].overlays || [], mapTargets, allowInitialPermissionZoom)) {
+        indiciaData.permissionOverlayInitialViewportDone = true;
+      }
       return;
     }
     requestId = ++indiciaData.userFilterOverlayRequestId;
@@ -697,7 +718,9 @@
         return;
       }
       indiciaData.userFilterOverlayCache[cacheKey] = response;
-      drawUserFilterMapOverlays(response.overlays || [], mapTargets);
+      if (drawUserFilterMapOverlays(response.overlays || [], mapTargets, allowInitialPermissionZoom)) {
+        indiciaData.permissionOverlayInitialViewportDone = true;
+      }
     })
     .fail(function onLoadOverlaysFailed() {
       if (requestId !== indiciaData.userFilterOverlayRequestId) {
