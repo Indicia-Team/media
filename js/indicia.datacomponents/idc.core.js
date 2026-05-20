@@ -470,7 +470,70 @@
         filterSelections.push('permission|' + $(this).val());
       }
     });
+    if (getStandardParamsFilterOverlayData().hasOverlay) {
+      filterSelections.push('standard|active');
+    }
     return Array.from(new Set(filterSelections)).sort();
+  }
+
+  /**
+   * Parse a comma-separated location list into unique numeric IDs.
+   */
+  function parseOverlayLocationIds(value) {
+    if (!value) {
+      return [];
+    }
+    return Array.from(new Set(
+      value.toString().split(',').map(function eachPart(id) {
+        return id.trim();
+      }).filter(function keepValid(id) {
+        return /^\d+$/.test(id);
+      })
+    ));
+  }
+
+  /**
+   * Convert a searchArea WKT from Web Mercator to WGS84 if possible.
+   */
+  function getSearchAreaWGS84(searchArea) {
+    var geom;
+    if (!searchArea || typeof OpenLayers === 'undefined') {
+      return searchArea;
+    }
+    try {
+      geom = OpenLayers.Geometry.fromWKT(searchArea);
+      return geom.transform('EPSG:3857', 'EPSG:4326').toString();
+    }
+    catch (e) {
+      return searchArea;
+    }
+  }
+
+  /**
+   * Collect standardParams filter overlay info from indiciaData.filter.def.
+   */
+  function getStandardParamsFilterOverlayData() {
+    var filterDef = (indiciaData.filter && indiciaData.filter.def) ? indiciaData.filter.def : {};
+    var locationIds = [];
+    var searchArea = '';
+    if (!filterDef) {
+      return {
+        hasOverlay: false,
+        searchArea: '',
+        locationIds: [],
+      };
+    }
+    searchArea = filterDef.searchArea ? getSearchAreaWGS84(filterDef.searchArea) : '';
+    locationIds = locationIds.concat(parseOverlayLocationIds(filterDef.location_list));
+    locationIds = locationIds.concat(parseOverlayLocationIds(filterDef.location_id));
+    locationIds = locationIds.concat(parseOverlayLocationIds(filterDef.indexed_location_list));
+    locationIds = locationIds.concat(parseOverlayLocationIds(filterDef.indexed_location_id));
+    locationIds = Array.from(new Set(locationIds)).sort();
+    return {
+      hasOverlay: !!searchArea || locationIds.length > 0,
+      searchArea: searchArea,
+      locationIds: locationIds,
+    };
   }
 
   /**
@@ -501,13 +564,14 @@
   /**
    * Build a stable key for current user-filter overlay state.
    */
-  function getUserFilterOverlayStateKey(filterIds, mapTargets) {
+  function getUserFilterOverlayStateKey(filterIds, mapTargets, standardOverlay) {
     var mapKeys = [];
     $.each(mapTargets, function eachMap() {
       mapKeys.push(this.sourceId + '::' + this.mapId);
     });
     mapKeys.sort();
-    return filterIds.join(',') + '|' + mapKeys.join(',');
+    return filterIds.join(',') + '|' + mapKeys.join(',') + '|' +
+      (standardOverlay.searchArea || '') + '|' + standardOverlay.locationIds.join(',');
   }
 
   /**
@@ -596,7 +660,8 @@
   indiciaFns.updateUserFilterMapOverlays = function updateUserFilterMapOverlays(force) {
     var filterIds = getSelectedMapOverlayFilterIds();
     var mapTargets = getLinkedLeafletMapTargets();
-    var stateKey = getUserFilterOverlayStateKey(filterIds, mapTargets);
+    var standardOverlay = getStandardParamsFilterOverlayData();
+    var stateKey = getUserFilterOverlayStateKey(filterIds, mapTargets, standardOverlay);
     var requestId;
     var cacheKey;
     if (!force && indiciaData.userFilterOverlayStateKey === stateKey) {
@@ -607,17 +672,24 @@
     if (filterIds.length === 0 || mapTargets.length === 0 || !indiciaData.esProxyAjaxUrl) {
       return;
     }
-    cacheKey = filterIds.join(',');
+    cacheKey = filterIds.join(',') + '|' + (standardOverlay.searchArea || '') + '|' + standardOverlay.locationIds.join(',');
     if (indiciaData.userFilterOverlayCache[cacheKey]) {
       drawUserFilterMapOverlays(indiciaData.userFilterOverlayCache[cacheKey].overlays || [], mapTargets);
       return;
     }
     requestId = ++indiciaData.userFilterOverlayRequestId;
+    var requestData = {
+      overlay_keys: filterIds,
+    };
+    if (standardOverlay.searchArea) {
+      requestData.standard_search_area = standardOverlay.searchArea;
+    }
+    if (standardOverlay.locationIds.length) {
+      requestData.standard_location_ids = standardOverlay.locationIds.join(',');
+    }
     $.ajax({
       url: indiciaData.esProxyAjaxUrl + '/getUserFilterMapOverlays/' + (indiciaData.nid ? indiciaData.nid : 0),
-      data: {
-        overlay_keys: filterIds,
-      },
+      data: requestData,
       dataType: 'json',
     })
     .done(function onLoadOverlays(response) {
@@ -2014,10 +2086,8 @@
    * Search area needs to be in GPS Lat Long for ES, not Web Mercator.
    */
   function ensureFilterDefSearchAreaWGS84(data) {
-    var geom;
-    if (data.filter_def && data.filter_def.searchArea && OpenLayers) {
-      geom = OpenLayers.Geometry.fromWKT(data.filter_def.searchArea);
-      data.filter_def.searchArea = geom.transform('EPSG:3857', 'EPSG:4326').toString();
+    if (data.filter_def && data.filter_def.searchArea) {
+      data.filter_def.searchArea = getSearchAreaWGS84(data.filter_def.searchArea);
     }
   }
 
@@ -2321,12 +2391,7 @@
         delete data.aggs._idfield.terms.order;
       }
     }
-    if (data.filter_def && data.filter_def.searchArea && indiciaData.leafletSearchPolygon !== data.filter_def.searchArea) {
-      indiciaData.leafletSearchPolygon = data.filter_def.searchArea;
-      $.each($('.idc-leafletMap'), function eachMap() {
-        $(this).idcLeafletMap('showFeature', data.filter_def.searchArea, true);
-      });
-    }
+    indiciaFns.updateUserFilterMapOverlays();
     // Allow custom filter modifier hooks.
     $.each(indiciaFns.modifyEsFilterHooks, function() {
       this(data);
