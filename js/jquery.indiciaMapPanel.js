@@ -1536,6 +1536,7 @@ var destroyAllFeatures;
             'OpenStreetMap',
             'https://tile.openstreetmap.org/${z}/${x}/${y}.png',
             {
+              tileOptions: { crossOriginKeyword: null },
               layerId: 'osm.0',
             },
           );
