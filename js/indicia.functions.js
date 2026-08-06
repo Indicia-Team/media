@@ -73,6 +73,39 @@ window.indiciaFns = {};
   };
 
   /**
+   * Prevent accidental double submission of a form.
+   *
+   * @param DOM form
+   *   Form element.
+   */
+  indiciaFns.preventDoubleFormSubmit = function(form) {
+    // Prevent double submission of the form.
+    $(form).submit(function(e) {
+      if (typeof $(this).valid === 'function' && !$(this).valid()) {
+        return;
+      }
+      if (!this.indiciaSubmissionLocked) {
+        this.indiciaSubmissionLocked = true;
+      } else {
+        e.preventDefault();
+        return false;
+      }
+    });
+  }
+
+  /**
+   * Unblock a previously submitted form allowing re-submission.
+   *
+   * @param DOM form
+   *   Form element.
+   */
+  indiciaFns.resetFormSubmission = function(form) {
+    if (form) {
+      form.indiciaSubmissionLocked = false;
+    }
+  };
+
+  /**
    * Enable buttons hover Effect. Since jQuery 1.7 the 'live' function has been
    * deprecated and 'on' function should be used. Use this function to allow
    * non-version specific code.
