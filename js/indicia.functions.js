@@ -698,19 +698,19 @@ window.indiciaFns = {};
     var date;
     var month;
     var day;
+    var year;
     if (typeof dateString === 'undefined' ||
         (typeof dateString === 'string' && dateString.trim() === '')) {
       return '';
     }
     date = new Date(dateString);
-    month = (1 + date.getMonth()).toString();
-    month = month.length > 1 ? month : '0' + month;
-    day = date.getDate().toString();
-    day = day.length > 1 ? day : '0' + day;
+    month = (1 + date.getUTCMonth()).toString().padStart(2, '0');
+    day = date.getUTCDate().toString().padStart(2, '0');
+    year = date.getUTCFullYear().toString().padStart(4, '0');
     return indiciaData.dateFormat
       .replace('d', day)
       .replace('m', month)
-      .replace('Y', date.getFullYear());
+      .replace('Y', year);
   };
 
   /**
