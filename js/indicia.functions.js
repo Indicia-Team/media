@@ -78,7 +78,7 @@ window.indiciaFns = {};
    * @param DOM form
    *   Form element.
    */
-  indiciaFns.preventDoubleFormSubmit = function(form) {
+  indiciaFns.preventFormDoubleSubmit = function(form) {
     // Prevent double submission of the form.
     $(form).submit(function(e) {
       if (typeof $(this).valid === 'function' && !$(this).valid()) {
