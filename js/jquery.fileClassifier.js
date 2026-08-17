@@ -300,7 +300,7 @@ indiciaData.queuedClassificationResponses = [];
     // Multiple suggestions made so need user input.
     let images = [];
     files.forEach((f) => {
-      images.push(`<img src="/${div.settings.interimImagePath}${f.path}" />`);
+      images.push($('<img>').attr('src', '/' + div.settings.interimImagePath + f.path)[0].outerHTML);
     });
     const imageListHtml = images.join('');
     let possibilityOptions = [];
@@ -310,18 +310,18 @@ indiciaData.queuedClassificationResponses = [];
         // suggestion as it cannot be used.
         return;
       }
-      let optionText = `<em>${suggestion.taxon}</em>`;
+      let optionText = $('<em>').text(suggestion.taxon).prop('outerHTML');
       if (suggestion.default_common_name) {
-        optionText += '<br/>' + suggestion.default_common_name;
+        optionText += '<br/>' + $('<div>').text(suggestion.default_common_name).html();
       }
-      optionText += '<br/><strong>' + suggestion.taxon_group + '</strong>';
-      let suggestionJson = JSON.stringify(suggestion).replace(/"/g, '&quot;');
+      optionText += '<br/>' + $('<strong>').text(suggestion.taxon_group).prop('outerHTML');
+      let suggestionJson = $('<div>').text(JSON.stringify(suggestion)).html();
       let probabilityPercent = Math.round(suggestion.probability * 100);
       let probabilityClass = getProbabilityClass(suggestion.probability);
       let probabilityTitle = indiciaData.lang.fileClassifier.percentProbability.replace('{1}', probabilityPercent);
       possibilityOptions.push(`
         <li class="classifier-suggestion" data-suggestion="${suggestionJson}">
-          <span class="probability ${probabilityClass}-probability" title="${probabilityTitle}"></span>
+          <span class="probability ${probabilityClass}-probability" title="${$('<div>').text(probabilityTitle).html()}"></span>
           <div>${optionText}</div>
         </li>`);
     });
@@ -455,7 +455,8 @@ indiciaData.queuedClassificationResponses = [];
             'taxa_taxon_list_id': suggestion.taxa_taxon_list_id,
             'probability_given': suggestion.probability,
             'classifier_chosen': i === 0 ? 't' : 'f',
-            'human_chosen': (typeof forceSuggestion === 'undefined' ? i === 0 : forceSuggestion.taxa_taxon_list_id === suggestion.taxa_taxon_list_id)
+            'human_chosen': (typeof forceSuggestion === 'undefined' ? i === 0 :
+              String(forceSuggestion.taxa_taxon_list_id) === String(suggestion.taxa_taxon_list_id))
               ? 't' : 'f'
           });
         }
@@ -582,12 +583,12 @@ indiciaData.queuedClassificationResponses = [];
     if (div.settings.mode.includes('checklist:append')) {
       // Search for an existing occurrence of the same species if we can
       // append to a linked checklist
-      if (prediction.taxa_taxon_list_id !==
-          div.settings.unknownTaxon.taxa_taxon_list_id) {
+        if (String(prediction.taxa_taxon_list_id) !==
+          String(div.settings.unknownTaxon.taxa_taxon_list_id)) {
         // This is not a record of unknown. (Unknown is never appended.)
         $grid.find('.added-row').each(function() {
           let ttlId = $(this).find('input.scTaxaTaxonListId').val();
-          if (ttlId === prediction.taxa_taxon_list_id) {
+          if (String(ttlId) === String(prediction.taxa_taxon_list_id)) {
             // Found a match.
             $speciesRow = $(this);
             // Stop the loop.
@@ -674,7 +675,12 @@ indiciaData.queuedClassificationResponses = [];
     else {
       // Single record form.
       // Assume there is a normal file upload control on the form.
-      $dest = $('#container-occurrence_medium-default div.filelist');
+      let mediaControlId = div.settings.mediaControlId || 'container-occurrence_medium-default';
+      let $mediaControl = $('#' + $.escapeSelector(mediaControlId));
+      if ($mediaControl.length === 0 && div.settings.mediaControlId) {
+        $mediaControl = $('#container-occurrence_medium-' + $.escapeSelector(mediaControlId));
+      }
+      $dest = $mediaControl.find('div.filelist');
       nameRoot = '';
     }
     files.forEach((file) => {
