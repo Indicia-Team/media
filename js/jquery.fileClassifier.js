@@ -376,12 +376,13 @@ indiciaData.queuedClassificationResponses = [];
     }
     else {
       let suggestions = forceSuggestion ? [forceSuggestion] : response.suggestions;
+      let prediction = Object.assign({}, unknown);
       if (suggestions.length > 1) {
         askUserToChooseSuggestion(div, files, response);
       } else {
         if (suggestions.length === 1) {
           // A single suggestion was made so can select it immediately.
-          let prediction = Object.assign({}, suggestions[0]);
+          prediction = Object.assign({}, suggestions[0]);
           // Copy the suggestion to prediction so we can modify it without
           // changing response.
           if(typeof prediction.taxa_taxon_list_id === 'undefined'){
@@ -472,7 +473,7 @@ indiciaData.queuedClassificationResponses = [];
           .text(result);
         // Allow forms to hook into the event of a new occurrence being added.
         $.each(hook_image_classifier_new_occurrence, function (idx, fn) {
-          fn(prediction, $container);
+          fn($container, prediction);
         });
       }
     }
@@ -812,8 +813,7 @@ indiciaData.queuedClassificationResponses = [];
 
     if ($filebox.length > 0) {
       // Find the file being deleted.
-      let div = $filebox[0];
-      file = getFileInContainer(div, $container);
+      let file = getFileInContainer($container);
 
       $filebox.find('.classification-result').each(function() {
         // Iterate over classification results.
