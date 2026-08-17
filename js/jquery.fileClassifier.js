@@ -651,11 +651,9 @@ indiciaData.queuedClassificationResponses = [];
       $dest = $('#container-occurrence_medium-default div.filelist');
       nameRoot = '';
     }
-
-    let $classifer = $('#container-' + div.settings.id);
     files.forEach((file) => {
       // Locate the file in the classifier.
-      let $src = $classifer.find('#' + file.mediafileId);
+      let $src = $(div).find('#' + file.mediafileId);
       // Rename the file inputs to match the species_checklist convention.
       $src.find('input').each(function() {
         let $this = $(this);
