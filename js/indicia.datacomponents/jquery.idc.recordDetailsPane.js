@@ -173,16 +173,20 @@
    * Loads and appends comments to the tab.
    */
   function loadComments(el) {
+    var requestedOccurrenceId = occurrenceId;
     // Check not already loaded.
-    if (loadedCommentsOcurrenceId === occurrenceId) {
+    if (loadedCommentsOcurrenceId === requestedOccurrenceId) {
       return;
     }
-    loadedCommentsOcurrenceId = occurrenceId;
     // Load the comments
     $.ajax({
       url: indiciaData.esProxyAjaxUrl + '/comments/' + indiciaData.nid,
-      data: { occurrence_id: occurrenceId },
+      data: { occurrence_id: requestedOccurrenceId },
       success: function success(response) {
+        if (occurrenceId !== requestedOccurrenceId) {
+          return;
+        }
+        loadedCommentsOcurrenceId = requestedOccurrenceId;
         $(el).find('.comments').html('');
         if (response.length === 0) {
           $('<div class="alert alert-info">There are no comments for this record.</div>')
