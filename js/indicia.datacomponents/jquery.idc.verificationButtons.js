@@ -204,6 +204,14 @@
 
   /**
    * Display the redetermination form for a specific set of records.
+   *
+   * @param object el
+   *   Verification buttons control element.
+   * @param array occurrenceIds
+   *   Array of occurrence IDs to redetermine.
+   * @param bool forceSelection
+   *   Whether to force the selection of records, disallowing whole grid
+   *   redets.
    */
   function showRedetFormForOccurrenceIds(el, occurrenceIds, forceSelection) {
     if (el.settings.verificationTemplates) {
