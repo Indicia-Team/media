@@ -205,11 +205,12 @@
   /**
    * Display the redetermination form for a specific set of records.
    */
-  function showRedetFormForOccurrenceIds(el, occurrenceIds) {
+  function showRedetFormForOccurrenceIds(el, occurrenceIds, forceSelection) {
     if (el.settings.verificationTemplates) {
       loadVerificationTemplates('DT', '#redet-template');
     }
     $('#redet-form').data('ids', JSON.stringify(occurrenceIds));
+    $('#redet-form').data('force-selection', forceSelection === true);
     $.fancybox.open({
       src: $('#redet-form'),
       type: 'html',
@@ -377,7 +378,7 @@
       redetFormValidator.showErrors({ 'redet-species:taxon': 'Please type a few characters then choose a name from the list of suggestions' });
     } else if (redetFormValidator.numberOfInvalids() === 0) {
       $.fancybox.close();
-      if (multiselectWholeTableMode()) {
+      if (multiselectWholeTableMode() && !$('#redet-form').data('force-selection')) {
         doRedeterminationWholeTable($('#redet-species').val(), $('#redet-form').find('.comment-textarea').val());
       } else {
         const ids = JSON.parse($('#redet-form').data('ids'));
@@ -732,7 +733,7 @@
 
     indiciaFns.on('click', '.classifier-suggestion', [], (e) => {
       $('#redet-form .multiple-warning').hide();
-      showRedetFormForOccurrenceIds(el, [$(e.currentTarget).data('occurrence_id')]);
+      showRedetFormForOccurrenceIds(el, [$(e.currentTarget).data('occurrence_id')], true);
       $.ajax({
         url: indiciaData.warehouseUrl + 'index.php/services/data/taxa_search',
         data: {
