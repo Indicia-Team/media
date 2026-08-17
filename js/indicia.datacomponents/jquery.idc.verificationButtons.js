@@ -37,13 +37,6 @@
   };
 
   /**
-   * Registered callbacks for events.
-   */
-  var callbacks = {
-    itemUpdate: []
-  };
-
-  /**
    * jQuery validation instance.
    */
   var emailFormvalidator;
@@ -1950,7 +1943,10 @@
       var el = this;
 
       el.settings = $.extend({}, defaults);
-      el.callbacks = callbacks;
+      // Callback lists belong to this verification-control instance.
+      el.callbacks = {
+        itemUpdate: []
+      };
       // Apply settings passed in the HTML data-* attribute.
       if (typeof $(el).attr('data-idc-config') !== 'undefined') {
         $.extend(el.settings, JSON.parse($(el).attr('data-idc-config')));
@@ -2131,10 +2127,10 @@
     },
 
     on: function on(event, handler) {
-      if (typeof callbacks[event] === 'undefined') {
+      if (typeof this.callbacks[event] === 'undefined') {
         indiciaFns.controlFail(this, 'Invalid event handler requested for ' + event);
       }
-      callbacks[event].push(handler);
+      this.callbacks[event].push(handler);
     },
 
     /**

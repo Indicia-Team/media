@@ -68,20 +68,6 @@
   };
 
   /**
-   * Registered callbacks for different events.
-   */
-  var callbacks = {
-    itemSelect: [],
-    itemDblClick: [],
-    populate: []
-  };
-
-  /**
-   * Track loaded row ID to avoid duplicate effort.
-   */
-  var lastLoadedRowId = null;
-
-  /**
    * Find the column config panel for a grid el.
    *
    * Use the data-el attribute to locate it, in case the panel is relocated to
@@ -331,15 +317,16 @@
      * */
     function loadSelectedRow() {
       var tr = $('#' + el.id + ' .es-data-grid tbody tr.selected').not('.disabled');
-      if (tr.length && tr.data('row-id') !== lastLoadedRowId) {
-        lastLoadedRowId = tr.data('row-id');
+      if (tr.length && tr.data('row-id') !== el.lastLoadedRowId) {
+        // Track loaded row ID to avoid duplicate effort.
+        el.lastLoadedRowId = tr.data('row-id');
         $.each(el.callbacks.itemSelect, function eachCallback() {
           this(tr);
         });
       }
       else if (!tr.length) {
         // No row selected - still inform callbacks.
-        lastLoadedRowId = null;
+        el.lastLoadedRowId = null;
         $.each(el.callbacks.itemSelect, function eachCallback() {
           this(null);
         });
@@ -933,7 +920,13 @@
       if (typeof options !== 'undefined') {
         $.extend(el.settings, options);
       }
-      el.callbacks = callbacks;
+      // Callback lists and the last loaded row belong to this grid instance.
+      el.callbacks = {
+        itemSelect: [],
+        itemDblClick: [],
+        populate: []
+      };
+      el.lastLoadedRowId = null;
       // dataGrid does not make use of multiple sources.
       el.settings.sourceObject = indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]];
       // Disable cookies unless id specified.
@@ -1044,7 +1037,7 @@
       }
       // Cleanup before repopulating.
       $(el).find('tbody tr').remove();
-      lastLoadedRowId = null;
+      el.lastLoadedRowId = null;
       $(el).find('.multiselect-all').prop('checked', false);
       // In tbodyHasScrollBar mode, we have to calculate the column widths
       // ourselves since putting CSS overflow on tbody requires us to lose
