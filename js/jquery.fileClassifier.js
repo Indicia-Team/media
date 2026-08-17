@@ -101,6 +101,9 @@ indiciaData.queuedClassificationResponses = [];
     // Add a click handler for the classify button in all classifier controls.
     //indiciaFns.on('click', '.classify-btn', classify);
     mediaUploadAddedHooks.push(function(div) {
+      if (div.settings.fileClassifier !== true) {
+        return;
+      }
       classify(div);
     });
 
