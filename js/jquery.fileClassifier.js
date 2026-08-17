@@ -101,7 +101,7 @@ indiciaData.queuedClassificationResponses = [];
     // Add a click handler for the classify button in all classifier controls.
     //indiciaFns.on('click', '.classify-btn', classify);
     mediaUploadAddedHooks.push(function(div) {
-      if (div.settings.fileClassifier !== true) {
+      if (div.settings.fileClassifier !== true || $(div).find('.progress').length > 0) {
         return;
       }
       classify(div);
@@ -186,46 +186,68 @@ indiciaData.queuedClassificationResponses = [];
     let nrPosts;
     let nrSuccess = 0;
     let nrFail = 0;
+    let createPostCompletion = function() {
+      let completed = false;
+      return function() {
+        if (completed) {
+          return;
+        }
+        completed = true;
+        nrPosts--;
+        if (nrPosts === 0) {
+          // Put up a jQueryUI dialog saying we are done.
+          // We could add something about number of successes and failures.
+          showDialog(div, 'dialogEnd');
+        }
+      };
+    };
     let donePost = function(response) {
       if (response === false) {
-        nrPosts--;
         nrFail++;
       }
       else if (response.suggestions.length <= 1) {
-        // If more than one suggestion, don't treat as handled as will be
-        // waiting for user input.
-        nrPosts--;
         nrSuccess++;
+      } else {
+        // The post remains outstanding until the user chooses or cancels.
+        return false;
       }
-
-      if (nrPosts === 0) {
-        // Put up a jQueryUI dialog saying we are done.
-        // We could add something about number of successes and failures.
-        showDialog(div, 'dialogEnd');
-      }
+      return true;
     };
     let failedPost = function(error) {
       console.log(error);
-      showDialog(div, 'classifierRequestFailed')
-      nrPosts--;
+      showDialog(div, 'classifierRequestFailed');
       nrFail++;
-    }
+    };
 
     // Post the files to the classifier.
     if (div.settings.mode.includes('single')) {
       // All the files are classified to give one result.
       nrPosts = 1;
-      doPost(div, files)
-      .then(donePost, failedPost)
-      .catch(donePost);
+      let completePost = createPostCompletion();
+      doPost(div, files, completePost)
+      .then((response) => {
+        if (donePost(response)) {
+          completePost();
+        }
+      }, (error) => {
+        failedPost(error);
+        completePost();
+      });
     }
     else {
       // Each file is classified to give a separate result.
       nrPosts = files.length;
       files.forEach((file) => {
-        doPost(div, [file])
-        .then(donePost, failedPost)
-        .catch(donePost);
+        let completePost = createPostCompletion();
+        doPost(div, [file], completePost)
+        .then((response) => {
+          if (donePost(response)) {
+            completePost();
+          }
+        }, (error) => {
+          failedPost(error);
+          completePost();
+        });
        });
     }
   };
@@ -238,7 +260,7 @@ indiciaData.queuedClassificationResponses = [];
    * @param {array} files - Array of file objects to be classified.
    * @returns {promise}
    */
-  function doPost(div, files) {
+  function doPost(div, files, completePost) {
     return new Promise((resolve, reject) => {
       // At present the classifier module can only handle one image at a time.
       $.post(div.settings.url, {
@@ -246,7 +268,7 @@ indiciaData.queuedClassificationResponses = [];
         'list': div.settings.taxonListId
       })
       .done(function(response){
-        handleResponse(div, files, response);
+        handleResponse(div, files, response, undefined, completePost);
         resolve(response);
       })
       .fail(function(jqXHR) {
@@ -269,7 +291,7 @@ indiciaData.queuedClassificationResponses = [];
     let last = indiciaData.queuedClassificationResponses.length;
     for (let i = 0; i < last; i++) {
       const thisResponse = indiciaData.queuedClassificationResponses.shift();
-      handleResponse(thisResponse[0], thisResponse[1], thisResponse[2])
+      handleResponse(thisResponse[0], thisResponse[1], thisResponse[2], undefined, thisResponse[3], true);
     }
   }
 
@@ -280,10 +302,10 @@ indiciaData.queuedClassificationResponses = [];
    *   Contains all the details of the control.
    * @param {array} files
    *   Array of file objects that were classified.
-   * @param {object} response.
+  * @param {object} response
    *   Response from the classifier
    */
-  function askUserToChooseSuggestion(div, files, response) {
+  function askUserToChooseSuggestion(div, files, response, completePost, deferred) {
     // Multiple suggestions made so need user input.
     let images = [];
     files.forEach((f) => {
@@ -314,7 +336,10 @@ indiciaData.queuedClassificationResponses = [];
     });
     if (possibilityOptions.length === 0) {
       // No valid suggestions, so treat as unknown.
-      handleResponse(div, files, null);
+      handleResponse(div, files, null, undefined, completePost, deferred);
+      if (!deferred) {
+        completePost();
+      }
       return;
     }
     const possibilityListHtml = possibilityOptions.join('');
@@ -336,6 +361,7 @@ indiciaData.queuedClassificationResponses = [];
       okButton: null,
       callbackCancel: function() {
         processQueue();
+        completePost();
       }
     });
     $('.classifier-suggestion').on('click', function(e) {
@@ -344,6 +370,7 @@ indiciaData.queuedClassificationResponses = [];
       // Also now can handle any classification responses that came in
       // after the one the user had to choose for.
       processQueue();
+      completePost();
     });
   }
 
@@ -356,16 +383,18 @@ indiciaData.queuedClassificationResponses = [];
    *   Array of file objects that were classified.
    * @param {object} response
    *   Response from the classifier.
-   * @param {object} forceSuggestion
+  * @param {object} forceSuggestion
    *   Optional suggestion object, only set if the user has chosen from a list
    *   of several suggestions.
+  * @param {function} completePost
+  *   Callback to invoke once a classification requiring user input is handled.
    */
-  function handleResponse(div, files, response, forceSuggestion) {
+  function handleResponse(div, files, response, forceSuggestion, completePost, deferred = false) {
     let unknown = div.settings.unknownTaxon;
     let $container;
     if ($('.suggestion-list').length > 0 && typeof forceSuggestion === 'undefined') {
       // Dialog for handling multiple suggestions visible, so we'll queue this one.
-      indiciaData.queuedClassificationResponses.push([div, files, response]);
+      indiciaData.queuedClassificationResponses.push([div, files, response, completePost]);
       return;
     }
     $.fancybox.close();
@@ -373,12 +402,15 @@ indiciaData.queuedClassificationResponses = [];
       // Classifier encountered an error.
       // Add a row with unknown species
       $container = addSpecies(div, files, unknown);
+      if (deferred) {
+        completePost();
+      }
     }
     else {
       let suggestions = forceSuggestion ? [forceSuggestion] : response.suggestions;
       let prediction = Object.assign({}, unknown);
       if (suggestions.length > 1) {
-        askUserToChooseSuggestion(div, files, response);
+        askUserToChooseSuggestion(div, files, response, completePost, deferred);
       } else {
         if (suggestions.length === 1) {
           // A single suggestion was made so can select it immediately.
@@ -475,6 +507,9 @@ indiciaData.queuedClassificationResponses = [];
         $.each(hook_image_classifier_new_occurrence, function (idx, fn) {
           fn($container, prediction);
         });
+        if (deferred) {
+          completePost();
+        }
       }
     }
   }
