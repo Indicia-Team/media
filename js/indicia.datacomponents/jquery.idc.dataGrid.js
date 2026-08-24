@@ -54,7 +54,9 @@
     includeFullScreenTool: true,
     includePager: true,
     keyboardNavigation: false,
+    pageChangeScrollPosition: 'top',
     sortable: true,
+    selectFirstOnPageChange: false,
     responsive: true,
     responsiveOptions: {
       breakpoints: {
@@ -1094,6 +1096,15 @@
       });
       if (el.settings.responsive) {
         $(el).find('table').trigger('footable_redraw');
+      }
+      if (el.settings.pendingPageChange) {
+        if (el.settings.pageChangeScrollPosition === 'top') {
+          $(el).find('tbody')[0].scrollTop = 0;
+        }
+        if (el.settings.selectFirstOnPageChange) {
+          $(el).find('tbody tr.data-row:not(.disabled)').first().addClass('selected');
+        }
+        el.settings.pendingPageChange = false;
       }
       indiciaFns.updatePagingFooter(el, response, data, 'tbody tr', afterKey);
       el.settings.maxCharsPerCol = maxCharsPerCol;

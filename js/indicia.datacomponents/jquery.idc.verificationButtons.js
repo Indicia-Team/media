@@ -1961,6 +1961,9 @@
       }
       listOutputControl = $('#' + el.settings.showSelectedRow);
       listOutputControlClass = $(listOutputControl).data('idc-class');
+      if (listOutputControlClass === 'idcDataGrid') {
+        listOutputControl[0].settings.selectFirstOnPageChange = true;
+      }
       // Form validation for redetermination
       redetFormValidator = $('#redet-form').validate();
       // Plus setup redet form texts.

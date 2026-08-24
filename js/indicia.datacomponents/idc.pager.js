@@ -14,6 +14,7 @@
    */
   indiciaFns.movePage = function movePage(el, forward, itemSelector) {
     var sourceSettings = el.settings.sourceObject.settings;
+    el.settings.pendingPageChange = true;
     if (el.settings.sourceObject.settings.mode === 'compositeAggregation') {
       el.settings.compositeInfo.page += (forward ? 1 : -1);
       // Composite aggregations use after_key to find next page.
@@ -48,6 +49,7 @@
     var newRowsPerPage = $(el).find('.rows-per-page select option:selected').val();
     var sourceSettings = el.settings.sourceObject.settings;
 
+    el.settings.pendingPageChange = true;
     if (sourceSettings.mode.match(/Aggregation$/)) {
       sourceSettings.aggregationSize = newRowsPerPage;
     } else {
