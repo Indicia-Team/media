@@ -46,11 +46,15 @@
    */
   indiciaFns.rowsPerPageChange = function rowsPerPageChange(el) {
     var newRowsPerPage = $(el).find('.rows-per-page select option:selected').val();
-    if (el.settings.sourceObject.settings.mode.match(/Aggregation$/)) {
-      el.settings.sourceObject.settings.aggregationSize = newRowsPerPage;
+    var sourceSettings = el.settings.sourceObject.settings;
+
+    if (sourceSettings.mode.match(/Aggregation$/)) {
+      sourceSettings.aggregationSize = newRowsPerPage;
     } else {
-      el.settings.sourceObject.settings.size = newRowsPerPage;
+      sourceSettings.size = newRowsPerPage;
+      sourceSettings.from = 0;
     }
+
     el.settings.sourceObject.populate();
   }
 
