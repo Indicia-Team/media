@@ -2541,6 +2541,9 @@ jQuery(document).ready(function docReady() {
    * Change event handlers on filter inputs.
    */
   $('.es-filter-param, .user-filter, .permissions-filter').on('change', function eachFilter() {
+    if ($(this).data('defer-filter-reload')) {
+      return;
+    }
     indiciaFns.updateUserFilterMapOverlays();
     // Force map to update viewport for new data.
     $.each($('.idc-leafletMap'), function eachMap() {
