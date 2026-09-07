@@ -188,6 +188,33 @@
   }
 
   /**
+   * Convert a date entered in the configured display format to ISO format.
+   *
+   * @param string dateValue
+   *   Date in the configured display format, or an ISO date.
+   *
+   * @returns string
+   *   Date in yyyy-mm-dd format.
+   */
+  function dateToIso(dateValue) {
+    if (!dateValue || dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      return dateValue;
+    }
+    const parts = dateValue.split(/\D+/);
+    const formatParts = indiciaData.dateFormat.split(/[^A-Za-z]+/);
+    if (parts.length !== 3 || formatParts.length !== 3) {
+      return dateValue;
+    }
+    const year = parts[formatParts.indexOf('Y')];
+    const month = parts[formatParts.indexOf('m')];
+    const day = parts[formatParts.indexOf('d')];
+    if (!year || !month || !day) {
+      return dateValue;
+    }
+    return [year, month.padStart(2, '0'), day.padStart(2, '0')].join('-');
+  }
+
+  /**
    * Perform the actual bulk edit operation once proceed confirmed.
    *
    * @param DOM dlg
@@ -272,7 +299,7 @@
       r.location_name = $(el).find('[name="edit-location-name"]').val();
     }
     if ($(el).find('[name="edit-date"]').val()) {
-      r.date = $(el).find('[name="edit-date"]').val();
+      r.date = dateToIso($(el).find('[name="edit-date"]').val());
     }
     if ($(el).find('[name="edit-sref"]').val()) {
       r.sref = $(el).find('[name="edit-sref"]').val();
@@ -315,11 +342,11 @@
       .done(function(response) {
         $.each(response, function() {
           const tr = $('<tr>').appendTo($(dlg).find('.preview-output tbody'));
-          let date = this._source.event.date_start;
+          let date = indiciaFns.formatDate(this._source.event.date_start);
           let recordedBy = typeof this._source.event.recorded_by === 'undefined' ? indiciaData.lang.bulkEditor.noValue : this._source.event.recorded_by;
           let locationName = typeof this._source.location.verbatim_locality === 'undefined' ? indiciaData.lang.bulkEditor.noValue : this._source.location.verbatim_locality;
           let sref = this._source.location.input_sref;
-          date = updates.date ? `<span class="old-value">${date}</span> <span class="new-value">${updates.date}</span>` : date;
+          date = updates.date ? `<span class="old-value">${date}</span> <span class="new-value">${indiciaFns.formatDate(updates.date)}</span>` : date;
           recordedBy = updates.recorder_name ? `<span class="old-value">${recordedBy}</span> <span class="new-value">${updates.recorder_name}</span>` : recordedBy;
           locationName = updates.location_name ? `<span class="old-value">${locationName}</span> <span class="new-value">${updates.location_name}</span>` : locationName;
           sref = updates.sref ? `<span class="old-value">${sref}</span> <span class="new-value">${updates.sref}</span>` : sref;
