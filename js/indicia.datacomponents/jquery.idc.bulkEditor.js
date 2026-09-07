@@ -51,6 +51,11 @@
     if (indiciaData.esScope === 'user') {
       return true;
     }
+    // If my records applied to Who pane.
+    if (indiciaData.filter?.def?.my_records === '1') {
+      return true;
+    }
+    // Or filter has a created_by_id limit for the current user.
     if (typeof filter.bool_queries !== 'undefined') {
       filter.bool_queries.forEach((qry) => {
         if (qry.bool_clause === 'must' && typeof qry.field !== 'undefined' && qry.field === 'metadata.created_by_id'
