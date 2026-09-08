@@ -1771,6 +1771,23 @@ body > .loading-spinner {
   text-decoration: line-through;
   color: red;
 }
+.bulk-editor-dlg .preview-messages {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.bulk-editor-dlg .preview-messages > i {
+  flex: 0 0 auto;
+}
+.bulk-editor-dlg .preview-messages .preview-message-text {
+  flex: 1;
+  min-width: 0;
+}
+.bulk-editor-dlg .preview-messages .preview-message-text > p {
+  margin: 0 0 0.5rem;
+  padding: 0;
+  line-height: 1.3;
+}
 
 /* idcRecordsMover */
 .records-mover-dlg .post-move-info .output {

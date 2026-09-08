@@ -316,6 +316,7 @@
   function previewClickHandler(el) {
     const dlg = $('#' + $(el)[0].settings.id + '-dlg');
     const updates = getUpdates(dlg);
+    const todoListInfo = getTodoListInfo(el);
     if (Object.keys(updates).length === 0) {
       $.fancyDialog({
         title: indiciaData.lang.bulkEditor.cannotProceed,
@@ -324,6 +325,11 @@
       });
       return;
     }
+    // Hide context sensitive messages - will show appropriate ones once we
+    // have the preview info.
+    $(dlg).find('.preview-messages p').hide();
+    $(dlg).find('.preview-info-partial strong').text(todoListInfo.total);
+    // Show the preview.
     $(dlg).find('.preview-output').show();
     $(dlg).find('.bulk-edit-form-controls').hide();
     $(dlg).find('.preview-bulk-edit').attr('disabled', true);
@@ -333,14 +339,19 @@
       restrictToOwnData: $(el)[0].settings.restrictToOwnData
     };
     if ($('#' + $(el)[0].settings.linkToDataControl).hasClass('multiselect-mode')) {
-      previewRequest['occurrence:ids'] = getTodoListInfo(el).ids.join(',');
+      previewRequest['occurrence:ids'] = todoListInfo.ids.join(',');
     } else {
       const filter = indiciaFns.getFormQueryData($(el)[0].settings.sourceObject, false);
       previewRequest['occurrence:idsFromElasticFilter'] = filter;
     }
     $.post(indiciaData.esProxyAjaxUrl + '/bulkeditpreview/' + indiciaData.nid, previewRequest, null, 'json')
       .done(function(response) {
-        $.each(response, function() {
+        const hasVerifiedRecords = response.aggregations.has_verified_records.doc_count > 0;
+        $(dlg).find(todoListInfo.total > response.records.length ? '.preview-info-partial' : '.preview-info-complete').show();
+        if (hasVerifiedRecords) {
+          $(dlg).find('.preview-info-verified').show();
+        }
+        $.each(response.records, function() {
           const tr = $('<tr>').appendTo($(dlg).find('.preview-output tbody'));
           let date = indiciaFns.formatDate(this._source.event.date_start);
           let recordedBy = typeof this._source.event.recorded_by === 'undefined' ? indiciaData.lang.bulkEditor.noValue : this._source.event.recorded_by;
