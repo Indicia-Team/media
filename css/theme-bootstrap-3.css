@@ -1897,6 +1897,7 @@ body > .loading-spinner {
 
 #entry_form div.form-group, #indicia-entry-form div.form-group {
   /* Removes last-child reset to zero in default theme overrides. */
+  /* Tweak spacing for checkbox label before as BS defaults expect after. */
 }
 #entry_form div.form-group p.inline-error, #indicia-entry-form div.form-group p.inline-error {
   margin-left: 0;
@@ -1904,10 +1905,11 @@ body > .loading-spinner {
 #entry_form div.form-group:last-child, #indicia-entry-form div.form-group:last-child {
   margin-bottom: 15px;
 }
-#entry_form div.form-group input[type=checkbox], #indicia-entry-form div.form-group input[type=checkbox] {
+#entry_form div.form-group .checkbox-label-before label, #indicia-entry-form div.form-group .checkbox-label-before label {
+  padding-left: 0;
+}
+#entry_form div.form-group .checkbox-label-before label input[type=checkbox], #indicia-entry-form div.form-group .checkbox-label-before label input[type=checkbox] {
   margin-left: 8px;
-  margin-right: 8px;
-  font-size: 150%;
 }
 #entry_form .species-grid div.form-group:last-child, #indicia-entry-form .species-grid div.form-group:last-child {
   margin-bottom: 0;
