@@ -292,20 +292,43 @@
    */
   function getUpdates(el) {
     let r = {};
-    if ($(el).find('[name="edit-recorder-name"]').val()) {
-      r.recorder_name = $(el).find('[name="edit-recorder-name"]').val();
+    // Can't skip requirement to reverify changed records if the date or sref
+    // change.
+    let canSkipReverify = $(el).find('[name="edit-date"]').val().trim() === ''
+        && $(el).find('[name="edit-sref"]').val().trim() === '';
+    if ($(el).find('[name="edit-recorder-name"]').val().trim() !== '') {
+      r.recorder_name = $(el).find('[name="edit-recorder-name"]').val().trim();
     }
-    if ($(el).find('[name="edit-location-name"]').val()) {
-      r.location_name = $(el).find('[name="edit-location-name"]').val();
+    if ($(el).find('[name="edit-location-name"]').val().trim() !== '') {
+      r.location_name = $(el).find('[name="edit-location-name"]').val().trim();
     }
-    if ($(el).find('[name="edit-date"]').val()) {
+    if ($(el).find('[name="edit-date"]').val().trim() !== '') {
       r.date = dateToIso($(el).find('[name="edit-date"]').val());
     }
-    if ($(el).find('[name="edit-sref"]').val()) {
-      r.sref = $(el).find('[name="edit-sref"]').val();
-      r.sref_system = $(el).find('[name="edit-sref_system"]').val();
+    if ($(el).find('[name="edit-sref"]').val().trim() !== '') {
+      r.sref = $(el).find('[name="edit-sref"]').val().trim();
+      r.sref_system = $(el).find('[name="edit-sref_system"]').val().trim();
+    }
+    if ($(el).find('[name="append-comment"]').val().trim() !== '') {
+      r.append_comment = $(el).find('[name="append-comment"]').val().trim();
+    }
+    if ($(el).find('[name="skip-reverify"]:visible').prop('checked') && canSkipReverify) {
+      r.skip_reverify = true;
     }
     return r;
+  }
+
+  /**
+   * Show the skip-reverify option only when date and spatial reference are unchanged.
+   *
+   * @param DOM dlg
+   *   Dialog element.
+   */
+  function updateSkipReverifyVisibility(dlg) {
+    const hasDateOrSref = dlg.find('[name="edit-date"], [name="edit-sref"]').filter(function hasValue() {
+      return $(this).val().trim() !== '';
+    }).length > 0;
+    dlg.find('#ctrl-wrap-skip-reverify').css('visibility', hasDateOrSref ? 'hidden' : '');
   }
 
   /**
@@ -332,6 +355,8 @@
     // Show the preview.
     $(dlg).find('.preview-output').show();
     $(dlg).find('.bulk-edit-form-controls').hide();
+    $(dlg).find('#ctrl-wrap-append-comment').hide();
+    $(dlg).find('#ctrl-wrap-skip-reverify').hide();
     $(dlg).find('.preview-bulk-edit').attr('disabled', true);
     let previewRequest = {
       updates: updates,
@@ -349,7 +374,7 @@
         const hasVerifiedRecords = response.aggregations.has_verified_records.doc_count > 0;
         $(dlg).find(todoListInfo.total > response.records.length ? '.preview-info-partial' : '.preview-info-complete').show();
         if (hasVerifiedRecords) {
-          $(dlg).find('.preview-info-verified').show();
+          $(dlg).find(updates.skip_reverify ? '.preview-info-skip-reverify' : '.preview-info-verified').show();
         }
         $.each(response.records, function() {
           const tr = $('<tr>').appendTo($(dlg).find('.preview-output tbody'));
@@ -370,6 +395,14 @@
           tr.append(`<th>${sref}</th>`);
           tr.append(`<th>${recordedBy}</th>`);
         })
+        if (updates.append_comment) {
+          $(dlg).find('.preview-output').append(`<div class="preview-comment">
+            <h3 class="preview-comment-heading">
+              ${indiciaData.lang.bulkEditor.addComment}
+            </h3>
+            <p>${updates.append_comment}</p>
+          </div>`);
+        }
         $(dlg).find('.proceed-bulk-edit').removeAttr('disabled');
       });
     return;
@@ -425,11 +458,15 @@
     dlg.find('.message').html(todoInfo.message);
     dlg.find('.bulk-edit-action-buttons').show();
     dlg.find('.bulk-edit-form-controls').show();
+    dlg.find('#ctrl-wrap-append-comment').show();
+    dlg.find('#ctrl-wrap-skip-reverify').show();
+    dlg.find('#ctrl-wrap-skip-reverify').css('visibility', 'visible');
     dlg.find('.post-bulk-edit-info').hide();
     dlg.find('.post-bulk-edit-info .close-bulk-edit-dlg').attr('disabled', true);
     dlg.find('.post-bulk-edit-info .output p').remove();
     dlg.find('.preview-output').hide();
     dlg.find('.preview-output tbody tr').remove();
+    dlg.find('.preview-comment').remove();
     dlg.find('.proceed-bulk-edit').attr('disabled', true);
     dlg.find('.preview-bulk-edit').removeAttr('disabled');
     dlg.find('.ctrl-wrap input').val('');
@@ -448,6 +485,15 @@
    */
   function initHandlers(el) {
     $(el).find('.bulk-edit-records-btn').on('click', bulkEditRecordsBtnClickHandler);
+
+    const dlg = $('#' + $(el)[0].settings.id + '-dlg');
+    const dateOrSrefControls = dlg.find('[name="edit-date"], #edit-date\\:date, [name="edit-sref"]');
+    dateOrSrefControls.on('input change', function updateSkipReverify() {
+      window.setTimeout(function refreshSkipReverify() {
+        updateSkipReverifyVisibility(dlg);
+      }, 0);
+    });
+    updateSkipReverifyVisibility(dlg);
 
     $(el).find('.preview-bulk-edit').on('click', () => {
       previewClickHandler(el);
