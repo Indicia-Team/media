@@ -633,7 +633,6 @@ table.report-grid .multi img {
 /* Styling for the list of uploaded files. */
 .filelist {
   /* Highlight drop target if dropping enabled */
-  /* Anchor image delete button to right */
 }
 .filelist label {
   width: auto;
@@ -648,12 +647,20 @@ table.report-grid .multi img {
   border-radius: 4px;
   color: gray;
 }
-.filelist .delete-file {
-  float: right;
-  color: #ffffff;
+.filelist .media-file-header {
+  background-color: #f1f1f1;
+  color: #444444;
+  border: 1px solid #d8d8d8;
+  padding: 0.5em;
+  border-radius: 4px 4px 0 0;
+  /* Anchor image delete button to right */
 }
-.filelist .delete-file:hover {
-  color: #000;
+.filelist .media-file-header .delete-file {
+  float: right;
+  cursor: pointer;
+}
+.filelist .media-file-header .delete-file:hover {
+  color: #000000;
 }
 
 .media-gallery ul {
