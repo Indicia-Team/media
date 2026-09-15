@@ -1225,6 +1225,9 @@
      */
     bindControls: function bindControls() {
       var el = this;
+      if (!indiciaFns.bindControl(el)) {
+        return;
+      }
       var settings = $(el)[0].settings;
       var controlClass;
       if (typeof settings.showSelectedRow !== 'undefined') {
@@ -1369,6 +1372,9 @@
         return true;
       } else if (typeof methodOrOptions === 'object' || !methodOrOptions) {
         // Default to "init".
+        if (!indiciaFns.initialiseControl(this)) {
+          return true;
+        }
         return methods.init.apply(this, passedArgs);
       }
       // If we get here, the wrong method was called.

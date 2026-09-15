@@ -99,6 +99,40 @@
   indiciaData.permissionOverlayInitialViewportDone = false;
 
   /**
+   * Mark a control as initialised, returning false if it already is.
+   *
+   * @param object el
+   *   Control element.
+   *
+   * @return bool
+   *   True when the control should continue initialising.
+   */
+  indiciaFns.initialiseControl = function initialiseControl(el) {
+    if (el.idcInitialised) {
+      return false;
+    }
+    el.idcInitialised = true;
+    return true;
+  };
+
+  /**
+   * Mark a control's cross-control bindings as complete.
+   *
+   * @param object el
+   *   Control element.
+   *
+   * @return bool
+   *   True when the bindings should be added.
+   */
+  indiciaFns.bindControl = function bindControl(el) {
+    if (el.idcControlsBound) {
+      return false;
+    }
+    el.idcControlsBound = true;
+    return true;
+  };
+
+  /**
    * Font Awesome icon and other classes for record statuses and flags.
    */
   indiciaData.statusClasses = {
