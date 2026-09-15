@@ -1543,8 +1543,16 @@
    * Handle the next chunk of uploaded decisions spreadsheet.
    */
   function nextSpreadsheetTask(metadata) {
+    var errorMessage;
     if ($.fancybox.getInstance() === false) {
       // Dialog has been closed, so process cancelled.
+      return;
+    }
+    if (!metadata || typeof metadata !== 'object' || !metadata.state) {
+      errorMessage = metadata && (metadata.message || metadata.msg);
+      $('.upload-output').removeClass('alert-info').addClass('alert-danger');
+      $('.upload-output .msg').empty().append($('<p>').text(errorMessage || indiciaData.lang.verificationButtons.uploadError));
+      $('.upload-output progress').hide();
       return;
     }
     if (metadata.state === 'checks failed') {
