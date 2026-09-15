@@ -419,12 +419,13 @@ body {
       }
     }
     tfoot {
-      span {
-        margin: 0 1em;
+      .inline-pager {
+        > span {
+          margin: 0 15px 0 0;
+        }
       }
-      button span {
-        // Undo margin if span inside a button.
-        margin: 0 0 0 8px;
+      button {
+        margin: 0 2px;
       }
     }
   }

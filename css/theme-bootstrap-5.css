@@ -1323,11 +1323,11 @@ body > .loading-spinner {
   padding: 0;
   width: 20px;
 }
-.idc-dataGrid table.es-data-grid tfoot span {
-  margin: 0 1em;
+.idc-dataGrid table.es-data-grid tfoot .inline-pager > span {
+  margin: 0 15px 0 0;
 }
-.idc-dataGrid table.es-data-grid tfoot button span {
-  margin: 0 0 0 8px;
+.idc-dataGrid table.es-data-grid tfoot button {
+  margin: 0 2px;
 }
 
 .data-grid-settings {
