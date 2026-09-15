@@ -163,8 +163,8 @@
         },
         error: function(jqXHR) {
           var msg = indiciaData.lang.verificationButtons.uploadError;
-          if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
-            msg += '<br/>' + jqXHR.responseJSON.message;
+          if (jqXHR.responseJSON && (jqXHR.responseJSON.message || jqXHR.responseJSON.msg)) {
+            msg += '<br/>' + (jqXHR.responseJSON.message || jqXHR.responseJSON.msg);
           }
           $('.upload-output').removeClass('alert-info').addClass('alert-danger');
           $('.upload-output .msg').html('<p>' + msg + '</p>');
@@ -1592,8 +1592,8 @@
         success: nextSpreadsheetTask,
         error: function(jqXHR) {
           var msg = indiciaData.lang.verificationButtons.uploadError;
-          if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
-            msg += '<br/>' + jqXHR.responseJSON.message;
+          if (jqXHR.responseJSON && (jqXHR.responseJSON.message || jqXHR.responseJSON.msg)) {
+            msg += '<br/>' + (jqXHR.responseJSON.message || jqXHR.responseJSON.msg);
           }
           $('.upload-output').removeClass('alert-info').addClass('alert-danger');
           $('.upload-output .msg').html('<p>' + msg + '</p>');
