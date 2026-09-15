@@ -152,9 +152,6 @@
       file = $('#decisions-file').prop('files')[0];
       formdata.append('decisions', file);
       formdata.append('filter_id', $('.user-filter.defines-permissions').val());
-      formdata.append('es_endpoint', indiciaData.esEndpoint);
-      formdata.append('id_prefix', indiciaData.idPrefix);
-      formdata.append('warehouse_name', indiciaData.warehouseName);
       $.ajax({
         url: indiciaData.esProxyAjaxUrl + '/verifyspreadsheet/' + indiciaData.nid,
         type: 'POST',
@@ -1582,9 +1579,7 @@
         type: 'POST',
         dataType: 'json',
         data: {
-          fileId: metadata.fileId,
-          id_prefix: indiciaData.idPrefix,
-          warehouse_name: indiciaData.warehouseName
+          fileId: metadata.fileId
         },
         success: nextSpreadsheetTask,
         error: function(jqXHR) {
