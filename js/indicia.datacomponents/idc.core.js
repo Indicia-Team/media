@@ -2532,7 +2532,7 @@ jQuery(document).ready(function docReady() {
       indiciaData.loadedFilterLocationId = null;
       indiciaFns.populateDataSources(true);
     }
-    else if (locIdToLoad !== indiciaData.loadedFilterLocationId) {
+    else if (locIdToLoad && locIdToLoad !== indiciaData.loadedFilterLocationId) {
       // A selected location which differs from the previously loaded one.
       // Remember which one we are loading so we don't reload the same one.
       indiciaData.loadedFilterLocationId = locIdToLoad;
