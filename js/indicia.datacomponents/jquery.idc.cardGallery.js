@@ -349,44 +349,44 @@
           }
         }
       });
-
-      /**
-       * Handler for the in-card nav Next button.
-       */
-      indiciaFns.on('click', '.nav-next', {}, function() {
-        var oldSelected = $(el).find('.card.selected');
-        handleArrowKeyNavigation('ArrowRight', oldSelected);
-      });
-
-      /**
-       * Handler for the in-card nav Prev button.
-       */
-      indiciaFns.on('click', '.nav-prev', {}, function() {
-        var oldSelected = $(el).find('.card.selected');
-        handleArrowKeyNavigation('ArrowLeft', oldSelected);
-      });
-
-      /**
-       * Handler for the in-card expand card button.
-       */
-      indiciaFns.on('click', '.expand-card', {}, function() {
-        const card = $(this).closest('.card');
-        setCardToMaxSize(card);
-        inMaxSizeMode(el, true);
-      });
-
-      /**
-       * Handler for the in-card expand collapse button.
-       */
-      indiciaFns.on('click', '.collapse-card', {}, function() {
-        const card = $(this).closest('.card');
-        setCardToNormalSize(card);
-        inMaxSizeMode(el, false);
-      });
-
-      // Public function so it can be called from bindControls event handlers.
-      el.loadSelectedCard = loadSelectedCard;
     }
+
+    /**
+     * Handler for the in-card nav Next button.
+     */
+    indiciaFns.on('click', '.nav-next', {}, function() {
+      var oldSelected = $(el).find('.card.selected');
+      handleArrowKeyNavigation('ArrowRight', oldSelected);
+    });
+
+    /**
+     * Handler for the in-card nav Prev button.
+     */
+    indiciaFns.on('click', '.nav-prev', {}, function() {
+      var oldSelected = $(el).find('.card.selected');
+      handleArrowKeyNavigation('ArrowLeft', oldSelected);
+    });
+
+    /**
+     * Handler for the in-card expand card button.
+     */
+    indiciaFns.on('click', '.expand-card', {}, function() {
+      const card = $(this).closest('.card');
+      setCardToMaxSize(card);
+      inMaxSizeMode(el, true);
+    });
+
+    /**
+     * Handler for the in-card expand collapse button.
+     */
+    indiciaFns.on('click', '.collapse-card', {}, function() {
+      const card = $(this).closest('.card');
+      setCardToNormalSize(card);
+      inMaxSizeMode(el, false);
+    });
+
+    // Public function so it can be called from bindControls event handlers.
+    el.loadSelectedCard = loadSelectedCard;
 
     /**
      * Next page click.
