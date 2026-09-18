@@ -1050,6 +1050,8 @@ body > .loading-spinner {
   /* Prevent images pushing buttons off bottom of page. */
 }
 .idc-cardGallery .es-card-gallery .card.show-max-size .image-container img {
+  width: auto;
+  height: auto;
   max-height: 600px;
 }
 .idc-cardGallery .es-card-gallery .card.show-max-size .expand-card {

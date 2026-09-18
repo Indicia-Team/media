@@ -186,6 +186,8 @@ body {
           text-align: center;
           /* Prevent images pushing buttons off bottom of page. */
           img {
+            width: auto;
+            height: auto;
             max-height: 600px;
           }
         }
