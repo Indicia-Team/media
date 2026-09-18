@@ -80,9 +80,9 @@
     // Move verification buttons onto the card.
     if ($('.idc-verificationButtons').length > 0) {
       $(card).closest('.idc-cardGallery').find('.footer').prepend($('.verification-buttons-cntr'));
+      // Show the navigation buttons.
+      $('.verification-buttons-cntr').after($('#card-nav-buttons'));
     }
-    // Show the navigation buttons.
-    $('.verification-buttons-cntr').after($('#card-nav-buttons'));
     // Ensure card visible.
     $(card)[0].scrollIntoView();
     indiciaFns.resizeMaxCard();
