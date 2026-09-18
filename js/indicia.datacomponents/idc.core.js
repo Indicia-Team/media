@@ -408,7 +408,7 @@
           } else if (this.human_chosen !== 'true') {
             // Display classifier not chosen label but only if not human
             // chosen.
-            selection = indiciaData.lang.classifier.suggestionNotChosen;
+            choiceInfo.push(indiciaData.lang.classifier.suggestionNotChosen);
           }
           if (this.probability_given > 0.7) {
             probabilityClass = 'high';
@@ -425,7 +425,7 @@
             <div class="details">
               <span class="taxon">${this.taxon_name_given}</span>
               <span class="classifier-name">${this.classifier} ${this.classifier_version}</span>
-              <span class="classifier-selection">${selection}</span>
+              ${choiceInfo.length ? `<span class="classifier-selection">${choiceInfo.join(' | ')}</span>` : ''}
             </div>
           </div>`;
         });
