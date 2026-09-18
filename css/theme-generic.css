@@ -1080,13 +1080,6 @@ body > .loading-spinner {
 .idc-cardGallery .es-card-gallery .card .image-container > *:first-child {
   margin-left: 4px;
 }
-.idc-cardGallery .es-card-gallery .card ul.data-container {
-  padding: 8px;
-  margin-bottom: 0;
-}
-.idc-cardGallery .es-card-gallery .card ul.data-container li {
-  list-style-type: none;
-}
 .idc-cardGallery .es-card-gallery .card h3 {
   font-size: 1.1em;
   font-weight: bold;
@@ -1139,16 +1132,19 @@ body > .loading-spinner {
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  padding-bottom: 8px;
 }
 .idc-cardGallery .es-card-gallery .card .card-footer > * {
-  margin-right: 15px;
+  margin: 8px;
   border: solid silver 1px;
   border-radius: 4px;
 }
 .idc-cardGallery .es-card-gallery .card .card-footer .data-container {
   background-color: #eee;
   color: #333;
+  padding: 8px;
+}
+.idc-cardGallery .es-card-gallery .card .card-footer .data-container li {
+  list-style-type: none;
 }
 .idc-cardGallery .es-card-gallery .card .card-footer .classifier-suggestions {
   background-color: #333;
