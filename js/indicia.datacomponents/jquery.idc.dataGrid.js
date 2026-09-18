@@ -54,6 +54,7 @@
     includeFullScreenTool: true,
     includePager: true,
     keyboardNavigation: false,
+    popupImageGrouping: 'record',
     pageChangeScrollPosition: 'top',
     sortable: true,
     selectFirstOnPageChange: false,
@@ -1092,6 +1093,9 @@
            + cells.join('') +
            '</tr>').appendTo($(el).find('tbody'));
         $(row).attr('data-doc-source', JSON.stringify(doc));
+        if (el.settings.popupImageGrouping === 'all') {
+          $(row).find('[data-fancybox]').attr('data-fancybox', 'data-grid-' + el.id);
+        }
         return true;
       });
       if (el.settings.responsive) {

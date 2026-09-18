@@ -105,6 +105,11 @@ body {
 .idc-cardGallery {
   /* Ensure height enough for spinner. */
   min-height: 140px;
+  &.open-image-on-click {
+    .es-card-gallery .card:not(.selected) a[data-fancybox] {
+      pointer-events: auto;
+    }
+  }
   &.max-size-mode {
     .card:not(.show-max-size) {
       display: none;

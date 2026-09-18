@@ -967,6 +967,9 @@ body > .loading-spinner {
   /* Ensure height enough for spinner. */
   min-height: 140px;
 }
+.idc-cardGallery.open-image-on-click .es-card-gallery .card:not(.selected) a[data-fancybox] {
+  pointer-events: auto;
+}
 .idc-cardGallery.max-size-mode .card:not(.show-max-size) {
   display: none;
 }

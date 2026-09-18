@@ -44,13 +44,16 @@
    */
   var defaults = {
     actions: [],
+    allowCardSelection: true,
     includeFieldCaptions: false,
     includeExpandTool: true,
     includeFullScreenTool: true,
     includeImageClassifierInfo: false,
     includePager: true,
     includeSortTool: true,
-    keyboardNavigation: false
+    keyboardNavigation: false,
+    openImageOnClick: false,
+    popupImageGrouping: 'record'
   };
 
   /**
@@ -193,9 +196,12 @@
      *
      * Adds selected class and fires callbacks.
      */
-    indiciaFns.on('click', '#' + el.id + ' .es-card-gallery .card', {}, function onCardGalleryCardClick() {
+    indiciaFns.on('click', '#' + el.id + ' .es-card-gallery .card', {}, function onCardGalleryCardClick(event) {
       var card = this;
-      if (!changingSelection && !$(card).hasClass('selected')) {
+      if ($(event.target).closest('a[data-fancybox]').length && el.settings.openImageOnClick) {
+        return;
+      }
+      if (el.settings.allowCardSelection && !changingSelection && !$(card).hasClass('selected')) {
         $(card).closest('.es-card-gallery').find('.card.selected').removeClass('selected');
         $(card).addClass('selected');
         loadSelectedCard();
@@ -209,9 +215,12 @@
      */
     indiciaFns.on('dblclick', '#' + el.id + ' .es-card-gallery .card', {}, function onCardGalleryitemDblClick() {
       var card = this;
-      if (!changingSelection && !$(card).hasClass('selected')) {
+      if (el.settings.allowCardSelection && !changingSelection && !$(card).hasClass('selected')) {
         $(card).closest('.es-card-gallery').find('.card.selected').removeClass('selected');
         $(card).addClass('selected');
+      }
+      if (!el.settings.allowCardSelection) {
+        return;
       }
       setCardToMaxSize(card);
       inMaxSizeMode(el, true);
@@ -488,6 +497,9 @@
       if (typeof options !== 'undefined') {
         $.extend(el.settings, options);
       }
+      if (el.settings.openImageOnClick) {
+        $(el).addClass('open-image-on-click');
+      }
       // CardGallery does not make use of multiple sources.
       el.settings.sourceObject = indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]];
 
@@ -609,6 +621,9 @@
             var thumbwrap = $('<div>').append(thumb);
             $(thumbwrap).appendTo(imageContainer);
           });
+          if (el.settings.popupImageGrouping === 'all') {
+            $(imageContainer).find('[data-fancybox]').attr('data-fancybox', 'card-gallery-' + el.id);
+          }
         }
         $(card).addClass(classes.join(' '));
         if (el.settings.includeFieldCaptions) {
