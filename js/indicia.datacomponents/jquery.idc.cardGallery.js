@@ -45,6 +45,7 @@
   var defaults = {
     actions: [],
     includeFieldCaptions: false,
+    includeExpandTool: true,
     includeFullScreenTool: true,
     includeImageClassifierInfo: false,
     includePager: true,
@@ -641,12 +642,14 @@
         if (el.settings.includeImageClassifierInfo && doc.identification.classifier) {
           $(indiciaFns.getImageClassifierSuggestionsHtml(doc)).appendTo(cardFooter);
         }
-        $('<button type="button" title="' + indiciaData.lang.cardGallery.expandCard + '" class="expand-card ' + indiciaData.templates.buttonDefaultClass + ' ' + indiciaData.templates.buttonSmallClass + '">' +
-          '<i class="fas fa-expand-arrows-alt"></i></i></button>')
-          .appendTo(card);
-        $('<button type="button" title="' + indiciaData.lang.cardGallery.collapseCard + '" class="collapse-card ' + indiciaData.templates.buttonDefaultClass + ' ' + indiciaData.templates.buttonSmallClass + '">' +
-          '<i class="fas fa-compress-arrows-alt"></i></button>')
-          .appendTo(card);
+        if (el.settings.includeExpandTool) {
+          $('<button type="button" title="' + indiciaData.lang.cardGallery.expandCard + '" class="expand-card ' + indiciaData.templates.buttonDefaultClass + ' ' + indiciaData.templates.buttonSmallClass + '">' +
+            '<i class="fas fa-expand-arrows-alt"></i></i></button>')
+            .appendTo(card);
+          $('<button type="button" title="' + indiciaData.lang.cardGallery.collapseCard + '" class="collapse-card ' + indiciaData.templates.buttonDefaultClass + ' ' + indiciaData.templates.buttonSmallClass + '">' +
+            '<i class="fas fa-compress-arrows-alt"></i></button>')
+            .appendTo(card);
+        }
         if (i === 0 && inMaxSizeMode(el)) {
           setCardToMaxSize(card);
           $(card).addClass('selected');
