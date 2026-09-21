@@ -44,12 +44,16 @@
    */
   var defaults = {
     actions: [],
+    allowCardSelection: true,
     includeFieldCaptions: false,
+    includeExpandTool: true,
     includeFullScreenTool: true,
     includeImageClassifierInfo: false,
     includePager: true,
     includeSortTool: true,
-    keyboardNavigation: false
+    keyboardNavigation: false,
+    openImageOnClick: false,
+    popupImageGrouping: 'record'
   };
 
   /**
@@ -80,9 +84,9 @@
     // Move verification buttons onto the card.
     if ($('.idc-verificationButtons').length > 0) {
       $(card).closest('.idc-cardGallery').find('.footer').prepend($('.verification-buttons-cntr'));
+      // Show the navigation buttons.
+      $('.verification-buttons-cntr').after($('#card-nav-buttons'));
     }
-    // Show the navigation buttons.
-    $('.verification-buttons-cntr').after($('#card-nav-buttons'));
     // Ensure card visible.
     $(card)[0].scrollIntoView();
     indiciaFns.resizeMaxCard();
@@ -192,9 +196,12 @@
      *
      * Adds selected class and fires callbacks.
      */
-    indiciaFns.on('click', '#' + el.id + ' .es-card-gallery .card', {}, function onCardGalleryCardClick() {
+    indiciaFns.on('click', '#' + el.id + ' .es-card-gallery .card', {}, function onCardGalleryCardClick(event) {
       var card = this;
-      if (!changingSelection && !$(card).hasClass('selected')) {
+      if ($(event.target).closest('a[data-fancybox]').length && el.settings.openImageOnClick) {
+        return;
+      }
+      if (el.settings.allowCardSelection && !changingSelection && !$(card).hasClass('selected')) {
         $(card).closest('.es-card-gallery').find('.card.selected').removeClass('selected');
         $(card).addClass('selected');
         loadSelectedCard();
@@ -208,9 +215,12 @@
      */
     indiciaFns.on('dblclick', '#' + el.id + ' .es-card-gallery .card', {}, function onCardGalleryitemDblClick() {
       var card = this;
-      if (!changingSelection && !$(card).hasClass('selected')) {
+      if (el.settings.allowCardSelection && !changingSelection && !$(card).hasClass('selected')) {
         $(card).closest('.es-card-gallery').find('.card.selected').removeClass('selected');
         $(card).addClass('selected');
+      }
+      if (!el.settings.allowCardSelection) {
+        return;
       }
       setCardToMaxSize(card);
       inMaxSizeMode(el, true);
@@ -349,44 +359,44 @@
           }
         }
       });
-
-      /**
-       * Handler for the in-card nav Next button.
-       */
-      indiciaFns.on('click', '.nav-next', {}, function() {
-        var oldSelected = $(el).find('.card.selected');
-        handleArrowKeyNavigation('ArrowRight', oldSelected);
-      });
-
-      /**
-       * Handler for the in-card nav Prev button.
-       */
-      indiciaFns.on('click', '.nav-prev', {}, function() {
-        var oldSelected = $(el).find('.card.selected');
-        handleArrowKeyNavigation('ArrowLeft', oldSelected);
-      });
-
-      /**
-       * Handler for the in-card expand card button.
-       */
-      indiciaFns.on('click', '.expand-card', {}, function() {
-        const card = $(this).closest('.card');
-        setCardToMaxSize(card);
-        inMaxSizeMode(el, true);
-      });
-
-      /**
-       * Handler for the in-card expand collapse button.
-       */
-      indiciaFns.on('click', '.collapse-card', {}, function() {
-        const card = $(this).closest('.card');
-        setCardToNormalSize(card);
-        inMaxSizeMode(el, false);
-      });
-
-      // Public function so it can be called from bindControls event handlers.
-      el.loadSelectedCard = loadSelectedCard;
     }
+
+    /**
+     * Handler for the in-card nav Next button.
+     */
+    indiciaFns.on('click', '.nav-next', {}, function() {
+      var oldSelected = $(el).find('.card.selected');
+      handleArrowKeyNavigation('ArrowRight', oldSelected);
+    });
+
+    /**
+     * Handler for the in-card nav Prev button.
+     */
+    indiciaFns.on('click', '.nav-prev', {}, function() {
+      var oldSelected = $(el).find('.card.selected');
+      handleArrowKeyNavigation('ArrowLeft', oldSelected);
+    });
+
+    /**
+     * Handler for the in-card expand card button.
+     */
+    indiciaFns.on('click', '.expand-card', {}, function() {
+      const card = $(this).closest('.card');
+      setCardToMaxSize(card);
+      inMaxSizeMode(el, true);
+    });
+
+    /**
+     * Handler for the in-card expand collapse button.
+     */
+    indiciaFns.on('click', '.collapse-card', {}, function() {
+      const card = $(this).closest('.card');
+      setCardToNormalSize(card);
+      inMaxSizeMode(el, false);
+    });
+
+    // Public function so it can be called from bindControls event handlers.
+    el.loadSelectedCard = loadSelectedCard;
 
     /**
      * Next page click.
@@ -486,6 +496,9 @@
       // Apply settings passed to the constructor.
       if (typeof options !== 'undefined') {
         $.extend(el.settings, options);
+      }
+      if (el.settings.openImageOnClick) {
+        $(el).addClass('open-image-on-click');
       }
       // CardGallery does not make use of multiple sources.
       el.settings.sourceObject = indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]];
@@ -608,6 +621,9 @@
             var thumbwrap = $('<div>').append(thumb);
             $(thumbwrap).appendTo(imageContainer);
           });
+          if (el.settings.popupImageGrouping === 'all') {
+            $(imageContainer).find('[data-fancybox]').attr('data-fancybox', 'card-gallery-' + el.id);
+          }
         }
         $(card).addClass(classes.join(' '));
         if (el.settings.includeFieldCaptions) {
@@ -641,12 +657,14 @@
         if (el.settings.includeImageClassifierInfo && doc.identification.classifier) {
           $(indiciaFns.getImageClassifierSuggestionsHtml(doc)).appendTo(cardFooter);
         }
-        $('<button type="button" title="' + indiciaData.lang.cardGallery.expandCard + '" class="expand-card ' + indiciaData.templates.buttonDefaultClass + ' ' + indiciaData.templates.buttonSmallClass + '">' +
-          '<i class="fas fa-expand-arrows-alt"></i></i></button>')
-          .appendTo(card);
-        $('<button type="button" title="' + indiciaData.lang.cardGallery.collapseCard + '" class="collapse-card ' + indiciaData.templates.buttonDefaultClass + ' ' + indiciaData.templates.buttonSmallClass + '">' +
-          '<i class="fas fa-compress-arrows-alt"></i></button>')
-          .appendTo(card);
+        if (el.settings.includeExpandTool) {
+          $('<button type="button" title="' + indiciaData.lang.cardGallery.expandCard + '" class="expand-card ' + indiciaData.templates.buttonDefaultClass + ' ' + indiciaData.templates.buttonSmallClass + '">' +
+            '<i class="fas fa-expand-arrows-alt"></i></i></button>')
+            .appendTo(card);
+          $('<button type="button" title="' + indiciaData.lang.cardGallery.collapseCard + '" class="collapse-card ' + indiciaData.templates.buttonDefaultClass + ' ' + indiciaData.templates.buttonSmallClass + '">' +
+            '<i class="fas fa-compress-arrows-alt"></i></button>')
+            .appendTo(card);
+        }
         if (i === 0 && inMaxSizeMode(el)) {
           setCardToMaxSize(card);
           $(card).addClass('selected');
@@ -665,6 +683,9 @@
      */
     bindControls: function() {
       var el = this;
+      if (!indiciaFns.bindControl(el)) {
+        return;
+      }
       $.each($('.idc-control'), function() {
         var controlClass = $(this).data('idc-class');
         if (typeof this.callbacks.itemUpdate !== 'undefined') {
@@ -719,6 +740,9 @@
         return true;
       } else if (typeof methodOrOptions === 'object' || !methodOrOptions) {
         // Default to "init".
+        if (!indiciaFns.initialiseControl(this)) {
+          return true;
+        }
         return methods.init.apply(this, passedArgs);
       }
       // If we get here, the wrong method was called.

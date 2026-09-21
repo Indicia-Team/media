@@ -54,7 +54,10 @@
     includeFullScreenTool: true,
     includePager: true,
     keyboardNavigation: false,
+    popupImageGrouping: 'record',
+    pageChangeScrollPosition: 'top',
     sortable: true,
+    selectFirstOnPageChange: false,
     responsive: true,
     responsiveOptions: {
       breakpoints: {
@@ -66,20 +69,6 @@
     },
     tbodyHasScrollBar: false
   };
-
-  /**
-   * Registered callbacks for different events.
-   */
-  var callbacks = {
-    itemSelect: [],
-    itemDblClick: [],
-    populate: []
-  };
-
-  /**
-   * Track loaded row ID to avoid duplicate effort.
-   */
-  var lastLoadedRowId = null;
 
   /**
    * Find the column config panel for a grid el.
@@ -331,15 +320,16 @@
      * */
     function loadSelectedRow() {
       var tr = $('#' + el.id + ' .es-data-grid tbody tr.selected').not('.disabled');
-      if (tr.length && tr.data('row-id') !== lastLoadedRowId) {
-        lastLoadedRowId = tr.data('row-id');
+      if (tr.length && tr.data('row-id') !== el.lastLoadedRowId) {
+        // Track loaded row ID to avoid duplicate effort.
+        el.lastLoadedRowId = tr.data('row-id');
         $.each(el.callbacks.itemSelect, function eachCallback() {
           this(tr);
         });
       }
       else if (!tr.length) {
         // No row selected - still inform callbacks.
-        lastLoadedRowId = null;
+        el.lastLoadedRowId = null;
         $.each(el.callbacks.itemSelect, function eachCallback() {
           this(null);
         });
@@ -933,7 +923,13 @@
       if (typeof options !== 'undefined') {
         $.extend(el.settings, options);
       }
-      el.callbacks = callbacks;
+      // Callback lists and the last loaded row belong to this grid instance.
+      el.callbacks = {
+        itemSelect: [],
+        itemDblClick: [],
+        populate: []
+      };
+      el.lastLoadedRowId = null;
       // dataGrid does not make use of multiple sources.
       el.settings.sourceObject = indiciaData.esSourceObjects[Object.keys(el.settings.source)[0]];
       // Disable cookies unless id specified.
@@ -973,7 +969,7 @@
         totalCols = el.settings.columns.length
           + (el.settings.responsive ? 1 : 0)
           + (el.settings.actions.length > 0 ? 1 : 0);
-        $('<tfoot><tr class="footer"><td colspan="' + totalCols + '"><div class="form-inline">' + indiciaFns.getFooterControls(el) + '</div></td></tr></tfoot>').appendTo(table);
+        $('<tfoot><tr class="footer"><td colspan="' + totalCols + '"><div class="form-inline inline-pager">' + indiciaFns.getFooterControls(el) + '</div></td></tr></tfoot>').appendTo(table);
       }
       setTableHeight(el);
       // Add tool icons for table settings, full screen and multiselect mode.
@@ -1044,7 +1040,7 @@
       }
       // Cleanup before repopulating.
       $(el).find('tbody tr').remove();
-      lastLoadedRowId = null;
+      el.lastLoadedRowId = null;
       $(el).find('.multiselect-all').prop('checked', false);
       // In tbodyHasScrollBar mode, we have to calculate the column widths
       // ourselves since putting CSS overflow on tbody requires us to lose
@@ -1097,10 +1093,22 @@
            + cells.join('') +
            '</tr>').appendTo($(el).find('tbody'));
         $(row).attr('data-doc-source', JSON.stringify(doc));
+        if (el.settings.popupImageGrouping === 'all') {
+          $(row).find('[data-fancybox]').attr('data-fancybox', 'data-grid-' + el.id);
+        }
         return true;
       });
       if (el.settings.responsive) {
         $(el).find('table').trigger('footable_redraw');
+      }
+      if (el.settings.pendingPageChange) {
+        if (el.settings.pageChangeScrollPosition === 'top') {
+          $(el).find('tbody')[0].scrollTop = 0;
+        }
+        if (el.settings.selectFirstOnPageChange) {
+          $(el).find('tbody tr.data-row:not(.disabled)').first().addClass('selected');
+        }
+        el.settings.pendingPageChange = false;
       }
       indiciaFns.updatePagingFooter(el, response, data, 'tbody tr', afterKey);
       el.settings.maxCharsPerCol = maxCharsPerCol;
@@ -1117,6 +1125,9 @@
      */
     bindControls: function() {
       var el = this;
+      if (!indiciaFns.bindControl(el)) {
+        return;
+      }
       $.each($('.idc-control'), function() {
         var controlClass = $(this).data('idc-class');
         if (this.callbacks && this.callbacks.itemUpdate) {
@@ -1171,6 +1182,9 @@
         return true;
       } else if (typeof methodOrOptions === 'object' || !methodOrOptions) {
         // Default to "init".
+        if (!indiciaFns.initialiseControl(this)) {
+          return true;
+        }
         return methods.init.apply(this, passedArgs);
       }
       // If we get here, the wrong method was called.

@@ -1681,6 +1681,7 @@ var destroyAllFeatures;
               'Dynamic (*OpenStreetMap* > Ordnance Survey Leisure > Google Satellite)',
               'https://tile.openstreetmap.org/${z}/${x}/${y}.png',
               {
+                tileOptions: { crossOriginKeyword: null },
                 layerId: 'dynamicOSGoogleSat.0',
                 maxZoom: 5,
                 // Very small scale (zoomed far out).
@@ -1753,6 +1754,7 @@ var destroyAllFeatures;
               'Dynamic (*OpenStreetMap* > Google Satellite)',
               'https://tile.openstreetmap.org/${z}/${x}/${y}.png',
               {
+                tileOptions: { crossOriginKeyword: null },
                 layerId: 'dynamicOSMGoogleSat.0',
                 maxZoom: 18,
                 minMetresPerPixel: 1,

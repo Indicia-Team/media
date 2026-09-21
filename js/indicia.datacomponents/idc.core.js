@@ -99,6 +99,40 @@
   indiciaData.permissionOverlayInitialViewportDone = false;
 
   /**
+   * Mark a control as initialised, returning false if it already is.
+   *
+   * @param object el
+   *   Control element.
+   *
+   * @return bool
+   *   True when the control should continue initialising.
+   */
+  indiciaFns.initialiseControl = function initialiseControl(el) {
+    if (el.idcInitialised) {
+      return false;
+    }
+    el.idcInitialised = true;
+    return true;
+  };
+
+  /**
+   * Mark a control's cross-control bindings as complete.
+   *
+   * @param object el
+   *   Control element.
+   *
+   * @return bool
+   *   True when the bindings should be added.
+   */
+  indiciaFns.bindControl = function bindControl(el) {
+    if (el.idcControlsBound) {
+      return false;
+    }
+    el.idcControlsBound = true;
+    return true;
+  };
+
+  /**
    * Font Awesome icon and other classes for record statuses and flags.
    */
   indiciaData.statusClasses = {
@@ -374,7 +408,7 @@
           } else if (this.human_chosen !== 'true') {
             // Display classifier not chosen label but only if not human
             // chosen.
-            selection = indiciaData.lang.classifier.suggestionNotChosen;
+            choiceInfo.push(indiciaData.lang.classifier.suggestionNotChosen);
           }
           if (this.probability_given > 0.7) {
             probabilityClass = 'high';
@@ -391,7 +425,7 @@
             <div class="details">
               <span class="taxon">${this.taxon_name_given}</span>
               <span class="classifier-name">${this.classifier} ${this.classifier_version}</span>
-              <span class="classifier-selection">${selection}</span>
+              ${choiceInfo.length ? `<span class="classifier-selection">${choiceInfo.join(' | ')}</span>` : ''}
             </div>
           </div>`;
         });
@@ -2498,7 +2532,7 @@ jQuery(document).ready(function docReady() {
       indiciaData.loadedFilterLocationId = null;
       indiciaFns.populateDataSources(true);
     }
-    else if (locIdToLoad !== indiciaData.loadedFilterLocationId) {
+    else if (locIdToLoad && locIdToLoad !== indiciaData.loadedFilterLocationId) {
       // A selected location which differs from the previously loaded one.
       // Remember which one we are loading so we don't reload the same one.
       indiciaData.loadedFilterLocationId = locIdToLoad;
@@ -2541,6 +2575,9 @@ jQuery(document).ready(function docReady() {
    * Change event handlers on filter inputs.
    */
   $('.es-filter-param, .user-filter, .permissions-filter').on('change', function eachFilter() {
+    if ($(this).data('defer-filter-reload')) {
+      return;
+    }
     indiciaFns.updateUserFilterMapOverlays();
     // Force map to update viewport for new data.
     $.each($('.idc-leafletMap'), function eachMap() {

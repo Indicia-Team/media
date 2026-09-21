@@ -14,6 +14,7 @@
    */
   indiciaFns.movePage = function movePage(el, forward, itemSelector) {
     var sourceSettings = el.settings.sourceObject.settings;
+    el.settings.pendingPageChange = true;
     if (el.settings.sourceObject.settings.mode === 'compositeAggregation') {
       el.settings.compositeInfo.page += (forward ? 1 : -1);
       // Composite aggregations use after_key to find next page.
@@ -46,11 +47,16 @@
    */
   indiciaFns.rowsPerPageChange = function rowsPerPageChange(el) {
     var newRowsPerPage = $(el).find('.rows-per-page select option:selected').val();
-    if (el.settings.sourceObject.settings.mode.match(/Aggregation$/)) {
-      el.settings.sourceObject.settings.aggregationSize = newRowsPerPage;
+    var sourceSettings = el.settings.sourceObject.settings;
+
+    el.settings.pendingPageChange = true;
+    if (sourceSettings.mode.match(/Aggregation$/)) {
+      sourceSettings.aggregationSize = newRowsPerPage;
     } else {
-      el.settings.sourceObject.settings.size = newRowsPerPage;
+      sourceSettings.size = newRowsPerPage;
+      sourceSettings.from = 0;
     }
+
     el.settings.sourceObject.populate();
   }
 
@@ -174,7 +180,7 @@
       // Enable or disable the paging buttons.
       $(footer).find('.prev').prop('disabled', offset <= 0);
       const actualPageSize = response.hits.hits ? response.hits.hits.length : 0;
-      $(footer).find('.next').prop('disabled', offset + actualPageSize > response.hits.total.value);
+      $(footer).find('.next').prop('disabled', offset + actualPageSize >= response.hits.total.value);
     }
     indiciaFns.drawPager($(footer).find('.showing'), pageSize, sourceSettings);
   }
