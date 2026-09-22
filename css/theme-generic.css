@@ -1226,7 +1226,7 @@ body > .loading-spinner {
   right: 4px;
   top: 4px;
 }
-.idc-cardGallery #card-nav-buttons {
+.idc-cardGallery [id$="-card-nav-buttons"] {
   float: right;
 }
 

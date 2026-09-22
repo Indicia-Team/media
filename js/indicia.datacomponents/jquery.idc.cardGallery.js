@@ -39,6 +39,31 @@
    */
   var changingSelection = false;
 
+    /**
+     * Get the navigation buttons for a gallery instance.
+     *
+     * @param DOM el
+     *   Gallery element.
+     *
+     * @returns jQuery
+     *   Navigation buttons element.
+     */
+    function getNavButtons(el) {
+      return $('#' + el.id + '-card-nav-buttons');
+    }
+
+    /**
+     * Get the navigation buttons container for a gallery instance.
+     *
+     * @param DOM el
+     *   Gallery element.
+     *
+     * @returns jQuery
+     *   Navigation buttons container element.
+     */
+    function getNavButtonsContainer(el) {
+      return $('#' + el.id + '-card-nav-buttons-cntr');
+    }
   /**
    * Declare default settings.
    */
@@ -85,7 +110,7 @@
     if ($('.idc-verificationButtons').length > 0) {
       $(card).closest('.idc-cardGallery').find('.footer').prepend($('.verification-buttons-cntr'));
       // Show the navigation buttons.
-      $('.verification-buttons-cntr').after($('#card-nav-buttons'));
+      $('.verification-buttons-cntr').after(getNavButtons($(card).closest('.idc-cardGallery')[0]));
     }
     // Ensure card visible.
     $(card)[0].scrollIntoView();
@@ -131,7 +156,7 @@
       }
       if (!on) {
         // Hide the nav buttons.
-        $('#card-nav-buttons-cntr').append($('#card-nav-buttons'));
+        getNavButtonsContainer(el).append(getNavButtons(el));
       }
       indiciaFns.updateControlLayout();
     }
@@ -251,68 +276,67 @@
     });
 
     /**
+     * Navigate when arrow key pressed, or nav button clicked.
+     */
+    function handleArrowKeyNavigation(key, oldSelected) {
+      var newSelected;
+      var oldCardBounds;
+      var nextRowTop;
+      var nextRowContents = [];
+      var navFn;
+      var closestVerticalDistance = null;
+      if (key === 'ArrowLeft') {
+        newSelected = $(oldSelected).prev('.card');
+      } else if (key === 'ArrowRight') {
+        newSelected = $(oldSelected).next('.card');
+      } else {
+        navFn = key === 'ArrowUp' ? 'prev' : 'next';
+        oldCardBounds = oldSelected[0].getBoundingClientRect();
+        newSelected = $(oldSelected)[navFn]('.card');
+        // Since we are going up or down, find the whole contents of the
+        // row we are moving into by inspecting the y position.
+        while (newSelected.length !== 0) {
+          if (newSelected[0].getBoundingClientRect().y !== oldCardBounds.y) {
+            if (!nextRowTop) {
+              nextRowTop = newSelected[0].getBoundingClientRect().y;
+            } else if (nextRowTop !== newSelected[0].getBoundingClientRect().y) {
+              break;
+            }
+            nextRowContents.push(newSelected);
+          }
+          newSelected = $(newSelected)[navFn]('.card');
+        }
+        // Now find the item in that row with the closest vertical centre
+        // to the card we are leaving.
+        $.each(nextRowContents, function() {
+          var thisCardBounds = this[0].getBoundingClientRect();
+          var thisVerticalDistance = Math.abs((oldCardBounds.left + oldCardBounds.right) / 2 - (thisCardBounds.left + thisCardBounds.right) / 2);
+          if (closestVerticalDistance === null || thisVerticalDistance < closestVerticalDistance) {
+            newSelected = this;
+            closestVerticalDistance = thisVerticalDistance;
+          }
+        });
+      }
+      if (newSelected.length) {
+        changingSelection = true;
+        $(newSelected).addClass('selected');
+        $(newSelected).focus();
+        $(oldSelected).removeClass('selected');
+      }
+      // Load row on timeout to avoid rapidly hitting services if repeat-hitting key.
+      if (loadRowTimeout) {
+        clearTimeout(loadRowTimeout);
+      }
+      loadRowTimeout = setTimeout(function() {
+        loadSelectedCard();
+        changingSelection = false;
+      }, 200);
+    }
+
+    /**
      * Implement arrow key and other navigation tools.
      */
     if (el.settings.keyboardNavigation) {
-
-      /**
-       * Navigate when arrow key pressed.
-       */
-      function handleArrowKeyNavigation(key, oldSelected) {
-        var newSelected;
-        var oldCardBounds;
-        var nextRowTop;
-        var nextRowContents = [];
-        var navFn;
-        var closestVerticalDistance = null;
-        if (key === 'ArrowLeft') {
-          newSelected = $(oldSelected).prev('.card');
-        } else if (key === 'ArrowRight') {
-          newSelected = $(oldSelected).next('.card');
-        } else {
-          navFn = key === 'ArrowUp' ? 'prev' : 'next';
-          oldCardBounds = oldSelected[0].getBoundingClientRect();
-          newSelected = $(oldSelected)[navFn]('.card');
-          // Since we are going up or down, find the whole contents of the
-          // row we are moving into by inspecting the y position.
-          while (newSelected.length !== 0) {
-            if (newSelected[0].getBoundingClientRect().y !== oldCardBounds.y) {
-              if (!nextRowTop) {
-                nextRowTop = newSelected[0].getBoundingClientRect().y;
-              } else if (nextRowTop !== newSelected[0].getBoundingClientRect().y) {
-                break;
-              }
-              nextRowContents.push(newSelected);
-            }
-            newSelected = $(newSelected)[navFn]('.card');
-          }
-          // Now find the item in that row with the closest vertical centre
-          // to the card we are leaving.
-          $.each(nextRowContents, function() {
-            var thisCardBounds = this[0].getBoundingClientRect();
-            var thisVerticalDistance = Math.abs((oldCardBounds.left + oldCardBounds.right) / 2 - (thisCardBounds.left + thisCardBounds.right) / 2);
-            if (closestVerticalDistance === null || thisVerticalDistance < closestVerticalDistance) {
-              newSelected = this;
-              closestVerticalDistance = thisVerticalDistance;
-            }
-          });
-        }
-        if (newSelected.length) {
-          changingSelection = true;
-          $(newSelected).addClass('selected');
-          $(newSelected).focus();
-          $(oldSelected).removeClass('selected');
-        }
-        // Load row on timeout to avoid rapidly hitting services if repeat-hitting key.
-        if (loadRowTimeout) {
-          clearTimeout(loadRowTimeout);
-        }
-        loadRowTimeout = setTimeout(function() {
-          loadSelectedCard();
-          changingSelection = false;
-        }, 200);
-      }
-
       /**
        * Keyboard handler for the gallery.
        */
@@ -364,7 +388,7 @@
     /**
      * Handler for the in-card nav Next button.
      */
-    indiciaFns.on('click', '.nav-next', {}, function() {
+    indiciaFns.on('click', `#${el.id} .nav-next`, {}, function() {
       var oldSelected = $(el).find('.card.selected');
       handleArrowKeyNavigation('ArrowRight', oldSelected);
     });
@@ -372,7 +396,7 @@
     /**
      * Handler for the in-card nav Prev button.
      */
-    indiciaFns.on('click', '.nav-prev', {}, function() {
+    indiciaFns.on('click', `#${el.id} .nav-prev`, {}, function() {
       var oldSelected = $(el).find('.card.selected');
       handleArrowKeyNavigation('ArrowLeft', oldSelected);
     });
@@ -380,7 +404,7 @@
     /**
      * Handler for the in-card expand card button.
      */
-    indiciaFns.on('click', '.expand-card', {}, function() {
+    indiciaFns.on('click', `#${el.id} .expand-card`, {}, function() {
       const card = $(this).closest('.card');
       setCardToMaxSize(card);
       inMaxSizeMode(el, true);
@@ -389,7 +413,7 @@
     /**
      * Handler for the in-card expand collapse button.
      */
-    indiciaFns.on('click', '.collapse-card', {}, function() {
+    indiciaFns.on('click', `#${el.id} .collapse-card`, {}, function() {
       const card = $(this).closest('.card');
       setCardToNormalSize(card);
       inMaxSizeMode(el, false);
@@ -581,7 +605,7 @@
           $('.idc-verificationButtons').append($('.verification-buttons-cntr'));
         }
         // Hide the nav buttons.
-        $('#card-nav-buttons-cntr').append($('#card-nav-buttons'));
+        getNavButtonsContainer(el).append(getNavButtons(el));
       }
 
       // Cleanup before repopulating.
