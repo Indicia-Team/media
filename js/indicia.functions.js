@@ -695,18 +695,31 @@ window.indiciaFns = {};
    *   Date formatted.
    */
   indiciaFns.formatDate = function formatDate(dateString) {
+    var parts;
     var date;
     var month;
     var day;
     var year;
+
     if (typeof dateString === 'undefined' ||
         (typeof dateString === 'string' && dateString.trim() === '')) {
       return '';
     }
-    date = new Date(dateString);
-    month = (1 + date.getUTCMonth()).toString().padStart(2, '0');
-    day = date.getUTCDate().toString().padStart(2, '0');
-    year = date.getUTCFullYear().toString().padStart(4, '0');
+
+    if (typeof dateString === 'string' &&
+        /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      parts = dateString.split('-');
+      year = parts[0];
+      month = parts[1];
+      day = parts[2];
+    }
+    else {
+      date = new Date(dateString);
+      month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      day = String(date.getUTCDate()).padStart(2, '0');
+      year = String(date.getUTCFullYear()).padStart(4, '0');
+    }
+
     return indiciaData.dateFormat
       .replace('d', day)
       .replace('m', month)
