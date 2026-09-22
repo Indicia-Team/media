@@ -133,6 +133,25 @@
   };
 
   /**
+   * Notify page-state coordinators that component-owned state changed.
+   *
+   * Components remain responsible for knowing which state they own. This
+   * document event provides a common boundary for an optional page-state
+   * coordinator without coupling the components to its implementation.
+   *
+   * @param object owner
+   *   Component or source whose state changed.
+   * @param string stateType
+   *   Name of the changed state category.
+   */
+  indiciaFns.notifyPageStateChanged = function notifyPageStateChanged(owner, stateType) {
+    $(document).trigger('idcPageStateChanged', [{
+      owner: owner,
+      stateType: stateType
+    }]);
+  };
+
+  /**
    * Font Awesome icon and other classes for record statuses and flags.
    */
   indiciaData.statusClasses = {

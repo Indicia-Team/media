@@ -306,6 +306,59 @@
   }
 
   /**
+   * Refresh sort icons from the source state.
+   *
+   * The sort belongs to the source, but the grid owns the corresponding
+   * visual indicator. This method is used after page-state restoration.
+   */
+  function refreshSortInfo(el) {
+    var sort = el.settings.sourceObject.settings.sort || {};
+    var sortField = Object.keys(sort)[0];
+    var sortButton = $(el).find('thead th span.sort');
+    $(sortButton).removeClass('fa-sort-down fa-sort-up').addClass('fa-sort');
+    if (sortField) {
+      $(el).find('thead th[data-field] span.sort').each(function eachSortButton() {
+        if ($(this).closest('th').attr('data-field') === sortField) {
+          showHeaderSortInfo($(this), sort[sortField] === 'desc');
+        }
+      });
+    }
+  }
+
+  /**
+   * Capture filter-row values owned by a grid.
+   */
+  function getFilterRowState(el) {
+    var filterRow = {};
+    $(el).find('.es-filter-row td[data-field] input').each(function eachFilterInput() {
+      filterRow[$(this).closest('td').attr('data-field')] = $(this).val();
+    });
+    return filterRow;
+  }
+
+  /**
+   * Restore filter-row values without firing change handlers.
+   */
+  function restoreFilterRowState(el, filterRow) {
+    if (!filterRow || typeof filterRow !== 'object') {
+      return;
+    }
+    $(el).find('.es-filter-row td[data-field] input').each(function eachFilterInput() {
+      var field = $(this).closest('td').attr('data-field');
+      if (Object.prototype.hasOwnProperty.call(filterRow, field)) {
+        $(this).val(filterRow[field]);
+      }
+    });
+  }
+
+  /**
+   * Clear all filter-row values owned by a grid.
+   */
+  function resetFilterRowState(el) {
+    $(el).find('.es-filter-row td[data-field] input').val('');
+  }
+
+  /**
    * Register the various user interface event handlers.
    */
   function initHandlers(el) {
@@ -449,6 +502,7 @@
         showHeaderSortInfo($sortSpan, sortDesc);
         sourceObj.settings.sort = {};
         sourceObj.settings.sort[fieldName] = sortDesc ? 'desc' : 'asc';
+        indiciaFns.notifyPageStateChanged(el, 'sort');
         sourceObj.populate();
       }
     });
@@ -467,6 +521,7 @@
         source.settings.from = 0;
         source.populate();
       });
+      indiciaFns.notifyPageStateChanged(el, 'gridFilterRow');
     });
 
     /**
@@ -985,6 +1040,7 @@
       }
       $('<div class="idc-tools">' + tools.join('<br/>') + '</div>').appendTo(el);
       initHandlers(el);
+      refreshSortInfo(el);
       if (footableSort === 'true' || el.settings.responsive) {
         // Make grid responsive.
         $(el).indiciaFootableReport(el.settings.responsiveOptions);
@@ -1014,6 +1070,49 @@
         setTableHeight(el);
         scheduleColumnResize(el);
       });
+    },
+
+    /**
+     * Return state owned by this grid for page-state persistence.
+     *
+     * Sort and pagination are owned by the linked source and are therefore
+     * intentionally excluded from this object.
+     *
+     * @return object
+     *   Grid-owned page state.
+     */
+    getPageState: function getPageState() {
+      return {
+        filterRow: getFilterRowState(this)
+      };
+    },
+
+    /**
+     * Restore grid-owned state without refreshing the data.
+     *
+     * @param object state
+     *   Grid-owned page state.
+     */
+    restorePageState: function restorePageState(state) {
+      var filterRow = state && state.filterRow ? state.filterRow : {};
+      restoreFilterRowState(this, filterRow);
+      if (this.settings.sourceObject.settings.mode === 'compositeAggregation' && this.settings.compositeInfo) {
+        this.settings.compositeInfo.page = 0;
+        this.settings.compositeInfo.pageAfterKeys = {};
+      }
+      refreshSortInfo(this);
+    },
+
+    /**
+     * Reset grid-owned state without refreshing the data.
+     */
+    resetPageState: function resetPageState() {
+      resetFilterRowState(this);
+      if (this.settings.compositeInfo) {
+        this.settings.compositeInfo.page = 0;
+        this.settings.compositeInfo.pageAfterKeys = {};
+      }
+      refreshSortInfo(this);
     },
 
     /**

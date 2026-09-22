@@ -91,6 +91,32 @@
   };
 
   /**
+   * Refresh the gallery sort indicators from the linked source.
+   *
+   * Sorting is source-owned so grids and galleries sharing a source remain
+   * consistent. The gallery only owns the visual sort indicator.
+   *
+   * @param object el
+   *   Gallery element.
+   */
+  function refreshSortInfo(el) {
+    var sort = el.settings.sourceObject.settings.sort || {};
+    var sortField = Object.keys(sort)[0];
+    var sortSpans = $(el).find('.sort-dropdown li span');
+    $(sortSpans).hide().removeClass('fa-sort-alpha-up fa-sort-alpha-down-alt');
+    if (sortField) {
+      $(el).find('.sort-dropdown li').each(function eachSortItem() {
+        if ($(this).attr('data-field') === sortField) {
+          var sortSpan = $(this).find('span');
+          $(sortSpan).removeClass('fa-sort-alpha-up fa-sort-alpha-down-alt');
+          $(sortSpan).addClass(sort[sortField] === 'desc' ? 'fa-sort-alpha-down-alt' : 'fa-sort-alpha-up');
+          $(sortSpan).show();
+        }
+      });
+    }
+  }
+
+  /**
      * Zooms a card in to use the full width of the control, as an overlay.
      *
      * @param DOM card
@@ -271,6 +297,7 @@
         $(sortSpan).show();
         sourceObj.settings.sort = {};
         sourceObj.settings.sort[fieldName] = sortDesc ? 'desc' : 'asc';
+        indiciaFns.notifyPageStateChanged(el, 'sort');
         sourceObj.populate();
       }
     });
@@ -580,7 +607,43 @@
       // Add overlay for loading.
       $('<div class="loading-spinner" style="display: block"><div>Loading...</div></div>').appendTo(el);
       initHandlers(el);
+      refreshSortInfo(el);
       indiciaFns.updateControlLayout();
+    },
+
+    /**
+     * Return gallery-owned state for the common page-state API.
+     *
+     * The gallery has no independent persisted inputs. Its sort and
+     * pagination state are exposed by the linked source instead.
+     *
+     * @return object
+     *   Empty gallery-owned state.
+     */
+    getPageState: function getPageState() {
+      return {};
+    },
+
+    /**
+     * Restore gallery presentation state without refreshing the data.
+     */
+    restorePageState: function restorePageState() {
+      if (this.settings.sourceObject.settings.mode === 'compositeAggregation' && this.settings.compositeInfo) {
+        this.settings.compositeInfo.page = 0;
+        this.settings.compositeInfo.pageAfterKeys = {};
+      }
+      refreshSortInfo(this);
+    },
+
+    /**
+     * Reset gallery presentation state without refreshing the data.
+     */
+    resetPageState: function resetPageState() {
+      if (this.settings.compositeInfo) {
+        this.settings.compositeInfo.page = 0;
+        this.settings.compositeInfo.pageAfterKeys = {};
+      }
+      refreshSortInfo(this);
     },
 
     /**
