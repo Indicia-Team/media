@@ -398,12 +398,14 @@
           tr.append(`<th>${recordedBy}</th>`);
         })
         if (updates.append_comment) {
-          $(dlg).find('.preview-output').append(`<div class="preview-comment">
-            <h3 class="preview-comment-heading">
-              ${indiciaData.lang.bulkEditor.addComment}
-            </h3>
-            <p>${updates.append_comment}</p>
-          </div>`);
+          const previewComment = $('<div class="preview-comment">');
+          $('<h3 class="preview-comment-heading">')
+            .text(indiciaData.lang.bulkEditor.addComment)
+            .appendTo(previewComment);
+          $('<p>')
+            .text(updates.append_comment)
+            .appendTo(previewComment);
+          $(dlg).find('.preview-output').append(previewComment);
         }
         $(dlg).find('.proceed-bulk-edit').removeAttr('disabled');
       });
