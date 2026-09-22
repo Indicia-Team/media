@@ -474,6 +474,7 @@
     dlg.find('.proceed-bulk-edit').attr('disabled', true);
     dlg.find('.preview-bulk-edit').removeAttr('disabled');
     dlg.find('.ctrl-wrap input').val('');
+    dlg.find('#append-comment').val('');
 
     // Now open it.
     $.fancybox.open({
