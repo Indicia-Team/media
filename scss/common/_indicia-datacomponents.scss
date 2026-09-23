@@ -336,7 +336,7 @@ body {
       }
     }
   }
-  #card-nav-buttons {
+  [id$="-card-nav-buttons"] {
     float: right;
   }
 }

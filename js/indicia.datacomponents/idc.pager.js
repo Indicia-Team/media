@@ -36,6 +36,7 @@
       }
       sourceSettings.from = Math.max(0, sourceSettings.from);
     }
+    indiciaFns.notifyPageStateChanged(el, 'page');
     el.settings.sourceObject.populate();
   }
 
@@ -46,9 +47,12 @@
    *   Control element.
    */
   indiciaFns.rowsPerPageChange = function rowsPerPageChange(el) {
-    var newRowsPerPage = $(el).find('.rows-per-page select option:selected').val();
+    var newRowsPerPage = parseInt($(el).find('.rows-per-page select option:selected').val(), 10);
     var sourceSettings = el.settings.sourceObject.settings;
 
+    if (isNaN(newRowsPerPage) || newRowsPerPage <= 0) {
+      return;
+    }
     el.settings.pendingPageChange = true;
     if (sourceSettings.mode.match(/Aggregation$/)) {
       sourceSettings.aggregationSize = newRowsPerPage;
@@ -57,6 +61,7 @@
       sourceSettings.from = 0;
     }
 
+    indiciaFns.notifyPageStateChanged(el, 'rowsPerPage');
     el.settings.sourceObject.populate();
   }
 

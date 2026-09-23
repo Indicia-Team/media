@@ -5044,7 +5044,7 @@ jQuery.fn.indiciaMapPanel.defaults = {
     'You can then filter the report for intersecting records.',
   hintClearSelection: 'Clear the edit layer',
   hintModifyFeature:
-    'Modify the selected feature. Click on the feature to select it then grab and drag the circular handles to change the boundary.',
+    'Modify the selected feature. Click on the feature to select it then grab and drag the handles to change the boundary.',
   hintFullscreen: 'Display the map in full screen mode',
   hlpClickOnceSetSref: 'Click once on the map to set your location.',
   hlpClickAgainToCorrect:

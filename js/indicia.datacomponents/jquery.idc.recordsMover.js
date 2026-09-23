@@ -51,6 +51,10 @@
     if (indiciaData.esScope === 'user') {
       return true;
     }
+    // If my records applied to Who pane.
+    if (indiciaData.filter?.def?.my_records === '1') {
+      return true;
+    }
     if (typeof filter.bool_queries !== 'undefined') {
       filter.bool_queries.forEach((qry) => {
         if ((qry.bool_clause === 'must' || qry.bool_clause === 'filter')
