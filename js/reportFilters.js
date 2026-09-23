@@ -1312,9 +1312,9 @@ jQuery(document).ready(function ($) {
    * Return a deep copy of the current report-filter state.
    *
    * The report filter definition is the source of truth for the What, Where,
-  * When, Who, Quality and Source panes. The selected filter metadata and
-  * standard parameters from custom filter inputs are included separately so
-  * restoring a page does not need to infer them from the definition.
+   * When, Who, Quality and Source panes. The selected filter metadata and
+   * standard parameters from custom filter inputs are included separately so
+   * restoring a page does not need to infer them from the definition.
    *
    * @return object
    *   Serializable report-filter state.
@@ -1401,6 +1401,10 @@ jQuery(document).ready(function ($) {
       standardParams: {}
     });
   };
+
+  if (typeof indiciaFns.restorePendingReportFilterPageState === 'function') {
+    indiciaFns.restorePendingReportFilterPageState();
+  }
 
   function codeToSharingTerm(code) {
     switch (code) {
@@ -1864,9 +1868,7 @@ jQuery(document).ready(function ($) {
       $('#pane-filter_' + name + ' .filter-desc').html(desc);
     });
     $('#filter-details').slideDown(400, function() {
-      if (indiciaFns.updateControlLayout) {
-        indiciaFns.updateControlLayout();
-      }
+      indiciaFns.updateControlLayout();
       if (indiciaFns.notifyPageStateChanged) {
         indiciaFns.notifyPageStateChanged(document, 'filterPanelVisibility');
       }
@@ -1904,9 +1906,7 @@ jQuery(document).ready(function ($) {
 
   $('#filter-done').on('click', function () {
     $('#filter-details').slideUp(400, function() {
-      if (indiciaFns.updateControlLayout) {
-        indiciaFns.updateControlLayout();
-      }
+      indiciaFns.updateControlLayout();
       if (indiciaFns.notifyPageStateChanged) {
         indiciaFns.notifyPageStateChanged(document, 'filterPanelVisibility');
       }

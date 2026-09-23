@@ -35,7 +35,8 @@
   }
 
   var cookieChunkSize = 3500;
-  var stateSchemaVersion = 1;
+  var stateSchemaVersion = 3;
+  var customFilterControlSelector = '.es-filter-param:not(.es-location-select-geom), .es-location-select';
 
   /**
    * Split a value into chunks that remain within the limit after cookie
@@ -77,7 +78,7 @@
    * @return string
    *   Storage key prefix.
    */
-  function getStorageKey(el) {
+  function getStorageKey(el, schemaVersion) {
     var configuredKey = el.settings.storageKey;
     var pageKey = window.location.pathname || 'page';
     var storageKey = configuredKey ||
@@ -85,7 +86,8 @@
     var userScope = typeof indiciaData.user_id !== 'undefined' && indiciaData.user_id !== null && indiciaData.user_id !== ''
       ? String(indiciaData.user_id)
       : 'anonymous';
-    return storageKey + '-v' + stateSchemaVersion + '-u' + userScope.replace(/[^a-zA-Z0-9_-]/g, '_');
+    schemaVersion = typeof schemaVersion === 'undefined' ? stateSchemaVersion : schemaVersion;
+    return storageKey + '-v' + schemaVersion + '-u' + userScope.replace(/[^a-zA-Z0-9_-]/g, '_');
   }
 
   /**
@@ -99,6 +101,15 @@
       for (var idx = 0; idx < chunkCount; idx++) {
         indiciaFns.cookie(key + '-' + idx, null);
       }
+    }
+  }
+
+  /**
+   * Remove cookies left behind by earlier page-state schemas.
+   */
+  function removeObsoleteStoredStates(el) {
+    for (var version = 1; version < stateSchemaVersion; version++) {
+      removeStoredState(getStorageKey(el, version));
     }
   }
 
@@ -219,6 +230,70 @@
   }
 
   /**
+   * Return a stable state key for an Elasticsearch filter control.
+   */
+  function getCustomFilterControlKey(control, index) {
+    var id = $(control).attr('id');
+    var name = $(control).attr('name');
+    if (id) {
+      return 'id:' + id;
+    }
+    if (name) {
+      var nameIndex = $(customFilterControlSelector).filter(function matchingName() {
+        return $(this).attr('name') === name;
+      }).index(control);
+      return 'name:' + name + ':' + nameIndex;
+    }
+    return 'index:' + index;
+  }
+
+  /**
+   * Capture values of custom Elasticsearch filter controls.
+   */
+  function getCustomFilterControlState() {
+    var state = {};
+    $(customFilterControlSelector).each(function eachFilterControl(index) {
+      var controlState = {
+        value: $(this).val()
+      };
+      if ($(this).is(':checkbox, :radio')) {
+        controlState.checked = $(this).is(':checked');
+      }
+      state[getCustomFilterControlKey(this, index)] = controlState;
+    });
+    return state;
+  }
+
+  /**
+   * Restore custom Elasticsearch filter controls without triggering reloads.
+   */
+  function restoreCustomFilterControlState(state) {
+    if (!state || typeof state !== 'object') {
+      return;
+    }
+    indiciaData.restoredEsLocationFilterValues = {};
+    $(customFilterControlSelector).each(function eachFilterControl(index) {
+      var controlState = state[getCustomFilterControlKey(this, index)];
+      if (!controlState || typeof controlState !== 'object') {
+        return;
+      }
+      $(this).val(controlState.value);
+      if ($(this).hasClass('es-location-select')) {
+        indiciaData.restoredEsLocationFilterValues[this.id] = controlState.value;
+      }
+      if (Object.prototype.hasOwnProperty.call(controlState, 'checked')) {
+        $(this).prop('checked', controlState.checked === true);
+      }
+    });
+    if (indiciaFns.restoreEsLocationFilterFeatures) {
+      indiciaFns.restoreEsLocationFilterFeatures();
+    }
+    else {
+      indiciaData.restoreEsLocationFilterFeaturesPending = true;
+    }
+  }
+
+  /**
    * Return only source fields enabled for this persistence control.
    */
   function getEnabledSourceState(el, sourceState) {
@@ -240,11 +315,47 @@
   }
 
   /**
+   * Restore report-filter state when its optional provider is available.
+   */
+  function restoreReportFilterState(el, state) {
+    var currentReportFilterState;
+    var reportFilterState;
+    if (!state || typeof indiciaFns.getReportFilterPageState !== 'function' ||
+        typeof indiciaFns.restoreReportFilterPageState !== 'function') {
+      return false;
+    }
+    currentReportFilterState = indiciaFns.getReportFilterPageState();
+    reportFilterState = $.extend(true, {}, currentReportFilterState);
+    if (categoryEnabled(el, 'selectedFilter')) {
+      reportFilterState.selectedFilter = state.selectedFilter;
+      reportFilterState.id = state.id;
+      reportFilterState.title = state.title;
+    }
+    if (categoryEnabled(el, 'filterDefinition')) {
+      reportFilterState.definition = state.definition;
+      reportFilterState.standardParams = state.standardParams;
+    }
+    indiciaFns.restoreReportFilterPageState(reportFilterState);
+    return true;
+  }
+
+  /**
+   * Complete restoration deferred until the optional report-filter provider loaded.
+   */
+  indiciaFns.restorePendingReportFilterPageState = function restorePendingReportFilterPageState() {
+    var pending = indiciaData.pendingReportFilterPageState;
+    if (pending && restoreReportFilterState(pending.el, pending.state)) {
+      delete indiciaData.pendingReportFilterPageState;
+    }
+  };
+
+  /**
    * Capture all state exposed by the page's providers.
    */
   function captureState(el) {
     var state = {};
-    if (categoryEnabled(el, 'selectedFilter') || categoryEnabled(el, 'filterDefinition')) {
+    if ((categoryEnabled(el, 'selectedFilter') || categoryEnabled(el, 'filterDefinition')) &&
+        typeof indiciaFns.getReportFilterPageState === 'function') {
       state.reportFilters = indiciaFns.getReportFilterPageState();
       if (!categoryEnabled(el, 'selectedFilter')) {
         delete state.reportFilters.selectedFilter;
@@ -258,6 +369,9 @@
     }
     if (categoryEnabled(el, 'filterPanelVisibility')) {
       state.filterPanelVisibility = getFilterPanelVisibility();
+    }
+    if (categoryEnabled(el, 'customFilterControls')) {
+      state.customFilterControls = getCustomFilterControlState();
     }
     state.sources = {};
     $.each(indiciaData.esSourceObjects || {}, function eachSource(name, source) {
@@ -292,27 +406,22 @@
    * Restore provider state without triggering requests.
    */
   function restoreState(el, state) {
-    var currentReportFilterState;
-    var reportFilterState;
     if (!state || typeof state !== 'object') {
       return;
     }
     if (state.reportFilters && (categoryEnabled(el, 'selectedFilter') || categoryEnabled(el, 'filterDefinition'))) {
-      currentReportFilterState = indiciaFns.getReportFilterPageState();
-      reportFilterState = $.extend(true, {}, currentReportFilterState);
-      if (categoryEnabled(el, 'selectedFilter')) {
-        reportFilterState.selectedFilter = state.reportFilters.selectedFilter;
-        reportFilterState.id = state.reportFilters.id;
-        reportFilterState.title = state.reportFilters.title;
+      if (!restoreReportFilterState(el, state.reportFilters)) {
+        indiciaData.pendingReportFilterPageState = {
+          el: el,
+          state: state.reportFilters
+        };
       }
-      if (categoryEnabled(el, 'filterDefinition')) {
-        reportFilterState.definition = state.reportFilters.definition;
-        reportFilterState.standardParams = state.reportFilters.standardParams;
-      }
-      indiciaFns.restoreReportFilterPageState(reportFilterState);
     }
     if (categoryEnabled(el, 'filterPanelVisibility')) {
       restoreFilterPanelVisibility(state.filterPanelVisibility);
+    }
+    if (categoryEnabled(el, 'customFilterControls')) {
+      restoreCustomFilterControlState(state.customFilterControls);
     }
     $.each(state.sources || {}, function eachSource(name, sourceState) {
       var source = indiciaData.esSourceObjects && indiciaData.esSourceObjects[name];
@@ -335,7 +444,10 @@
   function resetState(el) {
     var currentReportFilterState;
     var resetReportFilterState;
-    if (categoryEnabled(el, 'selectedFilter') || categoryEnabled(el, 'filterDefinition')) {
+    if ((categoryEnabled(el, 'selectedFilter') || categoryEnabled(el, 'filterDefinition')) &&
+        typeof indiciaFns.getReportFilterPageState === 'function' &&
+        typeof indiciaFns.resetReportFilterPageState === 'function' &&
+        typeof indiciaFns.restoreReportFilterPageState === 'function') {
       currentReportFilterState = indiciaFns.getReportFilterPageState();
       indiciaFns.resetReportFilterPageState();
       resetReportFilterState = indiciaFns.getReportFilterPageState();
@@ -352,6 +464,9 @@
     }
     if (categoryEnabled(el, 'filterPanelVisibility')) {
       restoreFilterPanelVisibility(el.pageStateDefaults && el.pageStateDefaults.filterPanelVisibility);
+    }
+    if (categoryEnabled(el, 'customFilterControls')) {
+      restoreCustomFilterControlState(el.pageStateDefaults && el.pageStateDefaults.customFilterControls);
     }
     $.each(indiciaData.esSourceObjects || {}, function eachSource(name, source) {
       if (typeof source.resetPageState === 'function') {
@@ -403,6 +518,7 @@
       }
       el.idcPageStateInitialised = true;
       el.settings = getControlConfig(el);
+      removeObsoleteStoredStates(el);
       el.pageStateDefaults = captureState(el);
       indiciaData.pageStateControls.push(el);
       $(el).find('.persist-page-state-reset').on('click', function resetClick() {

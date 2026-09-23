@@ -99,6 +99,13 @@
   indiciaData.permissionOverlayInitialViewportDone = false;
 
   /**
+   * Placeholder, will be replaced if controlLayout added to page.
+   */
+  indiciaFns.updateControlLayout = function updateControlLayout() {
+    // Not implemented.
+  };
+
+  /**
    * Mark a control as initialised, returning false if it already is.
    *
    * @param object el
@@ -2507,13 +2514,11 @@ jQuery(document).ready(function docReady() {
   }));
 
   /**
-   * A generic change handler for higher geography and normal location selects.
-   *
-   * @param DOM select
-   *   Select control.
+   * Synchronise location-filter map features after silent control changes.
    */
-  function onLocationSelectChange(select) {
-    const isHigherGeoSelect = $(this).hasClass('es-higher-geography-select');
+  function onLocationSelectChange(select, options) {
+    const isHigherGeoSelect = $(select).hasClass('es-higher-geography-select');
+    options = options || {};
     var thisSelect;
     var baseId;
     var selectToLoadFilterFor = select;
@@ -2537,6 +2542,10 @@ jQuery(document).ready(function docReady() {
     } else {
       locIdToLoad = $(select).val();
     }
+    if (options.locationId) {
+      locIdToLoad = options.locationId;
+      selectToLoadFilterFor = options.locationSelect || selectToLoadFilterFor;
+    }
     if (locIdToLoad === '' && indiciaData.loadedFilterLocationId) {
       // Nothing selected, but there was previuosly.
       if (!isHigherGeoSelect) {
@@ -2549,13 +2558,18 @@ jQuery(document).ready(function docReady() {
         $(this).idcLeafletMap('resetViewport');
       });
       indiciaData.loadedFilterLocationId = null;
-      indiciaFns.populateDataSources(true);
+      if (indiciaFns.notifyPageStateChanged) {
+        indiciaFns.notifyPageStateChanged(select, 'customFilterControls');
+      }
+      if (!options.deferPopulation) {
+        indiciaFns.populateDataSources(true);
+      }
     }
     else if (locIdToLoad && locIdToLoad !== indiciaData.loadedFilterLocationId) {
       // A selected location which differs from the previously loaded one.
       // Remember which one we are loading so we don't reload the same one.
       indiciaData.loadedFilterLocationId = locIdToLoad;
-      $.ajax({
+      return $.ajax({
         url: indiciaData.warehouseUrl + 'index.php/services/report/requestReport?report=library/locations/location_boundary_projected.xml',
         data: {
           reportSource: 'local',
@@ -2577,18 +2591,70 @@ jQuery(document).ready(function docReady() {
             $('#' + $(selectToLoadFilterFor).attr('id') + '-geom').val(data[0].boundary_geom);
           }
           $.each($('.idc-leafletMap'), function eachMap() {
-            $(map).idcLeafletMap('showFeature', data[0].boundary_geom, true);
+            $(this).idcLeafletMap('showFeature', data[0].boundary_geom, true);
           });
         }
-        indiciaFns.populateDataSources(true);
+        if (indiciaFns.notifyPageStateChanged) {
+          indiciaFns.notifyPageStateChanged(select, 'customFilterControls');
+        }
+        if (!options.deferPopulation) {
+          indiciaFns.populateDataSources(true);
+        }
       });
     }
+    return null;
   }
 
+  /**
+   * Restore location-filter map features after silent page-state changes.
+   */
+  indiciaFns.restoreEsLocationFilterFeatures = function restoreEsLocationFilterFeatures() {
+    var handledGroups = {};
+    var restoredValues = indiciaData.restoredEsLocationFilterValues || {};
+    $('.es-location-select').each(function eachLocationSelect() {
+      var select = this;
+      var baseId = $(select).hasClass('linked-select') ? select.id.replace(/-\d+$/, '') : select.id;
+      var group = $(select).hasClass('linked-select') ? $('.es-location-select').filter(function matchingGroup() {
+        return this.id === baseId || this.id.indexOf(baseId + '-') === 0;
+      }) : $(select);
+      var locationId = '';
+      var locationSelect = select;
+      if (handledGroups[baseId]) {
+        return;
+      }
+      handledGroups[baseId] = true;
+      group.each(function eachGroupSelect() {
+        var restoredValue = restoredValues[this.id];
+        var value = restoredValue || $(this).val();
+        if (value) {
+          locationId = value;
+          locationSelect = this;
+        }
+        $('#' + this.id + '-geom').val('');
+      });
+      if (locationId) {
+        // Geometry is client-only state, so rebuild it from the location ID.
+        onLocationSelectChange(select, {
+          deferPopulation: true,
+          locationId: locationId,
+          locationSelect: locationSelect
+        });
+      }
+      else if (indiciaData.loadedFilterLocationId) {
+        // Clear the previous client-only boundary when restoring no location.
+        onLocationSelectChange(select, { deferPopulation: true });
+      }
+    });
+  };
+
   // Hook up event handler to location select controls.
-  $('.es-higher-geography-select,.es-location-select').on('change', function selectChange() {
-    onLocationSelectChange(this);
+  $('.es-higher-geography-select,.es-location-select').on('change', function selectChange(event, options) {
+    return onLocationSelectChange(this, options);
   });
+  if (indiciaData.restoreEsLocationFilterFeaturesPending) {
+    indiciaData.restoreEsLocationFilterFeaturesPending = false;
+    indiciaFns.restoreEsLocationFilterFeatures();
+  }
 
   /**
    * Change event handlers on filter inputs.
@@ -2602,6 +2668,9 @@ jQuery(document).ready(function docReady() {
     $.each($('.idc-leafletMap'), function eachMap() {
       this.settings.initialBoundsSet = false;
     });
+    if ($(this).hasClass('es-filter-param') && indiciaFns.notifyPageStateChanged) {
+      indiciaFns.notifyPageStateChanged(this, 'customFilterControls');
+    }
     indiciaFns.populateDataSources(true);
   });
 
