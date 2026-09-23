@@ -12,10 +12,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/gpl.html.
  *
- * @package Client
- * @author  Indicia Team
  * @license http://www.gnu.org/licenses/gpl.html GPL 3.0
- * @link    http://code.google.com/p/indicia/
  */
 
 var loadFilter;
@@ -1003,10 +1000,10 @@ jQuery(document).ready(function ($) {
         // Trigger change to update hidden controls in UI.
         $('#autochecks').trigger('change');
       },
-      applyFormToDefinition: function() {
+      applyFormToDefinition: function(form) {
         if (indiciaData.filterEntity === 'occurrence') {
           // Map the checked boxes to a comma-separated value.
-          const checkedStatuses = $('.filter-controls .quality-pane input[type="checkbox"]:checked');
+          const checkedStatuses = form.find('.quality-pane input[type="checkbox"]:checked');
           let statusCodes = [];
           $.each(checkedStatuses, function () {
             statusCodes.push($(this).val());
@@ -2018,7 +2015,7 @@ jQuery(document).ready(function ($) {
     pane = e.currentTarget.parentNode.id.replace('controls-filter_', '');
     // Does the pane have any special code for applying it's settings to the definition?
     if (typeof paneObjList[pane].applyFormToDefinition !== 'undefined') {
-      paneObjList[pane].applyFormToDefinition();
+      paneObjList[pane].applyFormToDefinition($(e.currentTarget));
     }
     indiciaFns.applyFilterToReports();
     indiciaFns.updateFilterDescriptions();
@@ -2895,7 +2892,10 @@ jQuery(document).ready(function ($) {
     $.each(checkedStatuses, function () {
       statusCodes.push($(this).val());
     });
-    $('input.quality-filter').val(indiciaData.filterParser.quality.statusDescriptionFromFilter(statusCodes, $('[name="quality_op"]:checked').val()));
+    $('input.quality-filter').val(indiciaData.filterParser.quality.statusDescriptionFromFilter(
+      statusCodes,
+      $(pane).find('[name="quality_op"]:checked').val()
+    ));
     if ($(e.currentTarget).closest('.standalone-quality-filter').length !== 0) {
       // If standalone, this updates the filter immediately.
       indiciaData.filter.def.quality = statusCodes.filter(function(value) {
@@ -2939,14 +2939,14 @@ jQuery(document).ready(function ($) {
         // Exclude.
         $('#quality_op--standalone\\:1').prop('checked', !inChecked);
         // Statuses
-        const statuses = indiciaData.filter.def.quality.toString().split(',');
+        const statuses = indiciaData.filter.def.quality ? indiciaData.filter.def.quality.toString().split(',') : [];
         $('.quality-pane input[type="checkbox"]').prop('checked', false);
         $.each(statuses, function() {
           $('.quality-pane input[type="checkbox"][value="' + this + '"]').prop('checked', true);
         });
       }
       // Adjust for select control margin.
-      $(pane).css('top', (inputPos.top + inputHeight + parseInt( + $(input).css('margin-top').replace('px', ''), 10)) + 'px');
+      $(pane).css('top', (inputPos.top + inputHeight + parseInt($(input).css('margin-top').replace('px', ''), 10)) + 'px');
       $(pane).css('left', inputPos.left + parseInt($(input).css('margin-left').replace('px', ''), 10) + 'px');
       pane.show();
       document.addEventListener('click', closeQualityPane);
@@ -3051,11 +3051,11 @@ jQuery(document).ready(function ($) {
       },
       errorClass: indiciaData.templates.jQueryValidateErrorClass,
     });
-
-    $('.quality-pane button.cancel').on('click', closeQualityPane);
-
-    $('.quality-pane button.ok').on('click', saveAndCloseQualityPane);
   }
+
+  $('.quality-pane button.cancel').on('click', closeQualityPane);
+
+  $('.quality-pane button.ok').on('click', saveAndCloseQualityPane);
 
   /**
    * In vertical mode the panel descripts can be toggled on and off.

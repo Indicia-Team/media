@@ -140,25 +140,6 @@
   };
 
   /**
-   * Notify page-state coordinators that component-owned state changed.
-   *
-   * Components remain responsible for knowing which state they own. This
-   * document event provides a common boundary for an optional page-state
-   * coordinator without coupling the components to its implementation.
-   *
-   * @param object owner
-   *   Component or source whose state changed.
-   * @param string stateType
-   *   Name of the changed state category.
-   */
-  indiciaFns.notifyPageStateChanged = function notifyPageStateChanged(owner, stateType) {
-    $(document).trigger('idcPageStateChanged', [{
-      owner: owner,
-      stateType: stateType
-    }]);
-  };
-
-  /**
    * Font Awesome icon and other classes for record statuses and flags.
    */
   indiciaData.statusClasses = {
@@ -499,6 +480,10 @@
    *   page of data.
    */
   indiciaFns.populateDataSources = function populateDataSources(resetPage) {
+    if (typeof indiciaFns.deferPageStateDataSourcePopulation === 'function' &&
+        indiciaFns.deferPageStateDataSourcePopulation(resetPage)) {
+      return;
+    }
     // Track if an error message has been shown to the user for this set of
     // requests so we don't show it again.
     indiciaData.sourceErrorsShown = [];
@@ -2558,18 +2543,20 @@ jQuery(document).ready(function docReady() {
         $(this).idcLeafletMap('resetViewport');
       });
       indiciaData.loadedFilterLocationId = null;
-      if (indiciaFns.notifyPageStateChanged) {
-        indiciaFns.notifyPageStateChanged(select, 'customFilterControls');
-      }
+      indiciaFns.notifyPageStateChanged(select, 'customFilterControls');
       if (!options.deferPopulation) {
         indiciaFns.populateDataSources(true);
       }
     }
     else if (locIdToLoad && locIdToLoad !== indiciaData.loadedFilterLocationId) {
+      var restoringPageState = options.pageStateRestore && typeof indiciaFns.beginPageStateRestoreOperation === 'function';
       // A selected location which differs from the previously loaded one.
       // Remember which one we are loading so we don't reload the same one.
       indiciaData.loadedFilterLocationId = locIdToLoad;
-      return $.ajax({
+      if (restoringPageState) {
+        indiciaFns.beginPageStateRestoreOperation();
+      }
+      var request = $.ajax({
         url: indiciaData.warehouseUrl + 'index.php/services/report/requestReport?report=library/locations/location_boundary_projected.xml',
         data: {
           reportSource: 'local',
@@ -2594,13 +2581,15 @@ jQuery(document).ready(function docReady() {
             $(this).idcLeafletMap('showFeature', data[0].boundary_geom, true);
           });
         }
-        if (indiciaFns.notifyPageStateChanged) {
-          indiciaFns.notifyPageStateChanged(select, 'customFilterControls');
-        }
+        indiciaFns.notifyPageStateChanged(select, 'customFilterControls');
         if (!options.deferPopulation) {
           indiciaFns.populateDataSources(true);
         }
       });
+      if (restoringPageState) {
+        request.always(indiciaFns.endPageStateRestoreOperation);
+      }
+      return request;
     }
     return null;
   }
@@ -2611,18 +2600,21 @@ jQuery(document).ready(function docReady() {
   indiciaFns.restoreEsLocationFilterFeatures = function restoreEsLocationFilterFeatures() {
     var handledGroups = {};
     var restoredValues = indiciaData.restoredEsLocationFilterValues || {};
-    $('.es-location-select').each(function eachLocationSelect() {
+    var locationControls = $('.es-higher-geography-select,.es-location-select');
+    locationControls.each(function eachLocationSelect() {
       var select = this;
       var baseId = $(select).hasClass('linked-select') ? select.id.replace(/-\d+$/, '') : select.id;
-      var group = $(select).hasClass('linked-select') ? $('.es-location-select').filter(function matchingGroup() {
+      var controlClass = $(select).hasClass('es-higher-geography-select') ? 'es-higher-geography-select' : 'es-location-select';
+      var groupKey = controlClass + ':' + baseId;
+      var group = $(select).hasClass('linked-select') ? locationControls.filter('.' + controlClass).filter(function matchingGroup() {
         return this.id === baseId || this.id.indexOf(baseId + '-') === 0;
       }) : $(select);
       var locationId = '';
       var locationSelect = select;
-      if (handledGroups[baseId]) {
+      if (handledGroups[groupKey]) {
         return;
       }
-      handledGroups[baseId] = true;
+      handledGroups[groupKey] = true;
       group.each(function eachGroupSelect() {
         var restoredValue = restoredValues[this.id];
         var value = restoredValue || $(this).val();
@@ -2637,7 +2629,8 @@ jQuery(document).ready(function docReady() {
         onLocationSelectChange(select, {
           deferPopulation: true,
           locationId: locationId,
-          locationSelect: locationSelect
+          locationSelect: locationSelect,
+          pageStateRestore: true
         });
       }
       else if (indiciaData.loadedFilterLocationId) {
@@ -2651,15 +2644,12 @@ jQuery(document).ready(function docReady() {
   $('.es-higher-geography-select,.es-location-select').on('change', function selectChange(event, options) {
     return onLocationSelectChange(this, options);
   });
-  if (indiciaData.restoreEsLocationFilterFeaturesPending) {
-    indiciaData.restoreEsLocationFilterFeaturesPending = false;
-    indiciaFns.restoreEsLocationFilterFeatures();
-  }
 
   /**
    * Change event handlers on filter inputs.
    */
-  $('.es-filter-param, .user-filter, .permissions-filter').on('change', function eachFilter() {
+  $('.es-filter-param, .user-filter, .permissions-filter').on('change', function eachFilter(event, options) {
+    options = options || {};
     if ($(this).data('defer-filter-reload')) {
       return;
     }
@@ -2668,10 +2658,12 @@ jQuery(document).ready(function docReady() {
     $.each($('.idc-leafletMap'), function eachMap() {
       this.settings.initialBoundsSet = false;
     });
-    if ($(this).hasClass('es-filter-param') && indiciaFns.notifyPageStateChanged) {
+    if ($(this).hasClass('es-filter-param')) {
       indiciaFns.notifyPageStateChanged(this, 'customFilterControls');
     }
-    indiciaFns.populateDataSources(true);
+    if (!options.deferPopulation) {
+      indiciaFns.populateDataSources(true);
+    }
   });
 
   // Apply overlays for any preselected user filters once controls are ready.

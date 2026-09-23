@@ -36,7 +36,54 @@
 
   var cookieChunkSize = 3500;
   var stateSchemaVersion = 3;
-  var customFilterControlSelector = '.es-filter-param:not(.es-location-select-geom), .es-location-select';
+  var customFilterControlSelector = '.es-filter-param:not(.es-location-select-geom), .es-location-select, .es-higher-geography-select';
+
+  /**
+   * Notify the page-state coordinator that component-owned state changed.
+   *
+   * @param object owner
+   *   Component or source whose state changed.
+   * @param string stateType
+   *   Name of the changed state category.
+   */
+  indiciaFns.notifyPageStateChanged = function notifyPageStateChanged(owner, stateType) {
+    $(document).trigger('idcPageStateChanged', [{
+      owner: owner,
+      stateType: stateType
+    }]);
+  };
+
+  /**
+   * Track asynchronous work required before restored filters can be applied.
+   */
+  indiciaFns.beginPageStateRestoreOperation = function beginPageStateRestoreOperation() {
+    indiciaData.pageStateRestoreOperationCount = (indiciaData.pageStateRestoreOperationCount || 0) + 1;
+  };
+
+  /**
+   * Complete asynchronous restoration and run any deferred population.
+   */
+  indiciaFns.endPageStateRestoreOperation = function endPageStateRestoreOperation() {
+    indiciaData.pageStateRestoreOperationCount = Math.max((indiciaData.pageStateRestoreOperationCount || 1) - 1, 0);
+    if (indiciaData.pageStateRestoreOperationCount === 0 && indiciaData.pageStatePopulationDeferred) {
+      var resetPage = indiciaData.pageStateDeferredPopulationResetPage;
+      indiciaData.pageStatePopulationDeferred = false;
+      indiciaData.pageStateDeferredPopulationResetPage = false;
+      indiciaFns.populateDataSources(resetPage);
+    }
+  };
+
+  /**
+   * Defer population while asynchronous restored filter values are incomplete.
+   */
+  indiciaFns.deferPageStateDataSourcePopulation = function deferPageStateDataSourcePopulation(resetPage) {
+    if (!indiciaData.pageStateRestoreOperationCount) {
+      return false;
+    }
+    indiciaData.pageStatePopulationDeferred = true;
+    indiciaData.pageStateDeferredPopulationResetPage = indiciaData.pageStateDeferredPopulationResetPage || resetPage;
+    return true;
+  };
 
   /**
    * Split a value into chunks that remain within the limit after cookie
@@ -250,14 +297,28 @@
   /**
    * Capture values of custom Elasticsearch filter controls.
    */
-  function getCustomFilterControlState() {
+  function getCustomFilterControlState(useDefaults) {
     var state = {};
     $(customFilterControlSelector).each(function eachFilterControl(index) {
+      var value = $(this).val();
+      if (useDefaults && this.tagName === 'SELECT') {
+        value = $(this).find('option').filter(function defaultOption() {
+          return this.defaultSelected;
+        }).map(function defaultOptionValue() {
+          return this.value;
+        }).get();
+        if (!this.multiple) {
+          value = value.length > 0 ? value[0] : '';
+        }
+      }
+      else if (useDefaults && (this.tagName === 'INPUT' || this.tagName === 'TEXTAREA')) {
+        value = this.defaultValue;
+      }
       var controlState = {
-        value: $(this).val()
+        value: value
       };
       if ($(this).is(':checkbox, :radio')) {
-        controlState.checked = $(this).is(':checked');
+        controlState.checked = useDefaults ? this.defaultChecked : $(this).is(':checked');
       }
       state[getCustomFilterControlKey(this, index)] = controlState;
     });
@@ -267,30 +328,56 @@
   /**
    * Restore custom Elasticsearch filter controls without triggering reloads.
    */
-  function restoreCustomFilterControlState(state) {
+  function restoreCustomFilterControlState(state, resetLocations) {
+    var linkedChildIds = {};
+    var linkedSelectOptions = {};
     if (!state || typeof state !== 'object') {
       return;
     }
     indiciaData.restoredEsLocationFilterValues = {};
     $(customFilterControlSelector).each(function eachFilterControl(index) {
       var controlState = state[getCustomFilterControlKey(this, index)];
+      var isLocationControl = $(this).hasClass('es-location-select') ||
+        $(this).hasClass('es-higher-geography-select');
       if (!controlState || typeof controlState !== 'object') {
         return;
       }
-      $(this).val(controlState.value);
-      if ($(this).hasClass('es-location-select')) {
+      $(this).val(resetLocations && isLocationControl ? '' : controlState.value);
+      if (isLocationControl && !resetLocations) {
         indiciaData.restoredEsLocationFilterValues[this.id] = controlState.value;
       }
       if (Object.prototype.hasOwnProperty.call(controlState, 'checked')) {
         $(this).prop('checked', controlState.checked === true);
       }
     });
-    if (indiciaFns.restoreEsLocationFilterFeatures) {
-      indiciaFns.restoreEsLocationFilterFeatures();
+    if (resetLocations) {
+      $.each(indiciaData.linkedSelects || [], function indexLinkedSelect() {
+        linkedSelectOptions[this.id] = this;
+      });
+      $(customFilterControlSelector).filter('.es-location-select, .es-higher-geography-select').each(function clearLocationControl() {
+        var options = linkedSelectOptions[this.id];
+        $(this).val('');
+        $('#' + this.id + '-geom').val('');
+        if (options && options.parentControlId) {
+          if (options.hideChildrenUntilLoaded) {
+            $(this).hide();
+          }
+          $(this).addClass('ui-state-disabled').html('<option disabled>' + options.instruct + '</option>');
+        }
+      });
     }
-    else {
-      indiciaData.restoreEsLocationFilterFeaturesPending = true;
-    }
+    $.each(indiciaData.linkedSelects || [], function identifyLinkedChildren() {
+      linkedChildIds[$('#' + this.escapedId).attr('id')] = true;
+    });
+    $.each(resetLocations ? [] : (indiciaData.linkedSelects || []), function restoreRootLinkedSelect() {
+      var parentSelect = $('#' + this.parentControlId);
+      var parentId = parentSelect.attr('id');
+      if (parentSelect.length && !linkedChildIds[parentId] &&
+          Object.prototype.hasOwnProperty.call(indiciaData.restoredEsLocationFilterValues, parentId)) {
+        indiciaFns.changeLinkedParentSelect(parentSelect[0], this);
+      }
+    });
+    indiciaFns.restoreEsLocationFilterFeatures();
   }
 
   /**
@@ -352,7 +439,7 @@
   /**
    * Capture all state exposed by the page's providers.
    */
-  function captureState(el) {
+  function captureState(el, useControlDefaults) {
     var state = {};
     if ((categoryEnabled(el, 'selectedFilter') || categoryEnabled(el, 'filterDefinition')) &&
         typeof indiciaFns.getReportFilterPageState === 'function') {
@@ -371,7 +458,7 @@
       state.filterPanelVisibility = getFilterPanelVisibility();
     }
     if (categoryEnabled(el, 'customFilterControls')) {
-      state.customFilterControls = getCustomFilterControlState();
+      state.customFilterControls = getCustomFilterControlState(useControlDefaults);
     }
     state.sources = {};
     $.each(indiciaData.esSourceObjects || {}, function eachSource(name, source) {
@@ -466,7 +553,7 @@
       restoreFilterPanelVisibility(el.pageStateDefaults && el.pageStateDefaults.filterPanelVisibility);
     }
     if (categoryEnabled(el, 'customFilterControls')) {
-      restoreCustomFilterControlState(el.pageStateDefaults && el.pageStateDefaults.customFilterControls);
+      restoreCustomFilterControlState(el.pageStateDefaults && el.pageStateDefaults.customFilterControls, true);
     }
     $.each(indiciaData.esSourceObjects || {}, function eachSource(name, source) {
       if (typeof source.resetPageState === 'function') {
@@ -519,15 +606,17 @@
       el.idcPageStateInitialised = true;
       el.settings = getControlConfig(el);
       removeObsoleteStoredStates(el);
-      el.pageStateDefaults = captureState(el);
+      el.pageStateDefaults = captureState(el, true);
       indiciaData.pageStateControls.push(el);
       $(el).find('.persist-page-state-reset').on('click', function resetClick() {
+        indiciaFns.beginPageStateRestoreOperation();
         resetState(el);
         removeStoredState(getStorageKey(el));
         if (indiciaFns.applyFilterToReports) {
           indiciaFns.applyFilterToReports(true, false, false);
-          indiciaFns.populateDataSources();
+          indiciaFns.populateDataSources(true);
         }
+        indiciaFns.endPageStateRestoreOperation();
         $(el).trigger('pageStateReset');
       });
     });
