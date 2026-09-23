@@ -373,6 +373,9 @@ input:checked + .slider:before {
 #standard-params.standard-params-horizontal .header > div:last-child > * {
   margin: 4px 4px 4px 0;
 }
+#standard-params.standard-params-horizontal .header .idc-persistPageState {
+  display: inline-block;
+}
 #standard-params.standard-params-horizontal #filter-panes {
   padding-right: 24px;
 }
@@ -1226,7 +1229,7 @@ body > .loading-spinner {
   right: 4px;
   top: 4px;
 }
-.idc-cardGallery [id$="-card-nav-buttons"] {
+.idc-cardGallery [id$=-card-nav-buttons] {
   float: right;
 }
 

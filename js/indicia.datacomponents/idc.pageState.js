@@ -619,6 +619,10 @@
         indiciaFns.endPageStateRestoreOperation();
         $(el).trigger('pageStateReset');
       });
+      // If report filter builder on the page, move into the filter toolbar.
+      if ($('#filter-reset').length) {
+        $('#filter-reset').after($(el));
+      }
     });
   };
 
