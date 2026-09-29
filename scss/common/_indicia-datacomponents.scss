@@ -966,3 +966,20 @@ body {
     }
   }
 }
+
+.whole-table-progress {
+  margin-top: 15px;
+  text-align: center;
+  progress {
+    display: block;
+    margin: 0 auto;
+    width: 100%;
+  }
+  span {
+    display: block;
+    margin-top: 5px;
+  }
+  &.error {
+    color: #a00;
+  }
+}

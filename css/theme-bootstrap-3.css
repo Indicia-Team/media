@@ -1877,6 +1877,23 @@ body > .loading-spinner {
   animation-iteration-count: infinite;
 }
 
+.whole-table-progress {
+  margin-top: 15px;
+  text-align: center;
+}
+.whole-table-progress progress {
+  display: block;
+  margin: 0 auto;
+  width: 100%;
+}
+.whole-table-progress span {
+  display: block;
+  margin-top: 5px;
+}
+.whole-table-progress.error {
+  color: #a00;
+}
+
 /* Progress spinner */
 .progress-circle-container {
   width: 180px;

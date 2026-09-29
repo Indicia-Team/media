@@ -294,31 +294,107 @@
   }
 
   /**
+   * Complete a whole-table verification update.
+   */
+  function completeWholeTableUpdate() {
+    // Unset all table mode as this is a "dangerous" state that should be
+    // explicitly chosen each time.
+    $(listOutputControl).find('.multi-mode-table.active').removeClass('active');
+    $(listOutputControl).find('.multi-mode-selected').addClass('active');
+    // Table can be emptied.
+    $(listOutputControl).find('[data-row-id]').remove();
+    $(listOutputControl).find('.showing').html('No hits');
+  }
+
+  /**
+   * Process a whole-table verification update in batches.
+   *
+   * @param string endpoint
+   *   Proxy endpoint to call.
+   * @param object data
+   *   POST data for the update.
+   * @param DOM dialog
+   *   Open verification dialog to show progress in.
+   * @param string errorMessage
+   *   Message to show if a batch fails.
+   */
+  function processWholeTableUpdate(endpoint, data, dialog, errorMessage) {
+    var processed = 0;
+    var total = $(listOutputControl)[0].settings.sourceObject.settings.total;
+    total = total && typeof total.value !== 'undefined' ? parseInt(total.value, 10) : 0;
+    var progressContainer = $('<div class="whole-table-progress" role="status">' +
+      '<progress max="100" value="0"></progress><span></span></div>');
+    $(dialog).append(progressContainer);
+    var lang = indiciaData.lang.verificationButtons;
+    var progressBar = progressContainer.find('progress');
+    var progressText = progressContainer.find('span');
+
+    function updateProgress() {
+      var progressMessage = total > 0 ? lang.wholeTableProgress : lang.wholeTableProgressUnknown;
+      progressMessage = progressMessage.replace('{processed}', processed);
+      if (total > 0) {
+        progressMessage = progressMessage.replace('{total}', total);
+        progressBar.val(Math.min(100, processed / total * 100));
+      }
+      progressText.text(progressMessage);
+    }
+
+    function showFailure() {
+      progressContainer.addClass('error');
+      alert(lang.wholeTablePartialError
+        .replace('{error}', errorMessage)
+        .replace('{processed}', processed));
+    }
+
+    function processNextBatch() {
+      $.post(
+        indiciaData.esProxyAjaxUrl + '/' + endpoint + '/' + indiciaData.nid,
+        data,
+        null,
+        'json'
+      ).done(function success(response) {
+        if (!response || typeof response.updated === 'undefined') {
+          showFailure();
+          return;
+        }
+        processed += parseInt(response.updated, 10) || 0;
+        updateProgress();
+        if (response.search_after) {
+          data.search_after = response.search_after;
+          processNextBatch();
+        }
+        else {
+          if (total > 0) {
+            progressBar.val(100);
+          }
+          completeWholeTableUpdate();
+          $.fancybox.close();
+        }
+      }).fail(function failure() {
+        showFailure();
+      });
+    }
+
+    updateProgress();
+    processNextBatch();
+  }
+
+  /**
    * Saves a redetermination that should apply to the whole table dataset.
    */
   function doRedeterminationWholeTable(newTaxaTaxonListId, comment) {
     const pgUpdates = getRedetPgUpdates(newTaxaTaxonListId, comment);
-    // Since this might be slow.
-    $('body').append('<div class="loading-spinner"><div>Loading...</div></div>');
     // Loop sources and apply the filter data, only 1 will apply.
     $.each($(listOutputControl)[0].settings.source, function eachSource(sourceId) {
       pgUpdates['occurrence:idsFromElasticFilter'] = indiciaFns.getFormQueryData(indiciaData.esSourceObjects[sourceId])
       return false;
     });
-    $.post(
-      indiciaData.esProxyAjaxUrl + '/redetall/' + indiciaData.nid,
+    processWholeTableUpdate(
+      'redetall',
       pgUpdates,
-      function success() {
-        // Unset all table mode as this is a "dangerous" state that should be explicitly chosen each time.
-        $(listOutputControl).find('.multi-mode-table.active').removeClass('active');
-        $(listOutputControl).find('.multi-mode-selected').addClass('active');
-        // Table can be emptied.
-        $(listOutputControl).find('[data-row-id]').remove();
-        $(listOutputControl).find('.showing').html('No hits');
-      }
-    ).always(function cleanup() {
-      $('body > .loading-spinner').remove();
-    });
+      '#redet-form',
+      indiciaData.lang.verificationButtons.redetErrorMsg
+    );
     // In all table mode, everything handled by the ES proxy so nothing else to do.
   }
 
@@ -375,10 +451,11 @@
     if ($('#redet-species').val() === '') {
       redetFormValidator.showErrors({ 'redet-species:taxon': 'Please type a few characters then choose a name from the list of suggestions' });
     } else if (redetFormValidator.numberOfInvalids() === 0) {
-      $.fancybox.close();
-      if (multiselectWholeTableMode() && !$('#redet-form').data('force-selection')) {
+      var wholeTable = multiselectWholeTableMode() && !$('#redet-form').data('force-selection');
+      if (wholeTable) {
         doRedeterminationWholeTable($('#redet-species').val(), $('#redet-form').find('.comment-textarea').val());
       } else {
+        $.fancybox.close();
         const ids = JSON.parse($('#redet-form').data('ids'));
         saveRedeterminationForSelection(el, ids, $('#redet-species').val(), $('#redet-form').find('.comment-textarea').val());
       }
@@ -418,8 +495,11 @@
     if ($(popup).data('query')) {
       statusData.query = $(popup).data('query');
     }
-    saveVerifyComment(ids, statusData, $(popup).find('textarea').val());
-    $.fancybox.close();
+    const wholeTable = multiselectWholeTableMode() && statusData.status;
+    saveVerifyComment(ids, statusData, $(popup).find('textarea').val(), undefined, popup);
+    if (!wholeTable) {
+      $.fancybox.close();
+    }
   }
 
   /**
@@ -974,13 +1054,11 @@
   /**
    * Saves a verification comment that should apply to the whole table dataset.
    */
-  function saveVerifyCommentForWholeTable(status, comment, email) {
+  function saveVerifyCommentForWholeTable(status, comment, email, dialog) {
     var pgUpdates = getVerifyPgUpdates(status, comment, email);
     if (!status.status) {
       throw new Exception('saveVerifyCommentForWholeTable only works for verification status changes');
     }
-    // Since this might be slow.
-    $('body').append('<div class="loading-spinner"><div>Loading...</div></div>');
     // Loop sources and apply the filter data, only 1 will apply.
     $.each($(listOutputControl)[0].settings.source, function eachSource(sourceId) {
       $.extend(pgUpdates, {
@@ -988,20 +1066,12 @@
       });
       return false;
     });
-    $.post(
-      indiciaData.esProxyAjaxUrl + '/verifyall/' + indiciaData.nid,
+    processWholeTableUpdate(
+      'verifyall',
       pgUpdates,
-      function success() {
-        // Unset all table mode as this is a "dangerous" state that should be explicitly chosen each time.
-        $(listOutputControl).find('.multi-mode-table.active').removeClass('active');
-        $(listOutputControl).find('.multi-mode-selected').addClass('active');
-        // Table can be emptied.
-        $(listOutputControl).find('[data-row-id]').remove();
-        $(listOutputControl).find('.showing').html('No hits');
-      }
-    ).always(function cleanup() {
-      $('body > .loading-spinner').remove();
-    });
+      dialog,
+      indiciaData.lang.verificationButtons.elasticsearchUpdateError
+    );
     // In all table mode, everything handled by the ES proxy so nothing else to do.
   }
 
@@ -1092,11 +1162,11 @@
   /**
    * Instigates a verification event.
    */
-  function saveVerifyComment(occurrenceIds, status, comment, email) {
+  function saveVerifyComment(occurrenceIds, status, comment, email, dialog) {
     resetCommentForm('verification-form', '');
     if (multiselectWholeTableMode()) {
       // Verifying the whole table.
-      saveVerifyCommentForWholeTable(status, comment, email);
+      saveVerifyCommentForWholeTable(status, comment, email, dialog);
     }
     else {
       // Verifying a single record or selection.
