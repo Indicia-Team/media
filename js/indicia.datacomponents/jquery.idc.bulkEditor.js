@@ -492,7 +492,7 @@
     $(el).find('.bulk-edit-records-btn').on('click', bulkEditRecordsBtnClickHandler);
 
     const dlg = $('#' + $(el)[0].settings.id + '-dlg');
-    const dateOrSrefControls = dlg.find('[name="bulk-edit-date"], #edit-date\\:date, [name="bulk-edit-sref"]');
+    const dateOrSrefControls = dlg.find('[name="bulk-edit-date"], #bulk-edit-date\\:date, [name="bulk-edit-sref"]');
     dateOrSrefControls.on('input change', function updateSkipReverify() {
       window.setTimeout(function refreshSkipReverify() {
         updateSkipReverifyVisibility(dlg);
