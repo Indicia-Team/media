@@ -369,7 +369,7 @@
       success: function success(response) {
         var html = '';
         if (typeof response.error !== 'undefined' || (response.code && response.code !== 200)) {
-          alert('Elasticsearch query failed');
+          alert(indiciaData.lang.esDataSource.elasticsearchQueryFailed);
           $(el).find('.recorder-experience').html(
             '<div class="alert alert-warning">Experience could not be loaded.</div>'
           );
@@ -389,7 +389,7 @@
       error: function error(jqXHR) {
         if (jqXHR.readyState === 4) {
           // Don't bother if not done - i.e. error because user navigated away.
-          alert('Elasticsearch query failed');
+          alert(indiciaData.lang.esDataSource.elasticsearchQueryFailed);
         }
       },
       dataType: 'json'

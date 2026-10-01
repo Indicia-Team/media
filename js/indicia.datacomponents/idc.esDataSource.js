@@ -301,7 +301,7 @@ var IdcEsDataSource;
       }
       if (response.error || (response.code && response.code !== 200)) {
         hideAllSpinners.call(this);
-        let message = 'Elasticsearch query failed';
+        let message = indiciaData.lang.esDataSource.elasticsearchQueryFailed;
         if (response.code === 400) {
           // Bad request, probably due to a malformed query.
           if (response.message && response.message.indexOf('Failed to parse query') === 0) {
@@ -309,7 +309,7 @@ var IdcEsDataSource;
             message = indiciaData.lang.esDataSource.searchPhraseInvalid.replace('%query%', failedQuery);
           }
         }
-        if (typeof indiciaData.sourceErrorsShown === 'undefined' || indiciaData.sourceErrorsShown.indexOf(message) === -1) {
+        if (indiciaData.sourceErrorsShown.indexOf(message) === -1) {
           $.fancyDialog({
             title: indiciaData.lang.esDataSource.searchFailedTitle,
             message: message,
@@ -407,13 +407,15 @@ var IdcEsDataSource;
             hideAllSpinners.call(source);
             if (jqXHR.readyState === 4) {
               // Don't bother if not done - i.e. error because user navigated away.
-              const message = 'Elasticsearch query failed';
-              $.fancyDialog({
-                title: indiciaData.lang.esDataSource.searchFailedTitle,
-                message: message,
-                cancelButton: null
-              });
-              indiciaData.sourceErrorsShown.push(message);
+              const message = jqXHR.status === 401 ? indiciaData.lang.esDataSource.permissionsIssue : indiciaData.lang.esDataSource.elasticsearchQueryFailed;
+              if (indiciaData.sourceErrorsShown.indexOf(message) === -1) {
+                $.fancyDialog({
+                  title: indiciaData.lang.esDataSource.searchFailedTitle,
+                  message: message,
+                  cancelButton: null
+                });
+                indiciaData.sourceErrorsShown.push(message);
+              }
             }
           },
           dataType: 'json'

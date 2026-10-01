@@ -77,6 +77,13 @@
   indiciaData.esSourceObjects = {};
 
   /**
+   * Track errors shown.
+   *
+   * Avoid duplicates if multiple requests fail in the same way.
+   */
+  indiciaData.sourceErrorsShown = [];
+
+  /**
    * List of the user filters we've used, so we can refresh cache appropriately.
    */
   indiciaData.esUserFiltersLoaded = [];
