@@ -297,11 +297,14 @@
     };
     prepareForBulkMove(dlg);
     if (linkToDataControl.hasClass('multiselect-mode')) {
+      const filter = indiciaFns.getFormQueryData($(el)[0].settings.sourceObject, false);
       data['occurrence:ids'] = todoInfo.ids.join(',');
+      data.permissions_filter = filter.permissions_filter;
       performBulkMove(dlg, data, 'bulkmoveids');
     } else {
       const filter = indiciaFns.getFormQueryData($(el)[0].settings.sourceObject, false);
       data['occurrence:idsFromElasticFilter'] = filter;
+      data.permissions_filter = filter.permissions_filter;
       performBulkMove(dlg, data, 'bulkmoveall');
     }
   }
