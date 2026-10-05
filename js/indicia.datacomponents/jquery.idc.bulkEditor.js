@@ -429,15 +429,13 @@
       return;
     }
     prepareForBulkEdit(dlg);
+    const filter = indiciaFns.getFormQueryData($(el)[0].settings.sourceObject, false);
+    data.permissions_filter = filter.permissions_filter;
     if (linkToDataControl.hasClass('multiselect-mode')) {
-      const filter = indiciaFns.getFormQueryData($(el)[0].settings.sourceObject, false);
       data['occurrence:ids'] = getTodoListInfo(el).ids.join(',');
-      data.permissions_filter = filter.permissions_filter;
       performBulkEdit(dlg, data, 'bulkeditids');
     } else {
-      const filter = indiciaFns.getFormQueryData($(el)[0].settings.sourceObject, false);
       data['occurrence:idsFromElasticFilter'] = filter;
-      data.permissions_filter = filter.permissions_filter;
       performBulkEdit(dlg, data, 'bulkeditall');
     }
   }
