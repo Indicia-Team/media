@@ -1788,6 +1788,12 @@ body > .loading-spinner {
   text-decoration: line-through;
   color: red;
 }
+.bulk-editor-dlg .preview-output {
+  position: relative;
+}
+.bulk-editor-dlg .preview-output.is-loading > :not(.preview-loading) {
+  visibility: hidden;
+}
 .bulk-editor-dlg .preview-messages {
   display: flex;
   align-items: flex-start;

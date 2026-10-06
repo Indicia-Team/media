@@ -879,6 +879,12 @@ body {
     text-decoration: line-through;
     color: red;
   }
+  .preview-output {
+    position: relative;
+  }
+  .preview-output.is-loading > :not(.preview-loading) {
+    visibility: hidden;
+  }
   .preview-messages {
     display: flex;
     align-items: flex-start;

@@ -354,12 +354,15 @@
     // have the preview info.
     $(dlg).find('.preview-messages p').hide();
     $(dlg).find('.preview-info-partial strong').text(todoListInfo.total);
-    // Show the preview.
-    $(dlg).find('.preview-output').show();
+    $(dlg).find('.preview-output tbody tr').remove();
+    $(dlg).find('.preview-comment').remove();
+    $(dlg).find('.preview-output').show().addClass('is-loading');
+    $(dlg).find('.preview-loading').show();
     $(dlg).find('.bulk-edit-form-controls').hide();
     $(dlg).find('#ctrl-wrap-append-comment').hide();
     $(dlg).find('#ctrl-wrap-skip-reverify').hide();
     $(dlg).find('.preview-bulk-edit').attr('disabled', true);
+    $(dlg).find('.proceed-bulk-edit').attr('disabled', true);
     let previewRequest = {
       updates: updates,
       website_id: indiciaData.website_id,
@@ -407,7 +410,22 @@
             .appendTo(previewComment);
           $(dlg).find('.preview-output').append(previewComment);
         }
+        $(dlg).find('.preview-loading').hide();
+        $(dlg).find('.preview-output').removeClass('is-loading');
         $(dlg).find('.proceed-bulk-edit').removeAttr('disabled');
+      })
+      .fail(function() {
+        $(dlg).find('.preview-loading').hide();
+        $(dlg).find('.preview-output').removeClass('is-loading').hide();
+        $(dlg).find('.bulk-edit-form-controls').show();
+        $(dlg).find('#ctrl-wrap-append-comment').show();
+        $(dlg).find('#ctrl-wrap-skip-reverify').show();
+        $(dlg).find('.preview-bulk-edit').removeAttr('disabled');
+        $.fancyDialog({
+          title: indiciaData.lang.bulkEditor.cannotProceed,
+          message: indiciaData.lang.bulkEditor.previewFailed,
+          cancelButton: null
+        });
       });
     return;
   }
