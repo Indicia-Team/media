@@ -177,18 +177,20 @@ indiciaData.queuedClassificationResponses = [];
     let nrPosts;
     let nrSuccess = 0;
     let nrFail = 0;
+    let userCancelled = false;
     let createPostCompletion = function() {
       let completed = false;
-      return function() {
+      return function(cancelled = false) {
         if (completed) {
           return;
         }
         completed = true;
+        userCancelled = userCancelled || cancelled;
         nrPosts--;
         if (nrPosts === 0) {
           // Put up a jQueryUI dialog saying we are done.
           // We could add something about number of successes and failures.
-          showDialog(div, 'dialogEnd');
+          showDialog(div, userCancelled ? 'dialogCancelled' : 'dialogEnd');
         }
       };
     };
@@ -353,7 +355,7 @@ indiciaData.queuedClassificationResponses = [];
       okButton: null,
       callbackCancel: function() {
         processQueue();
-        completePost();
+        completePost(true);
       }
     });
     $('.user-selectable-suggestion').on('click', function(e) {
