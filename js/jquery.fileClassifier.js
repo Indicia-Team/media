@@ -666,9 +666,8 @@ indiciaData.queuedClassificationResponses = [];
     var nameRoot;
     if (div.settings.mode.includes('checklist')) {
       // List of records form.
-      // Test to see if there is already an image for this row.
-      if (!$row.next().hasClass('image-row')) {
-        // If not, trigger the event to add an image row.
+      // Add an uploader only when the next row does not already have one.
+      if (!$row.next().find('div.filelist').length) {
         $row.find('.add-media-link').trigger('click');
       }
       // Locate the file list in the image row where we move the files.
