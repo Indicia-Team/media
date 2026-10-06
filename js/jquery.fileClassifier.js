@@ -645,6 +645,7 @@ indiciaData.queuedClassificationResponses = [];
     const $searchInput = $('#' + $.escapeSelector(controlId + ':taxon'));
     $hiddenInput.val(prediction.taxa_taxon_list_id);
     $searchInput.val(prediction.taxon);
+    $hiddenInput.trigger('change', prediction);
     moveImagesIntoRecord(div, null, files, prediction.probability);
     return $hiddenInput.closest('form');
   }
