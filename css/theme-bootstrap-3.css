@@ -2388,6 +2388,13 @@ div.fancy-dialog-content {
   pointer-events: none;
 }
 
+button.show-classifier {
+  margin: 8px 0;
+}
+button.show-classifier i {
+  margin-right: 8px;
+}
+
 /* Image classifier info panels. */
 .classifier-suggestions .suggestions-list {
   display: flex;
