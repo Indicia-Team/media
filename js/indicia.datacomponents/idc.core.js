@@ -2665,7 +2665,7 @@ jQuery(document).ready(function docReady() {
     $.each($('.idc-leafletMap'), function eachMap() {
       this.settings.initialBoundsSet = false;
     });
-    if ($(this).hasClass('es-filter-param')) {
+    if ($(this).hasClass('es-filter-param') || $(this).hasClass('user-filter')) {
       indiciaFns.notifyPageStateChanged(this, 'customFilterControls');
     }
     if (!options.deferPopulation) {
