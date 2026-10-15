@@ -1076,6 +1076,26 @@
   }
 
   /**
+   * Returns a user-friendly error message from a failed AJAX request.
+   *
+   * Applies to verification decision list_verify or occ-comment AJAX posts.
+   */
+  function errorMessageFromFail(jqXHRorResponse, errorThrown) {
+    let specificMessage = errorThrown ? errorThrown : indiciaData.lang.verificationButtons.unknownError;
+    if (jqXHRorResponse) {
+      if (jqXHRorResponse.status === 403) {
+        specificMessage = indiciaData.lang.verificationButtons.ajaxProxyPermissions403;
+      } else if (jqXHRorResponse.error) {
+        specificMessage = jqXHRorResponse.error;
+      }
+      else if (jqXHRorResponse.responseJSON && jqXHRorResponse.responseJSON.error) {
+        specificMessage = jqXHRorResponse.responseJSON.error;
+      }
+    }
+    return indiciaData.lang.verificationButtons.verificationDecisionUpdateFailedMsg + specificMessage;
+  }
+
+  /**
    * Saves a verification comment for a selection of occurrences.
    *
    * Might be the verification of a single occurrence or list of occurrences.
@@ -1115,18 +1135,15 @@
         } else {
           $.fancyDialog({
             title: indiciaData.lang.verificationButtons.verificationDecisionUpdateFailed,
-            message:indiciaData.lang.verificationButtons.verificationDecisionUpdateFailedMsg +
-              (response && response.error ? response.error : 'Unknown error'),
+            message: errorMessageFromFail(response),
             cancelButton: null
           });
         }
       })
       .fail(function(jqXHR, textStatus, errorThrown) {
-        console.error('Indicia records update failed:', textStatus, errorThrown);
         $.fancyDialog({
           title: indiciaData.lang.verificationButtons.verificationDecisionUpdateFailed,
-          message:indiciaData.lang.verificationButtons.verificationDecisionUpdateFailedMsg +
-            (jqXHR.responseJSON ? jqXHR.responseJSON.error : errorThrown),
+          message: errorMessageFromFail(jqXHR, errorThrown),
           cancelButton: null
         });
       })
@@ -1152,11 +1169,9 @@
           if (response && typeof response === 'object' && response.success) {
             postUpdatesToEs([occurrenceId], esUpdates);
           } else {
-            console.error('Indicia records update failed:', response);
             $.fancyDialog({
               title: indiciaData.lang.verificationButtons.verificationDecisionUpdateFailed,
-              message: indiciaData.lang.verificationButtons.verificationDecisionUpdateFailedMsg +
-                (response && response.error ? response.error : 'Unknown error'),
+              message: errorMessageFromFail(response),
               cancelButton: null
             });
           }
@@ -1164,8 +1179,7 @@
         .fail(function(jqXHR, textStatus, errorThrown) {
           $.fancyDialog({
             title: indiciaData.lang.verificationButtons.verificationDecisionUpdateFailed,
-            message: indiciaData.lang.verificationButtons.verificationDecisionUpdateFailedMsg +
-              (jqXHR.responseJSON ? jqXHR.responseJSON.error : errorThrown),
+            message: errorMessageFromFail(jqXHR, errorThrown),
             cancelButton: null
           });
         })
