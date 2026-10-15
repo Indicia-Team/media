@@ -407,7 +407,7 @@ function loadTaxonDetails(meaningId) {
       html += '<div class="panel-heading"> ';
       html += '<h4 class="panel-title" >' ;
 
-      if (taxon.name_type.trim()==='Scientific') {
+      if (taxon.name_type==='Scientific') {
         taxon.taxon  = '<i>'+taxon.taxon+'</i>';
       }
       html += '<a class="btn btn-default" data-toggle="collapse" href="#taxon-panel-'+taxon.id+'" >'   ;
@@ -463,12 +463,20 @@ function loadTaxonDetails(meaningId) {
         html += '<p><strong>Authority:</strong> ' + taxon.authority + '</p>';
       }
 
-      html += '<p><strong>Type:</strong> ' +
-        taxon.name_type +
-        '</p>';
+      let nameType;
+
+      if (taxon.preferred === 't' && taxon.language_iso === 'lat') {
+        nameType = 'Accepted';
+      } else if (taxon.language_iso === 'lat') {
+        nameType = 'Synonym';
+      } else {
+        nameType = 'Vernacular';
+      }
+
+      html += '<p><strong>Type:</strong> ' + nameType + '</p>';
 
       html += '<p><strong>Preferred:</strong> ' +
-        ( (taxon.preferred === 't' ) ? 'Yes' : 'No') +
+        (taxon.preferred === 't' ? 'Yes' : 'No') +
         '</p>';
 
       html += '<p><strong>Name deprecated:</strong> ' +
