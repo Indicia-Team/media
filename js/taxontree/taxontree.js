@@ -105,7 +105,7 @@
  * @returns {void}
  */
 function initialiseTaxonTree() {
-  console.log('creating tree');
+
   if ($.jstree.reference('#taxon-tree')) {
     $('#taxon-tree').jstree('destroy');
   }
@@ -130,8 +130,7 @@ function initialiseTaxonTree() {
         }
 
         $.getJSON(url, function(data) {
-          console.log('loading', url);
-          console.log(data);
+
           callback(data);
         });
 
@@ -277,7 +276,7 @@ function loadTaxonListInfo() {
     taxon_list_id;
 
   $.getJSON(url, function(data) {
-    console.log('list info: ', data);
+
     var html =
       '<div class="panel panel-default">' +
         '<div class="panel-heading">' +
@@ -330,6 +329,8 @@ function initialiseTreeSearch() {
 
       var v = $('#tree-search').val();
 
+      searchTaxa(v);
+
       $('#taxon-tree').jstree(true).search(v);
 
     }, 250);
@@ -337,6 +338,113 @@ function initialiseTreeSearch() {
   });
 
 }
+
+function searchTaxa(taxon) {
+  var url = window.baseUrl +
+    'index.php/taxontree_operation/search/'; 
+
+    $.post(url,{
+          taxon: taxon,
+          taxon_list_id: taxon_list_id
+    }, function(data) {   
+          displaySearchResults(data);
+    });
+
+}
+
+function displaySearchResults(results) {
+
+  var html = '<div class="list-group">';
+
+  $.each(results.data, function(i, taxon) {
+
+    html +=
+      '<a href="#" ' +
+      'class="list-group-item search-result" ' +
+      'data-meaning-id="' + taxon.taxon_meaning_id + '" ' +
+      'data-path="' + taxon.path + '">' +
+      taxon.taxon +
+      '</a>';
+
+  });
+
+  html += '</div>';
+
+    $('#search-results')
+    .html(html);
+
+    $('#toggle-search-results').show();
+}
+
+$(document).on('click', '.search-result', function(e) {
+    e.preventDefault();
+
+      var tree = $('#taxon-tree').jstree(true);
+
+      tree.deselect_all();
+      tree.close_all();
+
+    var taxonMeaningId = $(this).data('meaning-id');
+    var path = $(this).data('path');
+
+    openTaxonPath(path);
+
+    var tree = $('#taxon-tree').jstree(true);
+
+    $('#toggle-search-results').show();
+
+    loadTaxonDetails(taxonMeaningId, taxon_list_id);
+});
+
+$(document).on('click', '#toggle-search-results', function () {
+    toggleSearch();
+});
+
+
+function toggleSearch() {
+
+  $('#search-results').toggle();
+
+  var visible = $('#search-results').is(':visible');
+
+  $('#toggle-search-results .glyphicon')
+    .toggleClass('glyphicon-chevron-up', visible)
+    .toggleClass('glyphicon-chevron-down', !visible);
+}
+
+
+function openTaxonPath(path) {
+
+    if (typeof path === 'string') {
+        path = path.split(',').map(Number);
+    }
+
+    currentIndex = 0;
+
+    var tree = $('#taxon-tree').jstree(true);
+
+      $('#taxon-tree')
+        .off('after_open.jstree.openPath')
+        .on('after_open.jstree.openPath', function (e, data) {
+
+            if ( data.node.id !== String(path[currentIndex]) ) {
+                return;
+            }
+
+            currentIndex++;
+
+            if (currentIndex < path.length) {
+                tree.open_node(path[currentIndex]);
+            } else {
+                tree.select_node(path[path.length - 1]);
+                $('#taxon-tree').off('after_open.jstree.openPath');
+            }
+
+          });
+
+    tree.open_node(path[currentIndex]);
+
+  }
 
 /**
  * Load taxon details.
@@ -348,7 +456,7 @@ function initialiseTreeSearch() {
  * @param {number} meaningId Taxon meaning identifier.
  * @returns {void}
  */
-function loadTaxonDetails(meaningId) {
+function loadTaxonDetails(meaningId,taxon_list_id) {
 
   var url = window.baseUrl +
     'index.php/taxontree_operation/details/' +
@@ -357,13 +465,10 @@ function loadTaxonDetails(meaningId) {
     taxon_list_id;
 
   $.getJSON(url, function(data) {
-
-
-
     var html = ' <strong>Occurrence count:</strong> '+data.occurrence_count;
 
-    minDate='';
-    maxDate=''
+    var minDate='';
+    var maxDate=''
 
     if (data.min_date && data.min_date.length>9) {
      var minDate = data.min_date.substr(0,10);     
@@ -375,10 +480,9 @@ function loadTaxonDetails(meaningId) {
 
 
     html += ' <strong>First recorded</strong>: '+minDate+' <strong>Last recorded</strong>: '+maxDate;
+    html += '<br/>'+data.taxon_path.join(' > ');
     
     html += '<br/><div id="details"><div class="row" ><div class="col-md-12" >';
-
-    console.log('Data: ',data);
 
     if (data.groups && data.groups.length > 0) {
       $.each(data.groups, function(i, group) {
@@ -407,7 +511,7 @@ function loadTaxonDetails(meaningId) {
       html += '<div class="panel-heading"> ';
       html += '<h4 class="panel-title" >' ;
 
-      if (taxon.name_type==='Scientific') {
+      if (taxon.language_iso === 'lat') {
         taxon.taxon  = '<i>'+taxon.taxon+'</i>';
       }
       html += '<a class="btn btn-default" data-toggle="collapse" href="#taxon-panel-'+taxon.id+'" >'   ;
@@ -483,8 +587,6 @@ function loadTaxonDetails(meaningId) {
         ((taxon.name_deprecated === 't') ? 'Yes' : 'No') +
         '</p>';
 
-   
-
       html += '</div> <!-- panel body --> </div> <!-- taxon-panel-1 --></div> <!-- panel -->';
     });
 
@@ -521,14 +623,15 @@ function loadTaxonDetails(meaningId) {
  */
 
   function fetchOccurrences(taxonMeaningId) {
-    url = window.baseUrl +
+    var url = window.baseUrl +
       'index.php/taxontree_operation/fetchOccurrences/' + taxonMeaningId;
+
     $.ajax({
       url: url,
       method: 'GET',
       dataType: 'json',
       success: function(data) {
-        console.log(data);
+        //console.log(data);
       },
       error: function(xhr, status, error) {
         console.log('Status:', status);
@@ -556,6 +659,7 @@ $('#taxon-list-select').on('change', function() {
 
 });
 
+
 $('#taxon-tree').on('click', '.jstree-anchor', function () {
 
   var node = $('#taxon-tree').jstree(true).get_node(this);
@@ -564,13 +668,10 @@ $('#taxon-tree').on('click', '.jstree-anchor', function () {
     node.original.meaning_id,
     taxon_list_id
   );
-
-});
+}); 
 
  $('#taxon-tree').on('select_node.jstree', function (e, data) {
 
-  console.log(data.node);
-  console.log(data.node.original);
-  console.log(data.node.original.meaning_id);
+
 
 });
