@@ -827,14 +827,10 @@
       // Some browsers have a fixed element overflow scrollbar which is always
       // visible.
       const fixedScrollbarWidth = tbody[0].offsetWidth - tbody[0].clientWidth;
-      // Space the header if a scrollbar consumes layout width. Overlay
-      // scrollbars do not reduce clientWidth, so must not alter the column
-      // width budget.
+      // Space the header if a scrollbar consumes layout width. The column
+      // budget uses clientWidth, which already excludes this scrollbar.
       var scrollbarWidth = fixedScrollbarWidth;
       $(el).find('.scroll-spacer').css('width', scrollbarWidth + 'px');
-      if (tbody.find('tr').length > 0) {
-        pixelsAvailable -= scrollbarWidth;
-      }
       var adjustedMaxCharsPerCol = {};
       $.each(el.settings.columns, function eachColumn(idx) {
         // Allow extra char per col for padding.
