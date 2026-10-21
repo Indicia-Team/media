@@ -1,4 +1,4 @@
-  /**
+ /**
  * Taxon Tree Viewer
  * =================
  *
@@ -55,8 +55,12 @@
  * UK Species Inventory / Taxon Tree Operations Module
  */
   
-
-  var esEnabled = false;
+/**
+ * Indicates whether occurrence retrieval is enabled.
+ *
+ * @type {boolean}
+ */
+var esEnabled = false;
 
  /**
  * Initialise the taxonomic tree.
@@ -105,41 +109,68 @@
  * @returns {void}
  */
 function initialiseTaxonTree() {
-
   if ($.jstree.reference('#taxon-tree')) {
     $('#taxon-tree').jstree('destroy');
   }
+    $('#taxon-tree').jstree({
+      plugins: ['search', 'sort', 'contextmenu'],
+      core: {
+        data: function(node, callback) {
+          var url;
 
-  $('#taxon-tree').jstree({
-    plugins: ['search','sort' ],      // ,'contextmenu'
-    core: {
-      data: function(node, callback) {
+          if (node.id === '#') {
+            url = window.baseUrl +
+              'index.php/taxontree_operation/tree/0/' +
+              taxon_list_id;
+          } else {
+            url = window.baseUrl +
+              'index.php/taxontree_operation/tree/' +
+              node.id +
+              '/' +
+              taxon_list_id;
+          }
 
-        var url;
-
-        if (node.id === '#') {
-          url = window.baseUrl +
-            'index.php/taxontree_operation/tree/0/' +
-            taxon_list_id;
-        } else {
-          url = window.baseUrl +
-            'index.php/taxontree_operation/tree/' +
-            node.id +
-            '/' +
-            taxon_list_id;
+          $.getJSON(url, function(data) {
+            callback(data);
+          });
         }
+      },
+      contextmenu: {
+        items: function(node) {
+          var items = $.jstree.defaults.contextmenu.items();
 
-        $.getJSON(url, function(data) {
+          items.create._disabled = true;
+          items.rename._disabled = true;
+          items.remove._disabled = true;
+          items.ccp.submenu.cut._disabled = true;
+          
+          // Access Edit > Copy
+          items.ccp.submenu.copy.label = 'Copy Taxon';
+          items.ccp.submenu.copy.action = function () {
+              navigator.clipboard.writeText(JSON.stringify(node))
+                .then(() => {
+                console.log("Text copied to clipboard successfully!");
+                })
+                .catch(err => {
+                console.error("Failed to copy text: ", err);
+              });
+          };
 
-          callback(data);
-        });
+          // Access Edit > Cut
+          items.ccp.submenu.cut.action = function () {
+            cutTaxon(node);
+          };
 
+          // Access Edit > Paste
+          items.ccp.submenu.paste.action = function () {
+            pasteTaxon(node);
+          };
+
+          return items;
+        }
       }
-    }
-  });
-
+    });
 }
-
 
 
 /**
@@ -193,37 +224,24 @@ function initialiseTaxonTree() {
  * @returns {void}
  */
 function loadTaxonLists() {
-
   var url = window.baseUrl + 'index.php/taxontree_operation/taxonlists';
-
   $.getJSON(url, function(data) {
-
     var $select = $('#taxon-list-select');
-
     $select.empty();
-
     $.each(data, function(i, item) {
-
       var $option = $('<option>', {
         value: item.id,
         text: item.title
       });
-
       if (parseInt(item.id, 10) === parseInt(taxon_list_id, 10)) {
         $option.prop('selected', true);
       }
-
       $select.append($option);
-
     });
-
   }).fail(function(xhr, status, error) {
     console.error('Failed to load taxon lists:', error);
   });
-
 }
-
-
 
 /**
  * Load taxon list information.
@@ -270,13 +288,10 @@ function loadTaxonLists() {
  * @returns {void}
  */
 function loadTaxonListInfo() {
-
   var url = window.baseUrl +
     'index.php/taxontree_operation/info/' +
     taxon_list_id;
-
   $.getJSON(url, function(data) {
-
     var html =
       '<div class="panel panel-default">' +
         '<div class="panel-heading">' +
@@ -288,21 +303,16 @@ function loadTaxonListInfo() {
           '<p><strong>Last Updated:</strong> ' + data.last_updated + '</p>' +
         '</div>' +
       '</div>';
-
     $('#taxon-list-info').html(html);
-
   }).fail(function(xhr, status, error) {
 
-    $('#taxon-list-info').html(
-      '<div class="alert alert-danger">' +
-      'Failed to load taxon list information.' +
-      '</div>'
-    );
-
-    console.error(error);
-
+  $('#taxon-list-info').html(
+    '<div class="alert alert-danger">' +
+    'Failed to load taxon list information.' +
+    '</div>'
+  );
+  console.error(error);
   });
-
 }
 
 /**
@@ -316,48 +326,54 @@ function loadTaxonListInfo() {
  * @returns {void}
  */
 function initialiseTreeSearch() {
-
   var to = false;
-
   $('#tree-search').keyup(function() {
-
     if (to) {
       clearTimeout(to);
     }
-
     to = setTimeout(function() {
-
       var v = $('#tree-search').val();
-
       searchTaxa(v);
-
       $('#taxon-tree').jstree(true).search(v);
-
     }, 250);
-
   });
-
 }
 
+/**
+ * Search for matching taxa.
+ *
+ * Sends the supplied search term to the Taxon Tree controller and
+ * displays any matching taxa in the search results panel.
+ *
+ * @param {string} taxon
+ *   Taxon name or partial name entered by the user.
+ *
+ * @return {void}
+ */
 function searchTaxa(taxon) {
   var url = window.baseUrl +
     'index.php/taxontree_operation/search/'; 
-
-    $.post(url,{
+  $.post(url,{
           taxon: taxon,
           taxon_list_id: taxon_list_id
     }, function(data) {   
           displaySearchResults(data);
     });
-
 }
 
+/**
+ * Display search results.
+ *
+ * Renders the search results in the search results panel.
+ *
+ * @param {Object} results
+ *   Search results data.
+ *
+ * @return {void}
+ */
 function displaySearchResults(results) {
-
   var html = '<div class="list-group">';
-
   $.each(results.data, function(i, taxon) {
-
     html +=
       '<a href="#" ' +
       'class="list-group-item search-result" ' +
@@ -365,85 +381,75 @@ function displaySearchResults(results) {
       'data-path="' + taxon.path + '">' +
       taxon.taxon +
       '</a>';
-
   });
-
   html += '</div>';
-
     $('#search-results')
     .html(html);
-
     $('#toggle-search-results').show();
 }
 
 $(document).on('click', '.search-result', function(e) {
-    e.preventDefault();
-
-      var tree = $('#taxon-tree').jstree(true);
-
-      tree.deselect_all();
-      tree.close_all();
-
-    var taxonMeaningId = $(this).data('meaning-id');
-    var path = $(this).data('path');
-
-    openTaxonPath(path);
-
-    var tree = $('#taxon-tree').jstree(true);
-
-    $('#toggle-search-results').show();
-
-    loadTaxonDetails(taxonMeaningId, taxon_list_id);
+  e.preventDefault();
+  var tree = $('#taxon-tree').jstree(true);
+  tree.deselect_all();
+  tree.close_all();
+  var taxonMeaningId = $(this).data('meaning-id');
+  var path = $(this).data('path');
+  openTaxonPath(path);
+  var tree = $('#taxon-tree').jstree(true);
+  $('#toggle-search-results').show();
+  loadTaxonDetails(taxonMeaningId, taxon_list_id);
 });
 
 $(document).on('click', '#toggle-search-results', function () {
     toggleSearch();
 });
 
-
+/**
+ * Toggle the search results panel.
+ *
+ * Shows or hides the search results container and updates the toggle
+ * icon to indicate whether the results are expanded or collapsed.
+ *
+ * @return {void}
+ */
 function toggleSearch() {
-
   $('#search-results').toggle();
-
   var visible = $('#search-results').is(':visible');
-
   $('#toggle-search-results .glyphicon')
     .toggleClass('glyphicon-chevron-up', visible)
     .toggleClass('glyphicon-chevron-down', !visible);
 }
 
-
+/**
+ * Toggle the visibility of the search results panel.
+ *
+ * Shows or hides the search results container and updates the toggle
+ * icon to reflect the current state.
+ *
+ * @return {void}
+ */
 function openTaxonPath(path) {
-
     if (typeof path === 'string') {
         path = path.split(',').map(Number);
     }
-
     currentIndex = 0;
-
     var tree = $('#taxon-tree').jstree(true);
-
       $('#taxon-tree')
         .off('after_open.jstree.openPath')
         .on('after_open.jstree.openPath', function (e, data) {
-
             if ( data.node.id !== String(path[currentIndex]) ) {
                 return;
             }
-
             currentIndex++;
-
             if (currentIndex < path.length) {
                 tree.open_node(path[currentIndex]);
             } else {
                 tree.select_node(path[path.length - 1]);
                 $('#taxon-tree').off('after_open.jstree.openPath');
             }
-
           });
-
     tree.open_node(path[currentIndex]);
-
   }
 
 /**
@@ -457,75 +463,48 @@ function openTaxonPath(path) {
  * @returns {void}
  */
 function loadTaxonDetails(meaningId,taxon_list_id) {
-
   var url = window.baseUrl +
     'index.php/taxontree_operation/details/' +
     meaningId +
     '/' +
     taxon_list_id;
-
   $.getJSON(url, function(data) {
     var html = ' <strong>Occurrence count:</strong> '+data.occurrence_count;
-
     var minDate='';
     var maxDate=''
-
     if (data.min_date && data.min_date.length>9) {
      var minDate = data.min_date.substr(0,10);     
     }
-
     if (data.max_date && data.max_date.length>9) {
       var maxDate = data.max_date.substr(0,10);
     }
-
-
     html += ' <strong>First recorded</strong>: '+minDate+' <strong>Last recorded</strong>: '+maxDate;
     html += '<br/>'+data.taxon_path.join(' > ');
-    
     html += '<br/><div id="details"><div class="row" ><div class="col-md-12" >';
-
     if (data.groups && data.groups.length > 0) {
       $.each(data.groups, function(i, group) {
         html += ' <span class="label label-info">' + group.title + '</span>';
       });
     }
 
-    if (data.designations && data.designations.length > 0) {
-      html += ' <ul class="list-group" >';
-      $.each(data.designations, function(i, designation) {
-        html += ' <li class="list-group-item">' + designation.title + '</li>';
-      });
-      html += '</ul>';
-    }
-
-
-
     $.each(data.names, function(i, taxon) {
-
       html += '<div class="panel panel-info">';
-
       if (taxon.preferred === 't') {
-        html += '<div><small><strong>Preferred Name</strong></small></div>';
+        html += '<div class="col-md-12 bg-success" ><small><strong>Preferred Name</strong></small></div>';
       }
-
       html += '<div class="panel-heading"> ';
       html += '<h4 class="panel-title" >' ;
-
       if (taxon.language_iso === 'lat') {
         taxon.taxon  = '<i>'+taxon.taxon+'</i>';
       }
       html += '<a class="btn btn-default" data-toggle="collapse" href="#taxon-panel-'+taxon.id+'" >'   ;
-    
       html += taxon.taxon + '</a></h4>';
-
       if (taxon.id) {
-        html += '<p><small><strong>Id:</strong> ' + taxon.id + '</small> </p>';
+        html += '<p><small><strong>Id:</strong> ' + taxon.id +' <strong>TVK:</strong>'+ taxon.search_code + '</small> </p>';
       }  
-
       html += '<p><strong>Updated:</strong> ' +
-        taxon.updated_on +
+        taxon.updated_on.substr(0,16) +
         '</p>';
-      
         if (taxon.name_form) {
         html += '<small>';
         switch (taxon.name_form) {
@@ -544,16 +523,12 @@ function loadTaxonDetails(meaningId,taxon_list_id) {
         }
         html += '</small>';
       }
-
       html += '</div> <!-- panel header -->';
-      
       html += '<div id="taxon-panel-'+taxon.id+'" class="panel-collapse collapse" >';
       html += '<div class="panel-body" >';
-
       if (taxon.rank) {
         html += '<p><strong>Rank</strong> ' + taxon.rank + '</p>';
       }
-
       if (taxon.organism_key) {
         html += '<p><strong>Organism key:</strong> ' + taxon.organism_key + '</p>';
       }      
@@ -566,9 +541,7 @@ function loadTaxonDetails(meaningId,taxon_list_id) {
       if (taxon.authority) {
         html += '<p><strong>Authority:</strong> ' + taxon.authority + '</p>';
       }
-
       let nameType;
-
       if (taxon.preferred === 't' && taxon.language_iso === 'lat') {
         nameType = 'Accepted';
       } else if (taxon.language_iso === 'lat') {
@@ -576,39 +549,35 @@ function loadTaxonDetails(meaningId,taxon_list_id) {
       } else {
         nameType = 'Vernacular';
       }
-
       html += '<p><strong>Type:</strong> ' + nameType + '</p>';
-
       html += '<p><strong>Preferred:</strong> ' +
         (taxon.preferred === 't' ? 'Yes' : 'No') +
         '</p>';
-
       html += '<p><strong>Name deprecated:</strong> ' +
         ((taxon.name_deprecated === 't') ? 'Yes' : 'No') +
         '</p>';
-
       html += '</div> <!-- panel body --> </div> <!-- taxon-panel-1 --></div> <!-- panel -->';
     });
-
     html += '</div><!-- col --><!-- row --></div> <!-- details -->';
+    if (data.designations && data.designations.length > 0) {
+      html += ' <ul class="list-group" >';
+      $.each(data.designations, function(i, designation) {
+        html += ' <li class="list-group-item">' + designation.title + '</li>';
+      });
+      html += '</ul>';
+    }
     $('#taxon_details').html(html);
-
     if ( (data.occurrence_count>0) && (esEnabled))  {
       fetchOccurrences(meaningId);
     }
-
   }).fail(function(xhr, status, error) {
-
     $('#taxon_details').html(
       '<div class="alert alert-danger">' +
       'Failed to load taxon details.' +
       '</div>'
     );
-
     console.error(error);
-
   });
-
 }
 
 /**
@@ -621,11 +590,9 @@ function loadTaxonDetails(meaningId,taxon_list_id) {
  * @param {number} meaningId Taxon meaning identifier.
  * @returns {void}
  */
-
   function fetchOccurrences(taxonMeaningId) {
     var url = window.baseUrl +
       'index.php/taxontree_operation/fetchOccurrences/' + taxonMeaningId;
-
     $.ajax({
       url: url,
       method: 'GET',
@@ -639,9 +606,7 @@ function loadTaxonDetails(meaningId,taxon_list_id) {
         console.log(xhr.responseText);
       }
     });
-
   }
-
 
 $(function() {
   loadTaxonLists();
@@ -651,27 +616,15 @@ $(function() {
 });
 
 $('#taxon-list-select').on('change', function() {
-
   taxon_list_id = $(this).val();
-
   initialiseTaxonTree();
   loadTaxonListInfo();
-
 });
 
-
 $('#taxon-tree').on('click', '.jstree-anchor', function () {
-
   var node = $('#taxon-tree').jstree(true).get_node(this);
-
   loadTaxonDetails(
     node.original.meaning_id,
     taxon_list_id
   );
 }); 
-
- $('#taxon-tree').on('select_node.jstree', function (e, data) {
-
-
-
-});
