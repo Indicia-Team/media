@@ -844,11 +844,12 @@
       // Widths are now explicit, so remove temporary anti-wrap mode used
       // during first-paint sizing to avoid a tall wrapped header.
       table.removeClass('sizing-columns');
-      // Wait until next paint so browser has applied all width/class changes
-      // before measuring heights for scrollbox and control layout.
-      window.requestAnimationFrame(function() {
-        setTableHeight(el);
-      });
+      // Apply the height in the same frame as the widths. Deferring it can
+      // expose temporary page overflow to ResizeObserver and restart sizing.
+      setTableHeight(el);
+      if ($(el).hasClass('layout-align-bottom')) {
+        indiciaFns.updateControlLayout();
+      }
     }
   }
 
