@@ -388,6 +388,16 @@ function displaySearchResults(results) {
     $('#toggle-search-results').show();
 }
 
+/**
+ * Handles selection of a taxon search result.
+ *
+ * Closes the current tree, opens the taxonomic path returned by the
+ * search endpoint, selects the target node and loads the associated
+ * taxon details.
+ *
+ * @event click
+ * @selector .search-result
+ */
 $(document).on('click', '.search-result', function(e) {
   e.preventDefault();
   var tree = $('#taxon-tree').jstree(true);
@@ -401,6 +411,12 @@ $(document).on('click', '.search-result', function(e) {
   loadTaxonDetails(taxonMeaningId, taxon_list_id);
 });
 
+/**
+ * Handles clicks on the search results toggle button.
+ *
+ * @event click
+ * @selector #toggle-search-results
+ */
 $(document).on('click', '#toggle-search-results', function () {
     toggleSearch();
 });
@@ -553,6 +569,9 @@ function loadTaxonDetails(meaningId,taxon_list_id) {
       html += '<p><strong>Preferred:</strong> ' +
         (taxon.preferred === 't' ? 'Yes' : 'No') +
         '</p>';
+      html += '<p><strong>Allow data entry:</strong> ' +
+        (taxon.allow_data_entry === 't' ? 'Yes' : 'No') +
+        '</p>';
       html += '<p><strong>Name deprecated:</strong> ' +
         ((taxon.name_deprecated === 't') ? 'Yes' : 'No') +
         '</p>';
@@ -598,7 +617,7 @@ function loadTaxonDetails(meaningId,taxon_list_id) {
       method: 'GET',
       dataType: 'json',
       success: function(data) {
-        //console.log(data);
+        // WIP: Process the occurrence data and display it in the taxon details panel
       },
       error: function(xhr, status, error) {
         console.log('Status:', status);
@@ -608,6 +627,13 @@ function loadTaxonDetails(meaningId,taxon_list_id) {
     });
   }
 
+/**
+* Initialises the Taxon Tree user interface.
+*
+* Executed when the document is ready. Loads available taxon lists,
+* initialises the taxonomic tree, enables tree searching and loads
+* summary information for the currently selected taxon list.
+*/
 $(function() {
   loadTaxonLists();
   initialiseTaxonTree();
@@ -615,12 +641,30 @@ $(function() {
   loadTaxonListInfo();
 });
 
+/**
+ * Handles taxon list selection changes.
+ *
+ * Reloads the taxonomic tree and taxon list summary information
+ * when the user selects a different taxon list.
+ *
+ * @event change
+ * @selector #taxon-list-select
+ */
 $('#taxon-list-select').on('change', function() {
   taxon_list_id = $(this).val();
   initialiseTaxonTree();
   loadTaxonListInfo();
 });
 
+/**
+ * Handles taxon selection within the tree.
+ *
+ * Loads detailed information for the selected taxon meaning and
+ * displays the results in the taxon details panel.
+ *
+ * @event click
+ * @selector .jstree-anchor
+ */
 $('#taxon-tree').on('click', '.jstree-anchor', function () {
   var node = $('#taxon-tree').jstree(true).get_node(this);
   loadTaxonDetails(
