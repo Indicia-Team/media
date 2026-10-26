@@ -423,20 +423,7 @@ var IdcEsDataSource;
             hideAllSpinners.call(source);
             // Don't bother if not done - i.e. error because user navigated away.
             if (jqXHR.readyState === 4) {
-<<<<<<< HEAD
-              // Don't bother if not done - i.e. error because user navigated away.
-              const message = jqXHR.status === 401 ? indiciaData.lang.esDataSource.permissionsIssue : indiciaData.lang.esDataSource.elasticsearchQueryFailed;
-              if (indiciaData.sourceErrorsShown.indexOf(message) === -1) {
-                $.fancyDialog({
-                  title: indiciaData.lang.esDataSource.searchFailedTitle,
-                  message: message,
-                  cancelButton: null
-                });
-                indiciaData.sourceErrorsShown.push(message);
-              }
-=======
               handlePopulationError.call(source, jqXHR.responseText, jqXHR.status);
->>>>>>> hotfix-cookies
             }
           },
           dataType: 'json'
