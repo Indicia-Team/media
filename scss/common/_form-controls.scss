@@ -110,6 +110,20 @@ table.species-grid {
       padding-left: 0.5em;
   }
 }
+.speciesmap-toolbar {
+  background-color: $colour-header-bg;
+  color: $colour-header-text;
+  border: 1px solid $colour-header-border;
+  border-radius: 4px;
+  button {
+    margin: 8px;
+    &.speciesmap-mode-active {
+      background-color: $colour-select-row-bg;
+      border-color: $colour-select-row-bg;
+      color: $colour-select-row;
+    }
+  }
+}
 
 #new-taxon-form {
   max-width: 600px;

@@ -67,7 +67,7 @@ var control_speciesmap_addcontrols;
       indiciaData.SubSampleLayer.strategies[0].cluster();
     };
     var showButtons = function(buttons) {
-      var all = ['add', 'mod', 'move', 'del', 'cancel', 'finish'];
+      var all = ['add', 'mod', 'move', 'del', 'cancelAdding', 'cancelMoving', 'done'];
       $.each(all, function (idx, button) {
         if ($.inArray(button, buttons) > -1) {
           $('#' + indiciaData.control_speciesmap_opts[this + 'ButtonId']).show();
@@ -249,7 +249,7 @@ var control_speciesmap_addcontrols;
       // deacivating the control still leaves the selected feature highlighted.
       div.map.editLayer.clickControl.activate(); // to allow user to select new position.
       $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(indiciaData.lang.speciesMap.MoveMessage2);
-      showButtons(['move', 'cancel']);
+      showButtons(['move', 'cancelMoving']);
       $.each(indiciaFns.speciesMapModeChangeHooks, function() {
         this('Move', 'begin');
       });
@@ -315,7 +315,7 @@ var control_speciesmap_addcontrols;
       // new rows have no deleted field
       $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(indiciaData.lang.speciesMap.AddDataMessage);
       $('#' + indiciaData.control_speciesmap_opts.buttonsId).each(function () {window.scroll(0, $(this).offset().top); });
-      showButtons(['cancel', 'finish']);
+      showButtons(['cancelAdding', 'done']);
       if (typeof indiciaData.control_speciesmap_opts.sample_method_id !== "undefined" && indiciaData.control_speciesmap_opts.sample_method_id !== '') {
         $('<input type="hidden" name="sc:' + gridIdx + '::sample:sample_method_id" value="' + indiciaData.control_speciesmap_opts.sample_method_id + '" />')
           .appendTo(subsampleBlock);
@@ -401,7 +401,7 @@ var control_speciesmap_addcontrols;
           rowsToShow.next('.supplementary-row').show();
           $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(
               indiciaData.lang.speciesMap.ModifyMessage2);
-          showButtons(['finish']);
+          showButtons(['done']);
           $('#' + indiciaData.control_speciesmap_opts.id + ' .scClonableRow').find("[name$='\:sampleIDX']").each(
             function (idx, field) {
               $(field).val(indiciaData.control_speciesmap_existing_feature.attributes.subSampleIndex);
@@ -531,8 +531,8 @@ var control_speciesmap_addcontrols;
         setupSummaryRows(feature.attributes.subSampleIndex);
       }
       // next deactivate current state
-      $('#' + indiciaData.control_speciesmap_opts.buttonsId).find('.ui-state-highlight')
-        .removeClass('ui-state-highlight');
+      $('#' + indiciaData.control_speciesmap_opts.buttonsId).find('button[aria-pressed]')
+        .removeClass('speciesmap-mode-active').attr('aria-pressed', 'false');
       indiciaData.control_speciesmap_existing_feature = null;
       indiciaData.control_speciesmap_new_feature = null;
       // Switches off add button functionality - note this equivalent of 'Finishing'
@@ -548,7 +548,7 @@ var control_speciesmap_addcontrols;
       // select feature is switched off above by Move code
       $.fancybox.close();
       // highlight button and display message.
-      $(me).addClass('ui-state-highlight');
+      $(me).addClass('speciesmap-mode-active').attr('aria-pressed', 'true');
       $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(message);
       switch (mode) {
         case 'Add':
@@ -621,7 +621,7 @@ var control_speciesmap_addcontrols;
         this(null, null);
       });
     };
-    var controlSpeciesmapFinishbutton = function () {
+    var controlSpeciesmapDonebutton = function () {
       // first check that any filled in species grid rows pass validation.
       var feature = (indiciaData.control_speciesmap_mode === 'Add' ?
             indiciaData.control_speciesmap_new_feature : indiciaData.control_speciesmap_existing_feature);
@@ -651,14 +651,15 @@ var control_speciesmap_addcontrols;
 
     var defaults = {
       mapDiv: '#map',
-      panelClasses: 'ui-widget-header ui-corner-tl ui-corner-tr',
+      panelClasses: 'speciesmap-toolbar',
       buttonsId: 'speciesmap_controls',
       addButtonId: 'speciesmap_addbutton_control',
       modButtonId: 'speciesmap_modbutton_control',
       moveButtonId: 'speciesmap_movebutton_control',
       delButtonId: 'speciesmap_delbutton_control',
-      cancelButtonId: 'speciesmap_cancelbutton_control',
-      finishButtonId: 'speciesmap_finishbutton_control',
+      cancelAddingButtonId: 'speciesmap_cancelbuttonadding_control',
+      cancelMovingButtonId: 'speciesmap_cancelbuttonmoving_control',
+      doneButtonId: 'speciesmap_donebutton_control',
       messageId: 'speciesmap_controls_messages',
       messageClasses: '',
       animationDuration: 1000,
@@ -725,25 +726,27 @@ var control_speciesmap_addcontrols;
       return labelContents.join(separator);
     }
     var opts;
-    var container;
     // Extend our default options with those provided, basing this on an empty object
     // so the defaults don't get changed.
     opts = $.extend({}, defaults, options);
     indiciaData.control_speciesmap_opts = opts;
-    container = $('<div id="' + opts.buttonsId + '" class="' + opts.panelClasses + '">').insertBefore(opts.mapDiv);
-    $('<button id="' + opts.addButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.AddLabel +
-        '</button>').on('click', controlSpeciesmapAddbutton).appendTo(container);
-    $('<button id="' + opts.modButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.ModifyLabel +
-        '</button>').on('click', controlSpeciesmapModifybutton).appendTo(container);
-    $('<button id="' + opts.moveButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.MoveLabel +
-        '</button>').on('click', controlSpeciesmapMovebutton).appendTo(container);
-    $('<button id="' + opts.delButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.DeleteLabel +
-        '</button>').on('click', controlSpeciesmapDeletebutton).appendTo(container);
-    $('<button id="' + opts.cancelButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.CancelLabel +
-        '</button>').on('click', controlSpeciesmapCancelbutton).appendTo(container).hide();
-    $('<button id="' + opts.finishButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.FinishLabel +
-        '</button>').on('click', controlSpeciesmapFinishbutton).appendTo(container).hide();
-    $('<div id="' + opts.messageId + '" class="' + opts.messageClasses + '"></div>').appendTo(container);
+    var headerToolbar = $('<div id="' + opts.buttonsId + '" class="' + opts.panelClasses + '">').insertBefore(opts.mapDiv);
+    var footerToolbar = $('<div id="' + opts.buttonsId + '-footer" class="' + opts.panelClasses + '">').insertAfter('#' + opts.id + '-container');
+    $('<button id="' + opts.addButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button" aria-pressed="false">' + indiciaData.lang.speciesMap.AddLabel +
+        '</button>').on('click', controlSpeciesmapAddbutton).appendTo(headerToolbar);
+    $('<button id="' + opts.modButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button" aria-pressed="false">' + indiciaData.lang.speciesMap.ModifyLabel +
+        '</button>').on('click', controlSpeciesmapModifybutton).appendTo(headerToolbar);
+    $('<button id="' + opts.moveButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button" aria-pressed="false">' + indiciaData.lang.speciesMap.MoveLabel +
+        '</button>').on('click', controlSpeciesmapMovebutton).appendTo(headerToolbar);
+    $('<button id="' + opts.delButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button" aria-pressed="false">' + indiciaData.lang.speciesMap.DeleteLabel +
+        '</button>').on('click', controlSpeciesmapDeletebutton).appendTo(headerToolbar);
+    $('<button id="' + opts.cancelAddingButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.CancelLabelWhenAdding +
+        '</button>').on('click', controlSpeciesmapCancelbutton).appendTo(footerToolbar).hide();
+    $('<button id="' + opts.cancelMovingButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.CancelLabelWhenMoving +
+        '</button>').on('click', controlSpeciesmapCancelbutton).appendTo(footerToolbar).hide();
+    $('<button id="' + opts.doneButtonId + '" class="' + indiciaData.templates.buttonHighlightedClass + '" type="button">' + indiciaData.lang.speciesMap.DoneLabel +
+        '</button>').on('click', controlSpeciesmapDonebutton).appendTo(footerToolbar).hide();
+    $('<div id="' + opts.messageId + '" class="' + opts.messageClasses + '"></div>').appendTo(headerToolbar);
     indiciaData.control_speciesmap_mode = 'Off';
 
     // If the form has it's own spatial ref system picker, we can drop the

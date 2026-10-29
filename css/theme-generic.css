@@ -113,6 +113,21 @@ table.species-grid .footable-row-detail-name {
   padding-left: 0.5em;
 }
 
+.speciesmap-toolbar {
+  background-color: #f1f1f1;
+  color: #444444;
+  border: 1px solid #d8d8d8;
+  border-radius: 4px;
+}
+.speciesmap-toolbar button {
+  margin: 8px;
+}
+.speciesmap-toolbar button.speciesmap-mode-active {
+  background-color: #2c7bb6;
+  border-color: #2c7bb6;
+  color: #ffffff;
+}
+
 #new-taxon-form {
   max-width: 600px;
 }
