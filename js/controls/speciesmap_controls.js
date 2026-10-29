@@ -197,9 +197,7 @@ var control_speciesmap_addcontrols;
         const infoPanel = $('<div>').append(getSubSampleLabel(f, "<br/>", true));
         input.on('click', function(){
           $('#' + indiciaData.control_speciesmap_opts.messageId).text(currentMsg);
-          if (indiciaData.control_speciesmap_mode === 'Modify') {
-            switchToSubSampleForm();
-          } else {
+          if (indiciaData.control_speciesmap_mode !== 'Modify') {
             switchToOverviewMap();
           }
           clusterFeatureSelected(f.id);
@@ -385,8 +383,8 @@ var control_speciesmap_addcontrols;
           break;
         }
       }
+      // Selecting the feature dispatches featureselected and runs the action.
       indiciaData.control_speciesmap_selectFeatureControl.select(ftr);
-      featureSelected({feature: ftr});
     }
     // feature selected on subSample layer
     var featureSelected = function (a1) {
