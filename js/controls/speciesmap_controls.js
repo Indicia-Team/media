@@ -196,7 +196,7 @@ var control_speciesmap_addcontrols;
         const input = $('<input type="button" class="' + indiciaData.templates.buttonDefaultClass + '" value="Select sample ' + sampleIndex + '"/><br/>');
         const infoPanel = $('<div>').append(getSubSampleLabel(f, "<br/>", true));
         input.on('click', function(){
-          $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(currentMsg);
+          $('#' + indiciaData.control_speciesmap_opts.messageId).text(currentMsg);
           if (indiciaData.control_speciesmap_mode === 'Modify') {
             switchToSubSampleForm();
           } else {
@@ -303,22 +303,31 @@ var control_speciesmap_addcontrols;
       );
       subsampleBlock = $('<div class="new added scm-block" id="scm-' + gridIdx + '-block"></div>')
         .appendTo('#' + indiciaData.control_speciesmap_opts.id + '-blocks');
-      $('<label>' + indiciaData.lang.speciesMap.SRefLabel + ':</label> ').appendTo(subsampleBlock);
-      $('<input type="text" name="sc:' + gridIdx + '::sample:entered_sref" readonly="readonly" value="' + $('#imp-sref').val() + '" />')
-        .appendTo(subsampleBlock);
-      $('<input type="hidden" name="sc:' + gridIdx + '::sample:geom" value="' + $('#imp-geom').val() + '" />')
-        .appendTo(subsampleBlock);
+      $('<label>').text(indiciaData.lang.speciesMap.SRefLabel + ':').appendTo(subsampleBlock);
+      $('<input>', {
+        type: 'text',
+        name: 'sc:' + gridIdx + '::sample:entered_sref',
+        readonly: 'readonly'
+      }).val($('#imp-sref').val()).appendTo(subsampleBlock);
+      $('<input>', {
+        type: 'hidden',
+        name: 'sc:' + gridIdx + '::sample:geom'
+      }).val($('#imp-geom').val()).appendTo(subsampleBlock);
       if (options.subSampleSampleMethodID) {
-        $('<input type="hidden" name="sc:' + gridIdx + '::sample:sample_method_id" value="' + options.subSampleSampleMethodID + '" />')
-          .appendTo(subsampleBlock);
+        $('<input>', {
+          type: 'hidden',
+          name: 'sc:' + gridIdx + '::sample:sample_method_id'
+        }).val(options.subSampleSampleMethodID).appendTo(subsampleBlock);
       }
       // new rows have no deleted field
       $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(indiciaData.lang.speciesMap.AddDataMessage);
       $('#' + indiciaData.control_speciesmap_opts.buttonsId).each(function () {window.scroll(0, $(this).offset().top); });
       showButtons(['cancelAdding', 'done']);
       if (typeof indiciaData.control_speciesmap_opts.sample_method_id !== "undefined" && indiciaData.control_speciesmap_opts.sample_method_id !== '') {
-        $('<input type="hidden" name="sc:' + gridIdx + '::sample:sample_method_id" value="' + indiciaData.control_speciesmap_opts.sample_method_id + '" />')
-          .appendTo(subsampleBlock);
+        $('<input>', {
+          type: 'hidden',
+          name: 'sc:' + gridIdx + '::sample:sample_method_id'
+        }).val(indiciaData.control_speciesmap_opts.sample_method_id).appendTo(subsampleBlock);
         sampleControlsDiv = $('#' + indiciaData.control_speciesmap_opts.id + '-subsample-ctrls')
           .clone(true, true)
           .appendTo(subsampleBlock)
@@ -414,7 +423,9 @@ var control_speciesmap_addcontrols;
         case 'Delete':
           $.fancyDialog({
             title: null,
-            message: indiciaData.lang.speciesMap.ConfirmDeleteText.replace('{OLD}', a1.feature.attributes.sRef),
+            message: indiciaData.lang.speciesMap.ConfirmDeleteText.replace('{OLD}', function () {
+              return indiciaFns.escapeHtml(a1.feature.attributes.sRef);
+            }),
             okButton: indiciaData.lang.speciesMap.Yes,
             cancelButton: indiciaData.lang.speciesMap.No,
             callbackOk: function () {
@@ -460,9 +471,12 @@ var control_speciesmap_addcontrols;
       }
       $('.scm-summary-' + sampleIDX).remove();
       if (block.length > 0 && rows.length > 0) {
-        $('.control_speciesmapsummary tbody').append('<tr class="scm-summary-' + sampleIDX + '"><td colspan=' +
-          elements + '><span>' + indiciaData.lang.speciesMap.SRefLabel + ': ' +
-          block.find("[name$='\:sample\:entered_sref']").val() + '</td></tr>');
+        $('<tr>').addClass('scm-summary-' + sampleIDX)
+          .append($('<td>', {colspan: elements}).append($('<span>').text(
+            indiciaData.lang.speciesMap.SRefLabel + ': ' +
+            block.find("[name$='\:sample\:entered_sref']").val()
+          )))
+          .appendTo('.control_speciesmapsummary tbody');
       }
       rows.each(function (idx, elem) {
         var cloned = $(elem).clone();
@@ -473,34 +487,36 @@ var control_speciesmap_addcontrols;
           $(elem).remove();
         });
         cloned.find('input:text').each(function (idx, elem) {
-          $(elem).after('<span>' + $(elem).val() + '</span>').remove();
+          $(elem).after($('<span>').text($(elem).val())).remove();
         });
         cloned.find('input:checkbox').each(function (idx, elem) {
           if ($(elem).filter(':checked').length > 0) {
-              $(elem).after('<span>' + indiciaData.lang.speciesMap.Yes + '</span>').remove();
+              $(elem).after($('<span>').text(indiciaData.lang.speciesMap.Yes)).remove();
           } else {
-              $(elem).after('<span>' + indiciaData.lang.speciesMap.No + '</span>').remove();
+              $(elem).after($('<span>').text(indiciaData.lang.speciesMap.No)).remove();
           }
         });
         cloned.find('select').each(function () {
-          var text = $('#' + indiciaData.control_speciesmap_opts.id).find('[name=' + $(this).attr('name')
-              .replace(':', '\:') + ']').val();
+          var name = $(this).attr('name');
+          var text = $('#' + indiciaData.control_speciesmap_opts.id).find('select').filter(function () {
+            return this.name === name;
+          }).val();
           $(this).val(text);
           text = $(this).find('option:selected');
           if (text.length > 0) {
             text = text[0].text;
-            $(this).after('<span>' + text + '</span>').remove();
+            $(this).after($('<span>').text(text)).remove();
           } else {
             $(this).remove();
           }
         });
         cloned.find('input:radio').each(function () {
-          var label = '';
           if ($(this).filter(':checked').length > 0) {
+            var label = $('<span>');
             $(this).parent().find('label').each(function (i, elem) {
-              label += elem.innerHTML;
+              label.append($(elem).contents().clone());
             });
-            $(this).parent().after('<span>' + label + '</span>').remove();
+            $(this).parent().after(label).remove();
           } else {
             $(this).parent().remove(); // removes span - includes label.
           }
@@ -723,6 +739,9 @@ var control_speciesmap_addcontrols;
             }
         }
       });
+      if (clusterButton) {
+        labelContents = labelContents.map(indiciaFns.escapeHtml);
+      }
       return labelContents.join(separator);
     }
     var opts;
