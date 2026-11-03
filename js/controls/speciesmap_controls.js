@@ -636,18 +636,28 @@ var control_speciesmap_addcontrols;
       });
     };
     var controlSpeciesmapDonebutton = function () {
-      // first check that any filled in species grid rows pass validation.
       var feature = (indiciaData.control_speciesmap_mode === 'Add' ?
             indiciaData.control_speciesmap_new_feature : indiciaData.control_speciesmap_existing_feature);
-      var scinputs;
-      scinputs = $("[name$='\:sampleIDX']").filter('[value=' + feature.attributes.subSampleIndex + ']').closest('tr')
-        .not('.scClonableRow')
-        .find('input,select')
-        .not(':disabled');
-      if (typeof scinputs.valid !== "undefined" && scinputs.length > 0 && !scinputs.valid()) {
-        return; // validation failed: leave everything in sight
+      var sampleIDX = feature.attributes.subSampleIndex;
+      var rows = $("[name$='\:sampleIDX']").filter('[value=' + sampleIDX + ']').closest('tr')
+        .not('.scClonableRow');
+      var fields = $('#scm-' + sampleIDX + '-block')
+        .add(rows)
+        .add(rows.next('.supplementary-row'))
+        .find(':input')
+        .not(':submit, :reset, :image, :file, :disabled');
+      var form = $('#' + indiciaData.control_speciesmap_opts.id + '-container').closest('form');
+      if (form.length && fields.length) {
+        var validator = form.validate();
+        fields = fields.not(validator.settings.ignore);
+        if (fields.length && !fields.valid()) {
+          fields.filter(function () {
+            return validator.invalid[this.name];
+          }).filter(':visible').first().focus();
+          return; // Leave the point editor open so the user can correct errors.
+        }
       }
-      setupSummaryRows(feature.attributes.subSampleIndex);
+      setupSummaryRows(sampleIDX);
       switchToOverviewMap();
       $('#' + indiciaData.control_speciesmap_opts.id + '-container').find('.new').removeClass('new');
       switch (indiciaData.control_speciesmap_mode) {
