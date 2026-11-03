@@ -122,8 +122,16 @@ var control_speciesmap_addcontrols;
       }
     };
 
+    var getSubSampleRecordCount = function(subSampleIndex) {
+      return $('[name$="\:sampleIDX"]')
+          .filter('[value=' + subSampleIndex + ']')
+          .closest('tr')
+          .not('.scClonableRow, .deleted-row')
+          .length;
+    };
+
     /**
-     * Use the attributes of a sub-sample feature to build it's label as per config.
+     * Use the attributes of a sub-sample feature to build its label as per config.
      */
     var rebuildFeatureLabel = function() {
       var feature = (indiciaData.control_speciesmap_mode === 'Add' ?
@@ -132,8 +140,7 @@ var control_speciesmap_addcontrols;
         return;
       }
       // need to remove then re-add feature to rebuild label
-      feature.attributes.count = $('[name$="\:sampleIDX"]')
-          .filter('[value=' + feature.attributes.subSampleIndex + ']').closest('tr').not('.scClonableRow').length;
+      feature.attributes.count = getSubSampleRecordCount(feature.attributes.subSampleIndex);
       feature.attributes.locationName = $('#scm-' + feature.attributes.subSampleIndex + '-block').find('[name$="sample\:location_name"]').val();
       feature.style = null;
       resetSubSampleFeatures();
@@ -858,8 +865,7 @@ var control_speciesmap_addcontrols;
           feature.attributes.subSampleIndex = id[1];
           feature.attributes.sRef = $(block).find('[name$="sample\:entered_sref"]').val();
           feature.attributes.locationName = $(block).find('[name$="sample\:location_name"]').val();
-          feature.attributes.count = $('[name$="\:sampleIDX"]')
-              .filter('[value=' + feature.attributes.subSampleIndex + ']').closest('tr').not('.scClonableRow').length;
+          feature.attributes.count = getSubSampleRecordCount(feature.attributes.subSampleIndex);
           addSubSampleFtr(feature);
           setupSummaryRows(feature.attributes.subSampleIndex);
         });
