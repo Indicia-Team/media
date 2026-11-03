@@ -207,9 +207,11 @@ var control_speciesmap_addcontrols;
       });
       // Clustering must be turned of for feature move etc
       setClusteringOn(false);
-      // Hide map, show cluster selection controls
-      $(indiciaData.control_speciesmap_opts.mapDiv)
-        .hide(indiciaData.control_speciesmap_opts.animationDuration);
+      // Keep cluster selection consistent with the map visibility setting.
+      if (indiciaData.control_speciesmap_opts.hideMapWhenEditingSubsample) {
+        $(indiciaData.control_speciesmap_opts.mapDiv)
+          .hide(indiciaData.control_speciesmap_opts.animationDuration);
+      }
       $('#' + indiciaData.control_speciesmap_opts.id + '-cluster')
         .show(indiciaData.control_speciesmap_opts.animationDuration);
       // Hide tab navigation buttons as they are confusing in this state.
