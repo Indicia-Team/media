@@ -323,7 +323,9 @@ var control_speciesmap_addcontrols;
       $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(indiciaData.lang.speciesMap.AddDataMessage);
       $('#' + indiciaData.control_speciesmap_opts.buttonsId).each(function () {window.scroll(0, $(this).offset().top); });
       showButtons(['cancelAdding', 'done']);
-      if (typeof indiciaData.control_speciesmap_opts.sample_method_id !== "undefined" && indiciaData.control_speciesmap_opts.sample_method_id !== '') {
+      if (typeof indiciaData.control_speciesmap_opts.sample_method_id !== "undefined" &&
+          indiciaData.control_speciesmap_opts.sample_method_id !== null &&
+          indiciaData.control_speciesmap_opts.sample_method_id !== '') {
         $('<input>', {
           type: 'hidden',
           name: 'sc:' + gridIdx + '::sample:sample_method_id'
