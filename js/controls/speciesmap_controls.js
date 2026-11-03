@@ -830,6 +830,10 @@ var control_speciesmap_addcontrols;
         $('.control_speciesmapsummary thead').append(cloned);
         // now add existing features.
         $('.scm-block').each(function (idx, block) {
+          // Keep deleted blocks for submission, but not on the map or summary.
+          if ($(block).find('[name$=":sample:deleted"]').val() === 't') {
+            return;
+          }
           var id = $(block).attr('id').split('-');
           var parser = new OpenLayers.Format.WKT();
           var feature;
