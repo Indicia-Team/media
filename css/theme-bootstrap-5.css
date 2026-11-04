@@ -1099,15 +1099,8 @@ body > .loading-spinner {
   border-radius: 4px;
 }
 .idc-cardGallery .es-card-gallery .card .verification-buttons-cntr button {
-  border: solid #f0f0f0 1px;
-  border-radius: 4px;
-  background: none;
-  box-shadow: none;
-  color: black;
-  text-shadow: none;
-  min-height: 22px;
+  padding: 5px;
   margin: 4px;
-  padding: 6px;
 }
 .idc-cardGallery .es-card-gallery .card .verification-buttons-cntr button:hover {
   background: #f0f0f0;
@@ -1465,15 +1458,8 @@ body > .loading-spinner {
 }
 
 .idc-verificationButtons-row button, .idc-verificationButtons-row a {
-  border: solid #f0f0f0 1px;
-  border-radius: 4px;
-  background: none;
-  box-shadow: none;
-  color: black;
-  text-shadow: none;
-  min-height: 22px;
+  padding: 5px;
   margin: 4px;
-  padding: 6px;
 }
 .idc-verificationButtons-row button:hover, .idc-verificationButtons-row a:hover {
   background: #f0f0f0;
