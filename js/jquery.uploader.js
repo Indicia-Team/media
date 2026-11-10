@@ -201,7 +201,7 @@ var checkSubmitInProgress = function (e) {
         uploadSelectBtn = this.settings.buttonTemplate
             .replace('{caption}', this.settings.addBtnCaption.replace('{1}', caption))
             .replace('{id}', 'upload-select-btn-' + id)
-            .replace('{class}', '')
+            .replace('{class}', indiciaData.templates.buttonHighlightedClass)
             .replace('{title}', this.settings.msgUseAddFileBtn.replace('{1}', fileTypes.join(',').replace(/,/g, ', ')));
         this.settings.browse_button = 'upload-select-btn-'+id;
       }
@@ -209,7 +209,7 @@ var checkSubmitInProgress = function (e) {
         linkSelectBtn = this.settings.buttonTemplate
             .replace('{caption}', this.settings.addBtnCaption.replace('{1}', this.settings.msgLink))
             .replace('{id}', 'link-select-btn-' + id)
-            .replace('{class}', '')
+            .replace('{class}', indiciaData.templates.buttonHighlightedClass)
             .replace('{title}', this.settings.msgUseAddLinkBtn.replace('{1}', linkTypes.join(',').replace(/,/g, ', ')));
       }
 
