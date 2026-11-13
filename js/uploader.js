@@ -1208,14 +1208,35 @@ jQuery(document).ready(function($) {
    * @param bool includeNotImported
    *   If true, include a parameter in the download link to include records
    *   that aren't yet imported.
+   * @param bool includeAllRows
+   *   If true, download all rows with their import status.
+   * @param bool isPrecheck
+   *   If true, indicates that this is a precheck rather than an actual import.
    */
-  function showFailureMessage(msg, includeNotImported) {
+  function showFailureMessage(msg, includeNotImported, includeAllRows, isPrecheck) {
     const urlSep = indiciaData.getErrorFileUrl.indexOf('?') === -1 ? '?' : '&';
     const includeNotImportedParam = includeNotImported ? '&include-not-imported=true' : '';
-    const fileLink = indiciaData.getErrorFileUrl + urlSep + 'config-id=' + encodeURIComponent(indiciaData.configId) + includeNotImportedParam;
+    const includeAllRowsParam = includeAllRows ? '&include-all-rows=true' : '';
+    const fileLink = indiciaData.getErrorFileUrl + urlSep +
+        'config-id=' + encodeURIComponent(indiciaData.configId) +
+        includeNotImportedParam + includeAllRowsParam + (isPrecheck ? '&precheck=true' : '');
+    const downloadLabel = includeAllRows ? indiciaData.lang.import_helper_2.downloadImportResults : indiciaData.lang.import_helper_2.downloadErrors;
     $('#error-info').append(msg);
-    $('#error-info').append('<div><a class="btn btn-info" download href="' + fileLink + '">' + indiciaData.lang.import_helper_2.downloadErrors + '</a></div>');
+    $('#error-info').append('<div><a class="btn btn-info" download href="' + fileLink + '">' + downloadLabel + '</a></div>');
     $('#error-info').fadeIn();
+  }
+
+  /**
+   * Display information about an incomplete import.
+   */
+  function showIncompleteImport(result, state) {
+    const prefix = state === 'precheck' ? 'incompletePrecheck' : 'incompleteImport';
+    const msg = indiciaData.lang.import_helper_2[prefix + 'Info']
+      .replace('{rowsProcessed}', result.rowsProcessed)
+      .replace('{totalRows}', result.totalRows);
+    $('#current-task').text(indiciaData.lang.import_helper_2[prefix]);
+    $('#import-details-import-another').show();
+    showFailureMessage(msg, true, true, state === 'precheck');
   }
 
   /**
@@ -1332,6 +1353,9 @@ jQuery(document).ready(function($) {
             if (result.status !== 'done') {
               importNextChunk(state);
             }
+            else if (result.rowsProcessed < result.totalRows) {
+              showIncompleteImport(result, state);
+            }
             else {
               // Checks are complete.
               $('#import-details-precheck-done').show();
@@ -1357,6 +1381,8 @@ jQuery(document).ready(function($) {
               .show();
             if (result.status !== 'done') {
               importNextChunk(state);
+            } else if (result.rowsProcessed < result.totalRows) {
+              showIncompleteImport(result, state);
             } else {
               // Import is complete.
               $('#import-details-importing-done').show();
