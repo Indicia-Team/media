@@ -67,7 +67,7 @@ var control_speciesmap_addcontrols;
       indiciaData.SubSampleLayer.strategies[0].cluster();
     };
     var showButtons = function(buttons) {
-      var all = ['add', 'mod', 'move', 'del', 'cancel', 'finish'];
+      var all = ['add', 'mod', 'move', 'del', 'cancelAdding', 'cancelMoving', 'done'];
       $.each(all, function (idx, button) {
         if ($.inArray(button, buttons) > -1) {
           $('#' + indiciaData.control_speciesmap_opts[this + 'ButtonId']).show();
@@ -122,8 +122,16 @@ var control_speciesmap_addcontrols;
       }
     };
 
+    var getSubSampleRecordCount = function(subSampleIndex) {
+      return $('[name$="\:sampleIDX"]')
+          .filter('[value=' + subSampleIndex + ']')
+          .closest('tr')
+          .not('.scClonableRow, .deleted-row')
+          .length;
+    };
+
     /**
-     * Use the attributes of a sub-sample feature to build it's label as per config.
+     * Use the attributes of a sub-sample feature to build its label as per config.
      */
     var rebuildFeatureLabel = function() {
       var feature = (indiciaData.control_speciesmap_mode === 'Add' ?
@@ -132,8 +140,7 @@ var control_speciesmap_addcontrols;
         return;
       }
       // need to remove then re-add feature to rebuild label
-      feature.attributes.count = $('[name$="\:sampleIDX"]')
-          .filter('[value=' + feature.attributes.subSampleIndex + ']').closest('tr').not('.scClonableRow').length;
+      feature.attributes.count = getSubSampleRecordCount(feature.attributes.subSampleIndex);
       feature.attributes.locationName = $('#scm-' + feature.attributes.subSampleIndex + '-block').find('[name$="sample\:location_name"]').val();
       feature.style = null;
       resetSubSampleFeatures();
@@ -196,10 +203,8 @@ var control_speciesmap_addcontrols;
         const input = $('<input type="button" class="' + indiciaData.templates.buttonDefaultClass + '" value="Select sample ' + sampleIndex + '"/><br/>');
         const infoPanel = $('<div>').append(getSubSampleLabel(f, "<br/>", true));
         input.on('click', function(){
-          $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(currentMsg);
-          if (indiciaData.control_speciesmap_mode === 'Modify') {
-            switchToSubSampleForm();
-          } else {
+          $('#' + indiciaData.control_speciesmap_opts.messageId).text(currentMsg);
+          if (indiciaData.control_speciesmap_mode !== 'Modify') {
             switchToOverviewMap();
           }
           clusterFeatureSelected(f.id);
@@ -209,9 +214,11 @@ var control_speciesmap_addcontrols;
       });
       // Clustering must be turned of for feature move etc
       setClusteringOn(false);
-      // Hide map, show cluster selection controls
-      $(indiciaData.control_speciesmap_opts.mapDiv)
-        .hide(indiciaData.control_speciesmap_opts.animationDuration);
+      // Keep cluster selection consistent with the map visibility setting.
+      if (indiciaData.control_speciesmap_opts.hideMapWhenEditingSubsample) {
+        $(indiciaData.control_speciesmap_opts.mapDiv)
+          .hide(indiciaData.control_speciesmap_opts.animationDuration);
+      }
       $('#' + indiciaData.control_speciesmap_opts.id + '-cluster')
         .show(indiciaData.control_speciesmap_opts.animationDuration);
       // Hide tab navigation buttons as they are confusing in this state.
@@ -249,7 +256,7 @@ var control_speciesmap_addcontrols;
       // deacivating the control still leaves the selected feature highlighted.
       div.map.editLayer.clickControl.activate(); // to allow user to select new position.
       $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(indiciaData.lang.speciesMap.MoveMessage2);
-      showButtons(['move', 'cancel']);
+      showButtons(['move', 'cancelMoving']);
       $.each(indiciaFns.speciesMapModeChangeHooks, function() {
         this('Move', 'begin');
       });
@@ -303,22 +310,33 @@ var control_speciesmap_addcontrols;
       );
       subsampleBlock = $('<div class="new added scm-block" id="scm-' + gridIdx + '-block"></div>')
         .appendTo('#' + indiciaData.control_speciesmap_opts.id + '-blocks');
-      $('<label>' + indiciaData.lang.speciesMap.SRefLabel + ':</label> ').appendTo(subsampleBlock);
-      $('<input type="text" name="sc:' + gridIdx + '::sample:entered_sref" readonly="readonly" value="' + $('#imp-sref').val() + '" />')
-        .appendTo(subsampleBlock);
-      $('<input type="hidden" name="sc:' + gridIdx + '::sample:geom" value="' + $('#imp-geom').val() + '" />')
-        .appendTo(subsampleBlock);
+      $('<label>').text(indiciaData.lang.speciesMap.SRefLabel + ':').appendTo(subsampleBlock);
+      $('<input>', {
+        type: 'text',
+        name: 'sc:' + gridIdx + '::sample:entered_sref',
+        readonly: 'readonly'
+      }).val($('#imp-sref').val()).appendTo(subsampleBlock);
+      $('<input>', {
+        type: 'hidden',
+        name: 'sc:' + gridIdx + '::sample:geom'
+      }).val($('#imp-geom').val()).appendTo(subsampleBlock);
       if (options.subSampleSampleMethodID) {
-        $('<input type="hidden" name="sc:' + gridIdx + '::sample:sample_method_id" value="' + options.subSampleSampleMethodID + '" />')
-          .appendTo(subsampleBlock);
+        $('<input>', {
+          type: 'hidden',
+          name: 'sc:' + gridIdx + '::sample:sample_method_id'
+        }).val(options.subSampleSampleMethodID).appendTo(subsampleBlock);
       }
       // new rows have no deleted field
       $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(indiciaData.lang.speciesMap.AddDataMessage);
       $('#' + indiciaData.control_speciesmap_opts.buttonsId).each(function () {window.scroll(0, $(this).offset().top); });
-      showButtons(['cancel', 'finish']);
-      if (typeof indiciaData.control_speciesmap_opts.sample_method_id !== "undefined" && indiciaData.control_speciesmap_opts.sample_method_id !== '') {
-        $('<input type="hidden" name="sc:' + gridIdx + '::sample:sample_method_id" value="' + indiciaData.control_speciesmap_opts.sample_method_id + '" />')
-          .appendTo(subsampleBlock);
+      showButtons(['cancelAdding', 'done']);
+      if (typeof indiciaData.control_speciesmap_opts.sample_method_id !== "undefined" &&
+          indiciaData.control_speciesmap_opts.sample_method_id !== null &&
+          indiciaData.control_speciesmap_opts.sample_method_id !== '') {
+        $('<input>', {
+          type: 'hidden',
+          name: 'sc:' + gridIdx + '::sample:sample_method_id'
+        }).val(indiciaData.control_speciesmap_opts.sample_method_id).appendTo(subsampleBlock);
         sampleControlsDiv = $('#' + indiciaData.control_speciesmap_opts.id + '-subsample-ctrls')
           .clone(true, true)
           .appendTo(subsampleBlock)
@@ -376,8 +394,8 @@ var control_speciesmap_addcontrols;
           break;
         }
       }
+      // Selecting the feature dispatches featureselected and runs the action.
       indiciaData.control_speciesmap_selectFeatureControl.select(ftr);
-      featureSelected({feature: ftr});
     }
     // feature selected on subSample layer
     var featureSelected = function (a1) {
@@ -401,7 +419,7 @@ var control_speciesmap_addcontrols;
           rowsToShow.next('.supplementary-row').show();
           $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(
               indiciaData.lang.speciesMap.ModifyMessage2);
-          showButtons(['finish']);
+          showButtons(['done']);
           $('#' + indiciaData.control_speciesmap_opts.id + ' .scClonableRow').find("[name$='\:sampleIDX']").each(
             function (idx, field) {
               $(field).val(indiciaData.control_speciesmap_existing_feature.attributes.subSampleIndex);
@@ -414,7 +432,9 @@ var control_speciesmap_addcontrols;
         case 'Delete':
           $.fancyDialog({
             title: null,
-            message: indiciaData.lang.speciesMap.ConfirmDeleteText.replace('{OLD}', a1.feature.attributes.sRef),
+            message: indiciaData.lang.speciesMap.ConfirmDeleteText.replace('{OLD}', function () {
+              return indiciaFns.escapeHtml(a1.feature.attributes.sRef);
+            }),
             okButton: indiciaData.lang.speciesMap.Yes,
             cancelButton: indiciaData.lang.speciesMap.No,
             callbackOk: function () {
@@ -460,9 +480,12 @@ var control_speciesmap_addcontrols;
       }
       $('.scm-summary-' + sampleIDX).remove();
       if (block.length > 0 && rows.length > 0) {
-        $('.control_speciesmapsummary tbody').append('<tr class="scm-summary-' + sampleIDX + '"><td colspan=' +
-          elements + '><span>' + indiciaData.lang.speciesMap.SRefLabel + ': ' +
-          block.find("[name$='\:sample\:entered_sref']").val() + '</td></tr>');
+        $('<tr>').addClass('scm-summary-' + sampleIDX)
+          .append($('<td>', {colspan: elements}).append($('<span>').text(
+            indiciaData.lang.speciesMap.SRefLabel + ': ' +
+            block.find("[name$='\:sample\:entered_sref']").val()
+          )))
+          .appendTo('.control_speciesmapsummary tbody');
       }
       rows.each(function (idx, elem) {
         var cloned = $(elem).clone();
@@ -473,34 +496,36 @@ var control_speciesmap_addcontrols;
           $(elem).remove();
         });
         cloned.find('input:text').each(function (idx, elem) {
-          $(elem).after('<span>' + $(elem).val() + '</span>').remove();
+          $(elem).after($('<span>').text($(elem).val())).remove();
         });
         cloned.find('input:checkbox').each(function (idx, elem) {
           if ($(elem).filter(':checked').length > 0) {
-              $(elem).after('<span>' + indiciaData.lang.speciesMap.Yes + '</span>').remove();
+              $(elem).after($('<span>').text(indiciaData.lang.speciesMap.Yes)).remove();
           } else {
-              $(elem).after('<span>' + indiciaData.lang.speciesMap.No + '</span>').remove();
+              $(elem).after($('<span>').text(indiciaData.lang.speciesMap.No)).remove();
           }
         });
         cloned.find('select').each(function () {
-          var text = $('#' + indiciaData.control_speciesmap_opts.id).find('[name=' + $(this).attr('name')
-              .replace(':', '\:') + ']').val();
+          var name = $(this).attr('name');
+          var text = $('#' + indiciaData.control_speciesmap_opts.id).find('select').filter(function () {
+            return this.name === name;
+          }).val();
           $(this).val(text);
           text = $(this).find('option:selected');
           if (text.length > 0) {
             text = text[0].text;
-            $(this).after('<span>' + text + '</span>').remove();
+            $(this).after($('<span>').text(text)).remove();
           } else {
             $(this).remove();
           }
         });
         cloned.find('input:radio').each(function () {
-          var label = '';
           if ($(this).filter(':checked').length > 0) {
+            var label = $('<span>');
             $(this).parent().find('label').each(function (i, elem) {
-              label += elem.innerHTML;
+              label.append($(elem).contents().clone());
             });
-            $(this).parent().after('<span>' + label + '</span>').remove();
+            $(this).parent().after(label).remove();
           } else {
             $(this).parent().remove(); // removes span - includes label.
           }
@@ -531,8 +556,8 @@ var control_speciesmap_addcontrols;
         setupSummaryRows(feature.attributes.subSampleIndex);
       }
       // next deactivate current state
-      $('#' + indiciaData.control_speciesmap_opts.buttonsId).find('.ui-state-highlight')
-        .removeClass('ui-state-highlight');
+      $('#' + indiciaData.control_speciesmap_opts.buttonsId).find('button[aria-pressed]')
+        .removeClass('speciesmap-mode-active').attr('aria-pressed', 'false');
       indiciaData.control_speciesmap_existing_feature = null;
       indiciaData.control_speciesmap_new_feature = null;
       // Switches off add button functionality - note this equivalent of 'Finishing'
@@ -548,7 +573,7 @@ var control_speciesmap_addcontrols;
       // select feature is switched off above by Move code
       $.fancybox.close();
       // highlight button and display message.
-      $(me).addClass('ui-state-highlight');
+      $(me).addClass('speciesmap-mode-active').attr('aria-pressed', 'true');
       $('#' + indiciaData.control_speciesmap_opts.messageId).empty().append(message);
       switch (mode) {
         case 'Add':
@@ -621,19 +646,29 @@ var control_speciesmap_addcontrols;
         this(null, null);
       });
     };
-    var controlSpeciesmapFinishbutton = function () {
-      // first check that any filled in species grid rows pass validation.
+    var controlSpeciesmapDonebutton = function () {
       var feature = (indiciaData.control_speciesmap_mode === 'Add' ?
             indiciaData.control_speciesmap_new_feature : indiciaData.control_speciesmap_existing_feature);
-      var scinputs;
-      scinputs = $("[name$='\:sampleIDX']").filter('[value=' + feature.attributes.subSampleIndex + ']').closest('tr')
-        .not('.scClonableRow')
-        .find('input,select')
-        .not(':disabled');
-      if (typeof scinputs.valid !== "undefined" && scinputs.length > 0 && !scinputs.valid()) {
-        return; // validation failed: leave everything in sight
+      var sampleIDX = feature.attributes.subSampleIndex;
+      var rows = $("[name$='\:sampleIDX']").filter('[value=' + sampleIDX + ']').closest('tr')
+        .not('.scClonableRow');
+      var fields = $('#scm-' + sampleIDX + '-block')
+        .add(rows)
+        .add(rows.next('.supplementary-row'))
+        .find(':input')
+        .not(':submit, :reset, :image, :file, :disabled');
+      var form = $('#' + indiciaData.control_speciesmap_opts.id + '-container').closest('form');
+      if (form.length && fields.length) {
+        var validator = form.validate();
+        fields = fields.not(validator.settings.ignore);
+        if (fields.length && !fields.valid()) {
+          fields.filter(function () {
+            return validator.invalid[this.name];
+          }).filter(':visible').first().focus();
+          return; // Leave the point editor open so the user can correct errors.
+        }
       }
-      setupSummaryRows(feature.attributes.subSampleIndex);
+      setupSummaryRows(sampleIDX);
       switchToOverviewMap();
       $('#' + indiciaData.control_speciesmap_opts.id + '-container').find('.new').removeClass('new');
       switch (indiciaData.control_speciesmap_mode) {
@@ -651,14 +686,15 @@ var control_speciesmap_addcontrols;
 
     var defaults = {
       mapDiv: '#map',
-      panelClasses: 'ui-widget-header ui-corner-tl ui-corner-tr',
+      panelClasses: 'speciesmap-toolbar',
       buttonsId: 'speciesmap_controls',
       addButtonId: 'speciesmap_addbutton_control',
       modButtonId: 'speciesmap_modbutton_control',
       moveButtonId: 'speciesmap_movebutton_control',
       delButtonId: 'speciesmap_delbutton_control',
-      cancelButtonId: 'speciesmap_cancelbutton_control',
-      finishButtonId: 'speciesmap_finishbutton_control',
+      cancelAddingButtonId: 'speciesmap_cancelbuttonadding_control',
+      cancelMovingButtonId: 'speciesmap_cancelbuttonmoving_control',
+      doneButtonId: 'speciesmap_donebutton_control',
       messageId: 'speciesmap_controls_messages',
       messageClasses: '',
       animationDuration: 1000,
@@ -722,28 +758,33 @@ var control_speciesmap_addcontrols;
             }
         }
       });
+      if (clusterButton) {
+        labelContents = labelContents.map(indiciaFns.escapeHtml);
+      }
       return labelContents.join(separator);
     }
     var opts;
-    var container;
     // Extend our default options with those provided, basing this on an empty object
     // so the defaults don't get changed.
     opts = $.extend({}, defaults, options);
     indiciaData.control_speciesmap_opts = opts;
-    container = $('<div id="' + opts.buttonsId + '" class="' + opts.panelClasses + '">').insertBefore(opts.mapDiv);
-    $('<button id="' + opts.addButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.AddLabel +
-        '</button>').on('click', controlSpeciesmapAddbutton).appendTo(container);
-    $('<button id="' + opts.modButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.ModifyLabel +
-        '</button>').on('click', controlSpeciesmapModifybutton).appendTo(container);
-    $('<button id="' + opts.moveButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.MoveLabel +
-        '</button>').on('click', controlSpeciesmapMovebutton).appendTo(container);
-    $('<button id="' + opts.delButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.DeleteLabel +
-        '</button>').on('click', controlSpeciesmapDeletebutton).appendTo(container);
-    $('<button id="' + opts.cancelButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.CancelLabel +
-        '</button>').on('click', controlSpeciesmapCancelbutton).appendTo(container).hide();
-    $('<button id="' + opts.finishButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.FinishLabel +
-        '</button>').on('click', controlSpeciesmapFinishbutton).appendTo(container).hide();
-    $('<div id="' + opts.messageId + '" class="' + opts.messageClasses + '"></div>').appendTo(container);
+    var headerToolbar = $('<div id="' + opts.buttonsId + '" class="' + opts.panelClasses + '">').insertBefore(opts.mapDiv);
+    var footerToolbar = $('<div id="' + opts.buttonsId + '-footer" class="' + opts.panelClasses + '">').insertAfter('#' + opts.id + '-container');
+    $('<button id="' + opts.addButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button" aria-pressed="false">' + indiciaData.lang.speciesMap.AddLabel +
+        '</button>').on('click', controlSpeciesmapAddbutton).appendTo(headerToolbar);
+    $('<button id="' + opts.modButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button" aria-pressed="false">' + indiciaData.lang.speciesMap.ModifyLabel +
+        '</button>').on('click', controlSpeciesmapModifybutton).appendTo(headerToolbar);
+    $('<button id="' + opts.moveButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button" aria-pressed="false">' + indiciaData.lang.speciesMap.MoveLabel +
+        '</button>').on('click', controlSpeciesmapMovebutton).appendTo(headerToolbar);
+    $('<button id="' + opts.delButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button" aria-pressed="false">' + indiciaData.lang.speciesMap.DeleteLabel +
+        '</button>').on('click', controlSpeciesmapDeletebutton).appendTo(headerToolbar);
+    $('<button id="' + opts.cancelAddingButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.CancelLabelWhenAdding +
+        '</button>').on('click', controlSpeciesmapCancelbutton).appendTo(footerToolbar).hide();
+    $('<button id="' + opts.cancelMovingButtonId + '" class="' + indiciaData.templates.buttonDefaultClass + '" type="button">' + indiciaData.lang.speciesMap.CancelLabelWhenMoving +
+        '</button>').on('click', controlSpeciesmapCancelbutton).appendTo(footerToolbar).hide();
+    $('<button id="' + opts.doneButtonId + '" class="' + indiciaData.templates.buttonHighlightedClass + '" type="button">' + indiciaData.lang.speciesMap.DoneLabel +
+        '</button>').on('click', controlSpeciesmapDonebutton).appendTo(footerToolbar).hide();
+    $('<div id="' + opts.messageId + '" class="' + opts.messageClasses + '"></div>').appendTo(headerToolbar);
     indiciaData.control_speciesmap_mode = 'Off';
 
     // If the form has it's own spatial ref system picker, we can drop the
@@ -810,6 +851,10 @@ var control_speciesmap_addcontrols;
         $('.control_speciesmapsummary thead').append(cloned);
         // now add existing features.
         $('.scm-block').each(function (idx, block) {
+          // Keep deleted blocks for submission, but not on the map or summary.
+          if ($(block).find('[name$=":sample:deleted"]').val() === 't') {
+            return;
+          }
           var id = $(block).attr('id').split('-');
           var parser = new OpenLayers.Format.WKT();
           var feature;
@@ -820,8 +865,7 @@ var control_speciesmap_addcontrols;
           feature.attributes.subSampleIndex = id[1];
           feature.attributes.sRef = $(block).find('[name$="sample\:entered_sref"]').val();
           feature.attributes.locationName = $(block).find('[name$="sample\:location_name"]').val();
-          feature.attributes.count = $('[name$="\:sampleIDX"]')
-              .filter('[value=' + feature.attributes.subSampleIndex + ']').closest('tr').not('.scClonableRow').length;
+          feature.attributes.count = getSubSampleRecordCount(feature.attributes.subSampleIndex);
           addSubSampleFtr(feature);
           setupSummaryRows(feature.attributes.subSampleIndex);
         });

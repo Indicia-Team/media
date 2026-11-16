@@ -9,14 +9,30 @@
   vertical-align: middle;
 }
 
+.ctrl-wrap.not-full-width-date input {
+  width: 10em;
+  max-width: 100%;
+}
+.ctrl-wrap.not-full-width-date .input-group {
+  width: fit-content;
+  max-width: 100%;
+  flex-wrap: nowrap;
+}
+.ctrl-wrap.not-full-width-date .input-group > input {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.ctrl-wrap.not-full-width-date .input-group > .ctrl-addons {
+  flex-shrink: 0;
+}
 .ctrl-wrap.not-full-width-sm * {
-  max-width: 200px;
+  max-width: 14em;
 }
 .ctrl-wrap.not-full-width-md * {
-  max-width: 400px;
+  max-width: 28em;
 }
 .ctrl-wrap.not-full-width-lg * {
-  max-width: 600px;
+  max-width: 42em;
 }
 
 .helpText, .helpTextLeft {
@@ -111,6 +127,21 @@ table.species-grid .footable-row-detail-value {
 }
 table.species-grid .footable-row-detail-name {
   padding-left: 0.5em;
+}
+
+.speciesmap-toolbar {
+  background-color: #f1f1f1;
+  color: #444444;
+  border: 1px solid #d8d8d8;
+  border-radius: 4px;
+}
+.speciesmap-toolbar button {
+  margin: 8px;
+}
+.speciesmap-toolbar button.speciesmap-mode-active {
+  background-color: #2c7bb6;
+  border-color: #2c7bb6;
+  color: #ffffff;
 }
 
 #new-taxon-form {
@@ -967,6 +998,8 @@ body > .loading-spinner {
 
 /* idcCardGallery plugin */
 .idc-cardGallery {
+  /* idc-tools are position absolutely within this container */
+  position: relative;
   /* Ensure height enough for spinner. */
   min-height: 140px;
 }
@@ -1097,15 +1130,8 @@ body > .loading-spinner {
   border-radius: 4px;
 }
 .idc-cardGallery .es-card-gallery .card .verification-buttons-cntr button {
-  border: solid #f0f0f0 1px;
-  border-radius: 4px;
-  background: none;
-  box-shadow: none;
-  color: black;
-  text-shadow: none;
-  min-height: 22px;
+  padding: 5px;
   margin: 4px;
-  padding: 6px;
 }
 .idc-cardGallery .es-card-gallery .card .verification-buttons-cntr button:hover {
   background: #f0f0f0;
@@ -1235,6 +1261,7 @@ body > .loading-spinner {
 
 /* idcDataGrid plugin */
 .idc-dataGrid {
+  /* idc-tools are position absolutely within this container */
   position: relative;
   /* Ensure height enough for spinner. */
   min-height: 140px;
@@ -1462,15 +1489,8 @@ body > .loading-spinner {
 }
 
 .idc-verificationButtons-row button, .idc-verificationButtons-row a {
-  border: solid #f0f0f0 1px;
-  border-radius: 4px;
-  background: none;
-  box-shadow: none;
-  color: black;
-  text-shadow: none;
-  min-height: 22px;
+  padding: 5px;
   margin: 4px;
-  padding: 6px;
 }
 .idc-verificationButtons-row button:hover, .idc-verificationButtons-row a:hover {
   background: #f0f0f0;
@@ -1981,13 +2001,13 @@ body > .loading-spinner {
   margin-bottom: 0;
 }
 #entry_form .ctrl-wrap.not-full-width-sm .input-group, #indicia-entry-form .ctrl-wrap.not-full-width-sm .input-group {
-  max-width: 200px;
+  max-width: 14em;
 }
 #entry_form .ctrl-wrap.not-full-width-md .input-group, #indicia-entry-form .ctrl-wrap.not-full-width-md .input-group {
-  max-width: 400px;
+  max-width: 28em;
 }
 #entry_form .ctrl-wrap.not-full-width-lg .input-group, #indicia-entry-form .ctrl-wrap.not-full-width-lg .input-group {
-  max-width: 600px;
+  max-width: 42em;
 }
 
 /*
@@ -2038,6 +2058,13 @@ input.precise-date-picker {
   }
 }
 /* Verification buttons control */
+.verification-popup legend {
+  float: none;
+}
+.verification-popup legend .btn-sm {
+  font-size: 12px;
+  padding: 2px 4px;
+}
 .verification-popup #ctrl-wrap-template-name .input-group-text.ctrl-addons {
   padding: 0;
 }
@@ -2292,14 +2319,16 @@ label#click-buffer {
   color: green;
 }
 
-.background-processing .panel-heading progress {
+.background-processing .background-progress {
+  display: block;
+  width: 100%;
   margin-bottom: 0;
 }
-.background-processing .panel-body {
+.background-processing .background-processing-log {
   height: 150px;
   overflow-y: auto;
 }
-.background-processing .panel-body p {
+.background-processing .background-processing-log p {
   margin-bottom: 4px;
 }
 
