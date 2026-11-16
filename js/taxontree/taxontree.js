@@ -109,9 +109,11 @@ var esEnabled = false;
  * @returns {void}
  */
 function initialiseTaxonTree() {
-  if ($.jstree.reference('#taxon-tree')) {
-    $('#taxon-tree').jstree('destroy');
-  }
+
+    if ($.jstree.reference('#taxon-tree')) {
+      $('#taxon-tree').jstree('destroy');
+    }
+
     $('#taxon-tree').jstree({
       plugins: ['search', 'sort', 'contextmenu'],
       core: {
@@ -136,14 +138,25 @@ function initialiseTaxonTree() {
         }
       },
       contextmenu: {
-        items: function(node) {
+        items: function (node) {
           var items = $.jstree.defaults.contextmenu.items();
 
           items.create._disabled = true;
           items.rename._disabled = true;
           items.remove._disabled = true;
-          items.ccp.submenu.cut._disabled = true;
-          
+
+          items.editTaxon = {
+            label: 'Edit Taxon',
+            icon: 'glyphicon glyphicon-pencil',
+            action: function () {
+              window.location.href =
+                window.baseUrl +
+                'index.php/taxa_taxon_list/edit/' +
+                node.id;
+            }
+          };
+
+        
           // Access Edit > Copy
           items.ccp.submenu.copy.label = 'Copy Taxon';
           items.ccp.submenu.copy.action = function () {
@@ -166,8 +179,8 @@ function initialiseTaxonTree() {
             pasteTaxon(node);
           };
 
-          return items;
-        }
+
+          return items;        }
       }
     });
 }
@@ -575,7 +588,23 @@ function loadTaxonDetails(meaningId,taxon_list_id) {
       html += '<p><strong>Name deprecated:</strong> ' +
         ((taxon.name_deprecated === 't') ? 'Yes' : 'No') +
         '</p>';
-      html += '</div> <!-- panel body --> </div> <!-- taxon-panel-1 --></div> <!-- panel -->';
+      
+      html += '</div> <!-- panel body --> '; 
+
+      html += '</div> <!-- taxon-panel-1 -->'; 
+      
+      html +=
+        '<div style="text-align:right;margin-top:10px;">' +
+        '<a class="btn btn-xs btn-primary" target="_blank" ' +
+        'href="' +
+              window.baseUrl +
+             'index.php/taxa_taxon_list/edit/' +
+              taxon.taxa_taxon_list_id + '">' +
+        '<span class="glyphicon glyphicon-pencil"></span> Edit' +
+        '</a>' +
+        '</div>';
+      
+      html += '</div> <!-- panel --> ';
     });
     html += '</div><!-- col --><!-- row --></div> <!-- details -->';
     if (data.designations && data.designations.length > 0) {
