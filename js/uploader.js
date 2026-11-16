@@ -612,7 +612,13 @@ jQuery(document).ready(function($) {
    * Click a link on the suggested column mappings auto-selects the option.
    */
   function applySuggestion(e) {
-    $(e.currentTarget).closest('td').find('option[value="' + $(e.currentTarget).data('value') + '"]').prop('selected', true);
+    const select = $(e.currentTarget).closest('td').find('select.mapped-field');
+    const value = $(e.currentTarget).data('value');
+    if (!select.find('option[value="' + value + '"]').length &&
+        typeof indiciaData.fullImportFieldOptionsHtml !== 'undefined') {
+      select.html(indiciaData.fullImportFieldOptionsHtml);
+    }
+    select.find('option[value="' + value + '"]').prop('selected', true);
     checkSelectedFields();
   }
 
@@ -1428,10 +1434,17 @@ jQuery(document).ready(function($) {
        $('#required-fields ul').append($('<li><i class="far fa-square required-checkbox" data-key="' + key + '"></i>' + caption + '</li>'));
     });
     // Auto-match any obvious column/field matches.
+    const normaliseMatchText = function(text) {
+      return text.toLocaleLowerCase().normalize('NFKD').replace(/[^\p{L}\p{N}]/gu, '');
+    };
+    const removeBrackets = function(text) {
+      return text.replace(/\([^)]*\)/g, '');
+    };
     $.each($('#mappings-table tbody tr'), function() {
       const row = this;
-      const columnLabel = $(row).find('td:first-child').text().toLowerCase().replace(/[^a-z0-9]/g, '');
-      const columnLabelExcludeBrackets = $(row).find('td:first-child').text().toLowerCase().replace(/\(.+\)/, '').replace(/[^a-z0-9]/g, '');
+      const columnLabelText = $(row).find('td:first-child').text();
+      const columnLabel = normaliseMatchText(columnLabelText);
+      const columnLabelExcludeBrackets = normaliseMatchText(removeBrackets(columnLabelText));
       // 4 categories of match in descending order of exactness.
       let matches = {
         headingPlusLabel: [],
@@ -1447,35 +1460,56 @@ jQuery(document).ready(function($) {
         // Scan for matches by field name, but only if not using a template.
         $.each($(row).find('option[value!=""]'), function() {
           const option = this;
-          const optGroupHeading = $(option).parent().attr('label').toLowerCase().replace(/[^a-z0-9]/g, '');
-          const possibleMatches = [
-            $(option).data('untranslated').toLowerCase().replace(/[^a-z0-9]/g, '')
+          const optionGroup = $(option).parent();
+          const groupHeadings = [
+            optionGroup.attr('label'),
+            optionGroup.data('short-label')
+          ].filter(Boolean);
+          const possibleMatchTexts = [
+            $(option).data('untranslated'),
+            $(option).text()
           ];
-          if ($(option).text().toLowerCase().replace(/[^a-z0-9]/g, '') !== possibleMatches[0]) {
-            possibleMatches.push($(option).text().toLowerCase().replace(/[^a-z0-9]/g, ''));
+          const possibleMatches = [];
+          $.each(possibleMatchTexts, function() {
+            const full = normaliseMatchText(this);
+            const withoutBrackets = normaliseMatchText(removeBrackets(this));
+            if (full && possibleMatches.indexOf(full) === -1) {
+              possibleMatches.push(full);
+            }
+            if (withoutBrackets && possibleMatches.indexOf(withoutBrackets) === -1) {
+              possibleMatches.push(withoutBrackets);
+            }
+          });
+          const addMatch = function(matchList) {
+            if (matchList.indexOf(option) === -1) {
+              matchList.push(option);
+            }
+          };
+          const normalisedGroupHeadings = groupHeadings.map(normaliseMatchText).filter(Boolean);
+          if (!columnLabel) {
+            return;
           }
           possibleMatches.forEach(function(matchText) {
-            const matchTextExcludesBrackets = matchText.replace(/\(.+\)/, '');
-            if (columnLabel === optGroupHeading + matchText) {
-              matches.headingPlusLabel.push(option);
+            if (normalisedGroupHeadings.some(heading => columnLabel === heading + matchText)) {
+              addMatch(matches.headingPlusLabel);
             }
             else if (columnLabel === matchText) {
-              matches.label.push(option);
+              addMatch(matches.label);
             }
-            else if (matchText !== matchTextExcludesBrackets && columnLabelExcludeBrackets === optGroupHeading + matchTextExcludesBrackets) {
-              matches.headingPlusLabel.push(option);
+            else if (columnLabelExcludeBrackets !== columnLabel &&
+                normalisedGroupHeadings.some(heading => columnLabelExcludeBrackets === heading + matchText)) {
+              addMatch(matches.headingPlusLabel);
             }
-            else if (matchText !== matchTextExcludesBrackets && columnLabelExcludeBrackets === matchTextExcludesBrackets) {
-              matches.label.push(option);
+            else if (columnLabelExcludeBrackets !== columnLabel && columnLabelExcludeBrackets === matchText) {
+              addMatch(matches.label);
             }
           });
           if ($(option).data('alt')) {
             $.each($(option).data('alt').split(','), function() {
               // Don't consider the alt term if already checked.
-              if (possibleMatches.indexOf(this) === -1) {
-                if (columnLabel === this) {
-                  matches.label.push(option);
-                }
+              const alt = normaliseMatchText(this);
+              if (possibleMatches.indexOf(alt) === -1 && columnLabel === alt) {
+                addMatch(matches.label);
               }
             });
           }
@@ -1490,7 +1524,7 @@ jQuery(document).ready(function($) {
         } else if (matches.headingPlusLabel.length + matches.label.length > 0) {
           // Any other match scenario isn't certain enough for automatic
           // selection so show suggestions.
-          $.extend(allMatches, matches.headingPlusLabel, matches.label);
+          allMatches = matches.headingPlusLabel.concat(matches.label);
           $.each(allMatches, function() {
             const suggestionLabel = $(this).parent().data('short-label') + ' - ' + this.text;
             suggestions.push('<a class="apply-suggestion ' + indiciaData.templates.buttonDefaultClass + ' ' + indiciaData.templates.buttonSmallClass + '" data-value="' + this.value + '">' + suggestionLabel + '</a>');
