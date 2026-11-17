@@ -431,7 +431,7 @@ jQuery(document).ready(function($) {
   /**
    * Tests if a required field key is covered by one of the global values.
    *
-   * @param string
+   * @param string key
    *   Key to check.
    */
   function inGlobalValues(key) {
@@ -610,6 +610,9 @@ jQuery(document).ready(function($) {
 
   /**
    * Click a link on the suggested column mappings auto-selects the option.
+   *
+   * @param object e
+   *   Click event for the suggestion link.
    */
   function applySuggestion(e) {
     const select = $(e.currentTarget).closest('td').find('select.mapped-field');
@@ -626,7 +629,7 @@ jQuery(document).ready(function($) {
    * Either show just standard import fields, or also show advanced.
    *
    * Depending on mode. If advanced fields are hidden, the original HTML for the
-   * columns set is stored in a data attribute so it can be reset.
+   * column selects is stored in indiciaData so it can be restored.
    */
   function showOrHideAdvancedFields() {
     const standardFieldsMode = $('[name="field-type-toggle"]:checked').val() === 'standard';
@@ -776,6 +779,15 @@ jQuery(document).ready(function($) {
     };
   }
 
+  /**
+   * Builds a card showing the details of a potential taxon match.
+   *
+   * @param object info
+   *   Taxon information returned by the warehouse.
+   *
+   * @return string
+   *   HTML for the taxon card.
+   */
   function getTaxonCard(info) {
     var rows = [];
     var prefix = '';
@@ -918,7 +930,7 @@ jQuery(document).ready(function($) {
   }
 
   /**
-   * Where there are species names that need matching, adds a matching table.
+   * Where there are location names that need matching, adds a matching table.
    */
   function addLocationMatchingTableToForm(result) {
     var matchingPanelBody = $('<div class="panel-body">')
@@ -1149,6 +1161,9 @@ jQuery(document).ready(function($) {
    * Preprocessing page code.
    */
 
+  /**
+   * Requests the next preprocessing step and updates the progress page.
+   */
   function nextPreprocessingStep() {
     $.ajax({
       url: indiciaData.preprocessUrl,
@@ -1234,6 +1249,11 @@ jQuery(document).ready(function($) {
 
   /**
    * Display information about an incomplete import.
+   *
+   * @param object result
+   *   Result of the import or precheck service call.
+   * @param string state
+   *   Current import state, either precheck or import.
    */
   function showIncompleteImport(result, state) {
     const prefix = state === 'precheck' ? 'incompletePrecheck' : 'incompleteImport';
@@ -1248,8 +1268,8 @@ jQuery(document).ready(function($) {
   /**
    * When an import or precheck has validation errors, warn the user.
    *
-   * @param obj result
-   *   Result of warehouse service call
+   * @param object result
+   *   Result of the warehouse service call.
    * @param string state
    *   Current state variable, e.g. precheck.
    */
@@ -1264,6 +1284,14 @@ jQuery(document).ready(function($) {
     showFailureMessage(msg);
   }
 
+  /**
+   * Processes the next chunk of the import or precheck operation.
+   *
+   * @param string state
+   *   Current import state.
+   * @param bool forceTemplateOverwrite
+   *   Whether to overwrite an existing import template.
+   */
   function importNextChunk(state, forceTemplateOverwrite) {
     var postData = {};
     // Post the description and template title of the import to save on the
@@ -1417,6 +1445,173 @@ jQuery(document).ready(function($) {
     );
   }
 
+  /**
+   * Normalises text for comparison with import column and field labels.
+   *
+   * @param string text
+   *   Text to normalise.
+   *
+   * @return string
+   *   Lowercase letters and numbers with punctuation removed.
+   */
+  function normaliseMappingText(text) {
+    return text.toLocaleLowerCase().normalize('NFKD').replace(/[^\p{L}\p{N}]/gu, '');
+  }
+
+  /**
+   * Removes parenthesised portions of a mapping label.
+   *
+   * @param string text
+   *   Label to simplify.
+   *
+   * @return string
+   *   Label without parenthesised portions.
+   */
+  function removeMappingBrackets(text) {
+    return text.replace(/\([^)]*\)/g, '');
+  }
+
+  /**
+   * Adds an option to a match category unless it is already present.
+   *
+   * @param object matches
+   *   Match categories keyed by match type.
+   * @param string matchType
+   *   Category to update.
+   * @param object option
+   *   Option element to add.
+   */
+  function addUniqueMappingMatch(matches, matchType, option) {
+    if (matches[matchType].indexOf(option) === -1) {
+      matches[matchType].push(option);
+    }
+  }
+
+  /**
+   * Finds field options matching an import column label.
+   *
+   * @param object row
+   *   Mapping table row containing the import column and field options.
+   *
+   * @return object
+   *   Matches grouped by qualified heading and label confidence.
+   */
+  function findMappingMatches(row) {
+    const columnLabelText = $(row).find('td:first-child').text();
+    const columnLabel = normaliseMappingText(columnLabelText);
+    const columnLabelExcludeBrackets = normaliseMappingText(removeMappingBrackets(columnLabelText));
+    const matches = {
+      headingPlusLabel: [],
+      label: []
+    };
+
+    if (!columnLabel) {
+      return matches;
+    }
+
+    $.each($(row).find('option[value!=""]'), function() {
+      const option = this;
+      const optionGroup = $(option).parent();
+      const groupHeadings = [
+        optionGroup.attr('label'),
+        optionGroup.data('short-label')
+      ].filter(Boolean).map(normaliseMappingText).filter(Boolean);
+      const possibleMatches = [];
+
+      $.each([$(option).data('untranslated'), $(option).text()], function() {
+        const full = normaliseMappingText(this);
+        const withoutBrackets = normaliseMappingText(removeMappingBrackets(this));
+        if (full && possibleMatches.indexOf(full) === -1) {
+          possibleMatches.push(full);
+        }
+        if (withoutBrackets && possibleMatches.indexOf(withoutBrackets) === -1) {
+          possibleMatches.push(withoutBrackets);
+        }
+      });
+
+      possibleMatches.forEach(function(matchText) {
+        if (groupHeadings.some(heading => columnLabel === heading + matchText)) {
+          addUniqueMappingMatch(matches, 'headingPlusLabel', option);
+        }
+        else if (columnLabel === matchText) {
+          addUniqueMappingMatch(matches, 'label', option);
+        }
+        else if (columnLabelExcludeBrackets !== columnLabel &&
+            groupHeadings.some(heading => columnLabelExcludeBrackets === heading + matchText)) {
+          addUniqueMappingMatch(matches, 'headingPlusLabel', option);
+        }
+        else if (columnLabelExcludeBrackets !== columnLabel && columnLabelExcludeBrackets === matchText) {
+          addUniqueMappingMatch(matches, 'label', option);
+        }
+      });
+
+      if ($(option).data('alt')) {
+        $.each($(option).data('alt').split(','), function() {
+          const alt = normaliseMappingText(this);
+          if (possibleMatches.indexOf(alt) === -1 && columnLabel === alt) {
+            addUniqueMappingMatch(matches, 'label', option);
+          }
+        });
+      }
+    });
+
+    return matches;
+  }
+
+  /**
+   * Adds ambiguous field matches as clickable suggestions below a row.
+   *
+   * @param object row
+   *   Mapping table row to update.
+   * @param object matches
+   *   Match categories returned by findMappingMatches().
+   */
+  function renderMappingSuggestions(row, matches) {
+    const allMatches = matches.headingPlusLabel.concat(matches.label);
+    const suggestions = [];
+    $.each(allMatches, function() {
+      const suggestionLabel = $(this).parent().data('short-label') + ' - ' + this.text;
+      suggestions.push('<a class="apply-suggestion ' + indiciaData.templates.buttonDefaultClass + ' ' + indiciaData.templates.buttonSmallClass + '" data-value="' + this.value + '">' + suggestionLabel + '</a>');
+    });
+    $(row).find('select.mapped-field').after('<p class="helpText">' +
+      indiciaData.lang.import_helper_2.suggestions + ': ' + suggestions.join(' ') + '</p>');
+  }
+
+  /**
+   * Applies a stored or confident automatic mapping to one table row.
+   *
+   * @param object row
+   *   Mapping table row to process.
+   */
+  function autoMatchMappingRow(row) {
+    const columnLabel = $(row).find('td:first-child').text();
+    const columnInfo = indiciaData.columns && indiciaData.columns[columnLabel];
+    if (columnInfo && columnInfo.warehouseField) {
+      // Mapping is already in the columns info, e.g. when loaded from a
+      // template.
+      $(row).find('option[value="' + columnInfo.warehouseField + '"]').attr('selected', true);
+      return;
+    }
+    if (indiciaData.import_template_id) {
+      return;
+    }
+
+    const matches = findMappingMatches(row);
+    if (matches.headingPlusLabel.length === 1) {
+      // A single, fully qualified match can be selected.
+      $(matches.headingPlusLabel[0]).attr('selected', true);
+    }
+    else if (matches.headingPlusLabel.length === 0 && matches.label.length === 1) {
+      // A single match without specifying the heading can also be selected.
+      $(matches.label[0]).attr('selected', true);
+    }
+    else if (matches.headingPlusLabel.length + matches.label.length > 0) {
+      // Any other match scenario isn't certain enough for automatic selection
+      // so show suggestions.
+      renderMappingSuggestions(row, matches);
+    }
+  }
+
   // Trigger the functionality for the appropriate page.
   if (indiciaData.step === 'fileSelectForm') {
     initFileUploadControl();
@@ -1433,105 +1628,8 @@ jQuery(document).ready(function($) {
     $.each(indiciaData.requiredFields, function(key, caption) {
        $('#required-fields ul').append($('<li><i class="far fa-square required-checkbox" data-key="' + key + '"></i>' + caption + '</li>'));
     });
-    // Auto-match any obvious column/field matches.
-    const normaliseMatchText = function(text) {
-      return text.toLocaleLowerCase().normalize('NFKD').replace(/[^\p{L}\p{N}]/gu, '');
-    };
-    const removeBrackets = function(text) {
-      return text.replace(/\([^)]*\)/g, '');
-    };
     $.each($('#mappings-table tbody tr'), function() {
-      const row = this;
-      const columnLabelText = $(row).find('td:first-child').text();
-      const columnLabel = normaliseMatchText(columnLabelText);
-      const columnLabelExcludeBrackets = normaliseMatchText(removeBrackets(columnLabelText));
-      // 4 categories of match in descending order of exactness.
-      let matches = {
-        headingPlusLabel: [],
-        label: []
-      };
-      let suggestions = [];
-      let allMatches = [];
-      if (indiciaData.columns && indiciaData.columns[$(row).find('td:first-child').text()] && indiciaData.columns[$(row).find('td:first-child').text()]['warehouseField']) {
-        // Mapping is already in the columns info, e.g. when loaded from a
-        // template.
-        $(row).find('option[value="' + indiciaData.columns[$(row).find('td:first-child').text()]['warehouseField'] + '"]').attr('selected', true);
-      } else if (!indiciaData.import_template_id) {
-        // Scan for matches by field name, but only if not using a template.
-        $.each($(row).find('option[value!=""]'), function() {
-          const option = this;
-          const optionGroup = $(option).parent();
-          const groupHeadings = [
-            optionGroup.attr('label'),
-            optionGroup.data('short-label')
-          ].filter(Boolean);
-          const possibleMatchTexts = [
-            $(option).data('untranslated'),
-            $(option).text()
-          ];
-          const possibleMatches = [];
-          $.each(possibleMatchTexts, function() {
-            const full = normaliseMatchText(this);
-            const withoutBrackets = normaliseMatchText(removeBrackets(this));
-            if (full && possibleMatches.indexOf(full) === -1) {
-              possibleMatches.push(full);
-            }
-            if (withoutBrackets && possibleMatches.indexOf(withoutBrackets) === -1) {
-              possibleMatches.push(withoutBrackets);
-            }
-          });
-          const addMatch = function(matchList) {
-            if (matchList.indexOf(option) === -1) {
-              matchList.push(option);
-            }
-          };
-          const normalisedGroupHeadings = groupHeadings.map(normaliseMatchText).filter(Boolean);
-          if (!columnLabel) {
-            return;
-          }
-          possibleMatches.forEach(function(matchText) {
-            if (normalisedGroupHeadings.some(heading => columnLabel === heading + matchText)) {
-              addMatch(matches.headingPlusLabel);
-            }
-            else if (columnLabel === matchText) {
-              addMatch(matches.label);
-            }
-            else if (columnLabelExcludeBrackets !== columnLabel &&
-                normalisedGroupHeadings.some(heading => columnLabelExcludeBrackets === heading + matchText)) {
-              addMatch(matches.headingPlusLabel);
-            }
-            else if (columnLabelExcludeBrackets !== columnLabel && columnLabelExcludeBrackets === matchText) {
-              addMatch(matches.label);
-            }
-          });
-          if ($(option).data('alt')) {
-            $.each($(option).data('alt').split(','), function() {
-              // Don't consider the alt term if already checked.
-              const alt = normaliseMatchText(this);
-              if (possibleMatches.indexOf(alt) === -1 && columnLabel === alt) {
-                addMatch(matches.label);
-              }
-            });
-          }
-        });
-        if (matches.headingPlusLabel.length === 1) {
-          // A single, fully qualified match can be selected.
-          $(matches.headingPlusLabel[0]).attr('selected', true);
-        } else if (matches.headingPlusLabel.length === 0 && matches.label.length === 1) {
-          // A single match without specifying the heading can also be
-          // selected.
-          $(matches.label[0]).attr('selected', true);
-        } else if (matches.headingPlusLabel.length + matches.label.length > 0) {
-          // Any other match scenario isn't certain enough for automatic
-          // selection so show suggestions.
-          allMatches = matches.headingPlusLabel.concat(matches.label);
-          $.each(allMatches, function() {
-            const suggestionLabel = $(this).parent().data('short-label') + ' - ' + this.text;
-            suggestions.push('<a class="apply-suggestion ' + indiciaData.templates.buttonDefaultClass + ' ' + indiciaData.templates.buttonSmallClass + '" data-value="' + this.value + '">' + suggestionLabel + '</a>');
-          });
-          $(row).find('select.mapped-field').after('<p class="helpText">' +  indiciaData.lang.import_helper_2.suggestions + ': ' + suggestions.join(' ') + '</p>');
-        }
-      }
+      autoMatchMappingRow(this);
     });
     indiciaFns.on('change', '.mapped-field', {}, checkSelectedFields);
     indiciaFns.on('click', '.apply-suggestion', {}, applySuggestion);
