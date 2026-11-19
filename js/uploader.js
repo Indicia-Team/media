@@ -1526,16 +1526,9 @@ jQuery(document).ready(function($) {
   }
   // Code for import reverser.
   // Change the button label depending if user has chosen to abort.
-  // Also change the next import step to be the first step again.
-  $('[name=\"reverse-mode\"').on('change', function() {
-    if ($(this).val() == 'abort_reverse') {
-      $('[name=\"next-import-step\"').val('fileSelectForm');
-      $('#run-reverse').prop('value', indiciaData.lang.import_helper_2.abort);
-    }
-    else {
-      $('[name=\"next-import-step\"').val('reversalResult');
-      $('#run-reverse').prop('value', indiciaData.lang.import_helper_2.continue);
-    };
+  $('#reversal-mode-warning-form [name="reverse-mode"]').on('change', function() {
+    var labels = indiciaData.lang.import_helper_2;
+    $(this.form).find('#run-reverse').val(this.value === 'abort_reverse' ? labels.abort : labels.continue);
   });
   // Don't allow reverse to be run until an import has been selected.
   $('#reverse-guid').on('change', function() {
@@ -1548,14 +1541,8 @@ jQuery(document).ready(function($) {
       $('.reverse-instructions-1').hide();
     }
   });
-  $('#run-reverse').on('click', function() {
-    // No need to confirm if aborting, as easy to go back.
-    if ($(this).val() != indiciaData.lang.import_helper_2.abort) {
-      if (confirm(indiciaData.lang.import_helper_2.are_you_sure_reverse) == true) {
-        return true;
-      } else {
-        return false;
-      }
-    }
+  $('#reverse-import-form, #reversal-mode-warning-form').on('submit', function() {
+    return $(this).find('[name="reverse-mode"]:checked').val() === 'abort_reverse'
+      || confirm(indiciaData.lang.import_helper_2.are_you_sure_reverse);
   });
 });
