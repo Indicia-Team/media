@@ -1541,8 +1541,12 @@ jQuery(document).ready(function($) {
       $('.reverse-instructions-1').hide();
     }
   });
-  $('#reverse-import-form, #reversal-mode-warning-form').on('submit', function() {
-    return $(this).find('[name="reverse-mode"]:checked').val() === 'abort_reverse'
-      || confirm(indiciaData.lang.import_helper_2.are_you_sure_reverse);
+  $('#reversal-mode-warning-form').on('submit', function(event) {
+    var submitter = event.originalEvent && event.originalEvent.submitter;
+    if ((submitter && submitter.name === 'reverse-mode' && submitter.value === 'abort_reverse')
+        || $(this).find('[name="reverse-mode"]:checked').val() === 'abort_reverse') {
+      return true;
+    }
+    return confirm(indiciaData.lang.import_helper_2.are_you_sure_reverse);
   });
 });
