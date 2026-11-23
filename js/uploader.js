@@ -1670,9 +1670,9 @@ jQuery(document).ready(function($) {
   }
   // Code for import reverser.
   // Change the button label depending if user has chosen to abort.
-  $('#reversal-mode-warning-form [name="reverse-mode"]').on('change', function() {
+  $('#reversal-mode-warning-form input[type="radio"][name="reverse-mode"]').on('change', function() {
     var labels = indiciaData.lang.import_helper_2;
-    $(this.form).find('#run-reverse').val(this.value === 'abort_reverse' ? labels.abort : labels.continue);
+    $(this.form).find('#run-reverse').val(this.value === 'abort_reverse' ? labels.abort : labels.queue_reversal);
   });
   // Don't allow reverse to be run until an import has been selected.
   $('#reverse-guid').on('change', function() {
@@ -1684,13 +1684,5 @@ jQuery(document).ready(function($) {
       $('#run-reverse').prop('disabled', true);
       $('.reverse-instructions-1').hide();
     }
-  });
-  $('#reversal-mode-warning-form').on('submit', function(event) {
-    var submitter = event.originalEvent && event.originalEvent.submitter;
-    if ((submitter && submitter.name === 'reverse-mode' && submitter.value === 'abort_reverse')
-        || $(this).find('[name="reverse-mode"]:checked').val() === 'abort_reverse') {
-      return true;
-    }
-    return confirm(indiciaData.lang.import_helper_2.are_you_sure_reverse);
   });
 });
