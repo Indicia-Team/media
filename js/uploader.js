@@ -1415,6 +1415,18 @@ jQuery(document).ready(function($) {
   if (indiciaData.step === 'fileSelectForm') {
     initFileUploadControl();
   }
+  else if (indiciaData.step === 'reversalCancelled') {
+    window.location.replace(indiciaData.myImportsUrl);
+  }
+  else if (indiciaData.step === 'reversalTasks') {
+    const url = indiciaData.reversalTasksUrl;
+    if (indiciaData.redirectToReversalTasks) {
+      window.location.replace(url);
+    }
+    else {
+      window.setTimeout(function () { window.location.replace(url); }, 1 * 60 * 1000);
+    }
+  }
   else if (indiciaData.step === 'globalValuesForm') {
     // Prevent hidden unrestricted versions of options controls from submitting
     // a value until they are selected by the user.
