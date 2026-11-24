@@ -3,6 +3,10 @@ var changeComplexGridRowCount;
 jQuery(document).ready(function($) {
   "use strict";
 
+  function escapeHtml(value) {
+    return $('<div>').text(value).html();
+  }
+
   function updateUniqueSelects(table) {
     var
       attrName=table.id.replace('complex-attr-grid-', '').split('-'),
@@ -51,26 +55,28 @@ jQuery(document).ready(function($) {
         var checkboxes=[];
         if (def.termlist_id) {
           $.each(indiciaData['tl'+def.termlist_id], function(idx, term) {
-            checkboxes.push('<input title="'+term[1]+'" type="checkbox" name="'+fieldname+'[]" class="' + indiciaData.formControlClass + '" value="'+term[0]+':' + term[1] + '">');
+            checkboxes.push('<input title="' + escapeHtml(term[1]) + '" type="checkbox" name="'+fieldname+'[]" class="' +
+              indiciaData.formControlClass + '" value="'+escapeHtml(term[0]+':'+term[1])+'">');
           });
         } else if (def.lookupValues) {
           $.each(def.lookupValues, function(val, term) {
             checkboxes.push(
-              '<input title="' + term + '" type="checkbox" name="' + fieldname +
-              '[]" class="' + indiciaData.formControlClass + '" value="' + val + ':' + term + '">'
+              '<input title="' + escapeHtml(term) + '" type="checkbox" name="' + fieldname +
+              '[]" class="' + indiciaData.formControlClass + '" value="' + escapeHtml(val + ':' + term) + '">'
             );
           });
          }
         row += checkboxes.join('</td><td>');
       } else if (def.datatype==='lookup') {
-        row += '<select name="'+fieldname+'" class="' + indiciaData.formControlClass + '"><option value="">&lt;'+indiciaData.langPleaseSelect+'&gt;</option>';
+        row += '<select name="'+fieldname+'" class="' + indiciaData.formControlClass + '"><option value="">&lt;'+
+          escapeHtml(indiciaData.langPleaseSelect)+'&gt;</option>';
         if (def.termlist_id) {
           $.each(indiciaData['tl'+def.termlist_id], function(idx, term) {
-            row += '<option value="'+term[0]+':' + term[1] + '">'+term[1]+'</option>';
+            row += '<option value="' + escapeHtml(term[0]+':'+term[1]) + '">' + escapeHtml(term[1])+'</option>';
           });
         } else if (def.lookupValues) {
           $.each(def.lookupValues, function(val, term) {
-            row += '<option value="'+val+':' + term + '">' + term + '</option>';
+            row += '<option value="' + escapeHtml(val+':' + term) + '">' + escapeHtml(term) + '</option>';
           });
         }
         row += '</select>';
