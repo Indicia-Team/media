@@ -1,6 +1,6 @@
 /* Shim for supporting Bootstrap 3 inline forms */
 .form-inline {
-  .form-control, * {
+  .form-control, *:not(legend) {
     display: inline-block;
     width: auto;
     vertical-align: middle;

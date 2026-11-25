@@ -1951,7 +1951,7 @@ body > .loading-spinner {
 }
 
 /* Shim for supporting Bootstrap 3 inline forms */
-.form-inline .form-control, .form-inline * {
+.form-inline .form-control, .form-inline *:not(legend) {
   display: inline-block;
   width: auto;
   vertical-align: middle;
