@@ -41,7 +41,7 @@ jQuery(document).ready(function($) {
   function getResizeableScrollComponent(id) {
     let thisCtrl = $('#' + id);
     if (thisCtrl.hasClass('idc-recordDetails')) {
-      return thisCtrl.find('.ui-tabs-panel');
+      return thisCtrl.find('.ui-tabs-panel:visible').first();
     }
     if (thisCtrl.hasClass('idc-dataGrid')) {
       return thisCtrl.find('tbody');
@@ -112,23 +112,26 @@ jQuery(document).ready(function($) {
         }
       });
       $.each(indiciaData.esControlLayout.alignBottom, function() {
+        const control = $('#' + this);
         const resizeEl = $(getResizeableScrollComponent(this));
+        const resizeEls = control.hasClass('idc-recordDetails') ?
+          control.find('.ui-tabs-panel') : resizeEl;
         // Ensure control ready.
-        if (resizeEl.length > 0) {
+        if (resizeEl.length > 0 || belowBreakpoint) {
           if (belowBreakpoint) {
             // Below breakpoint, so revert to unstyled height.
-            resizeEl.css('max-height', '');
+            resizeEls.css('max-height', '');
             $('body').css('padding-bottom', '4px');
           } else {
             const padding = 4;
             const resizeElTop = resizeEl[0].getBoundingClientRect().y;
             // Unset any min-height defined for outer container - we want to
             // know it's true intrinsic height.
-            $('#' + this).css('min-height', 'auto');
+            control.css('min-height', 'auto');
             // Allow for any footer area in the control that is under the scrollbox area (e.g. a tfoot).
-            const allowForSpaceBelowResizeEl = $('#' + this)[0].getBoundingClientRect().height - resizeEl[0].getBoundingClientRect().height - (resizeElTop - $('#' + this)[0].getBoundingClientRect().y);
+            const allowForSpaceBelowResizeEl = control[0].getBoundingClientRect().height - resizeEl[0].getBoundingClientRect().height - (resizeElTop - control[0].getBoundingClientRect().y);
             // Reset.
-            $('#' + this).css('min-height', '');
+            control.css('min-height', '');
             const controlHeight = window.innerHeight - resizeElTop - allowForSpaceBelowResizeEl - padding * 2;
             resizeEl.css('overflow-y', 'auto');
             resizeEl.css('max-height', Math.max(controlHeight, 50));
@@ -151,11 +154,57 @@ jQuery(document).ready(function($) {
       }
     });
 
-    window.addEventListener('resize', indiciaFns.updateControlLayout);
+    let updateFrame;
+    function scheduleControlLayoutUpdate() {
+      if (typeof updateFrame !== 'undefined') {
+        return;
+      }
+      updateFrame = window.requestAnimationFrame(function() {
+        updateFrame = undefined;
+        indiciaFns.updateControlLayout();
+      });
+    }
+
+    if (window.ResizeObserver) {
+      const observedIds = [indiciaData.esControlLayout.setOriginY]
+        .concat(indiciaData.esControlLayout.alignTop)
+        .concat(indiciaData.esControlLayout.alignBottom)
+        .concat(Object.keys(indiciaData.esControlLayout.setHeightPercent));
+      const observedSizes = new WeakMap();
+      const layoutResizeObserver = new window.ResizeObserver(function(entries) {
+        let layoutChanged = false;
+        $.each(entries, function() {
+          const previousSize = observedSizes.get(this.target);
+          const currentSize = {
+            height: this.contentRect.height,
+            width: this.contentRect.width,
+          };
+          observedSizes.set(this.target, currentSize);
+          if (!previousSize ||
+              Math.abs(previousSize.height - currentSize.height) >= 1 ||
+              Math.abs(previousSize.width - currentSize.width) >= 1) {
+            layoutChanged = true;
+          }
+        });
+        if (layoutChanged) {
+          scheduleControlLayoutUpdate();
+        }
+      });
+      $.each(observedIds.filter(function(id, index) {
+        return observedIds.indexOf(id) === index;
+      }), function() {
+        const observedControl = document.getElementById(this);
+        if (observedControl) {
+          layoutResizeObserver.observe(observedControl);
+        }
+      });
+    }
+
+    window.addEventListener('resize', scheduleControlLayoutUpdate);
     // Also recalc on fullscreen change otherwise layout refreshes too early
     // when closing fullscreen.
-    document.addEventListener("fullscreenchange", indiciaFns.updateControlLayout);
-    document.addEventListener("webkitfullscreenchange", indiciaFns.updateControlLayout);
+    document.addEventListener("fullscreenchange", scheduleControlLayoutUpdate);
+    document.addEventListener("webkitfullscreenchange", scheduleControlLayoutUpdate);
 
     indiciaFns.updateControlLayout();
   } else {

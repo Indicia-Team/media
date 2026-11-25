@@ -432,6 +432,9 @@
 
   function tabActivate(event, ui) {
     loadCurrentTabAjax($(ui.newPanel).closest('.idc-recordDetails')[0]);
+    window.requestAnimationFrame(function() {
+      indiciaFns.updateControlLayout();
+    });
   }
 
   /**
