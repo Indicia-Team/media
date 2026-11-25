@@ -1,6 +1,6 @@
 /* Shim for supporting Bootstrap 3 inline forms */
 .form-inline {
-  .form-control, *:not(legend) {
+  .form-control, *:not(legend):not([type="checkbox"]) {
     display: inline-block;
     width: auto;
     vertical-align: middle;
@@ -26,13 +26,16 @@
   padding-bottom: $form-group-margin-bottom;
 }
 /* Tweak spacing for checkbox label before as BS defaults expect after. */
-.form-check-label-before {
+.checkbox-label-before {
   padding-left: 0;
-
-  .form-check-input {
-    float: none;
-    margin-left: 8px;
-    margin-right: 0;
+  &.form-check {
+    padding-left: 0;
+    padding-right: 1.5em;
+    .form-check-input {
+      float: none;
+      margin-left: 8px;
+      margin-right: 0;
+    }
   }
 }
 #entry_form, #indicia-entry-form {

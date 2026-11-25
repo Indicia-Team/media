@@ -1951,7 +1951,7 @@ body > .loading-spinner {
 }
 
 /* Shim for supporting Bootstrap 3 inline forms */
-.form-inline .form-control, .form-inline *:not(legend) {
+.form-inline .form-control, .form-inline *:not(legend):not([type=checkbox]) {
   display: inline-block;
   width: auto;
   vertical-align: middle;
@@ -1979,10 +1979,14 @@ body > .loading-spinner {
 }
 
 /* Tweak spacing for checkbox label before as BS defaults expect after. */
-.form-check-label-before {
+.checkbox-label-before {
   padding-left: 0;
 }
-.form-check-label-before .form-check-input {
+.checkbox-label-before.form-check {
+  padding-left: 0;
+  padding-right: 1.5em;
+}
+.checkbox-label-before.form-check .form-check-input {
   float: none;
   margin-left: 8px;
   margin-right: 0;
