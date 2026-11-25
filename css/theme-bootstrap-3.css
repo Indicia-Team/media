@@ -1071,7 +1071,7 @@ body > .loading-spinner {
 }
 .idc-cardGallery .es-card-gallery .card .collapse-card {
   position: absolute;
-  top: 4px;
+  bottom: 4px;
   right: 4px;
   display: none;
   border: none;
