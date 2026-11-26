@@ -1419,7 +1419,12 @@ jQuery(document).ready(function($) {
               showIncompleteImport(result, state);
             } else {
               // Import is complete.
-              $('#import-details-importing-done').show();
+              if (result.errorsCount) {
+                $('#import-details-importing-done-with-errors').show();
+              }
+              else {
+                $('#import-details-importing-done').show();
+              }
               $('#import-details-import-another').show();
               // Update page title to import complete.
               $('#current-task').text(indiciaData.lang.import_helper_2.completeMessage);
